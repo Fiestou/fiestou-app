@@ -32,15 +32,6 @@ const nextConfig = {
       ],
     },
   ],
-  async middleware() {
-    const handler = nextApp.getRequestHandler();
-
-    // Enable CORS
-    nextApp.use(cors());
-
-    // Handle all other requests
-    nextApp.all("*", (req, res) => handler(req, res));
-  },
   generateEtags: false,
   reactStrictMode: true,
   eslint: {

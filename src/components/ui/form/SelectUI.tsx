@@ -22,7 +22,6 @@ export default function Select(attr: SelectType) {
       <select
         name={attr?.name}
         id={attr?.id ?? attr?.name}
-        placeholder={attr?.placeholder}
         disabled={attr?.disabled}
         className={`${attr?.className} ${
           attr?.errorMessage ? "border-red-500 placeholder-red-300" : ""
