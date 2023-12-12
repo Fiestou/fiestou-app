@@ -156,7 +156,7 @@ export default function Default({
         } fixed z-[60] top-0 left-0 w-full`}
       >
         <div className="fixed text-white left-0 top-0 w-full h-screen bg-cyan-500 text-right flex flex-col items-start">
-          <div className="min-h-[85vh] w-full flex text-lg flex-col items-start pt-20">
+          <div className="min-h-[78vh] w-full flex text-lg flex-col items-start pt-20">
             {!!content?.menu_links &&
               content.menu_links.map((item: any, key: any) => (
                 <div className="w-full py-2 px-4" key={key}>
