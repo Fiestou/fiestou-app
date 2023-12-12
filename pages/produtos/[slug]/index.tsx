@@ -1,0 +1,1016 @@
+import Product from "@/src/components/common/Product";
+import Icon from "@/src/icons/fontAwesome/FIcon";
+
+import Link from "next/link";
+import Template from "@/src/template";
+import Api, { defaultQuery } from "@/src/services/api";
+import {
+  AttributeType,
+  ProductType,
+  getPrice,
+  getPriceValue,
+} from "@/src/models/product";
+import {
+  dateBRFormat,
+  dateFormat,
+  filterRepeatRemove,
+  getDate,
+  getImage,
+  getSummary,
+  isMobileDevice,
+  moneyFormat,
+} from "@/src/helper";
+import { Button } from "@/src/components/ui/form";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { AddToCart } from "@/src/components/pages/carrinho";
+import Badge from "@/src/components/utils/Badge";
+import {
+  AttributeProductOrderType,
+  ProductOrderType,
+  VariationProductOrderType,
+} from "@/src/models/product";
+import Img from "@/src/components/utils/ImgBase";
+import { StoreType } from "@/src/models/store";
+import Newsletter from "@/src/components/common/Newsletter";
+import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
+
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination } from "swiper";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+
+import Calendar from "@/src/components/ui/form/CalendarUI";
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import Modal from "@/src/components/utils/Modal";
+import ShareModal from "@/src/components/utils/ShareModal";
+import { RelationType } from "@/src/models/relation";
+import LikeButton from "@/src/components/ui/LikeButton";
+import SidebarCart from "@/src/components/common/SidebarCart";
+
+export const getStaticPaths = async (ctx: any) => {
+  const api = new Api();
+  const request: any = await api.get(
+    {
+      url: "request/products",
+    },
+    ctx
+  );
+
+  const products = request?.data ?? [];
+
+  const paths = products
+    .filter((product: any) => !!product?.slug)
+    .map((product: any) => {
+      return { params: { slug: product?.slug } };
+    });
+
+  return {
+    paths: paths ?? [],
+    fallback: true,
+  };
+};
+
+export async function getStaticProps(ctx: any) {
+  const api = new Api();
+  const { slug } = ctx.params;
+
+  let request: any = await api.get(
+    {
+      url: "request/product",
+      data: {
+        slug: slug,
+      },
+    },
+    ctx
+  );
+
+  if (!request?.response) {
+    return {
+      notFound: true,
+    };
+  } else {
+    const product = request.data;
+    const comments = product?.comments ?? [];
+    const store = product?.store ?? {};
+
+    request = await api.get(
+      {
+        url: "content/product",
+      },
+      ctx
+    );
+
+    const categories = request?.data?.categories ?? {};
+    const HeaderFooter = request?.data?.HeaderFooter ?? {};
+    const DataSeo = request?.data?.DataSeo ?? {};
+    const Scripts = request?.data?.Scripts ?? {};
+
+    console.log(product, "<<");
+
+    return {
+      props: {
+        product: product,
+        comments: comments?.rate ?? [],
+        store: store,
+        categories: categories ?? {},
+        HeaderFooter: HeaderFooter,
+        DataSeo: DataSeo,
+        Scripts: Scripts,
+      },
+      revalidate: 60 * 60,
+    };
+  }
+}
+
+export default function Produto({
+  product,
+  comments,
+  store,
+  categories,
+  HeaderFooter,
+  DataSeo,
+  Scripts,
+}: {
+  product: ProductType;
+  comments: Array<any>;
+  store: StoreType;
+  categories: any;
+  HeaderFooter: any;
+  DataSeo: any;
+  Scripts: any;
+}) {
+  const { isFallback } = useRouter();
+
+  const router = useRouter();
+
+  const imageCover =
+    !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
+
+  const rate: { star: number; comments: number } = {
+    star: comments?.reduce((result, obj) => result + obj.rate, 0),
+    comments: comments?.length,
+  };
+
+  const [share, setShare] = useState(false);
+  const baseUrl = `https://fiestou.com.br/produtos/${product?.slug}`;
+
+  const [loadCart, setLoadCart] = useState(false);
+  const [resume, setResume] = useState(false);
+
+  const [productToCart, setProductToCart] = useState<ProductOrderType>({
+    product: product?.id,
+    attributes: [],
+    quantity: 1,
+    details: {},
+    total: getPriceValue(product).price,
+  });
+
+  const [days, setDays] = useState(1);
+
+  const handleQuantity = (q: any) => {
+    const qtd = Number(q);
+
+    updateOrderTotal({
+      ...productToCart,
+      quantity: !!qtd ? qtd : 1,
+    });
+  };
+
+  const updateOrderTotal = (orderUpdate: ProductOrderType) => {
+    let price = 0;
+
+    orderUpdate.attributes.map((attr: AttributeProductOrderType) =>
+      attr.variations.map((variate, key) => {
+        const variatePrice =
+          typeof variate?.price == "string"
+            ? variate?.price.replace(",", ".")
+            : variate?.price;
+        price += (Number(variatePrice) ?? 1) * (variate?.quantity ?? 1);
+      })
+    );
+
+    let total = getPriceValue(product).price + price;
+
+    if (!!orderUpdate?.details?.days) {
+      total = total * orderUpdate?.details?.days;
+    }
+
+    if (!!product?.schedulingDiscount) {
+      const schedulingDiscount = product?.schedulingDiscount ?? 1;
+      total = total - (total * schedulingDiscount) / 100;
+    }
+
+    total = total * orderUpdate.quantity;
+
+    let handle = {
+      ...orderUpdate,
+      total: total,
+    };
+
+    setProductToCart(handle);
+  };
+
+  const updateOrder = (
+    value: VariationProductOrderType,
+    attr: AttributeType
+  ) => {
+    let orderUpdate: ProductOrderType = productToCart;
+
+    if (
+      !orderUpdate.attributes.filter(
+        (fltr: AttributeProductOrderType) => fltr.id == attr.id
+      ).length
+    ) {
+      orderUpdate.attributes.push({
+        id: attr.id,
+        variations: [],
+      });
+    }
+
+    orderUpdate.attributes.map(
+      (attribute: AttributeProductOrderType, key: number) => {
+        if (attribute.id == attr.id) {
+          let variations: any = orderUpdate.attributes[key].variations;
+
+          if (attr.selectType == "radio") {
+            variations = [value];
+          }
+
+          if (attr.selectType == "checkbox") {
+            if (
+              !!variations.filter((item: any) => item.id == value.id).length
+            ) {
+              variations = variations.filter(
+                (item: any) => item.id != value.id
+              );
+            } else {
+              variations.push(value);
+            }
+          }
+
+          if (attr.selectType == "quantity") {
+            if (
+              !!variations.filter((item: any) => item.id == value.id).length
+            ) {
+              variations = variations
+                .map((item: any) =>
+                  item.id == value.id
+                    ? { ...item, quantity: value.quantity }
+                    : item
+                )
+                .filter((item: any) => !!item.quantity);
+            } else {
+              variations.push(value);
+            }
+          }
+
+          orderUpdate.attributes[key].variations = variations;
+        }
+      }
+    );
+
+    updateOrderTotal(orderUpdate);
+  };
+
+  const [cartModal, setCartModal] = useState(false as boolean);
+
+  const sendToCart = (e: any) => {
+    e.preventDefault();
+
+    setLoadCart(true);
+
+    if (AddToCart(productToCart)) {
+      setCartModal(true);
+    } else {
+      setLoadCart(true);
+    }
+  };
+
+  const handleDetails = (detail: Object) => {
+    let details = { ...(productToCart?.details ?? {}), ...detail };
+
+    let days = 1;
+    let date_1: any = new Date(details?.dateStart?.toDateString() ?? "");
+    let date_2: any = new Date(details?.dateEnd?.toDateString() ?? "");
+
+    const timestampDate1 = date_1.getTime();
+    const timestampDate2 = date_2.getTime();
+
+    days = Math.round(
+      Math.abs(timestampDate1 - timestampDate2) / (24 * 60 * 60 * 1000)
+    );
+
+    setDays(!!days ? days : 1);
+
+    updateOrderTotal({
+      ...productToCart,
+      details: {
+        ...details,
+        dateStart: dateFormat(details?.dateStart),
+        dateEnd: dateFormat(details?.dateEnd),
+        days: days,
+        schedulingDiscount: product?.schedulingDiscount,
+      },
+    });
+  };
+
+  const [layout, setLayout] = useState({} as any);
+
+  const renderComments = () => (
+    <>
+      {!!comments?.length && (
+        <div className="mt-4 md:mt-10 bg-zinc-100 p-4 lg:p-10 rounded-xl">
+          <div className="font-title font-bold text-zinc-900 mb-5 md:mb-6">
+            {comments?.length} comentário
+            {comments?.length == 1 ? "" : "s"}
+          </div>
+
+          <div className="grid gap-4">
+            {comments.map((item: any, key: any) => (
+              <div key={key} className="border-b pb-4">
+                <div className="flex gap-2 items-center">
+                  <div className="relative overflow-hidden bg-zinc-300 p-4 rounded-full"></div>
+                  <div className="w-full">
+                    <div className="text-zinc-900 font-bold text-sm">
+                      {item.user?.name ?? ""}
+                    </div>
+                    <div className="flex gap-1 text-xs">
+                      {[1, 2, 3, 4, 5].map((value: number) => (
+                        <label key={value}>
+                          <Icon
+                            icon="fa-star"
+                            type="fa"
+                            className={`${
+                              item.rate >= value
+                                ? "text-yellow-500"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-3 text-sm">{item.comment}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  const [match, setMatch] = useState([] as Array<any>);
+  const renderMatch = async () => {
+    const api = new Api();
+    let request: any = await api.get({
+      url: "request/products",
+      data: {
+        store: store?.id ?? 0,
+        busca: (product?.tags ?? ",").split(",").filter((item) => !!item),
+        categorias: (product?.category ?? []).map((cat: any) => cat.slug),
+        limit: 10,
+      },
+    });
+
+    setMatch(request?.data ?? []);
+  };
+
+  const renderSlideProducts = (handleMatch: Array<any>) => {
+    return (
+      <Swiper
+        spaceBetween={16}
+        loop={true}
+        breakpoints={{
+          0: {
+            slidesPerView: 1.5,
+            centeredSlides: true,
+          },
+          640: {
+            slidesPerView: 2.5,
+            centeredSlides: false,
+          },
+          1024: {
+            slidesPerView: 4,
+            centeredSlides: false,
+          },
+        }}
+        className="swiper-equal"
+      >
+        {!!handleMatch.length &&
+          handleMatch.map((item: any, key: any) => (
+            <SwiperSlide key={key}>
+              <Product product={item} />
+            </SwiperSlide>
+          ))}
+      </Swiper>
+    );
+  };
+
+  useEffect(() => {
+    if (!!window) {
+      setLayout({ ...layout, isMobile: isMobileDevice() });
+    }
+    if (!!store?.id) {
+      renderMatch();
+    }
+  }, [store]);
+
+  const renderDetails = () => (
+    <>
+      <div className="border rounded-lg p-4">
+        <div className="text-sm grid gap-1">
+          <div className="text-zinc-900">
+            Fornecido por:{" "}
+            <Link
+              href={`/${store?.slug}`}
+              className="font-bold hover:underline"
+            >
+              {store?.title}
+            </Link>
+          </div>
+          <div>Este parceiro não disponibiliza montagem</div>
+          <div className="py-2">
+            <div className="border-t border-dashed"></div>
+          </div>
+          <div className="grid gap-3">
+            {!!product?.color && (
+              <div className="flex items-center gap-3 text-zinc-900">
+                <div className="w-fit whitespace-nowrap pt-1">Cores:</div>
+                <div className="w-full flex items-center flex-wrap gap-1">
+                  {ColorsList.map(
+                    (color: any, key: any) =>
+                      product?.color?.indexOf(color.value) !== -1 && (
+                        <Link
+                          key={key}
+                          href={`/produtos/listagem/?color=${color.value}`}
+                        >
+                          <div>{ColorfulRender(color)}</div>
+                        </Link>
+                      )
+                  )}
+                </div>
+              </div>
+            )}
+            {!!categories?.length &&
+              categories.map(
+                (category: any) =>
+                  !!category?.childs &&
+                  !!category?.childs?.filter((child: any) =>
+                    (product?.category ?? [])
+                      .map((cat: any) => cat.id)
+                      .includes(child.id)
+                  ).length && (
+                    <div key={category.id} className="flex gap-2 text-zinc-900">
+                      <div className="w-fit whitespace-nowrap pt-1">
+                        {category.title}:
+                      </div>
+                      <div className="w-full flex items-center flex-wrap gap-1">
+                        {!!category?.childs &&
+                          category?.childs
+                            ?.filter((child: any) =>
+                              (product?.category ?? [])
+                                .map((cat: any) => cat.id)
+                                .includes(child.id)
+                            )
+                            .map((child: RelationType) => (
+                              <Link
+                                key={child.id}
+                                href={`/categoria/${child.slug}`}
+                                className="bg-zinc-100 hover:bg-zinc-200 py-1 px-2 rounded ease"
+                              >
+                                {child.title}
+                              </Link>
+                            ))}
+                      </div>
+                    </div>
+                  )
+              )}
+
+            {!!product?.tags && (
+              <div className="flex gap-1 text-zinc-900">
+                <div className="w-fit whitespace-nowrap">Tags:</div>
+                <div className="w-full flex items-center flex-wrap gap-1">
+                  {product?.tags
+                    .split(",")
+                    .filter((item) => !!item)
+                    .map((item, key) => (
+                      <Link
+                        key={key}
+                        href={`/produtos/listagem/?busca=${item}`}
+                        className="bg-zinc-100 hover:bg-zinc-200 py-1 px-2 rounded ease"
+                      >
+                        {item}
+                      </Link>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (isFallback) {
+    return <></>;
+  }
+
+  return (
+    <Template
+      scripts={Scripts}
+      metaPage={{
+        title: `${product?.title} - Produtos | ${DataSeo?.site_text}`,
+        image: !!getImage(imageCover) ? getImage(imageCover) : "",
+        description: DataSeo?.site_description,
+        url: `produtos/${product?.slug}`,
+      }}
+      header={{
+        template: "default",
+        position: "solid",
+        content: HeaderFooter,
+      }}
+      footer={{
+        template: "default",
+        content: HeaderFooter,
+      }}
+    >
+      <section className="">
+        <div className="container-medium py-4 md:py-6">
+          <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
+        </div>
+      </section>
+      <section className="md:pb-20">
+        <div className="container-medium">
+          <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-10 items-start">
+            <div className="w-full md:w-1/2 pb-4">
+              {!!product?.gallery && (
+                <div className="relative -mx-4 md:mx-0 mb-10">
+                  <Swiper
+                    spaceBetween={16}
+                    loop={true}
+                    modules={[Pagination, Navigation]}
+                    navigation={{
+                      prevEl: ".swiper-gallery-prev", // define o botão anterior
+                      nextEl: ".swiper-gallery-next", // define o botão próximo
+                    }}
+                    pagination={{
+                      el: ".swiper-pagination",
+                    }}
+                    breakpoints={{
+                      0: {
+                        slidesPerView: 1,
+                      },
+                    }}
+                    className="border-y md:border md:rounded-md"
+                  >
+                    {!!product?.gallery?.length &&
+                      product?.gallery?.map(
+                        (img, key) =>
+                          !!img?.details?.sizes["lg"] && (
+                            <SwiperSlide key={key}>
+                              <div className="w-full">
+                                <div className="aspect-square">
+                                  {!!getImage(img, "xl") && (
+                                    <Img
+                                      src={getImage(img, "xl")}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </SwiperSlide>
+                          )
+                      )}
+                  </Swiper>
+                  <div className="absolute top-1/2 left-0 -translate-y-1/2 z-[5] p-2">
+                    <button
+                      type="button"
+                      className="swiper-gallery-prev bg-zinc-900 text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
+                    >
+                      <Icon
+                        icon="fa-chevron-left"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      ></Icon>
+                    </button>
+                  </div>
+                  <div className="absolute top-1/2 right-0 -translate-y-1/2 z-[5] p-2">
+                    <button
+                      type="button"
+                      className="swiper-gallery-next bg-zinc-900 text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
+                    >
+                      <Icon
+                        icon="fa-chevron-right"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      ></Icon>
+                    </button>
+                  </div>
+                  <div className="swiper-pagination"></div>
+                </div>
+              )}
+              <div className="grid gap-3 py-3">
+                {!layout.isMobile && renderDetails()}
+                {!layout.isMobile && renderComments()}
+              </div>
+            </div>
+            <div className="w-full md:w-1/2">
+              <form onSubmit={(e: any) => sendToCart(e)} method="POST">
+                <div className="grid md:flex gap-4 pb-4 lg:gap-10">
+                  <div className="w-full pt-2 md:pt-0">
+                    <h1 className="font-title font-bold text-zinc-900 text-3xl">
+                      {product?.title}
+                    </h1>
+                    <div className="flex flex-wrap items-center py-4 md:pb-6 gap-4">
+                      {!!rate?.comments && (
+                        <div className="flex gap-1 items-center">
+                          <Icon
+                            icon="fa-star"
+                            type="fa"
+                            className="text-xs text-yellow-500"
+                          />
+                          <span className="font-bold text-zinc-900">
+                            {(rate.star / rate.comments).toFixed(1)}
+                          </span>
+                          <span className="text-xs">
+                            ({rate?.comments} avaliaç
+                            {rate?.comments > 1 ? "ões" : "ão"})
+                          </span>
+                        </div>
+                      )}
+                      {/* {!!product?.sku && (
+                        <Badge style="light">SKU {product?.sku}</Badge>
+                      )} */}
+                      {product?.fragility == "yes" && (
+                        <Badge style="light">
+                          <Icon icon="fa-fragile" type="far" /> Atenção!
+                          Material Frágil
+                        </Badge>
+                      )}
+                      <Badge style="light">
+                        {product?.comercialType == "selling"
+                          ? "Para venda"
+                          : "Para alugar"}
+                      </Badge>
+                    </div>
+
+                    <div className="grid gap-2">
+                      {!!product?.subtitle && (
+                        <div
+                          onClick={() => setResume(!resume)}
+                          className="cursor-pointer break-words w-full whitespace-pre-wrap font-semibold text-zinc-900"
+                        >
+                          {product?.subtitle}
+                          <div className="inline-block w-0">
+                            <Icon
+                              icon={
+                                resume ? "fa-chevron-up" : "fa-chevron-down"
+                              }
+                              type="far"
+                              className="text-xs pl-1"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {!!product?.description && (
+                        <div>
+                          {!!product?.subtitle ? (
+                            <div
+                              className={`relative overflow-hidden ${
+                                resume ? "h-auto" : "h-0"
+                              } break-words whitespace-pre-wrap`}
+                              dangerouslySetInnerHTML={{
+                                __html: product?.description,
+                              }}
+                            ></div>
+                          ) : (
+                            <>
+                              <div
+                                className="break-words whitespace-pre-wrap inline-block"
+                                dangerouslySetInnerHTML={{
+                                  __html: resume
+                                    ? product?.description
+                                    : getSummary(product?.description, 100),
+                                }}
+                              ></div>
+                              {!resume && (
+                                <div
+                                  onClick={() => setResume(true)}
+                                  className="pt-2 text-cyan-500 underline cursor-pointer"
+                                >
+                                  ler mais
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="w-fit md:text-right leading-tight pt-4 md:pt-0">
+                    <div className="whitespace-nowrap">
+                      {getPrice(product).priceFromFor &&
+                      !!getPrice(product).priceLow ? (
+                        <div className="text-sm">
+                          de
+                          <span className="line-through mx-1">
+                            R$ {getPrice(product).priceHigh}
+                          </span>
+                          por
+                        </div>
+                      ) : (
+                        <div className="text-sm">a partir de</div>
+                      )}
+                      <h3 className="font-bold text-4xl lg:text-3xl text-zinc-800">
+                        R${" "}
+                        {!!product?.schedulingTax &&
+                        product?.schedulingTax > getPriceValue(product).price
+                          ? moneyFormat(product?.schedulingTax)
+                          : moneyFormat(getPriceValue(product).price)}
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-6">
+                  {/* {!!product?.attributes &&
+                    (product?.attributes ?? [])?.map((attribute, index) => (
+                      <div key={index} className="md:pt-4">
+                        <div className="font-title text-zinc-900 font-bold py-4 text-sm lg:text-lg">
+                          {attribute.title}
+                        </div>
+                        <div className="border-b">
+                          {attribute?.variations &&
+                            attribute?.variations.map((item, key) => (
+                              <label
+                                key={key}
+                                className="flex border-t py-2 gap-4 items-center"
+                              >
+                                <div className="w-full py-1">{item.title}</div>
+                                <div className="w-fit py-1 whitespace-nowrap">
+                                  {!!item.price
+                                    ? `R$ ${moneyFormat(item.price)}`
+                                    : ""}
+                                </div>
+                                <div className="w-fit">
+                                  {attribute.selectType == "radio" && (
+                                    <input
+                                      type="radio"
+                                      onChange={() =>
+                                        updateOrder(
+                                          {
+                                            id: item.id,
+                                            title: item.title ?? "",
+                                            price: item.price,
+                                            quantity: 1,
+                                          },
+                                          attribute
+                                        )
+                                      }
+                                      className="form-control"
+                                      name={attribute.title}
+                                    />
+                                  )}
+                                  {attribute.selectType == "checkbox" && (
+                                    <input
+                                      type="checkbox"
+                                      onChange={() =>
+                                        updateOrder(
+                                          {
+                                            id: item.id,
+                                            title: item.title ?? "",
+                                            price: item.price,
+                                            quantity: 1,
+                                          },
+                                          attribute
+                                        )
+                                      }
+                                      className="form-control"
+                                      name={attribute.title}
+                                    />
+                                  )}
+                                  {attribute.selectType == "quantity" && (
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="number"
+                                        onChange={(e) =>
+                                          updateOrder(
+                                            {
+                                              id: item.id,
+                                              title: item.title ?? "",
+                                              price: item.price,
+                                              quantity: parseInt(
+                                                e.target.value ?? 1
+                                              ),
+                                            },
+                                            attribute
+                                          )
+                                        }
+                                        min={0}
+                                        className="form-control text-center my-[.1rem] p-2 w-[4rem] h-[2rem]"
+                                        name={attribute.title}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </label>
+                            ))}
+                        </div>
+                      </div>
+                    ))} */}
+
+                  <div className="md:flex justify-between items-end gap-2">
+                    <div className="w-full">
+                      <h4 className="font-title text-zinc-900 font-bold py-4 text-sm md:text-lg">
+                        Para quando você precisa?
+                      </h4>
+                      <div className="calendar">
+                        <Calendar
+                          required
+                          unavailable={product?.unavailable ?? []}
+                          onChange={(emit: any) => handleDetails(emit)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white drop-shadow-2xl md:drop-shadow-none fixed z-10 md:-mx-4 md:relative w-full md:w-auto left-0 bottom-0 flex justify-between">
+                    {!!productToCart?.total && (
+                      <>
+                        <div className="leading-tight self-center w-full px-4">
+                          <div className="text-xs">
+                            {!!productToCart?.details?.dateStart
+                              ? dateBRFormat(productToCart?.details?.dateStart)
+                              : "Selecione a data"}
+                          </div>
+
+                          <div className="font-bold text-zinc-900 text-lg whitespace-nowrap">
+                            R$ {moneyFormat(productToCart.total)}
+                          </div>
+                        </div>
+
+                        <div className="relative grid w-fit p-3">
+                          <Button
+                            type={
+                              !!productToCart?.details?.dateStart
+                                ? "submit"
+                                : "button"
+                            }
+                            style={
+                              !!productToCart?.details?.dateStart
+                                ? "btn-yellow"
+                                : "btn-light"
+                            }
+                            className={`${
+                              !!productToCart?.details?.dateStart
+                                ? ""
+                                : "opacity-50 bg-zinc-200"
+                            } whitespace-nowrap py-2 px-5 md:px-8 md:py-4`}
+                          >
+                            Adicionar
+                          </Button>
+                          <style jsx global>{`
+                            html {
+                              padding-bottom: ${layout.isMobile
+                                ? "6rem"
+                                : "0rem"};
+                            }
+                          `}</style>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex gap-4 border-t pt-6">
+                    <LikeButton id={product?.id} style="btn-outline-light" />
+                    <Button
+                      onClick={() => setShare(true)}
+                      type="button"
+                      style="btn-outline-light"
+                      className="p-4"
+                    >
+                      <Icon icon="fa-share-alt" type="far" className="mx-1" />
+                    </Button>
+
+                    <Modal
+                      title="Compartilhe:"
+                      status={share}
+                      size="sm"
+                      close={() => setShare(false)}
+                    >
+                      <ShareModal
+                        url={baseUrl}
+                        title={`${store?.title} - Fiestou`}
+                      />
+                    </Modal>
+                  </div>
+                  {(!!product?.weight ||
+                    !!product?.length ||
+                    !!product?.width ||
+                    !!product?.height) && (
+                    <div className="border-t pt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      {!!product?.weight && (
+                        <div className="border flex flex-col rounded p-4">
+                          <div className="text-xl text-zinc-900">
+                            <Icon icon="fa-weight" />
+                          </div>
+                          <div className="pt-4">
+                            Peso:{" "}
+                            <span className="font-bold text-zinc-900">
+                              {product?.weight}kg
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {!!product?.length && (
+                        <div className="border flex flex-col rounded p-4">
+                          <div className="text-xl text-zinc-900">
+                            <Icon icon="fa-ruler" />
+                          </div>
+                          <div className="pt-4">
+                            Comp:{" "}
+                            <span className="font-bold text-zinc-900">
+                              {product?.length}cm
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {!!product?.width && (
+                        <div className="border flex flex-col rounded p-4">
+                          <div className="text-xl text-zinc-900">
+                            <Icon icon="fa-ruler-horizontal" />
+                          </div>
+                          <div className="pt-4">
+                            Larg:{" "}
+                            <span className="font-bold text-zinc-900">
+                              {product?.width}cm
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {!!product?.height && (
+                        <div className="border flex flex-col rounded p-4">
+                          <div className="text-xl text-zinc-900">
+                            <Icon icon="fa-ruler-vertical" />
+                          </div>
+                          <div className="pt-4">
+                            Alt:{" "}
+                            <span className="font-bold text-zinc-900">
+                              {product?.height}cm
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </form>
+            </div>
+          </div>
+          <div className="grid gap-3 py-3">
+            {layout.isMobile && <div>{renderDetails()}</div>}
+            {layout.isMobile && <div>{renderComments()}</div>}
+          </div>
+        </div>
+      </section>
+
+      {!!product?.combinations && (
+        <section className="py-20 md:pt-6">
+          <div className="container-medium">
+            <div className="text-center md:text-left">
+              <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
+                Combina com
+              </h4>
+            </div>
+            <div className="mt-6 md:mt-8 -mx-4 md:mx-0">
+              {renderSlideProducts(product?.combinations ?? [])}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {!!match.length && (
+        <section className="py-20 md:pt-6">
+          <div className="container-medium">
+            <div className="text-center md:text-left">
+              <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
+                Veja também
+              </h4>
+            </div>
+            <div className="mt-6 md:mt-8 -mx-4 md:mx-0">
+              {renderSlideProducts(match)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <SidebarCart
+        status={cartModal}
+        close={() => router.push({ pathname: "/produtos" })}
+      />
+
+      <Newsletter />
+    </Template>
+  );
+}

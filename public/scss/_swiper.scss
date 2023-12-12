@@ -1,0 +1,37 @@
+.swiper-visible {
+  overflow: initial !important;
+}
+
+.swiper-visible.swiper-opacity .swiper-slide {
+  opacity: 0.5;
+
+  &.swiper-slide-active {
+    opacity: 1;
+  }
+}
+
+.slide-centered .swiper-wrapper {
+  align-items: center;
+}
+
+.swiper-pagination {
+  width: 100% !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  background-color: transparent !important;
+  @apply mb-2 md:-mb-8;
+}
+
+.swiper-pagination .swiper-pagination-bullet {
+  opacity: 0.4 !important;
+  background-color: black !important;
+}
+
+.swiper-pagination .swiper-pagination-bullet-active {
+  opacity: 0.85 !important;
+  background-color: black !important;
+}
+
+.swiper-equal .swiper-slide {
+  height: auto;
+}

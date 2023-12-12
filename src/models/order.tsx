@@ -1,0 +1,52 @@
+import { AddressType } from "./address";
+import { AttributeType, ProductOrderType } from "./product";
+import { UserType } from "./user";
+
+export interface BalanceType {
+  cash: 0;
+  payments: 0;
+  promises: 0;
+  orders: 0;
+}
+
+export interface ItemOrderType {
+  id: number;
+  slug?: string;
+  title: string;
+  description?: string;
+  details?: any;
+  store?: any;
+  attributes?: Array<AttributeType>;
+  tags?: string;
+  fragility?: string;
+  vehicle?: string;
+  freeTax?: string;
+  comercialType?: string;
+  schedulingPeriod?: string;
+  schedulingTax?: string;
+  deliveryStatus:
+    | "pending"
+    | "processing"
+    | "sent"
+    | "received"
+    | "returned"
+    | "canceled"
+    | "waitingWithdrawal"
+    | "transiting";
+}
+
+export interface OrderType {
+  id?: string;
+  hash?: string;
+  user?: any;
+  order?: number | string;
+  store?: number | string;
+  deliveryStatus: string;
+  deliverySchedule: string;
+  total: number;
+  platformCommission: number | string;
+  listItems: Array<ProductOrderType>;
+  deliveryAddress?: AddressType;
+  metadata?: any;
+  created_at?: string;
+}

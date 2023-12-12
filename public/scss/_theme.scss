@@ -1,0 +1,214 @@
+[class*="text-"] {
+  line-height: 1.5;
+}
+
+.container-medium {
+  max-width: 1200px;
+  @apply px-4 mx-auto w-full;
+}
+
+.ease {
+  transition: all 0.2s ease;
+}
+
+/* For Webkit-based browsers (Chrome, Safari and Opera) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* For IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.btn {
+  padding: 0.85rem 2rem;
+  @apply inline-block rounded-md font-semibold relative ease;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.checkcustom {
+  @apply flex;
+
+  input {
+    @apply absolute inset-0 w-full h-full opacity-0 cursor-pointer;
+  }
+
+  input + label {
+    @apply border border-zinc-300 bg-white inline-block cursor-pointer p-[3px];
+
+    div {
+      @apply bg-transparent;
+    }
+  }
+
+  input:hover + label {
+    div {
+      @apply bg-zinc-300;
+    }
+  }
+
+  input:checked + label {
+    @apply border-zinc-300;
+
+    div {
+      @apply bg-yellow-500;
+    }
+  }
+}
+
+.range-control {
+  @apply relative pt-2;
+
+  span {
+    height: 4px;
+    @apply absolute bg-yellow-400 left-0 rounded-xl;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    @apply absolute bg-transparent w-full left-0;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 15px;
+    width: 15px;
+    cursor: pointer;
+    margin-top: -6px;
+    z-index: 1;
+    @apply bg-yellow-400 relative rounded-xl;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    @apply bg-zinc-200 w-full relative rounded-xl;
+  }
+}
+
+input[type="date"].appearance-none::-webkit-inner-spin-button,
+input[type="date"].appearance-none::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.font-title {
+  font-family: var(--font-display);
+  line-height: 1.2 !important;
+
+  strong {
+    font-weight: inherit;
+  }
+}
+
+.font-content {
+  font-family: var(--font-body) !important;
+}
+
+.form-group {
+  @apply mt-4 grid relative focus-within:z-20;
+
+  label {
+    @apply block;
+  }
+}
+.form-control {
+  @apply w-full rounded-md px-3 py-3 text-stone-900 border border-stone-300;
+}
+
+.font-title {
+  font-family: var(--font-display);
+  line-height: 1.1 !important;
+
+  strong {
+    font-weight: inherit;
+    color: var(--theme-color);
+  }
+}
+
+.title-underline,
+u {
+  background: linear-gradient(
+    0deg,
+    var(--theme-yellow-200) 40%,
+    transparent 1%,
+    transparent 59%
+  );
+  background-clip: content-box;
+  text-decoration: none;
+  @apply inline-block;
+}
+
+.text-white .title-underline u {
+  background: transparent;
+  @apply underline underline-offset-8;
+}
+
+.font-content {
+  font-family: var(--font-body) !important;
+}
+
+// Calendar
+.calendar {
+  .react-calendar {
+    width: 100%;
+    border: transparent;
+  }
+
+  .react-calendar button,
+  .react-calendar__tile {
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .react-calendar__tile:disabled {
+    opacity: 0.5;
+  }
+
+  .react-calendar abbr:where([title]) {
+    text-decoration: none;
+  }
+
+  .react-calendar__tile--active,
+  .react-calendar__tile--active:enabled:focus {
+    background-color: var(--theme-yellow-400);
+    color: #222 !important;
+  }
+
+  .react-calendar__tile--active:enabled:hover {
+    background-color: var(--theme-yellow-200);
+    color: #222 !important;
+  }
+
+  .react-calendar__tile--now {
+    background: var(--theme-yellow-200);
+    color: #222222 !important;
+  }
+
+  .react-calendar__navigation {
+    gap: 2px;
+  }
+
+  .react-calendar__month-view__days {
+    display: grid !important;
+    gap: 1px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .react-calendar__month-view__days__day--weekend {
+    color: inherit;
+  }
+
+  .react-calendar__tile--hasActive {
+    background-color: var(--theme-yellow-200);
+  }
+
+  .react-calendar__navigation__prev2-button,
+  .react-calendar__navigation__next2-button {
+    display: none;
+  }
+}
