@@ -160,7 +160,7 @@ export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
               >
                 <div
                   className={`${
-                    !!item?.blocked ? "" : "hover:bg-yellow-100"
+                    !!item?.blocked ? "" : "hover:bg-yellow-300"
                   } group h-full bg-zinc-100 ease rounded-xl p-4 md:p-6 relative`}
                 >
                   <div className="flex justify-between">
@@ -181,7 +181,7 @@ export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
                   </div>
                   {!!item?.blocked && (
                     <div className="absolute top-0 left-0 bg-white w-full h-full bg-opacity-75">
-                      <div className="absolute top-0 right-0 m-2 bg-yellow-200 text-yellow-600 px-2 py-1 rounded-md text-xs uppercase font-semibold">
+                      <div className="absolute top-0 right-0 m-2 bg-yellow-300 text-yellow-600 px-2 py-1 rounded-md text-xs uppercase font-semibold">
                         em breve
                       </div>
                     </div>

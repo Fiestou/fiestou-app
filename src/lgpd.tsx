@@ -221,7 +221,7 @@ export default function Lgpd({ scripts }: any) {
             <button
               aria-label="salvar"
               type="submit"
-              className="btn bg-yellow-300 text-black hover:bg-yellow-200 whitespace-nowrap py-3 px-8"
+              className="btn bg-yellow-300 text-black hover:bg-yellow-300 whitespace-nowrap py-3 px-8"
               form="lgpd_form"
             >
               Salvar
@@ -262,7 +262,7 @@ export default function Lgpd({ scripts }: any) {
               type="submit"
               form="lgpd_form"
               aria-label={""}
-              className="btn bg-yellow-300 text-zinc-900 whitespace-nowrap hover:bg-yellow-200 px-4 py-2"
+              className="btn bg-yellow-300 text-zinc-900 whitespace-nowrap hover:bg-yellow-300 px-4 py-2"
             >
               Ok, continuar
             </button>

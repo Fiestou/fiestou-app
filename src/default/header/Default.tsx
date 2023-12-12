@@ -84,13 +84,6 @@ export default function Default({
               </div>
             </div>
 
-            {menuModal && (
-              <div
-                onClick={() => setMenuModal(false)}
-                className="bg-transparent fixed h-[100vh] w-[100vw] top-0 left-0"
-              ></div>
-            )}
-
             <div className="hidden lg:grid z-10 bottom-0 left-0 w-full order-2">
               <div className="w-full flex gap-6">
                 {!!content?.menu_links &&
@@ -160,7 +153,7 @@ export default function Default({
       <div
         className={`${
           menuModal ? "grid" : "hidden"
-        } absolute z-[60] top-0 left-0 w-full`}
+        } fixed z-[60] top-0 left-0 w-full`}
       >
         <div className="fixed text-white left-0 top-0 w-full h-screen bg-cyan-500 text-right flex flex-col items-start">
           <div className="h-full w-full flex text-lg flex-col items-start pt-20">

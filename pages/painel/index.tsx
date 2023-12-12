@@ -196,7 +196,7 @@ export default function Parceiro({ content }: { content: any }) {
                     passHref
                     href={item.url}
                     key={key}
-                    className="group min-w-[11rem] bg-zinc-100 hover:bg-yellow-100 ease rounded-lg p-3 lg:p-6 grid lg:flex gap-4 items-center"
+                    className="group min-w-[11rem] bg-zinc-100 hover:bg-yellow-300 ease rounded-lg p-3 lg:p-6 grid lg:flex gap-4 items-center"
                   >
                     <div className="w-full lg:max-w-[2rem] h-[2rem] text-[1.75rem] leading-none text-zinc-900 relative">
                       <Icon

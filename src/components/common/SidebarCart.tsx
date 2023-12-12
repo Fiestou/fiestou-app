@@ -82,7 +82,7 @@ export default function SidebarCart(attr: SidebarCartType) {
           <div
             className={`${
               effect ? "mr-0" : "-mr-10 opacity-0"
-            } ml-auto relative ease self-end md:self-center w-full max-w-[24rem]`}
+            } ml-auto relative ease self-end md:self-center w-full max-w-[20rem] md:max-w-[24rem]`}
           >
             <div className="relative flex flex-col bg-white h-[100vh]">
               <div className="flex items-center border-b justify-between px-4 py-2">

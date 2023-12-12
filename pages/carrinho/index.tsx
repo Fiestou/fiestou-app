@@ -222,13 +222,13 @@ export default function Carrinho({ cart }: { cart: any }) {
                   <Button
                     href="/produtos"
                     style="btn-link"
-                    className="hover:text-yellow-400 ease"
+                    className="hover:text-yellow-400 font-medium text-xs md:text-sm ease mb-4"
                   >
                     Acessar mais produtos
                   </Button>
                 </div>
 
-                <div className="w-full mb-[2rem] grid gap-6 max-w-[30rem] relative bg-zinc-50 p-4 md:p-8 rounded-md">
+                <div className="w-full mb-[3rem] grid gap-6 max-w-[30rem] relative bg-zinc-50 p-4 md:p-8 rounded-md">
                   <h5 className="font-title text-xl text-zinc-900">
                     Resumo do pedido
                   </h5>
