@@ -61,7 +61,7 @@ export async function getServerSideProps(
     req
   );
 
-  const parentMain = request?.data?.query?.parentMain ?? [];
+  const parentMain = request?.data?.query?.parentMain ?? {};
 
   return {
     props: {
@@ -96,11 +96,11 @@ export default function Categorias({
   };
 
   const [editRelation, setEditRelation] = useState({
-    parent: parentMain.id,
+    parent: parentMain?.id ?? 0,
   } as RelationType);
   const resetEditRelation = () => {
     setEditRelation({
-      parent: parentMain.id,
+      parent: parentMain?.id ?? 0,
     } as RelationType);
   };
   const handleEditRelation = (value: Object) => {
