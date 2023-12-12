@@ -1,11 +1,11 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import "react-quill/dist/quill.bubble.css";
+// import "react-quill/dist/quill.bubble.css";
 
-const QuillNoSSRWrapper = dynamic(import("react-quill"), {
-  ssr: false,
-  loading: () => <></>,
-});
+// const QuillNoSSRWrapper = dynamic(import("react-quill"), {
+//   ssr: false,
+//   loading: () => <></>,
+// });
 
 const modules = {
   toolbar: [
@@ -48,6 +48,8 @@ interface TextAreaType {
 }
 
 export default function TextArea(attr: TextAreaType) {
+  const [render, setRender] = useState(false as boolean);
+
   const getLines = (value: string) => {
     let split = value.toString().split("\n");
     return !!split.length ? split.length + 1 : 5;
@@ -64,12 +66,13 @@ export default function TextArea(attr: TextAreaType) {
   const onBlur = !!attr?.onBlur ? attr?.onBlur : attr?.onChange;
 
   useEffect(() => {
-    if (!!window) {
+    if (!!document) {
+      setRender(true);
       setRows(parseInt((attr?.rows ?? getLines(attr?.value ?? "")).toString()));
     }
   }, []);
 
-  return (
+  return !render ? (
     <>
       {attr?.options?.plugin == "quill" ? (
         <div
@@ -79,14 +82,14 @@ export default function TextArea(attr: TextAreaType) {
               : "min-h-[5rem]"
           } focus:border-zinc-800 pb-0 pt-1 px-0 hover:border-zinc-400 ease`}
         >
-          <QuillNoSSRWrapper
+          {/* <QuillNoSSRWrapper
             modules={modules}
             formats={formats}
             value={attr?.value}
             theme={`${!!attr?.options?.plugin?.theme ? "snow" : "bubble"}`}
             className="h-full"
             onChange={(e: any) => (!!attr?.onChange ? attr?.onChange(e) : {})}
-          />
+          /> */}
           <style global jsx>
             {`
               .ql-container {
@@ -129,5 +132,7 @@ export default function TextArea(attr: TextAreaType) {
         </div>
       )}
     </>
+  ) : (
+    <></>
   );
 }

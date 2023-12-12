@@ -1,11 +1,11 @@
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
-import "react-quill/dist/quill.snow.css";
+import { useCallback, useEffect, useRef, useState } from "react";
+// import "react-quill/dist/quill.snow.css";
 
-const QuillNoSSRWrapper = dynamic(import("react-quill"), {
-  ssr: false,
-  loading: () => <></>,
-});
+// const QuillNoSSRWrapper = dynamic(import("react-quill"), {
+//   ssr: false,
+//   loading: () => <></>,
+// });
 
 const modules = {
   toolbar: [
@@ -44,9 +44,17 @@ interface EditorType {
 }
 
 export default function Editor(attr: EditorType) {
-  return (
+  const [render, setRender] = useState(false as boolean);
+
+  useEffect(() => {
+    if (!!document) {
+      setRender(true);
+    }
+  }, []);
+
+  return !render ? (
     <>
-      <div className="pb-20">
+      {/* <div className="pb-20">
         <QuillNoSSRWrapper
           modules={modules}
           value={attr?.value}
@@ -59,7 +67,9 @@ export default function Editor(attr: EditorType) {
         <div className="text-red-500 text-xs pt-1 font-semibold">
           {attr?.errorMessage}
         </div>
-      )}
+      )} */}
     </>
+  ) : (
+    <></>
   );
 }
