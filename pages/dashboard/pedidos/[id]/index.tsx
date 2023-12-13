@@ -205,7 +205,7 @@ export default function Pedido({
     return render;
   };
 
-  const getOrder = async () => {
+  const getOrder = async (attempts?: number) => {
     let request: any = await api.bridge({
       url: "orders/get",
       data: {
@@ -601,7 +601,18 @@ export default function Pedido({
           </Modal>
         </>
       ) : (
-        <></>
+        <div className="cursor-wait container-medium animate-pulse">
+          <div className="flex pt-10 md:pt-16 gap-10">
+            <div className="w-full grid gap-4">
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+            </div>
+            <div className="py-48 w-full max-w-[24rem] rounded-lg bg-zinc-100"></div>
+          </div>
+        </div>
       )}
     </Template>
   );

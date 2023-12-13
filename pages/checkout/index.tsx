@@ -550,11 +550,11 @@ export default function Checkout({
                         Data da locação
                       </div>
                       <div>
-                        {dateBRFormat(resume.startDate)}{" "}
+                        {dateBRFormat(resume.startDate)}
                         {resume.endDate != resume.startDate
-                          ? `- ${dateBRFormat(resume.endDate)}`
-                          : ""}{" "}
-                        |{schedule}
+                          ? ` - ${dateBRFormat(resume.endDate)}`
+                          : ""}
+                        {!!schedule ? ` | ${schedule}` : ""}
                       </div>
                     </div>
                     <div>
@@ -597,14 +597,22 @@ export default function Checkout({
                       </div>
                     </div>
                     <div className="grid relative p-1 md:p-0">
-                      <Button
-                        loading={form.loading}
-                        style="btn-success"
-                        className="py-6 px-3"
-                        {...(!address?.street ? { disable: true } : {})}
-                      >
-                        Confirmar e efetuar pagamento
-                      </Button>
+                      {!!address?.street && !!schedule ? (
+                        <Button
+                          loading={form.loading}
+                          style="btn-success"
+                          className="py-6 px-3"
+                        >
+                          Confirmar e efetuar pagamento
+                        </Button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn bg-green-500 text-white border border-transparent opacity-40 py-6 px-3 text cursor-not-allowed"
+                        >
+                          Confirmar e efetuar pagamento
+                        </button>
+                      )}
 
                       <div className="border-t text-xs grayscale mt-4 pt-2 opacity-50 flex justify-center items-center gap-2">
                         <span>pagamento via:</span>
