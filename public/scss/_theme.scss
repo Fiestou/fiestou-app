@@ -134,7 +134,7 @@ input[type="date"].appearance-none::-webkit-calendar-picker-indicator {
 u {
   background: linear-gradient(
     0deg,
-    var(--theme-yellow-200) 40%,
+    var(--theme-yellow-400) 40%,
     transparent 1%,
     transparent 59%
   );
@@ -180,12 +180,12 @@ u {
   }
 
   .react-calendar__tile--active:enabled:hover {
-    background-color: var(--theme-yellow-200);
+    background-color: var(--theme-yellow-400);
     color: #222 !important;
   }
 
   .react-calendar__tile--now {
-    background: var(--theme-yellow-200);
+    background: var(--theme-yellow-400);
     color: #222222 !important;
   }
 
@@ -204,7 +204,7 @@ u {
   }
 
   .react-calendar__tile--hasActive {
-    background-color: var(--theme-yellow-200);
+    background-color: var(--theme-yellow-400);
   }
 
   .react-calendar__navigation__prev2-button,

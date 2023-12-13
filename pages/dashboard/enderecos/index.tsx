@@ -137,12 +137,16 @@ export default function Conta({
   };
 
   const [content, setContent] = useState(user as UserType);
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: any, handleLocations?: Array<AddressType>) => {
     e.preventDefault();
 
     handleForm({ loading: true });
 
-    const handle: UserType = { ...content, address: locations, id: user.id };
+    const handle: UserType = {
+      ...content,
+      address: handleLocations ?? locations,
+      id: user.id,
+    };
 
     setContent(handle);
 
@@ -219,6 +223,22 @@ export default function Conta({
     );
   };
 
+  const removeLocation = (e: any, remove: any) => {
+    e.preventDefault();
+
+    console.log(locations, remove);
+
+    let handleLocations = (locations ?? []).filter(
+      (locate: AddressType, index: any) => locate.zipCode != remove.zipCode
+    );
+
+    console.log(handleLocations);
+
+    handleForm({ edit: -1 });
+
+    handleSubmit(e, handleLocations);
+  };
+
   return (
     !router.isFallback && (
       <Template
@@ -284,7 +304,7 @@ export default function Conta({
                                 handleZipCode(e.target.value, key)
                               }
                               required
-                              value={locate?.zipCode}
+                              defaultValue={locate?.zipCode}
                               placeholder="CEP"
                             />
                             <div className="flex gap-2">
@@ -293,7 +313,7 @@ export default function Conta({
                                   name="rua"
                                   readonly
                                   required
-                                  value={locate?.street}
+                                  defaultValue={locate?.street}
                                   placeholder="Rua"
                                 />
                               </div>
@@ -307,7 +327,7 @@ export default function Conta({
                                     )
                                   }
                                   required
-                                  value={locate?.number}
+                                  defaultValue={locate?.number}
                                   placeholder="Número"
                                 />
                               </div>
@@ -318,7 +338,7 @@ export default function Conta({
                                   name="bairro"
                                   readonly
                                   required
-                                  value={locate?.neighborhood}
+                                  defaultValue={locate?.neighborhood}
                                   placeholder="Bairro"
                                 />
                               </div>
@@ -331,7 +351,7 @@ export default function Conta({
                                       key
                                     )
                                   }
-                                  value={locate?.complement}
+                                  defaultValue={locate?.complement}
                                   placeholder="Complemento"
                                 />
                               </div>
@@ -342,7 +362,7 @@ export default function Conta({
                                   name="cidade"
                                   readonly
                                   required
-                                  value={locate?.city}
+                                  defaultValue={locate?.city}
                                   placeholder="Cidade"
                                 />
                               </div>
@@ -351,22 +371,33 @@ export default function Conta({
                                   name="estado"
                                   readonly
                                   required
-                                  value={locate?.state}
+                                  defaultValue={locate?.state}
                                   placeholder="UF"
                                 />
                               </div>
                             </div>
-                            <label className="flex gap-2 items-center pt-2 text-zinc-900">
-                              <input
-                                name="prioridade"
-                                type="checkbox"
-                                checked={locate.main}
-                                onChange={(e: any) =>
-                                  handleAddress({ main: !locate.main }, key)
-                                }
-                              />
-                              Endereço principal
-                            </label>
+                            <div className="flex justify-between items-center">
+                              <label className="flex gap-2 items-center pt-2 text-zinc-900">
+                                <input
+                                  name="prioridade"
+                                  type="checkbox"
+                                  defaultChecked={locate.main}
+                                  onChange={(e: any) =>
+                                    handleAddress({ main: !locate.main }, key)
+                                  }
+                                />
+                                Endereço principal
+                              </label>
+                              <div>
+                                <button
+                                  type="button"
+                                  className="font-semibold text-sm text-zinc-950"
+                                  onClick={(e) => removeLocation(e, locate)}
+                                >
+                                  remover
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         ) : !!locate?.street ? (
                           <div className="text-sm md:text-base">

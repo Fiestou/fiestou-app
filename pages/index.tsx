@@ -21,8 +21,6 @@ export async function getStaticProps(ctx: any) {
   const api = new Api();
   let request: any = await api.get({ url: "content/home" }, ctx);
 
-  console.log(request, "<< home");
-
   const categories = request?.data?.categories ?? [];
   const content = request?.data?.content ?? {};
   const products = request?.data?.products ?? [];

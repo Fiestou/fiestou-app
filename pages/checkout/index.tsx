@@ -389,7 +389,7 @@ export default function Checkout({
                             name="cep"
                             onChange={(e: any) => handleZipCode(e.target.value)}
                             required
-                            value={address?.zipCode}
+                            defaultValue={address?.zipCode}
                             placeholder="CEP"
                           />
                           <div className="flex gap-2">
@@ -398,7 +398,7 @@ export default function Checkout({
                                 name="rua"
                                 readonly
                                 required
-                                value={address?.street}
+                                defaultValue={address?.street}
                                 placeholder="Rua"
                               />
                             </div>
@@ -412,7 +412,7 @@ export default function Checkout({
                                   })
                                 }
                                 required
-                                value={address?.number}
+                                defaultValue={address?.number}
                                 placeholder="Número"
                               />
                             </div>
@@ -423,7 +423,7 @@ export default function Checkout({
                                 name="bairro"
                                 readonly
                                 required
-                                value={address?.neighborhood}
+                                defaultValue={address?.neighborhood}
                                 placeholder="Bairro"
                               />
                             </div>
@@ -436,7 +436,7 @@ export default function Checkout({
                                     complement: e.target.value,
                                   })
                                 }
-                                value={address?.complement}
+                                defaultValue={address?.complement}
                                 placeholder="Complemento"
                               />
                             </div>
@@ -447,7 +447,7 @@ export default function Checkout({
                                 name="cidade"
                                 readonly
                                 required
-                                value={address?.city}
+                                defaultValue={address?.city}
                                 placeholder="Cidade"
                               />
                             </div>
@@ -456,7 +456,7 @@ export default function Checkout({
                                 name="estado"
                                 readonly
                                 required
-                                value={address?.state}
+                                defaultValue={address?.state}
                                 placeholder="UF"
                               />
                             </div>
