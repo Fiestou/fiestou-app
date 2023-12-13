@@ -30,7 +30,6 @@ export default async function handler(
     order?.listItems
       .filter((item: any) => !!item?.product)
       .map((item: ProductOrderType, key: any) => {
-        console.log(item, "<<");
         metadata.fornecedores[item.product.store.slug].produtos += `${
           item.product.title
         } x ${item.quantity}: R$ ${moneyFormat(item.total)}`;

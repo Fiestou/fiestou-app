@@ -6,6 +6,10 @@ const token = Cookies.get("fiestou.authtoken");
 
 export const api = axios.create({
   baseURL: process.env.BASE_URL,
+  headers: {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json",
+  },
 });
 
 if (token) {

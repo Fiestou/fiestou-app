@@ -7,7 +7,7 @@ import Cookies from "js-cookie";
 
 const token = Cookies.get("fiestou.authtoken");
 
-export const api = axios.create();
+export const api = axios.create({});
 
 if (token) {
   api.defaults.headers["Authorization"] = `Bearer ${token}`;
@@ -21,7 +21,7 @@ class Payment {
   async request(data?: OrderType, ctx?: any) {
     return await new Promise((resolve, reject) => {
       api
-        .post(appUrl + "/api/checkout", data ?? {})
+        .post("/api/checkout", data ?? {})
         .then((data: any) => {
           resolve(data);
         })
@@ -36,10 +36,10 @@ class Payment {
 
   async createSession(data: OrderType, ctx?: any) {
     return await api
-      .post(appUrl + "/api/stripe/create-stripe-session", data)
+      .post("/api/stripe/create-stripe-session", data)
       .then(({ data }: any) => data)
       .catch((response: any) => {
-        console.log(response);
+        console.log("catch: ", response);
       });
   }
 
@@ -55,7 +55,7 @@ class Payment {
     }
 
     return await api
-      .post(appUrl + "/api/stripe/get-stripe-session", { session: session })
+      .post("/api/stripe/get-stripe-session", { session: session })
       .then(({ data }: any) => data)
       .catch((response: any) => {
         console.log(response);
