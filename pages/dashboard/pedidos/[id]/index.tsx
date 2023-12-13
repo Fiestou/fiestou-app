@@ -318,7 +318,7 @@ export default function Pedido({
                       <span className="font-title font-bold">
                         Pedido #{order.id}
                       </span>
-                      {order?.metadata?.payment_status != "paid" ? (
+                      {order?.metadata?.payment_status == "paid" ? (
                         <div className="bg-green-400 text-white rounded text-sm inline-block px-2 py-1">
                           pago
                         </div>
