@@ -141,6 +141,8 @@ export default function Produto({
   DataSeo: any;
   Scripts: any;
 }) {
+  const api = new Api();
+
   const { isFallback } = useRouter();
 
   const router = useRouter();
@@ -409,8 +411,23 @@ export default function Produto({
     );
   };
 
+  const [productUpdated, setProductUpdated] = useState({} as ProductType);
+  const getProductUpdated = async () => {
+    let request: any = await api.get({
+      url: "request/product",
+      data: {
+        slug: product.slug,
+      },
+    });
+
+    // console.log(request.data, "<--");
+
+    setProductUpdated(request.data);
+  };
+
   useEffect(() => {
     if (!!window) {
+      getProductUpdated();
       setLayout({ ...layout, isMobile: isMobileDevice() });
     }
     if (!!store?.id) {
@@ -436,13 +453,13 @@ export default function Produto({
             <div className="border-t border-dashed"></div>
           </div>
           <div className="grid gap-3">
-            {!!product?.color && (
+            {!!productUpdated?.color && (
               <div className="flex items-center gap-3 text-zinc-900">
                 <div className="w-fit whitespace-nowrap pt-1">Cores:</div>
                 <div className="w-full flex items-center flex-wrap gap-1">
                   {ColorsList.map(
                     (color: any, key: any) =>
-                      product?.color?.indexOf(color.value) !== -1 && (
+                      productUpdated?.color?.indexOf(color.value) !== -1 && (
                         <Link
                           key={key}
                           href={`/produtos/listagem/?color=${color.value}`}
@@ -459,7 +476,7 @@ export default function Produto({
                 (category: any) =>
                   !!category?.childs &&
                   !!category?.childs?.filter((child: any) =>
-                    (product?.category ?? [])
+                    (productUpdated?.category ?? [])
                       .map((cat: any) => cat.id)
                       .includes(child.id)
                   ).length && (
@@ -471,7 +488,7 @@ export default function Produto({
                         {!!category?.childs &&
                           category?.childs
                             ?.filter((child: any) =>
-                              (product?.category ?? [])
+                              (productUpdated?.category ?? [])
                                 .map((cat: any) => cat.id)
                                 .includes(child.id)
                             )
@@ -489,11 +506,11 @@ export default function Produto({
                   )
               )}
 
-            {!!product?.tags && (
+            {!!productUpdated?.tags && (
               <div className="flex gap-1 text-zinc-900">
                 <div className="w-fit whitespace-nowrap">Tags:</div>
                 <div className="w-full flex items-center flex-wrap gap-1">
-                  {product?.tags
+                  {productUpdated?.tags
                     .split(",")
                     .filter((item) => !!item)
                     .map((item, key) => (
@@ -825,12 +842,15 @@ export default function Produto({
                       <h4 className="font-title text-zinc-900 font-bold py-4 text-sm md:text-lg">
                         Para quando você precisa?
                       </h4>
-                      <div className="calendar">
+                      <div className="calendar relative">
                         <Calendar
                           required
-                          unavailable={product?.unavailable ?? []}
+                          unavailable={productUpdated?.unavailable ?? []}
                           onChange={(emit: any) => handleDetails(emit)}
                         />
+                        {!productUpdated?.title && (
+                          <div className="absolute z-10 bg-white opacity-60 w-full h-full top-0 left-0"></div>
+                        )}
                       </div>
                     </div>
                   </div>
