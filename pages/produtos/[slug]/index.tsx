@@ -545,9 +545,9 @@ export default function Produto({
       <section className="md:pb-20">
         <div className="container-medium">
           <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-10 items-start">
-            <div className="w-full md:w-1/2 pb-4">
+            <div className="w-full md:w-1/2 md:pb-4">
               {!!product?.gallery && (
-                <div className="relative -mx-4 md:mx-0 mb-10">
+                <div className="relative -mx-4 md:mx-0 md:mb-10">
                   <Swiper
                     spaceBetween={16}
                     loop={true}

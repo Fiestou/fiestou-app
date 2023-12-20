@@ -357,8 +357,8 @@ export default function Filter(params: any) {
                                         <input
                                           type="checkbox"
                                           name="categoria[]"
-                                          value={category.slug}
-                                          checked
+                                          defaultValue={category.slug}
+                                          defaultChecked={true}
                                         />
                                       )}
                                       <div
