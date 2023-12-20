@@ -101,6 +101,7 @@ class ProductsController extends Controller
         if($request->has('categoria[]') && $request->input('categoria[]')){
             $categories = (is_array($request->input('categoria[]'))) ? $request->input('categoria[]') : [$request->input('categoria[]')];
             $categories = Category::whereIn('slug', $categories)->pluck('id')->toArray();
+
             $whereIn    = CategoryRel::whereIn('category', $categories)->pluck('product')->toArray();
             $products   = $products->whereIn('id', $whereIn);
         }
