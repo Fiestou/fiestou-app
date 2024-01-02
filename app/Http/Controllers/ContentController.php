@@ -29,7 +29,11 @@ class ContentController extends Controller
         }
     }
 
+<<<<<<< HEAD
     public function getDefault($json = false){
+=======
+    public function Default($json = false){
+>>>>>>> refs/remotes/origin/master
 
         $HeaderFooter = Content::where(["slug" => "menu", "type" => "page"])
                                ->first();
@@ -53,17 +57,24 @@ class ContentController extends Controller
         if($json){
             return response()->json([
                 'response'  => true,
+<<<<<<< HEAD
                 'data'      => $data
+=======
+                'data' => $data
+>>>>>>> refs/remotes/origin/master
             ]);
         }
 
         return $data;
     }
 
+<<<<<<< HEAD
     public function Default(Request $request){
         return $this->getDefault(true);
     }
 
+=======
+>>>>>>> refs/remotes/origin/master
     public function Home(Request $request){
 
         $content = Content::where(["slug" => "home", "type" => "page"])
@@ -78,6 +89,7 @@ class ContentController extends Controller
             $categories = Category::normalize($categories);
 
             $products = Product::with(["store"])
+<<<<<<< HEAD
                                ->where(['status' => 1])
                                ->limit(10)
                                ->get();
@@ -85,6 +97,14 @@ class ContentController extends Controller
             $products = Product::normalize($products, false);
 
             $data = array_merge($this->getDefault(), [
+=======
+                               ->limit(10)
+                               ->get();
+
+            $products = Product::normalize($products);
+
+            $data = array_merge($this->Default(), [
+>>>>>>> refs/remotes/origin/master
                         "content" => $content->setCustomContent(),
                         "categories" => $categories,
                         "products"  => $products
@@ -108,6 +128,7 @@ class ContentController extends Controller
 
         if(isset($content->id)){
 
+<<<<<<< HEAD
             $data = array_merge($this->getDefault(), [
                         "content" => $content->setCustomContent()
                     ]);
@@ -115,6 +136,15 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data'      => $data
+=======
+            $data = array_merge($this->Default(), [
+                    "content" => $content->setCustomContent()
+                ]);
+
+            return response()->json([
+                'response'  => true,
+                'data' => $data
+>>>>>>> refs/remotes/origin/master
             ]);
         }
 
@@ -138,7 +168,11 @@ class ContentController extends Controller
                 $category->childs = Category::reduceLevel($category->childs);
             }
 
+<<<<<<< HEAD
             $data = array_merge($this->getDefault(), [
+=======
+            $data = array_merge($this->Default(), [
+>>>>>>> refs/remotes/origin/master
                 "content" => $content->setCustomContent(),
                 "categories" => $categories
             ]);

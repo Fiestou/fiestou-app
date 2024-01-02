@@ -11,8 +11,11 @@
 |
 */
 
+<<<<<<< HEAD
 ini_set('memory_limit', '256M');
 
+=======
+>>>>>>> refs/remotes/origin/master
 $app = new Illuminate\Foundation\Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
 );

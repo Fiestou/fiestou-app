@@ -105,8 +105,12 @@ class UsersController extends Controller
 
         $ids = ContentRel::where($request->get('key'), (int) $request->get('value'))
                                     ->where('type', $request->get('type'))
+<<<<<<< HEAD
                                     ->pluck($request->get('key') == 'main_content_id' ? 'secondary_content_id' : 'main_content_id')
                                     ->toArray();
+=======
+                                    ->pluck($request->get('key') == 'main_content_id' ? 'secondary_content_id' : 'main_content_id');
+>>>>>>> refs/remotes/origin/master
 
         $relationship = User::whereIn('id', $ids)
                             ->get();
@@ -204,10 +208,18 @@ class UsersController extends Controller
         }
 
         try{
+<<<<<<< HEAD
 
             $user->save();
 
         }catch(\Exception $e){
+=======
+            if($user->save()){
+                // Mail::to($request->email)->queue((new RegisterUser(['user' => $user]))->onQueue('default'));
+            }
+         }
+         catch(\Exception $e){
+>>>>>>> refs/remotes/origin/master
             return response()->json([
                 'response'  => false,
                 'message'   => 'Erro ao salvar usuário',
@@ -236,12 +248,21 @@ class UsersController extends Controller
             $user->RequestToDetails($request->all());
 
             $user->hash = md5($user->email);
+<<<<<<< HEAD
             $user->name = $request->has('name') ? $request->get('name') : $user->name;
             $user->date = $request->has('date') ? $request->get('date') : $user->date;
             $user->email = $request->has('email') ? $request->get('email') : $user->email;
             $user->login = $request->has('login') ? $request->get('email') : $user->email;
             $user->person = $request->has('person') ? $request->get('person') : $user->person;
             $user->status = $request->has('status') ? $request->get('status') : 1;
+=======
+            $user->name = $request->get('name') ?? $user->name;
+            $user->date = $request->get('date') ?? $user->date;
+            $user->email = $request->get('email') ?? $user->email;
+            $user->login = $request->get('email') ?? $user->email;
+            $user->person = $request->get('person') ?? $user->person;
+            $user->status = $request->get('status') ?? 1;
+>>>>>>> refs/remotes/origin/master
 
             try{
                 $user->save();
@@ -268,5 +289,8 @@ class UsersController extends Controller
             'message'   => 'Erro ao salvar usuário <--'
         ], 500);
     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> refs/remotes/origin/master
 }

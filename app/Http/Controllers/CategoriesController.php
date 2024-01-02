@@ -11,8 +11,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Media;
 use App\Models\Category;
+<<<<<<< HEAD
 use App\Models\Product;
 use App\Models\CategoryRel;
+=======
+>>>>>>> refs/remotes/origin/master
 
 class CategoriesController extends Controller
 {
@@ -30,6 +33,7 @@ class CategoriesController extends Controller
             $categories = $categories->whereIn("id", $request->get('id'));
         }
 
+<<<<<<< HEAD
         return response()->json([
             'response'  => true,
             'data'      => Category::normalize($categories->get())
@@ -40,6 +44,11 @@ class CategoriesController extends Controller
 
         $categories = Category::select(['slug']);
         $categories = Category::normalize($categories->get());
+=======
+        $categories = $categories->get();
+
+        $categories = Category::normalize($categories);
+>>>>>>> refs/remotes/origin/master
 
         return response()->json([
             'response'  => true,
@@ -49,10 +58,15 @@ class CategoriesController extends Controller
 
     public function Get(Request $request){
 
+<<<<<<< HEAD
         $log = [];
         $metadata = [];
 
         $category = Category::with(["childs"]);
+=======
+        $category = Category::with(["childs"])
+                            ->orderBy('order', 'ASC');
+>>>>>>> refs/remotes/origin/master
 
         if($request->has('slug') && $request->get('slug')){
             $category = $category->where("slug", $request->get('slug'));
@@ -65,6 +79,7 @@ class CategoriesController extends Controller
         $category = $category->first();
         $category = Category::normalize([$category])[0];
 
+<<<<<<< HEAD
         $whereIn    = CategoryRel::whereIn('category', [$category->id])
                                 ->pluck('product')
                                 ->toArray();
@@ -92,6 +107,11 @@ class CategoriesController extends Controller
                         ],
             "metadata"  => $metadata,
             'log'       => $log
+=======
+        return response()->json([
+            'response'  => true,
+            'data'      => $category
+>>>>>>> refs/remotes/origin/master
         ]);
     }
 

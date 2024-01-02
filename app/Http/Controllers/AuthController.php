@@ -85,6 +85,7 @@ class AuthController extends Controller
             'email' => 'required',
         ]);
 
+<<<<<<< HEAD
         $user = User::where([ 'email' => $request->get('email') ])->first();
 
         if(isset($user->id)){
@@ -93,6 +94,16 @@ class AuthController extends Controller
             }
 
             $user->status = $request->get('status');
+=======
+        $user = User::where([ 'email' => $request->email ])->first();
+
+        if(isset($user->id)){
+            if(!!$request->status){
+                // Mail::to($request->email)->queue((new RegisterUser(['user' => $user]))->onQueue('default'));
+            }
+
+            $user->status = $request->status;
+>>>>>>> refs/remotes/origin/master
         }
 
         if($user->save())
@@ -100,7 +111,11 @@ class AuthController extends Controller
             return response()->json([
                 'response'  => true,
                 'actor'     => $user
+<<<<<<< HEAD
             ], 200);
+=======
+            ], 201);
+>>>>>>> refs/remotes/origin/master
         }
 
         return response()->json([

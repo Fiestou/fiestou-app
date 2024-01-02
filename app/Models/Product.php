@@ -57,14 +57,22 @@ class Product extends BaseModel
     }
 
     public function store(){
+<<<<<<< HEAD
         return $this->hasOne(Store::class, 'id', 'store')->select("id", "companyName", "slug", "title", "cover", "profile");
+=======
+        return $this->hasOne(Store::class, 'id', 'store')->select("id", "companyName", "slug", "title");
+>>>>>>> refs/remotes/origin/master
     }
 
     public function comments(){
         return $this->hasMany(Comment::class, 'product', 'id');
     }
 
+<<<<<<< HEAD
     public static function normalize($products = [], $deep = true){
+=======
+    public static function normalize($products = []){
+>>>>>>> refs/remotes/origin/master
         if(!empty($products)){
             $products = json_decode(json_encode($products));
 
@@ -80,6 +88,7 @@ class Product extends BaseModel
                     $product->gallery = $gallery;
                 }
 
+<<<<<<< HEAD
                 if(isset($product->store) && isset($product->store->cover) && !!$product->store->cover){
                     $cover = Media::where('id', $product->store->cover)->first();
                     $cover->details = json_decode($cover->details);
@@ -112,6 +121,21 @@ class Product extends BaseModel
                     if(isset($product->attributes) && !!$product->attributes){
                         $product->attributes = is_string($product->attributes) ? json_decode($product->attributes) : [];
                     }
+=======
+                if(isset($product->combinations) && !!$product->combinations) {
+                    $product->combinations = Product::normalize(Product::whereIn('id', json_decode($product->combinations, TRUE))->get());
+                }
+
+                if(isset($product->category) && !!$product->category){
+                    $categories = json_decode($product->category, TRUE);
+                    $product->category = Category::with(["childs"])
+                                                ->whereIn('id', $categories)
+                                                ->get();
+                }
+
+                if(isset($product->attributes) && !!$product->attributes){
+                    $product->attributes = is_string($product->attributes) ? json_decode($product->attributes) : [];
+>>>>>>> refs/remotes/origin/master
                 }
             }
 

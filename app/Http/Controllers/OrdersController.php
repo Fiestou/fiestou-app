@@ -39,6 +39,7 @@ class OrdersController extends Controller
                 array_push($products, $item->product->id);
             }
 
+<<<<<<< HEAD
             $products = Product::with(['store'])
                                       ->where(['status' => 1])
                                       ->whereIn('id', $products)
@@ -64,6 +65,15 @@ class OrdersController extends Controller
             return response()->json([
                 'response'  => true,
                 'data' => $order
+=======
+            $order->products = Product::with(['store'])
+                                      ->whereIn('id', $products)
+                                      ->get();
+
+            return response()->json([
+                'response'  => true,
+                'data' => $order,
+>>>>>>> refs/remotes/origin/master
             ]);
         }
 
@@ -83,12 +93,15 @@ class OrdersController extends Controller
 
         $orders = $orders->get();
 
+<<<<<<< HEAD
         foreach ($orders as $key => $order) {
             $order->deliveryAddress = json_decode($order->deliveryAddress, TRUE);
             $order->listItems = json_decode($order->listItems, TRUE);
             $order->metadata = json_decode($order->metadata, TRUE);
         }
 
+=======
+>>>>>>> refs/remotes/origin/master
         return response()->json([
             'response'  => true,
             'data'      => $orders
@@ -119,8 +132,11 @@ class OrdersController extends Controller
             "listItems"  => "required"
         ]);
 
+<<<<<<< HEAD
         $listItems = $request->get("listItems");
 
+=======
+>>>>>>> refs/remotes/origin/master
         $user = auth()->user();
 
         $order = new Order;
@@ -130,6 +146,7 @@ class OrdersController extends Controller
         $order->deliverySchedule    = $request->get("deliverySchedule");
         $order->deliveryAddress     = json_encode($request->get("deliveryAddress"));
         $order->deliveryStatus      = $request->get("deliveryStatus");
+<<<<<<< HEAD
         $order->listItems           = json_encode($listItems);
         $order->status              = 0;
 
@@ -153,6 +170,11 @@ class OrdersController extends Controller
             $product->save();
         }
 
+=======
+        $order->listItems           = json_encode($request->get("listItems"));
+        $order->status              = 0;
+
+>>>>>>> refs/remotes/origin/master
         DB::beginTransaction();
 
         if($order->save()){
