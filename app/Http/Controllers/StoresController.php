@@ -120,6 +120,17 @@ class StoresController extends Controller
                        ->where('status', 1)
                        ->get();
 
+        foreach ($stores as $key => $store) {
+
+            $profile = !!$store->profile ? Media::where(['id' => $store->profile])->first() : [];
+            if(isset($profile->id)){
+                $profile->details = json_decode($profile->details);
+                $store->profile   = $profile;
+            }
+
+            $store->metadata    = json_decode($store->metadata);
+        }
+
         return response()->json([
             'response'  => true,
             'data'      => $stores
