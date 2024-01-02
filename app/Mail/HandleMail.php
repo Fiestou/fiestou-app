@@ -26,9 +26,9 @@ class HandleMail extends Mailable implements ShouldQueue
      */
     public function build()
     {
-        $address    = 'fiestou@8pdev.studio';
+        $address    = 'noreply@8pdev.studio';
         $subject    = $this->data['subject'];
-        $name       = 'Mensagem Fiestou';
+        $name       = 'Fiestou';
 
         return $this->view('email.handle_mail')
                     ->with(['data' => $this->data])

@@ -85,14 +85,14 @@ class AuthController extends Controller
             'email' => 'required',
         ]);
 
-        $user = User::where([ 'email' => $request->get('email') ])->first();
+        $user = User::where([ 'email' => $request->email ])->first();
 
         if(isset($user->id)){
-            if($request->has('status') && !!$request->get('status')){
-                Mail::to($request->email)->queue((new RegisterUser(['user' => $user]))->onQueue('default'));
+            if(!!$request->status){
+                // Mail::to($request->email)->queue((new RegisterUser(['user' => $user]))->onQueue('default'));
             }
 
-            $user->status = $request->get('status');
+            $user->status = $request->status;
         }
 
         if($user->save())
@@ -100,7 +100,7 @@ class AuthController extends Controller
             return response()->json([
                 'response'  => true,
                 'actor'     => $user
-            ], 200);
+            ], 201);
         }
 
         return response()->json([

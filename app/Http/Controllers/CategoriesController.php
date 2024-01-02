@@ -11,8 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Media;
 use App\Models\Category;
-use App\Models\Product;
-use App\Models\CategoryRel;
 
 class CategoriesController extends Controller
 {
@@ -30,16 +28,9 @@ class CategoriesController extends Controller
             $categories = $categories->whereIn("id", $request->get('id'));
         }
 
-        return response()->json([
-            'response'  => true,
-            'data'      => Category::normalize($categories->get())
-        ]);
-    }
+        $categories = $categories->get();
 
-    public function Paths(Request $request){
-
-        $categories = Category::select(['slug']);
-        $categories = Category::normalize($categories->get());
+        $categories = Category::normalize($categories);
 
         return response()->json([
             'response'  => true,
@@ -49,10 +40,8 @@ class CategoriesController extends Controller
 
     public function Get(Request $request){
 
-        $log = [];
-        $metadata = [];
-
-        $category = Category::with(["childs"]);
+        $category = Category::with(["childs"])
+                            ->orderBy('order', 'ASC');
 
         if($request->has('slug') && $request->get('slug')){
             $category = $category->where("slug", $request->get('slug'));
@@ -65,33 +54,9 @@ class CategoriesController extends Controller
         $category = $category->first();
         $category = Category::normalize([$category])[0];
 
-        $whereIn    = CategoryRel::whereIn('category', [$category->id])
-                                ->pluck('product')
-                                ->toArray();
-
-        $products = Product::with(["store"])
-                           ->where(["status" => 1])
-                           ->whereIn('id', $whereIn);
-
-        $count = $products;
-        $metadata['count'] = $products->count();
-
-        if($request->has('limit') && $request->get('limit')){
-            $products = $products->limit($request->get('limit'));
-        }
-
-        if($request->has('offset') && $request->get('offset')){
-            $products = $products->offset($request->get('offset'));
-        }
-
         return response()->json([
             'response'  => true,
-            'data'      => [
-                            'category' => $category,
-                            'products' => Product::normalize($products->get(), false),
-                        ],
-            "metadata"  => $metadata,
-            'log'       => $log
+            'data'      => $category
         ]);
     }
 

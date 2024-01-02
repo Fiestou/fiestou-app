@@ -29,7 +29,7 @@ class ContentController extends Controller
         }
     }
 
-    public function getDefault($json = false){
+    public function Default($json = false){
 
         $HeaderFooter = Content::where(["slug" => "menu", "type" => "page"])
                                ->first();
@@ -53,15 +53,11 @@ class ContentController extends Controller
         if($json){
             return response()->json([
                 'response'  => true,
-                'data'      => $data
+                'data' => $data
             ]);
         }
 
         return $data;
-    }
-
-    public function Default(Request $request){
-        return $this->getDefault(true);
     }
 
     public function Home(Request $request){
@@ -78,13 +74,12 @@ class ContentController extends Controller
             $categories = Category::normalize($categories);
 
             $products = Product::with(["store"])
-                               ->where(['status' => 1])
                                ->limit(10)
                                ->get();
 
-            $products = Product::normalize($products, false);
+            $products = Product::normalize($products);
 
-            $data = array_merge($this->getDefault(), [
+            $data = array_merge($this->Default(), [
                         "content" => $content->setCustomContent(),
                         "categories" => $categories,
                         "products"  => $products
@@ -108,13 +103,13 @@ class ContentController extends Controller
 
         if(isset($content->id)){
 
-            $data = array_merge($this->getDefault(), [
-                        "content" => $content->setCustomContent()
-                    ]);
+            $data = array_merge($this->Default(), [
+                    "content" => $content->setCustomContent()
+                ]);
 
             return response()->json([
                 'response'  => true,
-                'data'      => $data
+                'data' => $data
             ]);
         }
 
@@ -138,7 +133,7 @@ class ContentController extends Controller
                 $category->childs = Category::reduceLevel($category->childs);
             }
 
-            $data = array_merge($this->getDefault(), [
+            $data = array_merge($this->Default(), [
                 "content" => $content->setCustomContent(),
                 "categories" => $categories
             ]);

@@ -39,31 +39,13 @@ class OrdersController extends Controller
                 array_push($products, $item->product->id);
             }
 
-            $products = Product::with(['store'])
-                                      ->where(['status' => 1])
+            $order->products = Product::with(['store'])
                                       ->whereIn('id', $products)
                                       ->get();
 
-            $notificate = [];
-
-            foreach ($products as $key => $item) {
-                if(!isset($notificate[$item->store])){
-                    $store = Store::select(["user"])
-                                  ->where(["id" => $item->store])
-                                  ->first();
-
-                    $notificate[$item->store] = User::select(["name", "email"])
-                                                    ->where([ 'id' => $store->user ])
-                                                    ->first();
-                }
-            }
-
-            $order->notificate  = array_values($notificate);
-            $order->products    = Product::normalize($products);
-
             return response()->json([
                 'response'  => true,
-                'data' => $order
+                'data' => $order,
             ]);
         }
 
@@ -82,12 +64,6 @@ class OrdersController extends Controller
         }
 
         $orders = $orders->get();
-
-        foreach ($orders as $key => $order) {
-            $order->deliveryAddress = json_decode($order->deliveryAddress, TRUE);
-            $order->listItems = json_decode($order->listItems, TRUE);
-            $order->metadata = json_decode($order->metadata, TRUE);
-        }
 
         return response()->json([
             'response'  => true,
@@ -119,8 +95,6 @@ class OrdersController extends Controller
             "listItems"  => "required"
         ]);
 
-        $listItems = $request->get("listItems");
-
         $user = auth()->user();
 
         $order = new Order;
@@ -130,28 +104,8 @@ class OrdersController extends Controller
         $order->deliverySchedule    = $request->get("deliverySchedule");
         $order->deliveryAddress     = json_encode($request->get("deliveryAddress"));
         $order->deliveryStatus      = $request->get("deliveryStatus");
-        $order->listItems           = json_encode($listItems);
+        $order->listItems           = json_encode($request->get("listItems"));
         $order->status              = 0;
-
-        foreach ($listItems as $key => $item) {
-            $product = Product::where('id', $item['product']['id'])
-                              ->first();
-
-            $unavailable = !!$product->unavailable ? json_decode($product->unavailable, TRUE) : [];
-            $unavailable = array_merge($unavailable, $item['product']['unavailable']);
-
-            foreach($unavailable as $day => $date){
-                $dataToCheck = Carbon::createFromFormat('Y-m-d', $date);
-                $dataCurrent = Carbon::now();
-
-                if ($dataCurrent->gt($dataToCheck)) {
-                    unset($unavailable[$day]);
-                }
-            }
-
-            $product->unavailable = json_encode($unavailable);
-            $product->save();
-        }
 
         DB::beginTransaction();
 

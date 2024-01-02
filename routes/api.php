@@ -150,7 +150,6 @@ Route::group([ 'prefix' => 'request' ], function(){
     Route::post('/stores', [StoresController::class, 'List']);
     Route::post('/store', [StoresController::class, 'Get']);
     Route::post('/categories', [CategoriesController::class, 'List']);
-    Route::post('/categories-paths', [CategoriesController::class, 'Paths']);
     Route::post('/category', [CategoriesController::class, 'Get']);
 });
 

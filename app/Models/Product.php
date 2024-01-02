@@ -57,14 +57,14 @@ class Product extends BaseModel
     }
 
     public function store(){
-        return $this->hasOne(Store::class, 'id', 'store')->select("id", "companyName", "slug", "title", "cover", "profile");
+        return $this->hasOne(Store::class, 'id', 'store')->select("id", "companyName", "slug", "title");
     }
 
     public function comments(){
         return $this->hasMany(Comment::class, 'product', 'id');
     }
 
-    public static function normalize($products = [], $deep = true){
+    public static function normalize($products = []){
         if(!empty($products)){
             $products = json_decode(json_encode($products));
 
@@ -80,38 +80,19 @@ class Product extends BaseModel
                     $product->gallery = $gallery;
                 }
 
-                if(isset($product->store) && isset($product->store->cover) && !!$product->store->cover){
-                    $cover = Media::where('id', $product->store->cover)->first();
-                    $cover->details = json_decode($cover->details);
-
-                    $product->store->cover = $cover;
+                if(isset($product->combinations) && !!$product->combinations) {
+                    $product->combinations = Product::normalize(Product::whereIn('id', json_decode($product->combinations, TRUE))->get());
                 }
 
-                if(isset($product->store) && isset($product->store->profile) && !!$product->store->profile){
-
-                    $profile = Media::where('id', $product->store->profile)->first();
-                    $profile->details = json_decode($profile->details);
-
-                    $product->store->profile = $profile;
+                if(isset($product->category) && !!$product->category){
+                    $categories = json_decode($product->category, TRUE);
+                    $product->category = Category::with(["childs"])
+                                                ->whereIn('id', $categories)
+                                                ->get();
                 }
 
-                if($deep){
-                    if(isset($product->combinations) && !!$product->combinations) {
-                        $combinations = json_decode($product->combinations, TRUE);
-
-                        $product->combinations = is_array($combinations) && !!count($combinations) ? Product::normalize(Product::whereIn('id', $combinations)->get(), false) : [];
-                    }
-
-                    if(isset($product->category) && !!$product->category){
-                        $categories = json_decode($product->category, TRUE);
-                        $product->category = Category::with(["childs"])
-                                                    ->whereIn('id', $categories)
-                                                    ->get();
-                    }
-
-                    if(isset($product->attributes) && !!$product->attributes){
-                        $product->attributes = is_string($product->attributes) ? json_decode($product->attributes) : [];
-                    }
+                if(isset($product->attributes) && !!$product->attributes){
+                    $product->attributes = is_string($product->attributes) ? json_decode($product->attributes) : [];
                 }
             }
 
