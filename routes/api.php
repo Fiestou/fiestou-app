@@ -150,10 +150,7 @@ Route::group([ 'prefix' => 'request' ], function(){
     Route::post('/stores', [StoresController::class, 'List']);
     Route::post('/store', [StoresController::class, 'Get']);
     Route::post('/categories', [CategoriesController::class, 'List']);
-<<<<<<< HEAD
     Route::post('/categories-paths', [CategoriesController::class, 'Paths']);
-=======
->>>>>>> refs/remotes/origin/master
     Route::post('/category', [CategoriesController::class, 'Get']);
 });
 

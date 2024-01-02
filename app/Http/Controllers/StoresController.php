@@ -84,28 +84,10 @@ class StoresController extends Controller
 
         if(isset($store->id)){
 
-<<<<<<< HEAD
-            $cover = !!$store->cover ? Media::where(['id' => $store->cover])->first() : [];
-
-=======
             $products = Product::with(["store"])
-                               ->where('store', $store->id)
-                               ->get();
-
-            foreach ($products as $key => $product) {
-                if($product->gallery){
-                    $gallery = Media::whereIn('id', json_decode($product->gallery, TRUE))->get();
-
-                    foreach ($gallery as $key => $item) {
-                        $item->details = json_decode($item->details);
-                    }
-
-                    $product->gallery = $gallery;
-                }
-            }
+                               ->where('store', $store->id);
 
             $cover = !!$store->cover ? Media::where(['id' => $store->cover])->first() : [];
->>>>>>> refs/remotes/origin/master
             if(isset($cover->id)){
                 $cover->details = json_decode($cover->details);
                 $store->cover   = $cover;
@@ -117,10 +99,7 @@ class StoresController extends Controller
                 $store->profile   = $profile;
             }
 
-<<<<<<< HEAD
-=======
-            $store->products = $products;
->>>>>>> refs/remotes/origin/master
+            $store->products    = Product::normalize($products->get(), false);
             $store->openClose   = json_decode($store->openClose);
             $store->metadata    = json_decode($store->metadata);
 
@@ -161,16 +140,9 @@ class StoresController extends Controller
         if(isset($store->id)){
 
             $users = Suborder::where(['store' => $store->id])
-<<<<<<< HEAD
                              ->groupBy('user')
                              ->pluck('user')
                              ->toArray();
-=======
-                             ->select('user')
-                             ->groupBy('user')
-                             ->get()
-                             ->pluck('user');
->>>>>>> refs/remotes/origin/master
 
             $customers = User::whereIn('id', $users);
 

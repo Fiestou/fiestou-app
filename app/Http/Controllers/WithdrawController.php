@@ -25,10 +25,6 @@ class WithdrawController extends Controller
         ]);
 
         $user = auth()->user();
-<<<<<<< HEAD
-=======
-
->>>>>>> refs/remotes/origin/master
         $store = Store::where(["user" => $user->id])
                       ->first();
 
@@ -85,24 +81,15 @@ class WithdrawController extends Controller
 
     public function List(Request $request){
 
-<<<<<<< HEAD
-=======
         $user = auth()->user();
 
->>>>>>> refs/remotes/origin/master
         if($user->person == "master"){
             $withdraw = Withdraw::orderBy('id', 'desc')->get();
         }
         else{
 
-<<<<<<< HEAD
-            $user = auth()->user();
-            $store = Store::where(["user" => $user->id])
-                         ->first();
-=======
             $store = Store::where(["user" => $user->id])
                           ->first();
->>>>>>> refs/remotes/origin/master
 
             if(!isset($store->id)){
                 return response()->json([
@@ -113,10 +100,6 @@ class WithdrawController extends Controller
             $withdraw = Withdraw::where(["store" => $store->id])
                                 ->orderBy('id', 'desc')
                                 ->get();
-<<<<<<< HEAD
-
-=======
->>>>>>> refs/remotes/origin/master
         }
 
         foreach ($withdraw as $key => $with) {

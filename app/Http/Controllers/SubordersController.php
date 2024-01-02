@@ -132,7 +132,6 @@ class SubordersController extends Controller
 
             $order = Order::where(['id' => $suborder->order])->first();
 
-<<<<<<< HEAD
             $suborder->deliveryStatus   = $request->get("deliveryStatus");
             $suborder->status           = $request->get("status") ?? 1;
 
@@ -142,14 +141,6 @@ class SubordersController extends Controller
             DB::beginTransaction();
 
             if(!$suborder->save() || !$order->save()){
-=======
-            $suborder->deliveryStatus = $request->get("deliveryStatus");
-            $suborder->status = $request->get("status") ?? 1;
-
-            DB::beginTransaction();
-
-            if(!$suborder->save()){
->>>>>>> refs/remotes/origin/master
 
                 DB::rollback();
 

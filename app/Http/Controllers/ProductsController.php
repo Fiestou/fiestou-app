@@ -30,12 +30,8 @@ class ProductsController extends Controller
                 ], 500);
             }
 
-<<<<<<< HEAD
             $product = Product::where(['status' => 1])
                               ->where('id', (int) $request->get('id'))
-=======
-            $product = Product::where('id', (int) $request->get('id'))
->>>>>>> refs/remotes/origin/master
                               ->where('store', $store->id)
                               ->first();
 
@@ -55,7 +51,6 @@ class ProductsController extends Controller
 
     public function List(Request $request){
 
-<<<<<<< HEAD
         $log = [];
         $metadata = [];
         $products = Product::where(['status' => 1])
@@ -64,16 +59,6 @@ class ProductsController extends Controller
         // if($request->has('select') && $request->get('select')){
         //     $products = $products->selectRaw('id, created_at, updated_at, ' . $request->get('select'));
         // }
-=======
-        return response()->json([
-            'log'   => $request['categoria[]'],
-        ]);
-
-        $products = Product::with(["store"]);
-
-        $order = $request->has('ordem') ? $request->get('ordem') : 'id DESC';
-        $products = $products->orderByRaw($order);
->>>>>>> refs/remotes/origin/master
 
         if($request->has('store') && $request->get('store')){
             $store = Store::where(["id" => $request->get('store')])->first();
@@ -113,21 +98,14 @@ class ProductsController extends Controller
             $products = $products->where('price', '<=', $request->get('range'));
         }
 
-<<<<<<< HEAD
         if($request->has('categoria[]') && $request->input('categoria[]')){
             $categories = (is_array($request->input('categoria[]'))) ? $request->input('categoria[]') : [$request->input('categoria[]')];
             $categories = Category::whereIn('slug', $categories)->pluck('id')->toArray();
 
-=======
-        if(isset($request['categoria[]']) && $request['categoria[]']){
-            $categories = (is_array($request['categoria[]'])) ? $request['categoria[]'] : [$request['categoria[]']];
-            $categories = Category::whereIn('slug', $categories)->pluck('id')->toArray();
->>>>>>> refs/remotes/origin/master
             $whereIn    = CategoryRel::whereIn('category', $categories)->pluck('product')->toArray();
             $products   = $products->whereIn('id', $whereIn);
         }
 
-<<<<<<< HEAD
         $count = $products;
         $metadata['count'] = $count->count();
 
@@ -151,15 +129,6 @@ class ProductsController extends Controller
             'data'      => Product::normalize($products->get(), false),
             'metadata'  => $metadata,
             'log'       => $log
-=======
-        $products = $products->get();
-
-        return response()->json([
-            'response'  => true,
-            'log'       => '--',
-            'request'   => $request['categoria[]'],
-            'data'      => Product::normalize($products)
->>>>>>> refs/remotes/origin/master
         ]);
     }
 
@@ -191,7 +160,6 @@ class ProductsController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
     public function Remove(Request $request){
 
         $request->validate([
@@ -222,8 +190,6 @@ class ProductsController extends Controller
         ]);
     }
 
-=======
->>>>>>> refs/remotes/origin/master
     public function Register(Request $request){
 
         $user = auth()->user();
@@ -233,18 +199,13 @@ class ProductsController extends Controller
         $product = new Product;
 
         if($request->has('id') && isset($store->id)){
-<<<<<<< HEAD
             $product = Product::where(['status' => 1])
                               ->where('id', (int) $request->get('id'))
-=======
-            $product = Product::where('id', (int) $request->get('id'))
->>>>>>> refs/remotes/origin/master
                               ->where('store', $store->id)
                               ->first();
         }
 
         foreach ($request->all() as $key => $value) {
-<<<<<<< HEAD
             if(!in_array($key, ['gallery', 'attributes', 'combinations', 'category'])){
                 $product->{$key} = $request->get($key);
             }
@@ -261,21 +222,6 @@ class ProductsController extends Controller
         if($request->has('attributes') && !empty($request->get('attributes'))){
             $product->attributes = json_encode($request->get('attributes'));
         }
-=======
-            $product->{$key} = $request->get($key);
-        }
-
-        if($request->has('title')) $product->slug = Str::slug($request->get('title'));
-
-        if($request->has('gallery') && !empty($request->get('gallery')))
-            $product->gallery = json_encode($request->get('gallery'));
-
-        if($request->has('attributes') && !empty($request->get('attributes')))
-            $product->attributes = json_encode($request->get('attributes'));
-
-        if($request->has('gallery') && !empty($request->get('gallery')))
-            $product->gallery = json_encode($request->get('gallery'));
->>>>>>> refs/remotes/origin/master
 
         if($request->has('combinations') && !empty($request->get('combinations'))){
             $combinations = array_map(function ($item) {
@@ -284,22 +230,14 @@ class ProductsController extends Controller
             $product->combinations = json_encode(array_values($combinations));
         }
 
-<<<<<<< HEAD
         $product->status    = 1;
         $product->store     = $store->id;
         $product->category  = json_encode([]);
 
-=======
->>>>>>> refs/remotes/origin/master
         DB::beginTransaction();
 
         if($product->save()){
 
-<<<<<<< HEAD
-=======
-            $product->category = json_encode([]);
-
->>>>>>> refs/remotes/origin/master
             if($request->has('category')){
                 $relationship = [];
                 CategoryRel::where(["product" => $product->id])->delete();
