@@ -25,6 +25,7 @@ class WithdrawController extends Controller
         ]);
 
         $user = auth()->user();
+
         $store = Store::where(["user" => $user->id])
                       ->first();
 
