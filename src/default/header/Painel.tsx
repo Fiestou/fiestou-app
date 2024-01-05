@@ -4,7 +4,9 @@ import { HeaderType } from "@/src/default/header/index";
 import { UserType } from "@/src/models/user";
 import { getFirstName } from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Api from "@/src/services/api";
+import { AuthCheck } from "@/src/contexts/AuthContext";
 
 const menu = [
   {
@@ -48,7 +50,13 @@ export default function Painel({
   params: HeaderType;
   user: UserType;
 }) {
+  const api = new Api();
+
   const [dropdown, setDropdown] = useState(false);
+
+  useEffect(() => {
+    AuthCheck();
+  }, []);
 
   return (
     <>

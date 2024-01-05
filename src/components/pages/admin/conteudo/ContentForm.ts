@@ -17,6 +17,7 @@ import { OrdersForm } from "@/src/components/pages/admin/conteudo/OrdersForm";
 import { SeoForm } from "@/src/components/pages/admin/conteudo/SeoForm";
 import { ScriptsForm } from "@/src/components/pages/admin/conteudo/ScriptsForm";
 import { EmailForm } from "@/src/components/pages/admin/conteudo/EmailForm";
+import { WithdrawForm } from "@/src/components/pages/admin/conteudo/WithdrawForm";
 import { UserMenuForm } from "./UserMenuForm";
 
 export interface FormType {
@@ -134,6 +135,13 @@ const painel: Array<FormType> = [
     slug: "store-custom",
     publicUrl: "",
     form: StoreForm,
+    origin: "painel",
+  },
+  {
+    title: "Saques",
+    slug: "withdraw",
+    publicUrl: "",
+    form: WithdrawForm,
     origin: "painel",
   },
   {

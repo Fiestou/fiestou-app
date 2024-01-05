@@ -18,9 +18,6 @@ export async function getStaticProps(ctx: any) {
       url: "request/graph",
       data: [
         {
-          model: "store as stores",
-        },
-        {
           model: "page",
           filter: [
             {
@@ -57,11 +54,16 @@ export async function getStaticProps(ctx: any) {
 
   const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
   const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const content = request?.data?.query?.page[0] ?? [];
+
+  request = await api.get({
+    url: "request/stores",
+  });
 
   return {
     props: {
-      stores: request?.data?.query?.stores ?? [],
-      content: request?.data?.query?.page[0] ?? {},
+      stores: request?.data ?? [],
+      content: content ?? {},
       HeaderFooter: HeaderFooter[0] ?? {},
       DataSeo: DataSeo[0] ?? {},
     },

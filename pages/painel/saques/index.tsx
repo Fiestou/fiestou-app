@@ -16,7 +16,28 @@ import { UserType } from "@/src/models/user";
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.bridge(
+  let request: any = await api.call(
+    {
+      url: "request/graph",
+      data: [
+        {
+          model: "page",
+          filter: [
+            {
+              key: "slug",
+              value: "withdraw",
+              compare: "=",
+            },
+          ],
+        },
+      ],
+    },
+    ctx
+  );
+
+  let content: any = request?.data?.query?.page[0] ?? [];
+
+  request = await api.bridge(
     {
       url: "users/get",
     },
@@ -35,6 +56,7 @@ export async function getServerSideProps(ctx: any) {
   return {
     props: {
       user: user,
+      content: content ?? {},
       bankAccounts: bankAccounts,
     },
   };
@@ -47,9 +69,11 @@ const formInitial = {
 
 export default function Saque({
   user,
+  content,
   bankAccounts,
 }: {
   user: UserType;
+  content: any;
   bankAccounts: any;
 }) {
   const api = new Api();
@@ -59,8 +83,6 @@ export default function Saque({
   const setFormValue = (value: any) => {
     setForm((form) => ({ ...form, ...value }));
   };
-
-  console.log(user);
 
   const [modalWD, setModalWD] = useState(false as boolean);
   const [origin, setOrigin] = useState("todos");
@@ -103,9 +125,7 @@ export default function Saque({
       data: handle,
     });
 
-    if (!!request?.response) {
-      console.log("sendWithdraw >>", request);
-
+    if (!!request?.code) {
       router.reload();
 
       setModalWD(false);
@@ -130,28 +150,33 @@ export default function Saque({
       >
         <div className="grid gap-6 items-start">
           <div className="grid gap-1 text-sm">
-            <b>Regras de saque:</b>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam
-              pulvinar massa risus, sit amet ullamcorper arcu suscipit a
-            </p>
+            <div
+              dangerouslySetInnerHTML={{ __html: content.modal_instruction }}
+            ></div>
           </div>
           <form onSubmit={(e) => RegisterWithdraw(e)} className="flex gap-4">
-            <Input
-              onChange={(e: any) => handleWithdraw({ value: e.target.value })}
-              placeholder="R$"
-              required
-              className="h-14 text-center"
-            />
-            <Select
-              onChange={(e: any) =>
-                handleWithdraw({ bankAccount: e.target.value })
-              }
-              required
-              className="h-14 text-center"
-              name={"account"}
-              options={[{ value: "", name: "Conta bancária" }, ...bankAccounts]}
-            />
+            <div>
+              <Input
+                onChange={(e: any) => handleWithdraw({ value: e.target.value })}
+                placeholder="R$"
+                required
+                className="h-14 text-center"
+              />
+            </div>
+            <div>
+              <Select
+                onChange={(e: any) =>
+                  handleWithdraw({ bankAccount: e.target.value })
+                }
+                required
+                className="h-14 text-center"
+                name={"account"}
+                options={[
+                  { value: "", name: "Conta bancária" },
+                  ...bankAccounts,
+                ]}
+              />
+            </div>
             <Button loading={form.loading}>Confirmar</Button>
           </form>
         </div>

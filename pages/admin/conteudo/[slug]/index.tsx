@@ -205,7 +205,7 @@ export default function Form({
                       )}
                   </div>
                 </div>
-                <div className="w-full lg:max-w-[24rem] grid gap-4 pb-2">
+                <div className="w-full lg:max-w-[20rem] grid gap-4 pb-2">
                   <div className="order-last lg:order-1 grid">
                     <Button loading={form.loading}>Salvar</Button>
                   </div>

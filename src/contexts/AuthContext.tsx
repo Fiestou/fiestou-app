@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useEffect } from "react";
 import Api, { api } from "@/src/services/api";
 import Router from "next/router";
 import Cookies from "js-cookie";
@@ -26,6 +26,32 @@ export function getUser() {
 
   return {} as UserType;
 }
+
+export const AuthCheck = () => {
+  if (!!window) {
+    const api = new Api();
+
+    const handleVisibilityChange = async (e: any) => {
+      e.preventDefault();
+
+      if (!document.hidden) {
+        const data: any = await api.bridge({
+          url: "me",
+        });
+
+        if (!data.id) {
+          window.location.href = "/logout";
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const request = new Api();

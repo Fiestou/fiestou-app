@@ -62,7 +62,7 @@ export default function Template({
 
         <title>{meta.title}</title>
 
-        {!!getImage(header?.content?.header_icon) ? (
+        {!!getImage(header?.content?.header_icon) && (
           <>
             <link
               rel="icon"
@@ -76,8 +76,6 @@ export default function Template({
               href={getImage(header?.content?.header_icon, "lg")}
             />
           </>
-        ) : (
-          ""
         )}
 
         <meta name="theme-color" content="#2798c6" />

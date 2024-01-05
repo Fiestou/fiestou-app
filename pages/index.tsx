@@ -56,6 +56,8 @@ export default function Home({
   DataSeo: any;
   Scripts: any;
 }) {
+  console.log(content.main_cover);
+
   return (
     <Template
       scripts={Scripts}

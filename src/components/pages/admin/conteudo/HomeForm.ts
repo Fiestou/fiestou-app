@@ -20,7 +20,7 @@ export const HomeForm = [
         label: "Imagem de fundo (desktop)",
         name: "main_cover",
         type: "media",
-        width: "w-full md:w-[49%]",
+        column: "md:col-span-4",
         options: {
           dir: "site",
         },
@@ -29,7 +29,7 @@ export const HomeForm = [
         label: "Imagem de fundo (mobile)",
         name: "main_cover_mobile",
         type: "media",
-        width: "w-full md:w-[49%]",
+        column: "md:col-span-2",
         options: {
           dir: "site",
         },

@@ -101,7 +101,7 @@ export default function Conteudo({ pages }: { pages: Array<any> }) {
               <div className="w-full">Página</div>
               <div className="w-[32rem]">Origem</div>
               <div className="w-[48rem]">Última atualização</div>
-              <div className="w-[32rem]">Status</div>
+              <div className="w-[14rem]">Status</div>
               <div className="w-[32rem]">Ações</div>
             </div>
             {!!listPages &&
@@ -119,14 +119,14 @@ export default function Conteudo({ pages }: { pages: Array<any> }) {
                       <div className="py-2">{item.origin}</div>
                     </div>
                     <div className="w-[48rem]">
-                      <div>
+                      <div className="text-xs">
                         {!!item?.meta
                           ? getExtenseData(item.meta.updated_at)
                           : "sem cadastro"}
                       </div>
                     </div>
-                    <div className="w-[32rem] text-center">
-                      <div className="rounded-md bg-zinc-100 py-2">
+                    <div className="w-[14rem] text-center">
+                      <div className="rounded-md bg-zinc-100 py-2 text-xs">
                         {!!item?.meta
                           ? !!item.meta.status
                             ? "Público"

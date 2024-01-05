@@ -182,8 +182,6 @@ export default function Form({
 
     const handle = request.data ?? {};
 
-    console.log(handle);
-
     setProduct(handle);
     setData(handle);
     setColors(

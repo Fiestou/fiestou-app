@@ -100,7 +100,6 @@ export default function Categorias() {
             onClick={() => {
               setModalRelation(true);
               setEditRelation(item);
-              console.log(typeof item.metadata, "<<");
               setMetadataRelation(item.metadata);
             }}
           >
@@ -209,7 +208,7 @@ export default function Categorias() {
             <div className="form-group">
               <Label style="float">Nome</Label>
               <Input
-                value={editRelation?.title}
+                defaultValue={editRelation?.title}
                 onChange={(e: any) =>
                   handleEditRelation({
                     title: e.target.value,
@@ -268,7 +267,23 @@ export default function Categorias() {
                     ]}
                   />
                 </div>
-                <div className="form-group w-full">
+
+                {!!editRelation?.multiple && (
+                  <div className="form-group w-full max-w-[4rem]">
+                    <Label style="float">Máx</Label>
+                    <Input
+                      defaultValue={metadataRelation?.limitSelect}
+                      onChange={(e: any) =>
+                        handleMetadataRelation({
+                          limitSelect: e.target.value,
+                        })
+                      }
+                      required
+                      className="py-2"
+                    />
+                  </div>
+                )}
+                <div className="form-group w-full max-w-[12rem]">
                   <Label style="float">Tamanho do elemento</Label>
                   <Select
                     onChange={(e: any) =>

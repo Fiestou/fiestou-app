@@ -27,4 +27,5 @@ export interface UserType {
   favorites?: Array<number>;
   bankAccounts?: Array<BankAccountType>;
   address?: Array<AddressType>;
+  created_at?: string;
 }

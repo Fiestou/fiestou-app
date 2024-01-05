@@ -106,13 +106,13 @@ export default function Filter(params: any) {
         const mainCategories: any = data?.filter((item: any) => !item.parent);
         const levelCategories: any = {};
 
-        mainCategories.map((item: any) => {
+        (mainCategories ?? []).map((item: any) => {
           levelCategories[item.slug] = !!item?.childs?.length
             ? handleCategoriesLevels(item?.childs, {}, 0)
             : [];
         });
 
-        setActiveChecked(mainCategories.map((item: any) => item.id));
+        setActiveChecked((mainCategories ?? []).map((item: any) => item.id));
         setCategories(mainCategories);
         setCategoriesLevels(levelCategories);
 
@@ -132,7 +132,7 @@ export default function Filter(params: any) {
       );
     }
 
-    if (!categories.length) {
+    if (!categories?.length) {
       getFilter();
     }
   }, []);
@@ -239,24 +239,25 @@ export default function Filter(params: any) {
                     : "Mais antigo"}
                 </div>
               </Button>
-              <Select
-                className="opacity-0 absolute h-full w-full top-0 left-0"
-                name="ordem"
-                onChange={(e: any) => {
-                  setFilterOrder(e.target.value);
-                }}
-                value={filterOrder}
-                options={[
-                  {
-                    name: "Mais recente",
-                    value: "created_at DESC",
-                  },
-                  {
-                    name: "Mais antigo",
-                    value: "created_at ASC",
-                  },
-                ]}
-              ></Select>
+              <div className="opacity-0 absolute h-full w-full top-0 left-0">
+                <Select
+                  name="ordem"
+                  onChange={(e: any) => {
+                    setFilterOrder(e.target.value);
+                  }}
+                  value={filterOrder}
+                  options={[
+                    {
+                      name: "Mais recente",
+                      value: "created_at DESC",
+                    },
+                    {
+                      name: "Mais antigo",
+                      value: "created_at ASC",
+                    },
+                  ]}
+                ></Select>
+              </div>
             </div>
           </div>
 
@@ -325,7 +326,7 @@ export default function Filter(params: any) {
             </div>
           </div>
 
-          {!!categories.length &&
+          {!!categories?.length &&
             categories.map((mainCategory: any, key: any) => (
               <div key={key} className="pb-6">
                 <Label>{mainCategory.title}</Label>
@@ -333,7 +334,7 @@ export default function Filter(params: any) {
                   <div className="flex md:flex-wrap gap-2">
                     {!!categoriesLevels[mainCategory.slug] &&
                       Object.values(categoriesLevels[mainCategory.slug]).map(
-                        (level: any, key: any) => (
+                        (level: any, index: any) => (
                           <>
                             {level.map(
                               (category: any) =>

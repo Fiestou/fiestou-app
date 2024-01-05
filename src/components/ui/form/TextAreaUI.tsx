@@ -72,7 +72,7 @@ export default function TextArea(attr: TextAreaType) {
     }
   }, []);
 
-  return !render ? (
+  return render ? (
     <>
       {attr?.options?.plugin == "quill" ? (
         <div
