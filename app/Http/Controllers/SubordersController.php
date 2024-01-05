@@ -78,8 +78,13 @@ class SubordersController extends Controller
         if(isset($store->id)){
             $suborders = Suborder::with(["parent"])
                                  ->orderBy('id', 'DESC')
-                                 ->where(["store" => $store->id])
-                                 ->get();
+                                 ->where(["store" => $store->id]);
+
+            if($request->has("customer")){
+                $suborders = $suborders->where(["user" => $request->get("customer")]);
+            }
+
+            $suborders = $suborders->get();
 
             foreach ($suborders as $key => $suborder) {
                 $order = $suborder->parent;
