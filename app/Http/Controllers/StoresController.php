@@ -84,8 +84,10 @@ class StoresController extends Controller
 
         if(isset($store->id)){
 
-            $cover = !!$store->cover ? Media::where(['id' => $store->cover])->first() : [];
+            $products = Product::with(["store"])
+                               ->where('store', $store->id);
 
+            $cover = !!$store->cover ? Media::where(['id' => $store->cover])->first() : [];
             if(isset($cover->id)){
                 $cover->details = json_decode($cover->details);
                 $store->cover   = $cover;
@@ -97,6 +99,7 @@ class StoresController extends Controller
                 $store->profile   = $profile;
             }
 
+            $store->products    = Product::normalize($products->get(), false);
             $store->openClose   = json_decode($store->openClose);
             $store->metadata    = json_decode($store->metadata);
 
@@ -116,6 +119,17 @@ class StoresController extends Controller
         $stores = Store::orderBy('id', 'DESC')
                        ->where('status', 1)
                        ->get();
+
+        foreach ($stores as $key => $store) {
+
+            $profile = !!$store->profile ? Media::where(['id' => $store->profile])->first() : [];
+            if(isset($profile->id)){
+                $profile->details = json_decode($profile->details);
+                $store->profile   = $profile;
+            }
+
+            $store->metadata    = json_decode($store->metadata);
+        }
 
         return response()->json([
             'response'  => true,

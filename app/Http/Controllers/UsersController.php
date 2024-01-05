@@ -204,10 +204,11 @@ class UsersController extends Controller
         }
 
         try{
-
-            $user->save();
-
-        }catch(\Exception $e){
+            if($user->save()){
+                // Mail::to($request->email)->queue((new RegisterUser(['user' => $user]))->onQueue('default'));
+            }
+         }
+         catch(\Exception $e){
             return response()->json([
                 'response'  => false,
                 'message'   => 'Erro ao salvar usuário',
@@ -268,5 +269,4 @@ class UsersController extends Controller
             'message'   => 'Erro ao salvar usuário <--'
         ], 500);
     }
-
 }

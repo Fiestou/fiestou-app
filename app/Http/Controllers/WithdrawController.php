@@ -81,14 +81,15 @@ class WithdrawController extends Controller
 
     public function List(Request $request){
 
+        $user = auth()->user();
+
         if($user->person == "master"){
             $withdraw = Withdraw::orderBy('id', 'desc')->get();
         }
         else{
 
-            $user = auth()->user();
             $store = Store::where(["user" => $user->id])
-                         ->first();
+                          ->first();
 
             if(!isset($store->id)){
                 return response()->json([
@@ -99,7 +100,6 @@ class WithdrawController extends Controller
             $withdraw = Withdraw::where(["store" => $store->id])
                                 ->orderBy('id', 'desc')
                                 ->get();
-
         }
 
         foreach ($withdraw as $key => $with) {
