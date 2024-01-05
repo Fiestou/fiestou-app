@@ -7,7 +7,7 @@ import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { Button, Select } from "@/src/components/ui/form";
-import { getExtenseData, print_r } from "@/src/helper";
+import { getExtenseData, moneyFormat, print_r } from "@/src/helper";
 import { useEffect, useState } from "react";
 import UserEditAdmin from "@/src/components/shared/UserEditAdmin";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -28,6 +28,7 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
   const api = new Api();
 
   const [user, setUser] = useState({} as UserType);
+  const [orders, setOrders] = useState([] as any);
 
   const getUser = async () => {
     let request: any = await api.bridge({
@@ -41,9 +42,21 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
     setUser(request.data);
   };
 
+  const getOrders = async () => {
+    let request: any = await api.bridge({
+      url: "suborders/list",
+      data: {
+        customer: id,
+      },
+    });
+
+    setOrders(request.data);
+  };
+
   useEffect(() => {
     if (!!window) {
       getUser();
+      getOrders();
     }
   }, []);
 
@@ -99,28 +112,33 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
               </div>
               <div>
                 <h3 className="text-xl md:text-2xl text-zinc-950 mb-6">
-                  Vendas
+                  Compras
                 </h3>
                 <div className="grid gap-6">
-                  {[1, 2, 3].map((item: any, key: any) => (
+                  {orders.map((suborder: any, key: any) => (
                     <div
                       key={key}
                       className="p-4 md:p-6 border rounded-md lg:rounded-2xl grid gap-2"
                     >
+                      <div className="flex justify-between font-bold text-zinc-950">
+                        <div>#{suborder.order.id}</div>
+                        <div>R$ {moneyFormat(suborder.total)}</div>
+                      </div>
                       <div className="flex justify-between text-zinc-400">
-                        <div>#000</div>
-                        <div>10/10/2023</div>
+                        <div>{getExtenseData(suborder.created_at)}</div>
+                        <div></div>
                       </div>
-                      <div className="flex justify-between font-bold">
-                        <div>Henrique</div>
-                        <div>R$ 400,00</div>
-                      </div>
-                      <div className="text-zinc-400">Decoração...</div>
 
                       <div className="flex gap-4 pt-4 text-sm">
-                        <div className="rounded-lg bg-zinc-100 py-3 px-5">
-                          Pagamento recebido
-                        </div>
+                        {suborder.order?.metadata?.payment_status == "paid" ? (
+                          <div className="inline-block text-sm py-3 px-5 rounded-md bg-green-400 text-white">
+                            pago
+                          </div>
+                        ) : (
+                          <div className="inline-block text-sm py-3 px-5 rounded-md bg-zinc-100 text-zinc-500">
+                            processando
+                          </div>
+                        )}
                         <div className="rounded-lg py-3 px-5 font-bold text-zinc-950 bg-yellow-200">
                           Por enviar
                         </div>

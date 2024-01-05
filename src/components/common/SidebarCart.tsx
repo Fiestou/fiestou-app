@@ -144,15 +144,17 @@ export default function SidebarCart(attr: SidebarCartType) {
               <div className="py-5"></div>
             </div>
 
-            <div
-              className={`${
-                effect ? "mr-0" : "-mr-10 opacity-0"
-              } ml-auto fixed right-0 bottom-0 ease w-full max-w-[20rem] md:max-w-[24rem]`}
-            >
-              <div className="p-4 grid">
-                <Button href="/carrinho">Ir ao carrinho</Button>
+            {status && (
+              <div
+                className={`${
+                  effect ? "mr-0" : "-mr-10 opacity-0"
+                } ml-auto fixed right-0 bottom-0 ease w-full max-w-[20rem] md:max-w-[24rem]`}
+              >
+                <div className="p-4 grid">
+                  <Button href="/carrinho">Ir ao carrinho</Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

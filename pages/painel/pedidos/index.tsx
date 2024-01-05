@@ -128,7 +128,7 @@ export default function Pedidos({ orders }: { orders: Array<any> }) {
                       </div>
                     ) : (
                       <div className="px-2 inline-block text-sm py-2 rounded-md bg-zinc-100 text-zinc-500">
-                        em aberto
+                        processando
                       </div>
                     )}
                   </div>

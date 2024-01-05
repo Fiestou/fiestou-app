@@ -94,7 +94,7 @@ export default function Clientes({ store }: { store: any }) {
         <div className="container-medium pb-12">
           <div className="border border-t-0 grid md:grid-cols-2 lg:block w-full">
             <div className="hidden lg:flex border-t bg-zinc-100 p-4 lg:p-8 gap-4 lg:gap-8 font-bold text-zinc-900 font-title">
-              <div className="w-[20rem]">Nome</div>
+              <div className="w-[40rem]">Nome</div>
               <div className="w-full">E-mail</div>
               <div className="w-[22rem]"></div>
             </div>
@@ -104,7 +104,7 @@ export default function Clientes({ store }: { store: any }) {
                   key={key}
                   className="grid lg:flex border-t p-4 lg:p-8 gap-2 lg:gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 ease items-center"
                 >
-                  <div className="w-full lg:w-[20rem]">
+                  <div className="w-full lg:w-[40rem]">
                     <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
                       Nome
                     </span>

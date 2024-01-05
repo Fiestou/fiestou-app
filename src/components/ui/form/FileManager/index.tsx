@@ -166,6 +166,7 @@ export default function FileManager(attr: FileManagerType) {
           <Icon icon="fa-image" />
           {attr.placeholder ?? "Selecionar"}
         </Button>
+
         {!!selecteds.filter((item) => !!getImage(item)).length && (
           <div
             className={`grid gap-2 w-full ${
@@ -220,6 +221,7 @@ export default function FileManager(attr: FileManagerType) {
           </div>
         )}
       </div>
+
       {modalStatus && (
         <div className="fixed flex flex-col bg-white z-50 w-full h-full inset-0">
           <div className="border-b border-zinc-300 p-2 flex gap-2">
@@ -280,13 +282,15 @@ export default function FileManager(attr: FileManagerType) {
                       key={key}
                     >
                       <div className="aspect-square bg-zinc-100 rounded-md">
-                        <Img
-                          src={item.base_url + item.details?.sizes?.sm}
-                          className="absolute inset-0 object-contain w-full h-full"
-                        />
+                        {!!getImage(item, "sm") && (
+                          <Img
+                            src={getImage(item, "sm")}
+                            className="absolute inset-0 object-contain w-full h-full"
+                          />
+                        )}
                       </div>
-                      {!!selecteds?.length &&
-                      selecteds?.find((sel) => sel.id == item.id) ? (
+                      {!!selecteds?.filter((sel) => sel.id == item.id)
+                        .length ? (
                         <div
                           onClick={() => unsetSelected(item.id)}
                           className="absolute inset-0 w-full h-full border-4 border-yellow-400 rounded-md"
