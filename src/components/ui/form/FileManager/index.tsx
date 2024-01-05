@@ -289,8 +289,8 @@ export default function FileManager(attr: FileManagerType) {
                           />
                         )}
                       </div>
-                      {!!selecteds?.filter((sel) => sel.id == item.id)
-                        .length ? (
+                      {!!selecteds?.filter((sel) => sel.id == item.id).length &&
+                      item?.id ? (
                         <div
                           onClick={() => unsetSelected(item.id)}
                           className="absolute inset-0 w-full h-full border-4 border-yellow-400 rounded-md"
