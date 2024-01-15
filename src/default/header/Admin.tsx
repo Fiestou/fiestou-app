@@ -37,8 +37,16 @@ const menu = [
     endpoint: "/admin/entregadores",
   },
   {
-    title: "conteúdo",
+    title: "conteúdo da plataforma",
     endpoint: "/admin/conteudo",
+  },
+  {
+    title: "comunicados",
+    endpoint: "/admin/comunicados",
+  },
+  {
+    title: "blog",
+    endpoint: "/admin/blog",
   },
   {
     title: "regras de negócio",
@@ -59,7 +67,7 @@ export default function Admin({
 
   return (
     <>
-      <div className="fixed w-full max-w-[14rem] top-0 left-0 bg-zinc-900 px-4 text-white">
+      <div className="fixed w-full max-w-[16rem] top-0 left-0 bg-zinc-900 px-4 text-white">
         <div
           dangerouslySetInnerHTML={{
             __html: `<style>
@@ -74,7 +82,7 @@ export default function Admin({
         ></div>
         <div className="flex flex-col gap-10 items-start justify-between min-h-screen">
           <div className="w-full">
-            <div className="max-w-[120px] lg:max-w-[100px] mx-auto">
+            <div className="max-w-[120px] lg:max-w-[100px] mx-auto py-4">
               <div className="relative">
                 <Link passHref href="/">
                   <Img
@@ -85,22 +93,24 @@ export default function Admin({
                 </Link>
               </div>
             </div>
-          </div>
 
-          <div className="grid gap-4">
-            {menu.map((item, key) => (
-              <Link passHref key={key} href={item.endpoint}>
-                <div
-                  className={`whitespace-nowrap leading-tight ease ${
-                    params.pathname == `${item.endpoint}/`
-                      ? "text-yellow-300 font-bold"
-                      : "hover:text-yellow-300"
-                  }`}
-                >
-                  {item.title}
-                </div>
-              </Link>
-            ))}
+            <hr className="mb-6 opacity-10" />
+
+            <div className="grid gap-4">
+              {menu.map((item, key) => (
+                <Link passHref key={key} href={item.endpoint}>
+                  <div
+                    className={`whitespace-nowrap leading-tight ease ${
+                      params.pathname == `${item.endpoint}/`
+                        ? "text-yellow-300 font-bold"
+                        : "hover:text-yellow-300"
+                    }`}
+                  >
+                    {item.title}
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
 
           <div className="pb-4">

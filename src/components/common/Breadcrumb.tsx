@@ -1,9 +1,15 @@
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 
-export default function Breadcrumbs({ links }: { links: Array<any> }) {
+export default function Breadcrumbs({
+  links,
+  justify,
+}: {
+  links: Array<any>;
+  justify?: string;
+}) {
   return (
-    <div className="flex gap-2 text-sm opacity-70">
+    <div className={`flex gap-2 text-sm opacity-70 ${justify ?? ""}`}>
       {[{ url: "/", name: "Início" }, ...(links ?? [])].map((link, key) => (
         <div key={key} className="flex items-center">
           {!!key && (

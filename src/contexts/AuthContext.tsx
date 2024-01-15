@@ -28,7 +28,7 @@ export function getUser() {
 }
 
 export const AuthCheck = () => {
-  if (!!window) {
+  if (!!window && false) {
     const api = new Api();
 
     const handleVisibilityChange = async (e: any) => {

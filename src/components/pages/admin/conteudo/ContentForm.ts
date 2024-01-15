@@ -19,6 +19,7 @@ import { ScriptsForm } from "@/src/components/pages/admin/conteudo/ScriptsForm";
 import { EmailForm } from "@/src/components/pages/admin/conteudo/EmailForm";
 import { WithdrawForm } from "@/src/components/pages/admin/conteudo/WithdrawForm";
 import { UserMenuForm } from "./UserMenuForm";
+import { BlogForm } from "./BlogForm";
 
 export interface FormType {
   title: string;
@@ -76,6 +77,13 @@ const site: Array<FormType> = [
     slug: "sobre",
     publicUrl: "/sobre",
     form: AboutForm,
+    origin: "site",
+  },
+  {
+    title: "Blog",
+    slug: "blog",
+    publicUrl: "/blog",
+    form: BlogForm,
     origin: "site",
   },
   {
