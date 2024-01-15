@@ -28,6 +28,27 @@ export default function Categorias() {
     setForm({ ...form, ...value });
   };
 
+  const [itemRemove, setItemRemove] = useState(0 as number);
+  const sendRemove = async () => {
+    setItemRemove(0);
+
+    const request: any = await api.bridge({
+      url: "categories/remove",
+      data: {
+        id: itemRemove,
+      },
+    });
+
+    if (request.response) {
+      setListRelation(request?.data);
+      setModalRelation(false);
+    }
+
+    handleForm({ loading: false });
+
+    return request;
+  };
+
   const [modalRelation, setModalRelation] = useState(false as boolean);
 
   const [editRelation, setEditRelation] = useState({} as RelationType);
@@ -50,13 +71,15 @@ export default function Categorias() {
       feature: relation?.feature ?? false,
       closest: relation?.closest ?? [],
       metadata: metadataRelation,
-      image: !!relation?.image ? relation?.image.id : "",
+      image: !!relation?.image.length ? relation?.image[0].id : "",
     };
 
     const request: any = await api.bridge({
       url: "categories/register",
       data: rel,
     });
+
+    console.log(relation, "rel");
 
     if (request.response) {
       setListRelation(request?.data);
@@ -95,16 +118,53 @@ export default function Categorias() {
             </div>
           )}
           <div className="w-full">{item.title}</div>
-          <div
-            className="text-sm cursor-pointer hover:text-cyan-600 hover:underline"
-            onClick={() => {
-              setModalRelation(true);
-              setEditRelation(item);
-              setMetadataRelation(item.metadata);
-            }}
-          >
-            editar
-          </div>
+          {!!itemRemove ? (
+            <div className="relative w-full z-[10]">
+              {itemRemove == item.id && (
+                <div className="bg-white top-0 right-0 -mt-2 -mr-2 absolute w-full max-w-[32rem] p-3 border rounded-lg">
+                  <div className="pb-4 text-sm">
+                    Ao excluir este item também serão excluídos todos
+                    relacionamentos desta categoria com produtos e todas as
+                    subcategorias. Deseja continuar com esta ação?
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setItemRemove(0)}
+                      className="text-sm cursor-pointer hover:text-cyan-600 hover:underline"
+                    >
+                      cancelar
+                    </button>
+                    <div
+                      onClick={() => sendRemove()}
+                      className="text-sm whitespace-nowrap cursor-pointer hover:text-red-800 text-red-500 hover:underline"
+                    >
+                      confirmar e excluir
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div
+                className="text-sm cursor-pointer hover:text-cyan-600 hover:underline"
+                onClick={() => setItemRemove(item.id)}
+              >
+                excluir
+              </div>
+              <div
+                className="text-sm cursor-pointer hover:text-cyan-600 hover:underline"
+                onClick={() => {
+                  setModalRelation(true);
+                  setEditRelation(item);
+                  setMetadataRelation(item.metadata);
+                }}
+              >
+                editar
+              </div>
+            </>
+          )}
         </div>
         <div className="relative pl-3 py-2 flex">
           <div className="flex flex-col">
@@ -315,9 +375,9 @@ export default function Categorias() {
 
             <div className="form-group">
               <FileManager
-                value={editRelation?.image ?? 0}
+                multiple={false}
+                value={editRelation?.image ?? []}
                 onChange={(value: any) => {
-                  console.log(value);
                   handleEditRelation({
                     image: value,
                   });

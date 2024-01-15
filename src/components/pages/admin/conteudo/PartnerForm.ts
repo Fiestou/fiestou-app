@@ -17,9 +17,19 @@ export const PartnerForm = [
         },
       },
       {
-        label: "Imagem de fundo",
+        label: "Imagem de fundo (desktop)",
         name: "main_cover",
         type: "media",
+        column: "md:col-span-4",
+        options: {
+          dir: "site",
+        },
+      },
+      {
+        label: "Imagem de fundo (mobile)",
+        name: "main_cover_mobile",
+        type: "media",
+        column: "md:col-span-2",
         options: {
           dir: "site",
         },

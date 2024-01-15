@@ -5,6 +5,9 @@ import { useRouter } from "next/router";
 import Content from "@/src/components/utils/Content";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { Button } from "@/src/components/ui/form";
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { getImage } from "@/src/helper";
+import Img from "@/src/components/utils/ImgBase";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -17,7 +20,7 @@ export async function getStaticProps(ctx: any) {
           filter: [
             {
               key: "slug",
-              value: "sobre",
+              value: "contato",
               compare: "=",
             },
           ],
@@ -71,10 +74,7 @@ export default function Contact({
   DataSeo: any;
 }) {
   const api = new Api();
-
-  const { isFallback } = useRouter();
-
-  const params = content.contato;
+  console.log(content);
 
   const [data, setData] = useState({} as any);
   const [form, setForm] = useState({
@@ -99,30 +99,25 @@ export default function Contact({
           <div className="flex">
             <div className="w-full">
               <div className="pb-4">
-                <div className="flex gap-2 text-sm opacity-70">
-                  <div className="flex items-center">
-                    <a className="hover:underline" href="/">
-                      Início
-                    </a>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="mr-2 text-[.5rem] leading-none">
-                      <Icon icon="fa-chevron-right " />
-                    </div>
-                    <a className="hover:underline" href="/contato/">
-                      Contato
-                    </a>
-                  </div>
-                </div>
+                <Breadcrumbs links={[{ url: "/contato", name: "Contato" }]} />
               </div>
-              <h1 className="font-title font-bold text-4xl md:text-5xl mb-4">
-                Contato
-              </h1>
-              <div className="text-lg md:text-2xl font-semibold">
-                Uma start-up para facilitar em como realizar sua festa
-              </div>
+              <h1
+                className="font-title font-bold text-4xl md:text-5xl mb-4"
+                dangerouslySetInnerHTML={{ __html: content.main_text }}
+              ></h1>
+              <div
+                className="text-lg md:text-2xl font-semibold"
+                dangerouslySetInnerHTML={{ __html: content.main_description }}
+              ></div>
             </div>
-            <div className="w-fit"></div>
+            {!!getImage(content.main_icons) && (
+              <div className="w-fit">
+                <Img
+                  src={getImage(content.main_icons)}
+                  className="w-auto max-w-full"
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -146,8 +141,8 @@ export default function Contact({
                 Telefone
               </h3>
               <div className="text-sm grid">
-                <span>17 99232-2333</span>
-                <span>17 99232-2333</span>
+                <span>{content.contact_phone}</span>
+                <span>{content.contact_phone_support}</span>
               </div>
             </div>
           </div>
@@ -169,11 +164,11 @@ export default function Contact({
                 E-mail
               </h3>
               <div className="text-sm grid">
-                <a href={`mail:contato@fiestou.com.br`}>
-                  <span>contato@fiestou.com.br</span>
+                <a href={`mail:${content.contact_email}`}>
+                  <span>{content.contact_email}</span>
                 </a>
-                <a href={`mail:suporte@fiestou.com.br`}>
-                  <span>suporte@fiestou.com.br</span>
+                <a href={`mail:${content.contact_email_support}`}>
+                  <span>{content.contact_email_support}</span>
                 </a>
               </div>
             </div>
@@ -195,10 +190,7 @@ export default function Contact({
               <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
                 Local
               </h3>
-              <div className="text-sm grid">
-                Rua Afonso Ramos Maia, 77 Brisamar - João Pessoa | PB CEP:
-                58033-040 | Brasil
-              </div>
+              <div className="text-sm grid">{content.contact_address}</div>
             </div>
           </div>
         </div>

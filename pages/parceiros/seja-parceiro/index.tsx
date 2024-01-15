@@ -132,15 +132,25 @@ export default function SejaParceiro({
       }}
     >
       <section className="bg-cyan-500 pt-[2rem] md:pt-24 relative">
-        {true && (
-          <Img
-            size="7xl"
-            src={getImage(content.main_cover)}
-            // "/images/fiestou-desenho-principal.png"
-            className="absolute inset-0 object-cover w-full h-full top-0 left-0"
-          />
+        {getImage(content.main_cover, "default") && (
+          <>
+            {/* <div className="absolute inset-0 w-full h-full top-0 left-0 bg-zinc-900"></div> */}
+            {!!content.main_cover && (
+              <Img
+                size="7xl"
+                src={getImage(content.main_cover, "default")}
+                className="hidden md:block absolute inset-0 object-cover w-full h-full top-0 left-0"
+              />
+            )}
+            {!!content.main_cover_mobile && (
+              <Img
+                size="7xl"
+                src={getImage(content.main_cover_mobile, "default")}
+                className="md:hidden absolute inset-0 object-cover w-full h-full top-0 left-0"
+              />
+            )}
+          </>
         )}
-        <div className="absolute inset-0 w-full h-full top-0 left-0 bg-zinc-900 opacity-40"></div>
         <div className="container-medium relative pt-16 md:py-16 text-white">
           <div className="grid gap-10 md:flex">
             <div className="w-full">
@@ -276,6 +286,7 @@ export default function SejaParceiro({
         </div>
       </section>
 
+      {/* 
       <section className="md:py-14 relative overflow-hidden">
         <div className="max-w-[88rem] pb-6 pt-14 md:p-14 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
@@ -336,6 +347,7 @@ export default function SejaParceiro({
           </div>
         </div>
       </section>
+      */}
 
       <section className="pt-10 md:py-14">
         <div className="container-medium">
@@ -416,7 +428,7 @@ export default function SejaParceiro({
               </div>
             </div>
             <div className="w-full">
-              <div className="aspect-square md:aspect-video bg-zinc-200 relative">
+              <div className="aspect-square relative">
                 {!!getImage(content.cta_image, "xl") && (
                   <Img
                     src={getImage(content.cta_image, "xl")}

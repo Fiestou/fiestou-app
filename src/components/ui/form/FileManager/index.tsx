@@ -1,6 +1,6 @@
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Button from "../ButtonUI";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import Img from "@/src/components/utils/ImgBase";
 import Cookies from "js-cookie";
@@ -38,9 +38,15 @@ export default function FileManager(attr: FileManagerType) {
   const [removeActive, setRemoveActive] = useState(false as boolean);
 
   const [placeholder, setPlaceholder] = useState([] as any);
-  const [selecteds, setSelecteds] = useState(
-    ([attr?.value] ?? []) as Array<any>
-  );
+  const [selecteds, setSelecteds] = useState([] as Array<any>);
+
+  useEffect(() => {
+    setSelecteds(
+      ((Array.isArray(attr?.value) ? attr?.value : [attr?.value]) ??
+        []) as Array<any>
+    );
+  }, [attr]);
+
   const setSelected = (media: any) => {
     setRemoveActive(false);
     setSelecteds(!!attr?.multiple ? [...selecteds, media] : [media]);
@@ -164,20 +170,20 @@ export default function FileManager(attr: FileManagerType) {
           className={`block py-3 px-3 w-full ${attr?.className} border-zinc-300`}
         >
           <Icon icon="fa-image" />
-          {attr.placeholder ?? "Selecionar"}
+          {attr?.placeholder ?? "Selecionar"}
         </Button>
 
-        {!!selecteds.filter((item) => !!getImage(item)).length && (
-          <div
-            className={`grid gap-2 w-full ${
-              attr?.multiple && attr?.options?.type != "thumb"
-                ? "grid-cols-4"
-                : attr?.options?.type == "thumb"
-                ? "max-w-[4rem]"
-                : ""
-            }`}
-          >
-            {selecteds
+        <div
+          className={`grid gap-2 w-full ${
+            attr?.multiple && attr?.options?.type != "thumb"
+              ? "grid-cols-4"
+              : attr?.options?.type == "thumb"
+              ? "max-w-[4rem]"
+              : ""
+          }`}
+        >
+          {!!selecteds.length &&
+            selecteds
               .filter((item) => !!getImage(item))
               .map((item: any, key: any) => (
                 <div
@@ -218,8 +224,7 @@ export default function FileManager(attr: FileManagerType) {
                   </div>
                 </div>
               ))}
-          </div>
-        )}
+        </div>
       </div>
 
       {modalStatus && (
@@ -289,8 +294,8 @@ export default function FileManager(attr: FileManagerType) {
                           />
                         )}
                       </div>
-                      {!!item?.id &&
-                      !!selecteds?.filter((sel) => sel == item?.id).length ? (
+                      {!!selecteds?.filter((sel: any) => sel?.id == item?.id)
+                        .length ? (
                         <div
                           onClick={() => unsetSelected(item.id)}
                           className="absolute inset-0 w-full h-full border-4 border-yellow-400 rounded-md"
@@ -306,7 +311,7 @@ export default function FileManager(attr: FileManagerType) {
               </div>
             </div>
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pb-6">
-              <div className="relative overflow-hidden p-6 rounded-full bg-yellow-300 hover:bg-yellow-300 ease text-zinc-900">
+              <div className="relative overflow-hidden p-6 rounded-full bg-yellow-300 hover:bg-yellow-400 ease text-zinc-900">
                 <Icon
                   icon="fa-arrow-up"
                   type="far"
