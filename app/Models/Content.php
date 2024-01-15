@@ -293,6 +293,10 @@ class Content extends BaseModel
                     $content->title = (isset($graph['title']) && !empty($graph['title'])) ? strip_tags($graph['title']) : 'content-'.uniqid();
                     $content->slug  = (isset($graph['slug']) && !empty($graph['slug'])) ? Str::slug(strip_tags($graph['slug'])) : Str::slug(strip_tags($content->title));
 
+                    if(isset($graph['status'])){
+                        $content->status = $graph['status'];
+                    }
+
                     $content->type = $graph['model'];
 
                     DB::beginTransaction();
