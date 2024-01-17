@@ -16,6 +16,7 @@ export default function Stripe() {
       deliveryStatus: "",
       deliverySchedule: "",
       total: 0,
+      status: -1,
       platformCommission: 0,
       listItems: [
         {
