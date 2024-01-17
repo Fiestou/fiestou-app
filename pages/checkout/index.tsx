@@ -250,6 +250,7 @@ export default function Checkout({
       deliverySchedule: schedule,
       deliveryAddress: address,
       deliveryStatus: "pending",
+      status: -1,
     };
 
     const sendOrderToClient: any = await api.bridge({
