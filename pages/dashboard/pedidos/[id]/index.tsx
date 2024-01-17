@@ -24,6 +24,7 @@ import {
 } from "@/src/mail";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { deliveryTypes } from "@/src/models/delivery";
+import { CompleteOrderSMS, PartnerNewOrderSMS } from "@/src/sms";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -105,7 +106,7 @@ export default function Pedido({
     setForm({ ...form, ...value });
   };
 
-  const [order, setOrder] = useState({} as any);
+  const [order, setOrder] = useState({} as OrderType);
   const [products, setProducts] = useState([] as Array<any>);
 
   const [rate, setRate] = useState({} as RateType);
@@ -149,7 +150,7 @@ export default function Pedido({
     let render = [];
 
     render.push(
-      <div className="relative flex pb-8">
+      <div key={order.id} className="relative flex pb-8">
         <div className="absolute top-0 left-0 border-l-2 border-dashed h-full ml-3"></div>
         <div className="w-fit relative">
           <div className="p-3 bg-yellow-300 rounded-full"></div>
@@ -220,7 +221,9 @@ export default function Pedido({
       };
     }
 
-    const handle = request?.data ?? {};
+    const handle: OrderType = request?.data ?? {};
+
+    // console.log(handle);
 
     if (
       !!handle?.metadata?.id &&
@@ -232,7 +235,7 @@ export default function Pedido({
         handle?.metadata?.id
       );
 
-      await api.bridge({
+      const updateOrderMetadata = await api.bridge({
         url: "orders/register-meta",
         data: {
           id: handle.id,
@@ -243,6 +246,16 @@ export default function Pedido({
       if (checkoutSession?.data?.status == "complete") {
         handle.status = 1;
         handle.deliveryStatus = "processing";
+
+        await CompleteOrderSMS(handle, {
+          subject: mailContent["order_complete_subject"],
+          message: mailContent["order_complete_body"],
+        });
+
+        await PartnerNewOrderSMS(handle, handle?.notificate ?? [], {
+          subject: mailContent["partner_order_subject"],
+          message: mailContent["partner_order_body"],
+        });
 
         await CompleteOrderMail(handle, {
           subject: mailContent["order_complete_subject"],
@@ -256,8 +269,13 @@ export default function Pedido({
       }
     }
 
-    let dates =
-      handle.listItems?.map((item: any) => item.details.dateStart) ?? {};
+    let dates: any = [];
+    let products: any = [];
+
+    handle.listItems?.map((item: any) => {
+      dates.push(item.details.dateStart);
+      products.push(item.product);
+    });
 
     setResume({
       startDate: findDates(dates).minDate,
@@ -265,7 +283,7 @@ export default function Pedido({
     } as any);
 
     setOrder(handle);
-    setProducts(handle.products);
+    setProducts(products);
   };
 
   const initialized = useRef(false);
@@ -458,6 +476,7 @@ export default function Pedido({
                         </div>
                       </div>
 
+                      {/* 
                       <div>
                         <hr className="my-0" />
                       </div>
@@ -474,6 +493,7 @@ export default function Pedido({
                           Validade: 09/2024
                         </div>
                       </div>
+                      */}
 
                       <div>
                         <hr className="my-0" />

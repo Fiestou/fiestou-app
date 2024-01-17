@@ -31,8 +31,8 @@ export default async function handler(
       .filter((item: any) => !!item?.product)
       .map((item: ProductOrderType, key: any) => {
         metadata.fornecedores[item.product.store.slug].produtos += `${
-          item.product.sku
-        } x ${item.quantity}: R$${moneyFormat(item.total)}\n`;
+          item.product.title
+        } x ${item.quantity}: R$${moneyFormat(item.total)} / `;
 
         transformedItem.push({
           price_data: {
@@ -46,21 +46,21 @@ export default async function handler(
       });
 
     Object.values(metadata.fornecedores).map((item: any, key: any) => {
-      handleMetadata += `${item.loja}: ${item.produtos}\n`;
+      handleMetadata += `${item.loja}: ${item.produtos} | `;
     });
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card", "boleto", "pix"],
+      payment_method_types: ["card", "boleto"],
       line_items: transformedItem,
       mode: "payment",
       metadata: {
-        cliente: order?.user?.email ?? "",
-        taxa: order.platformCommission,
+        taxa: `${order.platformCommission}%`,
         nota: handleMetadata,
       },
       locale: "pt-BR",
       success_url: `${redirectURL}/`,
       cancel_url: `${redirectURL}/`,
+      customer_email: order?.user?.email ?? "",
     });
 
     res.json({ session: session });

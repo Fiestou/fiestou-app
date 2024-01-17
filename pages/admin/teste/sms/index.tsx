@@ -1,11 +1,11 @@
-import {
-  ChangeDeliveryStatusMail,
-  CompleteOrderMail,
-  ContentType,
-  RegisterOrderMail,
-  RegisterUserMail,
-} from "@/src/mail";
 import Api from "@/src/services/api";
+import {
+  ChangeDeliveryStatusSMS,
+  CompleteOrderSMS,
+  MessageType,
+  RegisterOrderSMS,
+  RegisterUserSMS,
+} from "@/src/sms";
 import { useState } from "react";
 
 export async function getServerSideProps(ctx: any) {
@@ -27,8 +27,6 @@ export async function getServerSideProps(ctx: any) {
     ],
   });
 
-  // console.log(request, "<<");
-
   return {
     props: {
       page: request?.data?.query?.page[0] ?? {},
@@ -36,14 +34,12 @@ export async function getServerSideProps(ctx: any) {
   };
 }
 
-export default function Mail({ page }: { page: any }) {
-  console.log(page);
-
+export default function Sms({ page }: { page: any }) {
   const getContent = (type: string) => {
     return {
       subject: page[type + "_subject"],
-      html: page[type + "_body"],
-    } as ContentType;
+      message: page[type + "_body"],
+    } as MessageType;
   };
 
   const [data, setData] = useState({} as any);
@@ -55,16 +51,16 @@ export default function Mail({ page }: { page: any }) {
     e.preventDefault();
 
     if (data.content == "register") {
-      await RegisterUserMail(
-        { email: data.email, name: data.name },
+      await RegisterUserSMS(
+        { email: data.email, name: data.name, phone: data.phone },
         getContent("register")
       );
     }
 
     if (data.content == "delivery") {
-      await ChangeDeliveryStatusMail(
+      await ChangeDeliveryStatusSMS(
         {
-          user: { email: data.email, name: data.name },
+          user: { email: data.email, name: data.name, phone: data.phone },
           deliveryStatus: "sent",
           deliverySchedule: "",
           total: 0,
@@ -77,9 +73,9 @@ export default function Mail({ page }: { page: any }) {
     }
 
     if (data.content == "order") {
-      await RegisterOrderMail(
+      await RegisterOrderSMS(
         {
-          user: { email: data.email, name: data.name },
+          user: { email: data.email, name: data.name, phone: data.phone },
           deliveryStatus: "",
           deliverySchedule: "",
           total: 0,
@@ -93,9 +89,9 @@ export default function Mail({ page }: { page: any }) {
     }
 
     if (data.content == "order_complete") {
-      await CompleteOrderMail(
+      await CompleteOrderSMS(
         {
-          user: { email: data.email, name: data.name },
+          user: { email: data.email, name: data.name, phone: data.phone },
           deliveryStatus: "",
           deliverySchedule: "",
           total: 0,
@@ -116,6 +112,13 @@ export default function Mail({ page }: { page: any }) {
           <input
             className="form-control"
             onChange={(e: any) => handleData({ email: e.target.value })}
+          />
+        </div>
+        <div>
+          <label>Celular</label>
+          <input
+            className="form-control"
+            onChange={(e: any) => handleData({ phone: e.target.value })}
           />
         </div>
         <div>

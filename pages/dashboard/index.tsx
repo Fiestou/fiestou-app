@@ -127,7 +127,7 @@ export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
       }}
     >
       <section className="">
-        <div className="container-medium pb-6 pt-10 md:pb-14">
+        <div className="container-medium pb-6 pt-10 md:pb-10">
           <div className="flex items-end">
             <div className="w-full">
               <div className="pb-4">
@@ -194,7 +194,7 @@ export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
         <div className="text-center py-10">
           <a
             href="/logout"
-            className="font-semibold hover:text-yellow-500 ease whitespace-nowrap"
+            className="font-semibold text-zinc-900 underline hover:text-yellow-500 ease whitespace-nowrap"
           >
             Sair da conta
           </a>

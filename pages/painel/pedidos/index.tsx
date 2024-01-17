@@ -122,12 +122,21 @@ export default function Pedidos({ orders }: { orders: Array<any> }) {
                     <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
                       status:
                     </span>
-                    {suborder.order?.metadata?.payment_status == "paid" ? (
-                      <div className="px-2 inline-block text-sm py-2 rounded-md bg-green-400 text-white">
+
+                    {suborder.order?.status == 1 ? (
+                      <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
                         pago
                       </div>
+                    ) : suborder.order?.metadata?.status == "expired" ? (
+                      <div className="bg-red-100 text-red-700 rounded text-sm inline-block px-2 py-1">
+                        cancelado
+                      </div>
+                    ) : suborder.order?.status == 0 ? (
+                      <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
+                        em aberto
+                      </div>
                     ) : (
-                      <div className="px-2 inline-block text-sm py-2 rounded-md bg-zinc-100 text-zinc-500">
+                      <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
                         processando
                       </div>
                     )}

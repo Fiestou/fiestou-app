@@ -66,9 +66,7 @@ export default function Button(attr: ButtonType) {
       </span>
       {!attr?.href && attr?.loading && (
         <div
-          className={`${
-            attr?.loading ? "" : "opacity-0"
-          } absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2`}
+          className={`absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2`}
         >
           <Icon icon="fa-spinner-third" className="animate-spin" />
         </div>

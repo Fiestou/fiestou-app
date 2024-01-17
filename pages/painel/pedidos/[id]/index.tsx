@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { ChangeDeliveryStatusMail } from "@/src/mail";
 import { deliveryTypes } from "@/src/models/delivery";
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -85,8 +86,6 @@ export default function Pedido({
   order: OrderType;
   mailContent: any;
 }) {
-  console.log(order);
-
   const api = new Api();
   const router = useRouter();
 
@@ -140,14 +139,16 @@ export default function Pedido({
     >
       <section className="">
         <div className="container-medium pt-12 pb-4">
-          <div className="flex">
-            <div className="w-full">Produtos {">"} Title</div>
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <div className="underline">Precisa de ajuda?</div>{" "}
-              <Icon icon="fa-question-circle" />
-            </div>
+          <div className="pb-4">
+            <Breadcrumbs
+              links={[
+                { url: "/painel", name: "Painel" },
+                { url: "/painel/pedidos", name: "Pedidos" },
+                { url: "#", name: `#${order.id}` },
+              ]}
+            />
           </div>
-          <div className="lg:flex items-center mt-6 lg:mt-10">
+          <div className="grid md:flex items-center w-full">
             <Link passHref href="/painel/pedidos">
               <Icon
                 icon="fa-long-arrow-left"
@@ -159,13 +160,21 @@ export default function Pedido({
                 Pedido #{order.id}
               </div>
               <div className="inline-block md:pt-2">
-                {order?.metadata?.payment_status == "paid" ? (
-                  <div className="px-4 text-sm py-2 rounded-md bg-green-200 text-green-900">
-                    Pagamento recebido
+                {order?.status == 1 ? (
+                  <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
+                    pago
+                  </div>
+                ) : order?.metadata?.status == "expired" ? (
+                  <div className="bg-red-100 text-red-700 rounded text-sm inline-block px-2 py-1">
+                    cancelado
+                  </div>
+                ) : order?.status == 0 ? (
+                  <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
+                    em aberto
                   </div>
                 ) : (
-                  <div className="px-4 text-sm py-2 rounded-md bg-zinc-100 text-zinc-500">
-                    Aguardando pagamento
+                  <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
+                    processando
                   </div>
                 )}
               </div>

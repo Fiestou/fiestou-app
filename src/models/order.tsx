@@ -45,8 +45,10 @@ export interface OrderType {
   deliverySchedule: string;
   total: number;
   platformCommission: number | string;
+  notificate?: Array<any>;
   listItems: Array<ProductOrderType>;
   deliveryAddress?: AddressType;
   metadata?: any;
+  status: number;
   created_at?: string;
 }
