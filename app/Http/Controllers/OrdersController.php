@@ -131,7 +131,7 @@ class OrdersController extends Controller
         $order->deliveryAddress     = json_encode($request->get("deliveryAddress"));
         $order->deliveryStatus      = $request->get("deliveryStatus");
         $order->listItems           = json_encode($listItems);
-        $order->status              = 0;
+        $order->status              = -1;
 
         foreach ($listItems as $key => $item) {
             $product = Product::where('id', $item['product']['id'])
@@ -183,7 +183,7 @@ class OrdersController extends Controller
                 $sub->listItems = json_encode($suborder['listItems']);
                 $sub->deliveryStatus        = "pending";
                 $sub->deliverySchedule      = $order->deliverySchedule;
-                $sub->status = 0;
+                $sub->status = -1;
                 $sub->save();
             }
         }
@@ -222,8 +222,13 @@ class OrdersController extends Controller
 
             if($metadata['status'] == 'complete'){
                 $order->status = 1;
-
-                Suborder::where('order', $order->id)->update(['status' => 1]);
+                $order->deliveryStatus = 'processing';
+                Suborder::where('order', $order->id)->update(['status' => 1, 'deliveryStatus' => 'processing']);
+            }
+            else{
+                $order->status = 0;
+                $order->deliveryStatus = 'pending';
+                Suborder::where('order', $order->id)->update(['status' => 0, 'deliveryStatus' => 'pending']);
             }
 
             if($order->save()){

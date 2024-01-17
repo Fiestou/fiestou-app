@@ -157,4 +157,38 @@ class CategoriesController extends Controller
             'log'       => [$request->get('closest'), $request->get('metadata')]
         ]);
     }
+
+    public function Remove(Request $request){
+
+        $request->validate([
+            "id" => "required",
+        ]);
+
+        $category = Category::with(["childs"])
+                            ->where(['id' => $request->get("id")])
+                            ->first();
+
+        if(isset($category->id)){
+
+            if(isset($category->childs) && !!$category->childs){
+                $category->deleteChilds($category->childs);
+            }
+
+            $categoryRel = CategoryRel::where(['category' => $request->get("id")])
+                                        ->delete();
+
+            $category->delete();
+        }
+
+        $categories = Category::with(["childs"])
+                              ->where(["parent" => NULL])
+                              ->get();
+
+        $categories = Category::normalize($categories);
+
+        return response()->json([
+            'response'  => true,
+            'data'      => $categories
+        ]);
+    }
 }

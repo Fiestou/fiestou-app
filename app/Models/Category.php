@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Support\Arr;
 use App\Models\BaseModel;
+use App\Models\CategoryRel;
 use Illuminate\Support\Str;
 use App\Models\Media;
 use DB;
@@ -87,5 +88,18 @@ class Category extends BaseModel
         }
 
         return [];
+    }
+
+    public function deleteChilds($childs){
+        foreach($childs as $category){
+            if(isset($category->childs) && !!$category->childs){
+                $category->deleteChilds($category->childs);
+            }
+
+            $categoryRel = CategoryRel::where(['category' => $category->id])
+                                        ->delete();
+
+            $category->delete();
+        }
     }
 }

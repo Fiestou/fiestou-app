@@ -73,6 +73,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/categories/list', [CategoriesController::class, 'List']);
         Route::post('/categories/get', [CategoriesController::class, 'Get']);
         Route::post('/categories/register', [CategoriesController::class, 'Register']);
+        Route::post('/categories/remove', [CategoriesController::class, 'Remove']);
 
         // COMMENTS
         Route::post('/comments/list', [CommentsController::class, 'List']);
