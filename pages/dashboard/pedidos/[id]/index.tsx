@@ -143,8 +143,6 @@ export default function Pedido({
 
   const [resume, setResume] = useState({} as any);
 
-  console.log(order);
-
   const renderDelivery = () => {
     let checked = false;
 
@@ -224,7 +222,11 @@ export default function Pedido({
 
     const handle = request?.data ?? {};
 
-    if (!!handle?.metadata?.id && handle?.metadata?.status != "complete") {
+    if (
+      !!handle?.metadata?.id &&
+      handle?.metadata?.status != "complete" &&
+      handle?.metadata?.status != "expired"
+    ) {
       const payment = new Payment();
       const checkoutSession: any = await payment.getSession(
         handle?.metadata?.id
@@ -239,6 +241,9 @@ export default function Pedido({
       });
 
       if (checkoutSession?.data?.status == "complete") {
+        handle.status = 1;
+        handle.deliveryStatus = "processing";
+
         await CompleteOrderMail(handle, {
           subject: mailContent["order_complete_subject"],
           html: mailContent["order_complete_body"],
@@ -249,12 +254,6 @@ export default function Pedido({
           html: mailContent["partner_order_body"],
         });
       }
-      // else {
-      //   await RegisterOrderMail(handle, handle.listItems, {
-      //     subject: mailContent["order_subject"],
-      //     html: mailContent["order_body"],
-      //   });
-      // }
     }
 
     let dates =
@@ -267,7 +266,6 @@ export default function Pedido({
 
     setOrder(handle);
     setProducts(handle.products);
-    console.log(handle.products, "<<");
   };
 
   const initialized = useRef(false);
@@ -318,22 +316,34 @@ export default function Pedido({
                       <span className="font-title font-bold">
                         Pedido #{order.id}
                       </span>
-                      {order?.metadata?.payment_status == "paid" ? (
-                        <div className="bg-green-400 text-white rounded text-sm inline-block px-2 py-1">
+                      {order.status == -1 ? (
+                        <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
+                          processando
+                        </div>
+                      ) : order.status == 1 ? (
+                        <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
                           pago
                         </div>
+                      ) : order?.metadata?.status == "expired" ? (
+                        <div className="bg-red-100 text-red-700 rounded text-sm inline-block px-2 py-1">
+                          cancelado
+                        </div>
                       ) : (
-                        <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
+                        <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
                           em aberto
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="grid">{renderDelivery()}</div>
-                  <div className="py-10">
-                    <hr />
-                  </div>
+                  {order?.metadata?.status != "expired" && (
+                    <div>
+                      <div className="grid">{renderDelivery()}</div>
+                      <div className="py-10">
+                        <hr />
+                      </div>
+                    </div>
+                  )}
                   <div className="grid">
                     <h4 className="text-xl md:text-2xl text-zinc-800 pb-6">
                       Itens do pedido
@@ -393,7 +403,7 @@ export default function Pedido({
                 </div>
                 <div className="w-full md:max-w-[28rem]">
                   <div className="rounded-2xl bg-zinc-100 p-8">
-                    {order?.metadata?.status == "open" && (
+                    {order.status == 0 && order?.metadata?.status == "open" && (
                       <div>
                         <Button
                           style="btn-success"

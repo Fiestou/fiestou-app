@@ -1,14 +1,15 @@
 export const deliveryTypes = [
   {
-    name: "Processando",
-    value: "processing",
-    description: "O pagamento está sendo processado pelo getway de pagamento.",
-  },
-  {
     name: "Aguardando pagamento",
     value: "pending",
     description:
       "Seu pagamento ainda não for confirmado pelo getway de pagamento.",
+  },
+  {
+    name: "Processando",
+    value: "processing",
+    description:
+      "Seu pedido já esta em nosso sistema e estamos preparando para envio.",
   },
   {
     name: "Enviado",

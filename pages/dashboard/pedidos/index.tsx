@@ -139,13 +139,17 @@ export default function Pedidos({
                       </div>
                     </div>
                     <div className="order-2 md:order-1 text-right md:text-center w-[45%] md:w-full md:max-w-[8rem]">
-                      {item?.metadata?.payment_status == "paid" ? (
-                        <div className="bg-green-400 text-white rounded text-sm inline-block px-2 py-1">
+                      {item?.status == 1 ? (
+                        <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
                           pago
                         </div>
-                      ) : (
-                        <div className="bg-zinc-100 text-zinc-500 rounded text-sm inline-block px-2 py-1">
+                      ) : item?.status == 0 ? (
+                        <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
                           em aberto
+                        </div>
+                      ) : (
+                        <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
+                          processando
                         </div>
                       )}
                     </div>
