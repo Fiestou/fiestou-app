@@ -17,6 +17,7 @@
         "laravel/tinker": "^2.5",
         "league/flysystem-aws-s3-v3": "^1.0",
         "sendgrid/sendgrid": "^8.0",
+        "twilio/sdk": "^7.13",
         "tymon/jwt-auth": "^1.0"
     },
     "require-dev": {

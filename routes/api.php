@@ -10,6 +10,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\CronController;
 use App\Http\Controllers\MailController;
+use App\Http\Controllers\SmsController;
 
 use App\Http\Controllers\WithdrawController;
 use App\Http\Controllers\OrdersController;
@@ -36,6 +37,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 // OPEN
 Route::get('/user-active', [AuthController::class, 'ActiveUser']);
 Route::post('/mail-send', [MailController::class, 'MailSend']);
+Route::post('/sms-send', [SMSController::class, 'SendSMS']);
 
 // AUTH
 Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {

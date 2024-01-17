@@ -31,7 +31,18 @@ class OrdersController extends Controller
             $order->metadata = json_decode($order->metadata);
             $order->listItems = json_decode($order->listItems);
             $order->deliveryAddress = json_decode($order->deliveryAddress);
-            $order->user = User::where(["id" => $order->user])->first();
+
+            $user = User::where(["id" => $order->user])->first();
+
+            if(isset($user->id)){
+                $details = json_decode($user->details, TRUE);
+                foreach ($details as $key => $value) {
+                    $user->{$key} = $value;
+                }
+                unset($user->details);
+            }
+
+            $order->user = $user;
 
             $products = [];
 
@@ -52,14 +63,38 @@ class OrdersController extends Controller
                                   ->where(["id" => $item->store])
                                   ->first();
 
-                    $notificate[$item->store] = User::select(["name", "email"])
-                                                    ->where([ 'id' => $store->user ])
-                                                    ->first();
+                    $user = User::select(["name", "email", "details"])
+                                ->where([ 'id' => $store->user ])
+                                ->first();
+
+                    if(isset($user->email)){
+                        $details = json_decode($user->details, TRUE);
+                        if(isset($details['phone'])){
+                            $user->phone = $details['phone'];
+                        }
+                        unset($user->details);
+                    }
+
+                    $notificate[$item->store] = $user;
                 }
             }
 
             $order->notificate  = array_values($notificate);
-            $order->products    = Product::normalize($products);
+
+            $products = Product::normalize($products);
+
+            foreach ($products as $key => $product) {
+                foreach ($order->listItems as $i => $item) {
+                    if($item->product->id == $product->id){
+                        unset($product->category);
+                        unset($product->combinations);
+                        unset($product->fragility);
+                        unset($product->freeTax);
+
+                        $item->product = $product;
+                    }
+                }
+            }
 
             return response()->json([
                 'response'  => true,
