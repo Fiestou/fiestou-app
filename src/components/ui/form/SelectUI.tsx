@@ -46,7 +46,7 @@ export default function Select(attr: SelectType) {
         >
           {!!attr?.placeholder ?? <option value="">{attr?.placeholder}</option>}
 
-          {attr.options &&
+          {!!attr.options.length &&
             attr.options.map((item, key) => (
               <option key={key} value={item.value ?? item.name}>
                 {item.name}

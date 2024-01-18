@@ -90,10 +90,13 @@ export default function Categories({
                     }}
                   >
                     <Checkbox
-                      checked={!!selected.find((id: any) => id == item.id)}
+                      checked={
+                        !!selected.filter((id: any) => id == item.id).length
+                      }
                       type={"checkbox"}
                     />
                   </div>
+                  {/* <div>{JSON.stringify(selected)}</div> */}
                   <div className="aspect-[1/1] max-w-[1.5rem]">
                     {!!getImage(item.image) && (
                       <Img
@@ -104,7 +107,7 @@ export default function Categories({
                   </div>
                   <div>
                     {item.title}
-                    {!!selected.find((id: any) => id == item.id) && (
+                    {!!selected.filter((id: any) => id == item.id).length && (
                       <div className="limit_checked"></div>
                     )}
                   </div>
@@ -127,7 +130,10 @@ export default function Categories({
       if (!categories.length) {
         getCategories();
       }
-      setSelected(checked.map((item: any) => item.id));
+
+      const handleSelected = checked.map((item: any) => item.id);
+      setSelected(handleSelected);
+      emit(handleSelected);
     }
   }, [checked]);
 

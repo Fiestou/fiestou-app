@@ -12,6 +12,7 @@ import Modal from "@/src/components/utils/Modal";
 import Input from "@/src/components/ui/form/InputUI";
 import FileManager from "@/src/components/ui/form/FileManager";
 import { RelationType } from "@/src/models/relation";
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 const formInitial = {
   edit: "",
@@ -105,10 +106,60 @@ export default function Categorias() {
     handleForm({ loading: false });
   };
 
-  const renderCategory = (item: any) => {
+  const [retract, setRetract] = useState([] as Array<number>);
+  const retractGroup = (item: number) => {
+    const handle = retract.includes(item)
+      ? retract.filter((id) => id != item)
+      : [...retract, item];
+
+    setRetract(handle);
+  };
+
+  const reorderList = (newPos: number, id: number) => {
+    if (newPos > -1) {
+      const findLevel = (list: Array<any>) => {
+        return list.map((item: any, current: number) => {
+          if (item.id == id && newPos <= list.length) {
+            let saveCurrent = Object.assign({}, item);
+            console.log(saveCurrent);
+
+            list.map((old: any, i: number) => {
+              if (old.order == newPos) {
+                console.log(old);
+                // list[i]["order"] = saveCurrent["order"];
+                // saveCurrent["order"] = newPos;
+              }
+            });
+
+            // list[current] = saveCurrent;
+          }
+          // else if (!!item?.childs.length) {
+          //   list[key] = findLevel(item.childs);
+          // }
+        });
+      };
+
+      let handle: any = findLevel(listRelation);
+
+      // console.log(handle);
+
+      // setListRelation(handle as Array<RelationType>);
+    }
+  };
+
+  const renderCategory = (item: any, key: number) => {
     return (
-      <div key={item.id}>
+      <div key={item.id} className="relative">
         <div className="px-3 py-2 rounded bg-zinc-100 hover:bg-zinc-200 ease flex gap-2 items-center justify-between">
+          <div onClick={() => retractGroup(item.id)} className="cursor-pointer">
+            <Icon
+              icon={
+                !retract.includes(item.id) ? "fa-caret-down" : "fa-caret-up"
+              }
+              type="fa"
+              className="text-sm px-1"
+            />
+          </div>
           {!!getImage(item.image) && (
             <div className="aspect-[1/1] max-w-[2rem]">
               <Img
@@ -165,8 +216,34 @@ export default function Categorias() {
               </div>
             </>
           )}
+          <div className="group hidden relative">
+            <div className="relative px-2">
+              <Icon icon="fa-ellipsis-v" className="text-lg" />
+              <input className="opacity-0 absolute cursor-pointer top-0 left-0 h-[1.5rem] w-[1.5rem]" />
+            </div>
+            <div className="border rounded-lg p-3 text-sm gap-2 bg-white absolute right-0 bottom-0 hidden group-focus-within:grid">
+              <button
+                onClick={() => reorderList(item.order - 1, item.id)}
+                className="whitespace-nowrap hover:underline"
+              >
+                mover para cima
+              </button>
+              <button
+                onClick={() => reorderList(item.order + 1, item.id)}
+                className="whitespace-nowrap hover:underline"
+              >
+                mover para baixo
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="relative pl-3 py-2 flex">
+        <div
+          className={`${
+            retract.includes(item.id)
+              ? "h-0 overflow-hidden opacity-0 py-1"
+              : "py-2"
+          } relative pl-3 flex`}
+        >
           <div className="flex flex-col">
             <div className="hover:border-cyan-400 rounded-bl cursor-pointer h-full ease pl-4 pt-3 border-l border-b"></div>
             <div className="pt-2"></div>
@@ -174,8 +251,8 @@ export default function Categorias() {
           <div className="w-full">
             <div className="">
               {!!item?.childs &&
-                item?.childs.map((child: RelationType) =>
-                  renderCategory(child)
+                item?.childs.map((child: RelationType, key: number) =>
+                  renderCategory(child, key)
                 )}
             </div>
             <div
@@ -221,14 +298,15 @@ export default function Categorias() {
     >
       <section className="">
         <div className="container-medium pt-12">
-          <div className="flex">
-            <div className="w-full">Produtos {">"} Title</div>
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <div className="underline">Precisa de ajuda?</div>{" "}
-              <Icon icon="fa-question-circle" />
-            </div>
+          <div className="">
+            <Breadcrumbs
+              links={[
+                { url: "/admin", name: "Admin" },
+                { url: "/admin/blog", name: "Blog" },
+              ]}
+            />
           </div>
-          <div className="flex mt-10 pb-6">
+          <div className="flex mt-6 pb-6">
             <div className="w-full">
               <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
                 Configurar filtro
@@ -253,7 +331,7 @@ export default function Categorias() {
         <div className="container-medium pb-12">
           <div className="grid gap-2">
             {listRelation.map((item: RelationType, key: any) =>
-              renderCategory(item)
+              renderCategory(item, key)
             )}
           </div>
         </div>

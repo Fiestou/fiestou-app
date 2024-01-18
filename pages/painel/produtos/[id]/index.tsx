@@ -91,6 +91,8 @@ export default function Form({
 }) {
   const api = new Api();
 
+  const [placeholder, setPlaceholder] = useState(true as boolean);
+
   const [form, setForm] = useState(formInitial);
   const setFormValue = (value: any) => {
     setForm((form) => ({ ...form, ...value }));
@@ -182,6 +184,8 @@ export default function Form({
 
     const handle = request.data ?? {};
 
+    console.log(handle, "handle");
+
     setProduct(handle);
     setData(handle);
     setColors(
@@ -191,6 +195,8 @@ export default function Form({
     );
     setHandleGallery(handle?.gallery ?? []);
     setCategories(handle?.category ?? []);
+
+    setPlaceholder(false);
   };
 
   useEffect(() => {
@@ -317,617 +323,642 @@ export default function Form({
       <section className="">
         <div className="container-medium pb-12">
           <form onSubmit={(e) => handleSubmit(e)} method="POST">
-            <div className="grid lg:flex gap-10 lg:gap-20">
-              <div className="w-full grid gap-8">
-                <div className="grid gap-6">
-                  <div className="border-t pt-4 pb-2">
-                    <h4 className="text-2xl text-zinc-900 mb-2">
-                      Nome e descrição
-                    </h4>
-                    <div className="grid gap-2">
-                      <div className="form-group">
-                        <Label>Título</Label>
-                        <Input
-                          type="text"
-                          name="titulo"
-                          onChange={(e: any) =>
-                            handleData({ title: e.target.value })
-                          }
-                          value={data.title}
-                          required
-                          placeholder="Digite o nome completo"
-                        />
-                        <Input
-                          type="text"
-                          name="slug"
-                          onChange={(e: any) =>
-                            handleData({ slug: slugfy(e.target.value) })
-                          }
-                          value={slugfy(data.slug ?? data.title)}
-                          required
-                          placeholder="Configure a slug para o link"
-                          className="mt-2 text-sm p-2 bg-zinc-100 border-0"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <Label>Subtítulo</Label>
-                        <Input
-                          type="text"
-                          name="subtitulo"
-                          onChange={(e: any) =>
-                            handleData({ subtitle: e.target.value })
-                          }
-                          value={data.subtitle}
-                          required
-                          placeholder="Digite o subtítulo"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <Label>Descrição</Label>
-                        <TextArea
-                          name="descricao"
-                          onChange={(e: any) =>
-                            handleData({ description: e.target.value })
-                          }
-                          value={data.description}
-                          required
-                          placeholder="Adicione a descrição detalhada do produto"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <Label>Fotos</Label>
-                        <FileInput
-                          name="cover"
-                          id="cover"
-                          onChange={async (e: any) =>
-                            handleData({
-                              gallery: await handleGalleryPreview(e),
-                            })
-                          }
-                          multiple
-                          loading={form.loading}
-                          remove={(e: any) => {}}
-                          aspect="aspect-[4/2] md:aspect-[8/2]"
-                        />
-                        <div className="grid gap-4 grid-cols-5 mt-4">
-                          {!!handleGallery.length &&
-                            handleGallery
-                              .filter((item) => !item.remove)
-                              .map((item: any, key: any) => (
-                                <div key={key} className="w-full group">
-                                  <div className="relative rounded-md bg-zinc-100 overflow-hidden aspect-square">
-                                    <Img
-                                      src={
-                                        !!item.base_url
-                                          ? getImage(item, "thumb")
-                                          : item.base64
-                                      }
-                                      className="absolute object-contain h-full inset-0 w-full"
-                                    />
-                                    <button
-                                      onClick={() => removeGalleryItem(item)}
-                                      className="opacity-0 group-hover:opacity-100 ease absolute top-0 right-0 m-1 p-3 rounded-full bg-zinc-200 hover:bg-red-600 text-zinc-500 hover:text-white"
-                                      type="button"
-                                    >
-                                      <Icon
-                                        icon="fa-times"
-                                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                                      />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4 pb-2">
-                    <h4 className="text-2xl text-zinc-900 mb-2">Preço</h4>
-                    <div className="grid gap-2">
-                      <div className="grid gap-2 grid-cols-2">
+            <div className="grid lg:flex items-start gap-10 lg:gap-20">
+              {placeholder ? (
+                <div className="w-full grid gap-4 cursor-wait">
+                  {[1, 2, 3, 4, 5, 6].map((key: number) => (
+                    <div
+                      key={key}
+                      className="bg-zinc-200 rounded-md animate-pulse py-8"
+                    ></div>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full grid gap-8">
+                  <div className="grid gap-6">
+                    <div className="border-t pt-4 pb-2">
+                      <h4 className="text-2xl text-zinc-900 mb-2">
+                        Nome e descrição
+                      </h4>
+                      <div className="grid gap-2">
                         <div className="form-group">
-                          <Label>Preço de venda</Label>
+                          <Label>Título</Label>
                           <Input
-                            onChange={(e: any) =>
-                              handleData({ price: parseInt(e.target.value) })
-                            }
-                            {...(!!data?.price ? { value: data?.price } : {})}
-                            required
                             type="text"
-                            name="preco_venda"
-                            placeholder="0,00"
+                            name="titulo"
+                            onChange={(e: any) =>
+                              handleData({ title: e.target.value })
+                            }
+                            value={data.title}
+                            required
+                            placeholder="Digite o nome completo"
+                          />
+                          <Input
+                            type="text"
+                            name="slug"
+                            onChange={(e: any) =>
+                              handleData({ slug: slugfy(e.target.value) })
+                            }
+                            value={slugfy(data.slug ?? data.title)}
+                            required
+                            placeholder="Configure a slug para o link"
+                            className="mt-2 text-sm p-2 bg-zinc-100 border-0"
                           />
                         </div>
 
                         <div className="form-group">
-                          <Label>Preço promocional</Label>
+                          <Label>Subtítulo</Label>
                           <Input
+                            type="text"
+                            name="subtitulo"
                             onChange={(e: any) =>
+                              handleData({ subtitle: e.target.value })
+                            }
+                            value={data.subtitle}
+                            required
+                            placeholder="Digite o subtítulo"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <Label>Descrição</Label>
+                          <TextArea
+                            name="descricao"
+                            onChange={(e: any) =>
+                              handleData({ description: e.target.value })
+                            }
+                            value={data.description}
+                            required
+                            placeholder="Adicione a descrição detalhada do produto"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <Label>Fotos</Label>
+                          <FileInput
+                            name="cover"
+                            id="cover"
+                            onChange={async (e: any) =>
                               handleData({
-                                priceSale: parseInt(e.target.value),
+                                gallery: await handleGalleryPreview(e),
                               })
                             }
-                            {...(!!data?.priceSale
-                              ? { value: data?.priceSale }
-                              : {})}
+                            multiple
+                            loading={form.loading}
+                            remove={(e: any) => {}}
+                            aspect="aspect-[4/2] md:aspect-[8/2]"
+                          />
+                          <div className="grid gap-4 grid-cols-5 mt-4">
+                            {!!handleGallery.length &&
+                              handleGallery
+                                .filter((item) => !item.remove)
+                                .map((item: any, key: any) => (
+                                  <div key={key} className="w-full group">
+                                    <div className="relative rounded-md bg-zinc-100 overflow-hidden aspect-square">
+                                      <Img
+                                        src={
+                                          !!item.base_url
+                                            ? getImage(item, "thumb")
+                                            : item.base64
+                                        }
+                                        className="absolute object-contain h-full inset-0 w-full"
+                                      />
+                                      <button
+                                        onClick={() => removeGalleryItem(item)}
+                                        className="opacity-0 group-hover:opacity-100 ease absolute top-0 right-0 m-1 p-3 rounded-full bg-zinc-200 hover:bg-red-600 text-zinc-500 hover:text-white"
+                                        type="button"
+                                      >
+                                        <Icon
+                                          icon="fa-times"
+                                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                                        />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 pb-2">
+                      <h4 className="text-2xl text-zinc-900 mb-2">Preço</h4>
+                      <div className="grid gap-2">
+                        <div className="grid gap-2 grid-cols-2">
+                          <div className="form-group">
+                            <Label>Preço de venda</Label>
+                            <Input
+                              onChange={(e: any) =>
+                                handleData({ price: parseInt(e.target.value) })
+                              }
+                              {...(!!data?.price ? { value: data?.price } : {})}
+                              required
+                              type="text"
+                              name="preco_venda"
+                              placeholder="0,00"
+                            />
+                          </div>
+
+                          <div className="form-group">
+                            <Label>Preço promocional</Label>
+                            <Input
+                              onChange={(e: any) =>
+                                handleData({
+                                  priceSale: parseInt(e.target.value),
+                                })
+                              }
+                              {...(!!data?.priceSale
+                                ? { value: data?.priceSale }
+                                : {})}
+                              type="text"
+                              name="preco_promo"
+                              placeholder="0,00"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 items-start">
+                      <div className="w-full">
+                        <Label>Tipo comercial</Label>
+                        <Select
+                          name="tipo_comercial"
+                          onChange={(e: any) =>
+                            handleData({ comercialType: e.target.value })
+                          }
+                          value={data.comercialType}
+                          options={[
+                            {
+                              value: "",
+                              name: "Selecione...",
+                            },
+                            {
+                              value: "selling",
+                              name: "Venda",
+                            },
+                            {
+                              value: "renting",
+                              name: "Aluguel",
+                            },
+                          ]}
+                        />
+                      </div>
+
+                      {data.comercialType == "renting" && (
+                        <>
+                          <div className="w-full">
+                            <Label>Tempo</Label>
+                            <Select
+                              name="periodo"
+                              onChange={(e: any) =>
+                                handleData({
+                                  schedulingPeriod: e.target.value,
+                                })
+                              }
+                              value={data?.schedulingPeriod}
+                              options={schedulingPeriod}
+                              required
+                            />
+                          </div>
+                          <div className="w-full">
+                            <Label>
+                              Desconto
+                              <small className="font-medium pl-2">(em %)</small>
+                            </Label>
+                            <Input
+                              name="desconto_aluguel"
+                              onChange={(e: any) =>
+                                handleData({
+                                  schedulingDiscount: justNumber(
+                                    e.target.value
+                                  ),
+                                })
+                              }
+                              value={justNumber(data.schedulingDiscount)}
+                              type="text"
+                              placeholder="Ex: 10%"
+                              required
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <Variable
+                      product={data}
+                      emitAttributes={(param: any) => {
+                        handleData({ attributes: param });
+                      }}
+                    />
+
+                    <Categories
+                      checked={categories}
+                      emit={(value: any) => handleData({ category: value })}
+                    />
+
+                    <div className="border-t pt-4 pb-2">
+                      <h4 className="text-2xl text-zinc-900 mb-2">Estoque</h4>
+                      <div className="grid gap-2">
+                        <div className="flex gap-2">
+                          <div className="w-full grid gap-2 sm:grid-cols-3">
+                            <div className="form-group">
+                              <Label>SKU</Label>
+                              <Input
+                                onChange={(e: any) =>
+                                  handleData({ sku: e.target.value })
+                                }
+                                value={data?.sku}
+                                type="text"
+                                name="sku"
+                                placeholder="#0000"
+                              />
+                            </div>
+                            <div className="form-group">
+                              <Label>Código do produto</Label>
+                              <Input
+                                onChange={(e: any) =>
+                                  handleData({ code: e.target.value })
+                                }
+                                value={data?.code}
+                                type="text"
+                                name="codigo"
+                                placeholder="1234"
+                              />
+                            </div>
+                            <div className="form-group">
+                              <div className="flex items-center">
+                                <Label>Disponibilidade</Label>
+                                <span className="pl-2 text-xs">(em dias)</span>
+                              </div>
+
+                              <Input
+                                onChange={(e: any) =>
+                                  handleData({ availability: e.target.value })
+                                }
+                                value={data?.availability ?? 1}
+                                min={1}
+                                type="number"
+                                name="disponibilidade"
+                                placeholder="Em dias"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <Label>Quantidade</Label>
+                          <div className="grid md:flex gap-3">
+                            <div className="w-full">
+                              <Select
+                                onChange={(e: any) => {
+                                  handleData({ quantityType: e.target.value });
+                                }}
+                                value={data?.quantityType ?? "manage"}
+                                name="quantidade_tipo"
+                                options={[
+                                  {
+                                    name: "Selecione...",
+                                    value: "",
+                                  },
+                                  {
+                                    name: "Gerenciar estoque",
+                                    value: "manage",
+                                  },
+                                  {
+                                    name: "Sob demanda",
+                                    value: "ondemand",
+                                  },
+                                ]}
+                              />
+                            </div>
+                            {(!data?.quantityType ||
+                              data?.quantityType == "manage") && (
+                              <div className="w-full">
+                                <Input
+                                  onChange={(e: any) =>
+                                    handleData({ quantity: e.target.value })
+                                  }
+                                  value={data?.quantity ?? "1"}
+                                  min="0"
+                                  className="text-center"
+                                  type="number"
+                                  name="quantidade"
+                                  placeholder="Digite a quantidade"
+                                  required
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 pb-2">
+                      <h4 className="text-2xl text-zinc-900 mb-2">
+                        Peso e dimensões
+                      </h4>
+                      <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+                        <div className="form-group">
+                          <Label>Peso</Label>
+                          <Input
+                            onChange={(e: any) =>
+                              handleData({ weight: e.target.value })
+                            }
+                            value={data?.weight}
                             type="text"
-                            name="preco_promo"
-                            placeholder="0,00"
+                            name="peso"
+                            placeholder="0,00 (kg)"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <Label>Comprimento</Label>
+                          <Input
+                            onChange={(e: any) =>
+                              handleData({ length: e.target.value })
+                            }
+                            value={data?.length}
+                            type="text"
+                            name="comprimento"
+                            placeholder="0,00 (m)"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <Label>Largura</Label>
+                          <Input
+                            onChange={(e: any) =>
+                              handleData({ width: e.target.value })
+                            }
+                            value={data?.width}
+                            type="text"
+                            name="largura"
+                            placeholder="0,00 (m)"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <Label>Altura</Label>
+                          <Input
+                            onChange={(e: any) =>
+                              handleData({ height: e.target.value })
+                            }
+                            value={data?.height}
+                            type="text"
+                            name="altura"
+                            placeholder="0,00 (m)"
                           />
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <Variable
-                    product={data}
-                    emitAttributes={(param: any) => {
-                      handleData({ attributes: param });
-                    }}
-                  />
-
-                  <Categories
-                    checked={categories}
-                    emit={(value: any) => handleData({ category: value })}
-                  />
-
-                  <div className="border-t pt-4 pb-2">
-                    <h4 className="text-2xl text-zinc-900 mb-2">Estoque</h4>
-                    <div className="grid gap-2">
-                      <div className="flex gap-2">
-                        <div className="w-full grid gap-2 sm:grid-cols-3">
-                          <div className="form-group">
-                            <Label>SKU</Label>
-                            <Input
-                              onChange={(e: any) =>
-                                handleData({ sku: e.target.value })
-                              }
-                              value={data?.sku}
-                              type="text"
-                              name="sku"
-                              placeholder="#0000"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <Label>Código do produto</Label>
-                            <Input
-                              onChange={(e: any) =>
-                                handleData({ code: e.target.value })
-                              }
-                              value={data?.code}
-                              type="text"
-                              name="codigo"
-                              placeholder="1234"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <Label>Disponibilidade</Label>
-                            <Input
-                              onChange={(e: any) =>
-                                handleData({ availability: e.target.value })
-                              }
-                              value={data?.availability ?? 1}
-                              min={1}
-                              type="number"
-                              name="disponibilidade"
-                              placeholder="Em dias"
-                            />
+                    <div className="border-t pt-4 pb-2">
+                      <h4 className="text-2xl text-zinc-900 pb-6">
+                        Características
+                      </h4>
+                      <div className="grid gap-8">
+                        {/* ColorsList */}
+                        <div className="">
+                          <Label>Cor</Label>
+                          <Colors
+                            value={colors}
+                            onChange={(value: any) => handleColors(value)}
+                          />
+                          <div className="text-sm text-zinc-400 whitespace-nowrap">
+                            {colors?.length ?? 0} de 3
                           </div>
                         </div>
-                      </div>
-                      <div className="form-group">
-                        <Label>Quantidade</Label>
-                        <div className="grid md:flex gap-3">
-                          <Select
-                            onChange={(e: any) => {
-                              handleData({ quantityType: e.target.value });
-                            }}
-                            value={data?.quantityType ?? "manage"}
-                            name="quantidade_tipo"
-                            options={[
-                              {
-                                name: "Selecione...",
-                                value: "",
-                              },
-                              {
-                                name: "Gerenciar estoque",
-                                value: "manage",
-                              },
-                              {
-                                name: "Sob demanda",
-                                value: "ondemand",
-                              },
-                            ]}
-                          />
-                          {(!data?.quantityType ||
-                            data?.quantityType == "manage") && (
-                            <Input
-                              onChange={(e: any) =>
-                                handleData({ quantity: e.target.value })
-                              }
-                              value={data?.quantity ?? "1"}
-                              min="0"
-                              className="text-center"
-                              type="number"
-                              name="quantidade"
-                              placeholder="Digite a quantidade"
-                              required
-                            />
+                        {/* ---- */}
+
+                        <div className="">
+                          <div className="flex items-center">
+                            <Label>Adicionar Tag</Label>
+                            <div className="text-xs pt-1 pl-2">
+                              (máx 6 tags)
+                            </div>
+                          </div>
+                          <div className="relative">
+                            <div className="w-full">
+                              <Input
+                                onChange={(e: any) => setTags(e.target.value)}
+                                type="text"
+                                name="tags"
+                                defaultValue={tags}
+                                className="pr-28"
+                                placeholder="Exemplo: Fazenda, Desenho animado, Galinha"
+                              />
+                            </div>
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                              <Button
+                                onClick={(e: any) => {
+                                  handleData({
+                                    tags: handleTags(data?.tags ?? "", tags),
+                                  });
+                                  setTags("");
+                                }}
+                                type="button"
+                                style="btn-link"
+                                className="px-4"
+                              >
+                                confirmar
+                              </Button>
+                            </div>
+                          </div>
+                          {!!data?.tags && (
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              {data.tags
+                                .split(",")
+                                .filter((item) => !!item)
+                                .map(
+                                  (item: any, key: any) =>
+                                    key < 6 && (
+                                      <div
+                                        className="bg-zinc-100 border border-zin-300 px-4 py-2 rounded-md items-center flex gap-3"
+                                        key={key}
+                                      >
+                                        <span className="text-sm md:text-base">
+                                          {item}
+                                        </span>
+                                        <div
+                                          onClick={() =>
+                                            handleData({
+                                              tags: handleTags(
+                                                data?.tags?.replace(item, "") ??
+                                                  "",
+                                                ""
+                                              ),
+                                            })
+                                          }
+                                          className="cursor-pointer hover:text-zinc-900"
+                                        >
+                                          <Icon icon="fa-times" />
+                                        </div>
+                                      </div>
+                                    )
+                                )}
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="border-t pt-4 pb-2">
-                    <h4 className="text-2xl text-zinc-900 mb-2">
-                      Peso e dimensões
-                    </h4>
-                    <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
-                      <div className="form-group">
-                        <Label>Peso</Label>
-                        <Input
-                          onChange={(e: any) =>
-                            handleData({ weight: e.target.value })
-                          }
-                          value={data?.weight}
-                          type="text"
-                          name="peso"
-                          placeholder="0,00 (kg)"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <Label>Comprimento</Label>
-                        <Input
-                          onChange={(e: any) =>
-                            handleData({ length: e.target.value })
-                          }
-                          value={data?.length}
-                          type="text"
-                          name="comprimento"
-                          placeholder="0,00 (m)"
-                        />
-                      </div>
+                    <div className="border-t pt-4 pb-2">
+                      <h4 className="text-2xl text-zinc-900 pb-6">
+                        Venda combinada
+                      </h4>
 
-                      <div className="form-group">
-                        <Label>Largura</Label>
-                        <Input
-                          onChange={(e: any) =>
-                            handleData({ width: e.target.value })
-                          }
-                          value={data?.width}
-                          type="text"
-                          name="largura"
-                          placeholder="0,00 (m)"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <Label>Altura</Label>
-                        <Input
-                          onChange={(e: any) =>
-                            handleData({ height: e.target.value })
-                          }
-                          value={data?.height}
-                          type="text"
-                          name="altura"
-                          placeholder="0,00 (m)"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4 pb-2">
-                    <h4 className="text-2xl text-zinc-900 pb-6">
-                      Características
-                    </h4>
-                    <div className="grid gap-8">
-                      {/* ColorsList */}
-                      <div className="">
-                        <Label>Cor</Label>
-                        <Colors
-                          value={colors}
-                          onChange={(value: any) => handleColors(value)}
-                        />
-                        <div className="text-sm text-zinc-400 whitespace-nowrap">
-                          {colors?.length ?? 0} de 3
-                        </div>
-                      </div>
-                      {/* ---- */}
-
-                      <div className="">
-                        <div className="flex items-center">
-                          <Label>Adicionar Tag</Label>
-                          <div className="text-xs pt-1 pl-2">(máx 6 tags)</div>
-                        </div>
-                        <div className="relative">
-                          <div className="w-full">
-                            <Input
-                              onChange={(e: any) => setTags(e.target.value)}
-                              type="text"
-                              name="tags"
-                              defaultValue={tags}
-                              className="pr-28"
-                              placeholder="Exemplo: Fazenda, Desenho animado, Galinha"
-                            />
-                          </div>
-                          <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                            <Button
-                              onClick={(e: any) => {
-                                handleData({
-                                  tags: handleTags(data?.tags ?? "", tags),
-                                });
-                                setTags("");
-                              }}
-                              type="button"
-                              style="btn-link"
-                              className="px-4"
-                            >
-                              confirmar
-                            </Button>
-                          </div>
-                        </div>
-                        {!!data?.tags && (
-                          <div className="flex flex-wrap gap-1 pt-1">
-                            {data.tags
-                              .split(",")
-                              .filter((item) => !!item)
-                              .map(
-                                (item: any, key: any) =>
-                                  key < 6 && (
-                                    <div
-                                      className="bg-zinc-100 border border-zin-300 px-4 py-2 rounded-md items-center flex gap-3"
-                                      key={key}
-                                    >
-                                      <span className="text-sm md:text-base">
-                                        {item}
-                                      </span>
-                                      <div
-                                        onClick={() =>
-                                          handleData({
-                                            tags: handleTags(
-                                              data?.tags?.replace(item, "") ??
-                                                "",
-                                              ""
-                                            ),
-                                          })
-                                        }
-                                        className="cursor-pointer hover:text-zinc-900"
-                                      >
-                                        <Icon icon="fa-times" />
-                                      </div>
-                                    </div>
-                                  )
-                              )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2 items-start">
-                        <div className="w-full">
-                          <Label>Tipo comercial</Label>
-                          <Select
-                            name="tipo_comercial"
-                            onChange={(e: any) =>
-                              handleData({ comercialType: e.target.value })
+                      <div className="grid gap-8">
+                        <div className="">
+                          <Label>Combinações</Label>
+                          <Options
+                            name="tipo_produto"
+                            value={data?.combinations ?? []}
+                            onSearch={(search: string) =>
+                              SearchProducts(search)
                             }
-                            value={data.comercialType}
-                            options={[
-                              {
-                                value: "",
-                                name: "Selecione...",
-                              },
-                              {
-                                value: "selling",
-                                name: "Venda",
-                              },
-                              {
-                                value: "renting",
-                                name: "Aluguel",
-                              },
-                            ]}
+                            list={productsFind}
+                            onChange={(emit: any) =>
+                              handleData({
+                                combinations: emit,
+                              })
+                            }
                           />
                         </div>
 
-                        {data.comercialType == "renting" && (
-                          <>
-                            <div className="w-full">
-                              <Label>Tempo</Label>
-                              <Select
-                                name="periodo"
-                                onChange={(e: any) =>
-                                  handleData({
-                                    schedulingPeriod: e.target.value,
-                                  })
-                                }
-                                value={data?.schedulingPeriod}
-                                options={schedulingPeriod}
-                                required
-                              />
-                            </div>
-                            <div className="w-full">
-                              <Label>
-                                Desconto
-                                <small className="font-medium pl-2">
-                                  (em %)
-                                </small>
-                              </Label>
-                              <Input
-                                name="desconto_aluguel"
-                                onChange={(e: any) =>
-                                  handleData({
-                                    schedulingDiscount: justNumber(
-                                      e.target.value
-                                    ),
-                                  })
-                                }
-                                value={justNumber(data.schedulingDiscount)}
-                                type="text"
-                                placeholder="Ex: 10%"
-                                required
-                              />
-                            </div>
-                          </>
-                        )}
+                        <div className="">
+                          <Label>Mostrar produtos relacionados?</Label>
+                          <Select
+                            value={data?.suggestions ?? "yes"}
+                            name="sugestoes"
+                            options={[
+                              { name: "Sim", value: "yes" },
+                              { name: "Não", value: "no" },
+                            ]}
+                            onChange={(e: any) =>
+                              handleData({
+                                suggestions: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 pb-2">
+                      <h4 className="text-2xl text-zinc-900 mb-2">
+                        Transporte
+                      </h4>
+                      <div className="grid md:grid-cols-3 gap-2">
+                        <div className="form-group">
+                          <Label>Este produto é frágil?</Label>
+                          <Select
+                            value={data.fragility ?? "yes"}
+                            name="fragilidade"
+                            options={[
+                              { name: "Sim", value: "yes" },
+                              { name: "Não", value: "no" },
+                            ]}
+                            onChange={(e: any) =>
+                              handleData({
+                                fragility: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <Label>Veículo recomendado</Label>
+                          <Select
+                            value={data.vehicle}
+                            name="veiculo"
+                            options={[
+                              {
+                                name: "Moto",
+                                value: "motorbike",
+                              },
+                              {
+                                name: "Carro",
+                                value: "car",
+                              },
+                              {
+                                name: "Caminhonete",
+                                value: "pickup",
+                              },
+                              {
+                                name: "Caminhão",
+                                value: "truck",
+                              },
+                            ]}
+                            onChange={(e: any) =>
+                              handleData({
+                                vehicle: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <Label>Taxa de entrega</Label>
+                          <Input
+                            value={data.freeTax}
+                            type="text"
+                            name="taxa_entrega"
+                            onChange={(e: any) =>
+                              handleData({
+                                freeTax: e.target.value,
+                              })
+                            }
+                            placeholder="R$ 00,00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-2 pb-2">
+                      <div className="grid gap-2">
+                        <div className="form-group">
+                          <Label>Exibir na minha loja</Label>
+                          <Select
+                            name="status"
+                            value={data.status ?? "visible"}
+                            options={[
+                              {
+                                name: "Sim",
+                                value: "visible",
+                              },
+                              {
+                                name: "Não",
+                                value: "hidden",
+                              },
+                            ]}
+                            onChange={(e: any) =>
+                              handleData({
+                                status: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="border-t pt-4 pb-2">
-                    <h4 className="text-2xl text-zinc-900 pb-6">Up Sell</h4>
-
-                    <div className="grid gap-8">
-                      <div className="">
-                        <Label>Combinações</Label>
-                        <Options
-                          name="tipo_produto"
-                          value={data?.combinations ?? []}
-                          onSearch={(search: string) => SearchProducts(search)}
-                          list={productsFind}
-                          onChange={(emit: any) =>
-                            handleData({
-                              combinations: emit,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div className="">
-                        <Label>Mostrar produtos relacionados?</Label>
-                        <Select
-                          value={data?.suggestions ?? "yes"}
-                          name="sugestoes"
-                          options={[
-                            { name: "Sim", value: "yes" },
-                            { name: "Não", value: "no" },
-                          ]}
-                          onChange={(e: any) =>
-                            handleData({
-                              suggestions: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-full">
+                      <Link
+                        passHref
+                        href="/painel/produtos/"
+                        className="text-zinc-900"
+                      >
+                        Cancelar
+                      </Link>
                     </div>
-                  </div>
-
-                  <div className="border-t pt-4 pb-2">
-                    <h4 className="text-2xl text-zinc-900 mb-2">Transporte</h4>
-                    <div className="grid md:grid-cols-3 gap-2">
-                      <div className="form-group">
-                        <Label>Este produto é frágil?</Label>
-                        <Select
-                          value={data.fragility ?? "yes"}
-                          name="fragilidade"
-                          options={[
-                            { name: "Sim", value: "yes" },
-                            { name: "Não", value: "no" },
-                          ]}
-                          onChange={(e: any) =>
-                            handleData({
-                              fragility: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <Label>Veículo recomendado</Label>
-                        <Select
-                          value={data.vehicle}
-                          name="veiculo"
-                          options={[
-                            {
-                              name: "Moto",
-                              value: "motorbike",
-                            },
-                            {
-                              name: "Carro",
-                              value: "car",
-                            },
-                            {
-                              name: "Caminhonete",
-                              value: "pickup",
-                            },
-                            {
-                              name: "Caminhão",
-                              value: "truck",
-                            },
-                          ]}
-                          onChange={(e: any) =>
-                            handleData({
-                              vehicle: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <Label>Taxa de entrega</Label>
-                        <Input
-                          value={data.freeTax}
-                          type="text"
-                          name="taxa_entrega"
-                          onChange={(e: any) =>
-                            handleData({
-                              freeTax: e.target.value,
-                            })
-                          }
-                          placeholder="R$ 00,00"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-2 pb-2">
-                    <div className="grid gap-2">
-                      <div className="form-group">
-                        <Label>Exibir na minha loja</Label>
-                        <Select
-                          name="status"
-                          value={data.status ?? "visible"}
-                          options={[
-                            {
-                              name: "Sim",
-                              value: "visible",
-                            },
-                            {
-                              name: "Não",
-                              value: "hidden",
-                            },
-                          ]}
-                          onChange={(e: any) =>
-                            handleData({
-                              status: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
+                    <div>
+                      <Button loading={form.loading} className="px-10">
+                        Salvar
+                      </Button>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="w-full">
-                    <Link
-                      passHref
-                      href="/painel/produtos/"
-                      className="text-zinc-900"
-                    >
-                      Cancelar
-                    </Link>
-                  </div>
-                  <div>
-                    <Button loading={form.loading} className="px-10">
-                      Salvar
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              )}
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
                 <HelpCard list={content.help_list} />
               </div>
