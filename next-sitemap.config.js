@@ -4,9 +4,13 @@ module.exports = {
   changefreq: "daily",
   generateRobotsTxt: true,
   exclude: [
+    "/admin/",
     "/admin/*",
+    "/dashboard/",
     "/dashboard/*",
+    "/painel/",
     "/painel/*",
+    "/api/",
     "/api/*",
     "/checkout",
     "/finalizar",
