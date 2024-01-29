@@ -25,10 +25,24 @@ export async function getStaticProps(ctx: any) {
   const categories = request?.data?.categories ?? [];
   const content = request?.data?.content ?? {};
   const products = request?.data?.products ?? [];
-  const blog = request?.data?.blog ?? [];
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
+
+  request = await api.call(
+    {
+      url: "request/graph",
+      data: [
+        {
+          model: "blog as posts",
+          limit: 3,
+        },
+      ],
+    },
+    ctx
+  );
+
+  const blog = request?.data?.query?.posts ?? [];
 
   return {
     props: {
@@ -61,8 +75,6 @@ export default function Home({
   DataSeo: any;
   Scripts: any;
 }) {
-  // console.log(blog);
-
   return (
     <Template
       scripts={Scripts}

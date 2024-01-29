@@ -3,6 +3,8 @@ import Img from "../utils/ImgBase";
 import { getExtenseData, getImage } from "@/src/helper";
 
 export default function PostItem({ post }: any) {
+  console.log(post);
+
   return (
     <>
       <Link href={`/blog/${post.slug}`}>
