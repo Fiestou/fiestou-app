@@ -52,6 +52,14 @@ const nextConfig = {
     MAIL_USERNAME: process.env.MAIL_USERNAME,
     MAIL_PASSWORD: process.env.MAIL_PASSWORD,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/sitemap.xml",
+        destination: "/api/sitemap",
+      },
+    ];
+  },
   trailingSlash: true,
   experimental: {
     scrollRestoration: false,
