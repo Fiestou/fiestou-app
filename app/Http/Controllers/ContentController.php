@@ -80,19 +80,26 @@ class ContentController extends Controller
             $products = Product::with(["store"])
                                ->where(['status' => 1])
                                ->limit(10)
+                               ->orderBy("id", "desc")
                                ->get();
 
             $products = Product::normalize($products, false);
 
+            $blog = Content::where(["type" => "blog", "status" => 1])
+                            ->orderBy("id", "desc")
+                            ->limit(3)
+                            ->get();
+
             $data = array_merge($this->getDefault(), [
-                        "content" => $content->setCustomContent(),
-                        "categories" => $categories,
-                        "products"  => $products
+                        "content"       => $content->setCustomContent(),
+                        "categories"    => $categories,
+                        "blog"          => $blog,
+                        "products"      => $products
                 	]);
 
             return response()->json([
                 'response'  => true,
-                'data' => $data
+                'data'      => $data
             ]);
         }
 

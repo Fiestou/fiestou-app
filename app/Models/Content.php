@@ -113,6 +113,9 @@ class Content extends BaseModel
     public function GraphRequest($graphs = [], $auth = false){
         $auth = $auth ? $auth : json_decode(json_encode([]));
 
+        $return     = [
+            'log' => []
+        ];
         $register   = [];
         $delete     = [];
         $query      = [];
@@ -149,7 +152,7 @@ class Content extends BaseModel
                         $result = $result->orderByRaw($graph['orderBy']);
                     }
                     else{
-                        $result = $result->orderByDesc('created_at');
+                        $result = $result->orderBy('id', 'desc');
                     }
 
                     if(isset($graph['offset'])){
@@ -380,8 +383,6 @@ class Content extends BaseModel
             }
         }
 
-        $return = [];
-
         if($query){
             $return['query'] = Content::GraphResultClear($query);
         }
@@ -393,8 +394,6 @@ class Content extends BaseModel
         if($delete){
             $return['delete'] = (!!$auth) ? $delete : "Permissão de registro negada";
         }
-
-        $return['log'] = $this->log;
 
         return $return;
     }

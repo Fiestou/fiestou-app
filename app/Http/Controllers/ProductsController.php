@@ -117,12 +117,12 @@ class ProductsController extends Controller
             $products = $products->offset($request->get('offset'));
         }
 
-        // if($request->has('ordem')){
-        //     $products = $products->orderByRaw( $request->get('ordem') );
-        // }
-        // else{
-        //     $products = $products->orderBy('product.created_at', 'desc');
-        // }
+        if($request->has('ordem')){
+            $products = $products->orderBy('created_at', $request->get('ordem') == "asc" ? "asc" : "desc");
+        }
+        else{
+            $products = $products->orderBy('created_at', 'desc');
+        }
 
         return response()->json([
             'response'  => true,
