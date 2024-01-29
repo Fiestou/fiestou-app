@@ -19,7 +19,7 @@
         <tr>
             <td>
                 <center>
-                    <img src="https://www.fiestou.com.br/_next/image/?url=https%3A%2F%2Fd3hwvozn85ys0n.cloudfront.net%2Fuploads%2Fsite%2Fmedia%2F16-05-2023%2Flg-476-logopng.webp&w=640&q=75"
+                    <img src="https://d3hwvozn85ys0n.cloudfront.net/uploads/site/media/14-08-2023/lg-546-fiestou-logopng.webp"
                         width="120" style="margin: 2rem 0;">
                 </center>
             </td>
