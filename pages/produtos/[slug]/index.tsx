@@ -48,6 +48,7 @@ import ShareModal from "@/src/components/utils/ShareModal";
 import { RelationType } from "@/src/models/relation";
 import LikeButton from "@/src/components/ui/LikeButton";
 import SidebarCart from "@/src/components/common/SidebarCart";
+import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 
 export const getStaticPaths = async (ctx: any) => {
   const api = new Api();
@@ -554,6 +555,8 @@ export default function Produto({
         content: HeaderFooter,
       }}
     >
+      <RegionConfirm />
+
       <section className="">
         <div className="container-medium py-4 md:py-6">
           <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />

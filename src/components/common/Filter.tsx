@@ -31,10 +31,9 @@ export default function Filter(params: any) {
         ? 1
         : query?.categoria?.length
       : 0);
+
   const [filterOrder, setFilterOrder] = useState(
-    (query?.ordem == "created_at ASC"
-      ? "created_at ASC"
-      : "created_at DESC") as string
+    (query?.ordem == "asc" ? "asc" : "desc") as string
   );
 
   const [visibleFields, setVisibleFields] = useState(query as any);
@@ -227,16 +226,14 @@ export default function Filter(params: any) {
               >
                 <Icon
                   icon={
-                    filterOrder == "created_at DESC"
+                    filterOrder == "desc"
                       ? "fa-sort-amount-down"
                       : "fa-sort-amount-up"
                   }
                   className="text-zinc-900 text-xl md:text-base"
                 />
                 <div className="hidden md:block whitespace-nowrap">
-                  {filterOrder == "created_at DESC"
-                    ? "Mais recente"
-                    : "Mais antigo"}
+                  {filterOrder == "desc" ? "Mais recente" : "Mais antigo"}
                 </div>
               </Button>
               <div className="opacity-0 absolute h-full w-full top-0 left-0">
@@ -249,11 +246,11 @@ export default function Filter(params: any) {
                   options={[
                     {
                       name: "Mais recente",
-                      value: "created_at DESC",
+                      value: "desc",
                     },
                     {
                       name: "Mais antigo",
-                      value: "created_at ASC",
+                      value: "asc",
                     },
                   ]}
                 ></Select>
@@ -261,6 +258,7 @@ export default function Filter(params: any) {
             </div>
           </div>
 
+          {/* 
           <div className="pb-6">
             {!!rate && <input type="hidden" value={rate} name="rate" />}
             <Label>Avaliação</Label>
@@ -284,6 +282,7 @@ export default function Filter(params: any) {
               ))}
             </div>
           </div>
+           */}
 
           <div className="pb-6">
             <Label>Faixa de preço</Label>
@@ -344,9 +343,11 @@ export default function Filter(params: any) {
                                     name="categoria"
                                     value={category.slug}
                                     id={`categories${category.id}`}
-                                    {...(!!query?.categoria?.includes(
-                                      category.slug
-                                    ) || activeChecked.includes(category.id)
+                                    {...((!!query["categoria[]"] &&
+                                      query["categoria[]"].includes(
+                                        category.slug
+                                      )) ||
+                                    activeChecked.includes(category.id)
                                       ? { checked: true }
                                       : {})}
                                     onClick={(e: any) =>

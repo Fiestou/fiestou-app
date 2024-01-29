@@ -244,4 +244,19 @@ export const HomeForm = [
       },
     ],
   },
+  {
+    title: "Blog",
+    fields: [
+      {
+        label: "Título",
+        name: "blog_title",
+        type: "input",
+      },
+      {
+        label: "Subtítulo",
+        name: "blog_subtitle",
+        type: "input",
+      },
+    ],
+  },
 ];

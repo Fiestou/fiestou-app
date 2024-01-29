@@ -7,6 +7,8 @@ import { Button, Input, Label } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { cleanText, getExtenseData, getImage } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import PostItem from "@/src/components/common/PostItem";
+import Newsletter from "@/src/components/common/Newsletter";
 
 export const getStaticPaths = async (ctx: any) => {
   const api = new Api();
@@ -48,13 +50,17 @@ export async function getStaticProps(ctx: any) {
       data: [
         {
           model: "blog as post",
-          filer: [
+          filter: [
             {
               key: "slug",
               value: slug,
               compare: "=",
             },
           ],
+        },
+        {
+          model: "blog as posts",
+          limit: 3,
         },
         {
           model: "page",
@@ -92,15 +98,18 @@ export async function getStaticProps(ctx: any) {
   );
 
   const post = request?.data?.query?.post ?? [];
+
+  console.log(request?.data);
+
+  const posts = request?.data?.query?.posts ?? [];
   const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
   const DataSeo = request?.data?.query?.DataSeo ?? [];
   const Scripts = request?.data?.query?.Scripts ?? [];
 
-  console.log(post);
-
   return {
     props: {
       post: post[0] ?? {},
+      posts: posts ?? [],
       HeaderFooter: HeaderFooter[0] ?? {},
       DataSeo: DataSeo[0] ?? {},
       Scripts: Scripts[0] ?? {},
@@ -110,11 +119,13 @@ export async function getStaticProps(ctx: any) {
 
 export default function Post({
   post,
+  posts,
   HeaderFooter,
   DataSeo,
   Scripts,
 }: {
   post: any;
+  posts: Array<any>;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;
@@ -184,6 +195,29 @@ export default function Post({
           </div>
         </div>
       </section>
+
+      <section className="xl:py-14">
+        <div className="container-medium">
+          <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
+            <h2 className="font-title text-zinc-900 font-bold text-2xl md:text-4xl mt-2">
+              Veja também
+            </h2>
+          </div>
+          <div className="grid grid-cols-3 gap-4 md:gap-6">
+            {!!posts?.length &&
+              posts.map((post: any, key: any) => (
+                <div key={key}>
+                  <PostItem post={post} />
+                </div>
+              ))}
+          </div>
+          <div className="text-center mt-10">
+            <Button href="/blog">Mais postagens</Button>
+          </div>
+        </div>
+      </section>
+
+      <Newsletter />
     </Template>
   );
 }

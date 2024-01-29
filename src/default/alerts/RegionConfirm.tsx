@@ -20,8 +20,6 @@ export default function RegionConfirm() {
       url: "content/default",
     });
 
-    console.log(request, "<<<");
-
     const handle = isCEPInRegion(cep) ? "valid" : "invalid";
 
     setValid(handle);

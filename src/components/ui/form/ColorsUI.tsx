@@ -63,6 +63,7 @@ export default function Colors(attr: ColorType) {
   const [value, setValue] = useState([] as any);
 
   useEffect(() => {
+    console.log(attr?.value);
     setValue(
       typeof attr?.value == "string"
         ? [attr?.value]

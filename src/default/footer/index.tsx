@@ -125,6 +125,10 @@ export function Footer(props: FooterType) {
               </div>
               <div className="hidden md:block px-1">|</div>
               <div>
+                <button id="lgpd_reset">LGPD</button>
+              </div>
+              <div className="hidden md:block px-1">|</div>
+              <div>
                 Desenvolvido por
                 <a
                   href="https://8pdev.studio/"

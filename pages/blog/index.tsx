@@ -7,6 +7,7 @@ import { Button, Input, Label } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { clean, cleanText, getExtenseData, getImage } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import PostItem from "@/src/components/common/PostItem";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -134,28 +135,9 @@ export default function Post({
         <div className="container-medium grid gap-6 md:gap-10">
           <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {!!posts.length &&
-              posts.map((item: any, key: any) => (
+              posts.map((post: any, key: any) => (
                 <div key={key} className="w-full pb-6">
-                  <Link href={`/blog/${item.slug}`}>
-                    <div className="aspect-[4/3] bg-zinc-100 relative overflow-hidden rounded-lg">
-                      <Img
-                        src={getImage(item?.image)}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </Link>
-                  <div className="grid gap-2 pt-4">
-                    <div>
-                      <Link href={`/blog/${item.slug}`}>
-                        <div className="text-zinc-900 hover:text-yellow-500 ease font-bold text-xl">
-                          {item.title}
-                        </div>
-                      </Link>
-                      <div className="text-sm text-zinc-400">
-                        {getExtenseData(item.created_at)}
-                      </div>
-                    </div>
-                  </div>
+                  <PostItem post={post} />
                 </div>
               ))}
           </div>

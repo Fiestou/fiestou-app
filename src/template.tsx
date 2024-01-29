@@ -4,7 +4,7 @@ import { Footer, FooterType } from "@/src/default/footer";
 import Head from "next/head";
 import RegionConfirm from "./default/alerts/RegionConfirm";
 import { getImage } from "./helper";
-import Lgpd from "./lgpd";
+import Lgpd from "./default/alerts/lgpd";
 
 interface metaPage {
   title?: string;
@@ -40,11 +40,11 @@ export default function Template({
       const hostname = window.location.hostname;
       hasError =
         hostname.includes("vercel") ||
-        hostname.includes("localhost-") ||
+        hostname.includes("localhost") ||
         hostname.includes("admin");
     }
 
-    return !hasError && <Lgpd scripts={scripts} />;
+    return !hasError && <Lgpd content={scripts} />;
   };
 
   return (
@@ -122,7 +122,6 @@ export default function Template({
       </Head>
 
       <Header {...header} />
-      <RegionConfirm />
       {children}
       <Footer {...footer} />
 

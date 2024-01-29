@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://www.fiestou.com.br
+
+# Sitemaps
+Sitemap: https://www.fiestou.com.br/sitemap.xml

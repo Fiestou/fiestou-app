@@ -14,6 +14,7 @@ import "swiper/css/pagination";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { Button } from "@/src/components/ui/form";
 import Paginate from "@/src/components/utils/Paginate";
+import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -89,6 +90,8 @@ export default function Produtos({
         content: HeaderFooter,
       }}
     >
+      <RegionConfirm />
+
       <section className="bg-cyan-500 pt-24 md:pt-32 relative">
         <div className="container-medium relative pb-14 md:pb-20 text-white">
           <div className="flex items-end">
