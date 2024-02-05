@@ -62,7 +62,7 @@
                                                                 <tr>
                                                                     <td id="header_wrapper"
                                                                         style="padding: 36px 48px; display: block;text-align:center">
-                                                                        <img src="https://d3hwvozn85ys0n.cloudfront.net/uploads/site/media/14-08-2023/sm-546-fiestou-logopng.webp"
+                                                                        <img src="https://api.fiestou.com.br/images/fiestou-logo-email.jpg"
                                                                             width="120">
                                                                     </td>
                                                                 </tr>
@@ -86,9 +86,9 @@
                                                                             <tbody>
                                                                                 <tr>
                                                                                     <td valign="top"
-                                                                                        style="padding: 48px 48px 32px;text-align:center">
+                                                                                        style="padding: 48px 48px 32px;">
                                                                                         <div id="body_content_inner"
-                                                                                            style="color: #222222; font-family: 'Helvetica Neue',Helvetica,Roboto,Arial,sans-serif; font-size: 14px; line-height: 150%; text-align: left;"
+                                                                                            style="text-align:center;color: #222222; font-family: 'Helvetica Neue',Helvetica,Roboto,Arial,sans-serif; font-size: 14px; line-height: 150%;"
                                                                                             align="left">
                                                                                             @yield('msg')
                                                                                         </div>
