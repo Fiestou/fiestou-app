@@ -169,8 +169,8 @@ export default function Post({
       </section>
 
       {!!getImage(post?.image) && (
-        <section className="relative">
-          <div className="absolute w-full h-1/2 bg-cyan-500"></div>
+        <section className="relative px-4">
+          <div className="absolute left-0 w-full h-1/2 bg-cyan-500"></div>
           <div className="w-full mx-auto max-w-[56rem] relative rounded-xl overflow-hidden">
             <div className="aspect-[4/2] bg-zinc-100">
               <Img
@@ -203,7 +203,7 @@ export default function Post({
               Veja também
             </h2>
           </div>
-          <div className="grid grid-cols-3 gap-4 md:gap-6">
+          <div className="grid md:grid-cols-3 gap-4 md:gap-6">
             {!!posts?.length &&
               posts.map((post: any, key: any) => (
                 <div key={key}>
@@ -211,7 +211,7 @@ export default function Post({
                 </div>
               ))}
           </div>
-          <div className="text-center mt-10">
+          <div className="text-center my-10">
             <Button href="/blog">Mais postagens</Button>
           </div>
         </div>

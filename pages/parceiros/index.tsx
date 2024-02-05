@@ -56,6 +56,8 @@ export async function getStaticProps(ctx: any) {
   const DataSeo = request?.data?.query?.DataSeo ?? [];
   const content = request?.data?.query?.page[0] ?? [];
 
+  console.log(content);
+
   request = await api.get({
     url: "request/stores",
   });
@@ -84,6 +86,14 @@ export default function Parceiros({
 }) {
   return (
     <Template
+      metaPage={{
+        title: `${content.main_text} | ${DataSeo?.site_text}`,
+        image: !!getImage(DataSeo?.site_image)
+          ? getImage(DataSeo?.site_image)
+          : "",
+        description: `${content.main_description} - ${DataSeo?.site_description}`,
+        url: `faq`,
+      }}
       header={{
         template: "default",
         position: "fixed",

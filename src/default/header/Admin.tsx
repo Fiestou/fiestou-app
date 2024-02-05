@@ -45,7 +45,7 @@ const menu = [
     endpoint: "/admin/comunicados",
   },
   {
-    title: "teste de mensageria",
+    title: "teste de mensagem",
     endpoint: "/admin/teste",
   },
   {

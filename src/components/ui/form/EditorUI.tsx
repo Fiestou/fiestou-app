@@ -72,7 +72,7 @@ export default function Editor(attr: EditorType) {
         theme="snow"
         modules={modules}
         formats={formats}
-        value={attr?.value}
+        defaultValue={attr?.value}
         onChange={handleValue}
       />
     </div>
