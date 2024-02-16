@@ -24,50 +24,53 @@ export default function Lgpd({ content }: any) {
       footer: "",
     };
 
-    !!listScripts.length &&
-      listScripts.map((script: any) => {
-        locate[script.script_position] = script.script_text;
-      });
+    if (!!listScripts?.length) {
+      listScripts
+        .filter((script: any) => !!script?.script_position)
+        .map((script: any) => {
+          locate[script.script_position] = script.script_text;
+        });
 
-    if (document.querySelector("#scripts-body") == null) {
-      let queryBody = document
-        .createRange()
-        .createContextualFragment(
-          '<div id="scripts-body" class="d-none"></div>'
-        );
-      let queryFooter = document
-        .createRange()
-        .createContextualFragment(
-          '<div id="scripts-footer" class="d-none"></div>'
-        );
+      if (document.querySelector("#scripts-body") == null) {
+        let queryBody = document
+          .createRange()
+          .createContextualFragment(
+            '<div id="scripts-body" class="d-none"></div>'
+          );
+        let queryFooter = document
+          .createRange()
+          .createContextualFragment(
+            '<div id="scripts-footer" class="d-none"></div>'
+          );
 
-      let behaviorBody: any = document.querySelector("body");
+        let behaviorBody: any = document.querySelector("body");
 
-      if (!!behaviorBody) {
-        behaviorBody.prepend(queryBody);
-        behaviorBody.appendChild(queryFooter);
+        if (!!behaviorBody) {
+          behaviorBody.prepend(queryBody);
+          behaviorBody.appendChild(queryFooter);
+        }
+
+        let header = document
+          .createRange()
+          .createContextualFragment(locate.header);
+        let body = document.createRange().createContextualFragment(locate.body);
+        let footer = document
+          .createRange()
+          .createContextualFragment(locate.footer);
+
+        let scripts_head = document.querySelector("head");
+        let scripts_body = document.querySelector("#scripts-body");
+        let scripts_footer = document.querySelector("#scripts-footer");
+
+        setTimeout(() => {
+          scripts_head?.prepend(header);
+          scripts_body?.appendChild(body);
+          scripts_footer?.appendChild(footer);
+        }, 100);
       }
-
-      let header = document
-        .createRange()
-        .createContextualFragment(locate.header);
-      let body = document.createRange().createContextualFragment(locate.body);
-      let footer = document
-        .createRange()
-        .createContextualFragment(locate.footer);
-
-      let scripts_head = document.querySelector("head");
-      let scripts_body = document.querySelector("#scripts-body");
-      let scripts_footer = document.querySelector("#scripts-footer");
-
-      setTimeout(() => {
-        scripts_head?.prepend(header);
-        scripts_body?.appendChild(body);
-        scripts_footer?.appendChild(footer);
-      }, 100);
+    } else {
+      setWarning(false);
     }
-
-    console.log(locate);
   };
 
   useEffect(() => {
