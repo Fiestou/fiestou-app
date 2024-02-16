@@ -60,9 +60,13 @@ export default function List(attr: ListType) {
             <div className="flex items-center">
               <div className="w-full pl-2">
                 <div className="font-semibold text-sm text-zinc-900 cursor-pointer whitespace-nowrap">
-                  {!!item[attr.mainField]
-                    ? item[attr.mainField]
-                    : `rascunho - ${attr.singular} ${key + 1}`}
+                  {!!item[attr.mainField] ? (
+                    <div
+                      dangerouslySetInnerHTML={{ __html: item[attr.mainField] }}
+                    ></div>
+                  ) : (
+                    `rascunho - ${attr.singular} ${key + 1}`
+                  )}
                 </div>
               </div>
               <div

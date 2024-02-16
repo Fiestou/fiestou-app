@@ -51,14 +51,7 @@ export default function HandleField(field: any) {
 
   if (field.type == "editor") {
     return (
-      <Editor
-        {...params}
-        onChange={(event: any) =>
-          field?.emitChange(
-            !!params?.options?.plugin ? event : event.target.value ?? ""
-          )
-        }
-      />
+      <Editor {...params} onChange={(event: any) => field?.emitChange(event)} />
     );
   }
 

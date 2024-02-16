@@ -20,6 +20,7 @@ import { EmailForm } from "@/src/components/pages/admin/conteudo/EmailForm";
 import { WithdrawForm } from "@/src/components/pages/admin/conteudo/WithdrawForm";
 import { UserMenuForm } from "./UserMenuForm";
 import { BlogForm } from "./BlogForm";
+import { CheckoutForm } from "./CheckoutForm";
 
 export interface FormType {
   title: string;
@@ -98,6 +99,13 @@ const site: Array<FormType> = [
     slug: "contato",
     publicUrl: "/contato",
     form: ContactForm,
+    origin: "site",
+  },
+  {
+    title: "Checkout",
+    slug: "checkout",
+    publicUrl: "/checkout",
+    form: CheckoutForm,
     origin: "site",
   },
   {

@@ -555,7 +555,7 @@ export default function Home({
         </div>
       </section>
 
-      <section className="xl:py-14">
+      <section className="pb-14 xl:py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
             <span>{content.blog_subtitle}</span>
@@ -563,7 +563,7 @@ export default function Home({
               {content.blog_title}
             </h2>
           </div>
-          <div className="grid grid-cols-3 gap-4 md:gap-6">
+          <div className="grid md:grid-cols-3 gap-10 md:gap-6">
             {!!blog?.length &&
               blog.map((post: any, key: any) => (
                 <div key={key}>

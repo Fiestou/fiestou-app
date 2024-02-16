@@ -256,22 +256,7 @@ export default function Carrinho({ cart }: { cart: any }) {
                         R$ {moneyFormat(resume.subtotal)}
                       </div>
                     </div>
-                    <div className="rounded-md bg-red-100 text-sm text-zinc-900 p-3 md:p-3 grid gap-2">
-                      <div className="flex items-center gap-2 font-bold">
-                        <Icon
-                          icon="fa-exclamation-triangle"
-                          type="fa"
-                          className="text-xs text-red-500"
-                        />
-                        <span className="">Atenção</span>
-                      </div>
-                      <div className="text-xs">
-                        Para os produtos alugados, requeremos que retornem tudo
-                        que estava na descrição e com as mesmas condições, que
-                        foram apresentados. Obrigado e aproveite.
-                      </div>
-                    </div>
-                    <div className="flex">
+                    <div className="flex border-t border-zinc-300 pt-4">
                       <div className="text-zinc-900 text-lg">Total</div>
                       <div className="whitespace-nowrap w-full text-right">
                         <div className="font-bold text-zinc-900 text-xl">

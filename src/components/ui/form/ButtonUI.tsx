@@ -29,7 +29,7 @@ export default function Button(attr: ButtonType) {
 
   const style: any = {
     "btn-yellow": `btn bg-yellow-300 text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-yellow-300" : "opacity-75"
+      !attr?.disable ? "hover:bg-yellow-400" : "opacity-75"
     }`,
     "btn-success": `btn bg-green-500 text-white border border-transparent ${
       !attr?.disable ? "hover:bg-green-600" : "opacity-75"

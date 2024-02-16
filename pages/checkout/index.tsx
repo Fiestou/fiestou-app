@@ -92,12 +92,23 @@ export async function getServerSideProps(ctx: any) {
         {
           model: "roles",
         },
+        {
+          model: "page as checkout",
+          filter: [
+            {
+              key: "slug",
+              value: "checkout",
+              compare: "=",
+            },
+          ],
+        },
       ],
     },
     ctx
   );
 
   const roles = request?.data?.query?.roles ?? [];
+  const checkout = request?.data?.query?.checkout ?? [];
   const mailContent = request?.data?.query?.mailContent ?? [];
 
   return {
@@ -107,6 +118,7 @@ export async function getServerSideProps(ctx: any) {
       token: !!ctx.req.cookies["fiestou.authtoken"],
       products: products,
       roles: roles[0] ?? {},
+      checkout: checkout[0] ?? {},
       mailContent: mailContent[0] ?? {},
     },
   };
@@ -118,6 +130,7 @@ export default function Checkout({
   token,
   products,
   roles,
+  checkout,
   mailContent,
 }: {
   cart: Array<CartType>;
@@ -125,11 +138,14 @@ export default function Checkout({
   token: boolean;
   products: Array<ProductType>;
   roles: any;
+  checkout: any;
   mailContent: any;
 }) {
   const api = new Api();
   const router = useRouter();
   const { isFallback } = useRouter();
+
+  console.log(checkout, "checkout");
 
   const [form, setForm] = useState(FormInitialType);
 
@@ -570,7 +586,7 @@ export default function Checkout({
                         R$ {moneyFormat(resume.subtotal)}
                       </div>
                     </div>
-                    <div className="rounded-md bg-red-100 text-sm text-zinc-900 p-3 md:p-3 grid gap-2">
+                    {/* <div className="rounded-md bg-red-100 text-sm text-zinc-900 p-3 md:p-3 grid gap-2">
                       <div className="flex items-center gap-2 font-bold">
                         <Icon
                           icon="fa-exclamation-triangle"
@@ -584,7 +600,8 @@ export default function Checkout({
                         que estava na descrição e com as mesmas condições, que
                         foram apresentados. Obrigado e aproveite.
                       </div>
-                    </div>
+                    </div> */}
+
                     <div className="flex">
                       <div className="text-zinc-900 text-lg">Total</div>
                       <div className="whitespace-nowrap w-full text-right">
@@ -597,6 +614,23 @@ export default function Checkout({
                         </div>
                       </div>
                     </div>
+
+                    {!!checkout?.terms_list && (
+                      <div className="links-underline bg-zinc-200 rounded grid gap-2 px-3 py-2 text-[.8rem] leading-tight">
+                        {checkout?.terms_list.map((term: any, key: any) => (
+                          <div key={key} className="flex gap-2 pb-1">
+                            <div className="pt-[2px]">
+                              <input type="checkbox" required />
+                            </div>
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: term.term_description,
+                              }}
+                            ></div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div className="grid relative p-1 md:p-0">
                       {!!address?.street && !!schedule ? (
                         <Button

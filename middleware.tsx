@@ -32,12 +32,18 @@ export async function middleware(req: any) {
       return NextResponse.redirect(permanentLink);
     }
 
-    if (user.person == "partner" && url.includes("/dashboard")) {
+    if (
+      user.person == "partner" &&
+      (url.includes("/dashboard") || url.includes("/admin"))
+    ) {
       permanentLink.pathname = "/painel";
       return NextResponse.redirect(permanentLink);
     }
 
-    if (user.person == "client" && url.includes("/painel")) {
+    if (
+      user.person == "client" &&
+      (url.includes("/painel") || url.includes("/admin"))
+    ) {
       permanentLink.pathname = "/dashboard";
       return NextResponse.redirect(permanentLink);
     }
