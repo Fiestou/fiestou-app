@@ -5,6 +5,16 @@ const cors = require("cors");
 const nextConfig = {
   headers: () => [
     {
+      source: "/(.*)",
+      headers: [
+        {
+          key: "Content-Security-Policy",
+          value:
+            "script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; img-src * data: blob:; font-src * data:; default-src *; ",
+        },
+      ],
+    },
+    {
       source: "/:path*",
       headers: [
         {

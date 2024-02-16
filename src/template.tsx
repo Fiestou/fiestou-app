@@ -54,6 +54,7 @@ export default function Template({
         <meta httpEquiv="Cache-Control" content="public, max-age=3600" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge,chrome=1" />
         <meta httpEquiv="content-language" content="pt-BR" />
+
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
