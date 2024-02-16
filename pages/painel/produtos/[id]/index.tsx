@@ -24,6 +24,7 @@ import { Variable } from "@/src/components/pages/painel/produtos/produto";
 import Img from "@/src/components/utils/ImgBase";
 import router from "next/router";
 import Categories from "@/src/components/pages/painel/produtos/produto/Categories";
+import { getStore, getUser } from "@/src/contexts/AuthContext";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -182,9 +183,11 @@ export default function Form({
       data: { id: id },
     });
 
-    const handle = request.data ?? {};
-
-    console.log(handle, "handle");
+    let handle = request.data ?? {};
+    handle = {
+      ...handle,
+      store: getStore(),
+    };
 
     setProduct(handle);
     setData(handle);

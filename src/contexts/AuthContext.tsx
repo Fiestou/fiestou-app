@@ -27,6 +27,12 @@ export function getUser() {
   return {} as UserType;
 }
 
+export function getStore() {
+  if (!!Cookies.get("fiestou.authtoken")) {
+    return Cookies.get("fiestou.store");
+  }
+}
+
 export const AuthCheck = () => {
   if (!!window && false) {
     const api = new Api();
