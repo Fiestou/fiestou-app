@@ -173,6 +173,7 @@ export default function Checkout({
   );
 
   const [schedule, setSchedule] = useState("" as string);
+  const [deliverTo, setDeliverTo] = useState("reception" as string);
   const [locations, setLocations] = useState([] as Array<AddressType>);
   const [address, setAddress] = useState({} as AddressType);
 
@@ -265,6 +266,7 @@ export default function Checkout({
       total: total,
       deliverySchedule: schedule,
       deliveryAddress: address,
+      deliveryTo: deliverTo,
       deliveryStatus: "pending",
       status: -1,
     };
@@ -287,8 +289,6 @@ export default function Checkout({
       });
 
       if (!!checkoutSession?.session?.id) {
-        setForm({ ...form, loading: false });
-
         await api.bridge({
           url: "orders/register-meta",
           data: {
@@ -307,6 +307,8 @@ export default function Checkout({
         const result = await stripe?.redirectToCheckout({
           sessionId: checkoutSession?.session.id,
         });
+
+        setForm({ ...form, loading: false });
 
         if (result?.error) {
           alert(result.error.message);
@@ -485,60 +487,88 @@ export default function Checkout({
 
                   <div className="mb-0 relative overflow-hidden">
                     <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                      Horário de entrega
+                      Detalhes de entrega
                     </h4>
-                    <div className="h-0 pt-4 relative overflow-hidden">
-                      {!schedule && (
-                        <input readOnly name="agendamento" required />
-                      )}
-                    </div>
-                    <div className="border relative rounded-lg py-4">
-                      <div className="absolute top-0 left-0 bg-white text-sm -mt-3 px-1 mx-2">
-                        Selecione
+                    <div className="flex pt-2 flex-col gap-6">
+                      <div>
+                        <div className="form-group">
+                          <Label style="float">Recebimento</Label>
+                          <Select
+                            onChange={(e: any) => {
+                              setDeliverTo(e.target.value);
+                            }}
+                            name="entregar_para"
+                            required
+                            options={[
+                              {
+                                name: "Entregar na portaria",
+                                value: "reception",
+                              },
+                              {
+                                name: "Deixar na porta",
+                                value: "door",
+                              },
+                              {
+                                name: "Estarei para receber",
+                                value: "for_me",
+                              },
+                            ]}
+                          />
+                        </div>
                       </div>
-                      <Swiper
-                        spaceBetween={0}
-                        breakpoints={{
-                          0: {
-                            slidesPerView: 4.5,
-                          },
-                          1024: {
-                            slidesPerView: 7.5,
-                          },
-                        }}
-                      >
-                        {[
-                          { period: "Manhã", time: "09:00" },
-                          { period: "Manhã", time: "10:00" },
-                          { period: "Manhã", time: "11:00" },
-                          { period: "Manhã", time: "12:00" },
-                          { period: "Tarde", time: "13:00" },
-                          { period: "Tarde", time: "14:00" },
-                          { period: "Tarde", time: "15:00" },
-                          { period: "Tarde", time: "16:00" },
-                          { period: "Tarde", time: "17:00" },
-                          { period: "Noite", time: "18:00" },
-                          { period: "Noite", time: "19:00" },
-                          { period: "Noite", time: "20:00" },
-                          { period: "Noite", time: "21:00" },
-                        ].map((item: any, key) => (
-                          <SwiperSlide key={key} className="pl-4">
-                            <div
-                              onClick={() =>
-                                setSchedule(`${item.period} - ${item.time}`)
-                              }
-                              className={`${
-                                schedule == item.period + " - " + item.time
-                                  ? "text-yellow-500"
-                                  : "text-zinc-500 hover:text-zinc-900"
-                              }  ease cursor-pointer`}
-                            >
-                              <div className="text-xs">{item.period}</div>
-                              <div className="font-semibold">{item.time}</div>
-                            </div>
-                          </SwiperSlide>
-                        ))}
-                      </Swiper>
+                      <div className="border relative rounded-lg py-4">
+                        <div className="h-0 relative overflow-hidden">
+                          {!schedule && (
+                            <input readOnly name="agendamento" required />
+                          )}
+                        </div>
+                        <div className="absolute top-0 left-0 bg-white text-sm -mt-3 px-1 mx-1">
+                          Horário
+                        </div>
+                        <Swiper
+                          spaceBetween={0}
+                          breakpoints={{
+                            0: {
+                              slidesPerView: 4.5,
+                            },
+                            1024: {
+                              slidesPerView: 7.5,
+                            },
+                          }}
+                        >
+                          {[
+                            { period: "Manhã", time: "09:00" },
+                            { period: "Manhã", time: "10:00" },
+                            { period: "Manhã", time: "11:00" },
+                            { period: "Manhã", time: "12:00" },
+                            { period: "Tarde", time: "13:00" },
+                            { period: "Tarde", time: "14:00" },
+                            { period: "Tarde", time: "15:00" },
+                            { period: "Tarde", time: "16:00" },
+                            { period: "Tarde", time: "17:00" },
+                            { period: "Noite", time: "18:00" },
+                            { period: "Noite", time: "19:00" },
+                            { period: "Noite", time: "20:00" },
+                            { period: "Noite", time: "21:00" },
+                          ].map((item: any, key) => (
+                            <SwiperSlide key={key} className="pl-4">
+                              <div
+                                onClick={() =>
+                                  setSchedule(`${item.period} - ${item.time}`)
+                                }
+                                className={`${
+                                  schedule == item.period + " - " + item.time
+                                    ? "text-yellow-500"
+                                    : "text-zinc-500 hover:text-zinc-900"
+                                }  ease cursor-pointer`}
+                              >
+                                <div className="text-xs">{item.period}</div>
+                                <div className="font-semibold">{item.time}</div>
+                              </div>
+                            </SwiperSlide>
+                          ))}
+                        </Swiper>
+                      </div>
                     </div>
                   </div>
                   <div className="border-b pb-4"></div>

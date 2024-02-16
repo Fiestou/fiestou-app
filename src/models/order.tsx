@@ -43,6 +43,7 @@ export interface OrderType {
   store?: number | string;
   deliveryStatus: string;
   deliverySchedule: string;
+  deliveryTo?: string;
   total: number;
   platformCommission: number | string;
   notificate?: Array<any>;
