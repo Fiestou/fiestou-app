@@ -165,6 +165,7 @@ class OrdersController extends Controller
         $order->deliverySchedule    = $request->get("deliverySchedule");
         $order->deliveryAddress     = json_encode($request->get("deliveryAddress"));
         $order->deliveryStatus      = $request->get("deliveryStatus");
+        $order->deliveryTo          = $request->get("deliveryTo") ?? "";
         $order->listItems           = json_encode($listItems);
         $order->status              = -1;
 
@@ -218,6 +219,7 @@ class OrdersController extends Controller
                 $sub->listItems = json_encode($suborder['listItems']);
                 $sub->deliveryStatus        = "pending";
                 $sub->deliverySchedule      = $order->deliverySchedule;
+                $sub->deliveryTo            = $order->deliveryTo;
                 $sub->status = -1;
                 $sub->save();
             }
