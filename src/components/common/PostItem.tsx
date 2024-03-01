@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Icon from "@/src/icons/fontAwesome/FIcon";
 import Img from "../utils/ImgBase";
 import { getExtenseData, getImage } from "@/src/helper";
 
@@ -19,14 +20,24 @@ export default function PostItem({ post }: any) {
       </Link>
       <div className="grid gap-2 pt-4">
         <div className="md:pr-4">
+          <div className="text-sm text-zinc-400">
+            {getExtenseData(post.created_at)}
+          </div>
           <Link href={`/blog/${post.slug}`}>
             <div className="text-zinc-900 hover:text-yellow-500 ease font-bold text-xl leading-tight">
               {post.title}
             </div>
           </Link>
-          <div className="text-sm text-zinc-400">
-            {getExtenseData(post.created_at)}
-          </div>
+          <Link href={`/blog/${post.slug}`}>
+            <div className="text-zinc-900 mt-3 hover:text-yellow-500 ease font-bold text-sm leading-tight">
+              Saiba mais{" "}
+              <Icon
+                icon="fa-chevron-right"
+                type="far"
+                className="ml-2 text-xs"
+              />
+            </div>
+          </Link>
         </div>
       </div>
     </>

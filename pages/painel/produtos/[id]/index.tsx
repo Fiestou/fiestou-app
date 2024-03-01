@@ -449,7 +449,7 @@ export default function Form({
                       <div className="grid gap-2">
                         <div className="grid gap-2 grid-cols-2">
                           <div className="form-group">
-                            <Label>Preço de venda</Label>
+                            <Label>Preço de venda/aluguel</Label>
                             <Input
                               onChange={(e: any) =>
                                 handleData({ price: parseInt(e.target.value) })

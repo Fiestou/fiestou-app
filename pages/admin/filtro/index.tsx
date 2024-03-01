@@ -22,7 +22,7 @@ const formInitial = {
 export default function Categorias() {
   const api = new Api();
 
-  const [listRelation, setListRelation] = useState([] as Array<RelationType>);
+  const [listRelation, setListRelation] = useState([] as Array<any>);
 
   const [form, setForm] = useState(formInitial);
   const handleForm = (value: Object) => {
@@ -329,11 +329,9 @@ export default function Categorias() {
       </section>
       <section className="">
         <div className="container-medium pb-12">
-          <div className="grid gap-2">
-            {listRelation.map((item: RelationType, key: any) =>
-              renderCategory(item, key)
-            )}
-          </div>
+          {listRelation.map((item: RelationType, key: any) =>
+            renderCategory(item, key)
+          )}
         </div>
       </section>
       {modalRelation && (

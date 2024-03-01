@@ -48,11 +48,11 @@ export const RegisterOrderMail = async (
   let address: any = order.deliveryAddress;
   address = `${address.street}, ${address.number}, ${address.neighborhood} - ${
     address.zipCode
-  }<br/>${address.city}, ${address.state} - ${address.country} ${
-    !!address.complement ? "<br/>" + address.complement : ""
+  } | ${address.city}, ${address.state} - ${address.country} ${
+    !!address.complement ? " - " + address.complement : ""
   }`;
 
-  let table = "<table>";
+  let table = "<table style='width: 100%'>";
 
   products.map((item: any, key: any) => {
     table += `<tr>
