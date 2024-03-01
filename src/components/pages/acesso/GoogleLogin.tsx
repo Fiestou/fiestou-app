@@ -51,7 +51,7 @@ export default function GoogleLogin() {
     <button
       type="button"
       onClick={() => handleAuth()}
-      className="rounded flex items-center gap-4 justify-center border py-[.85rem] border-zinc-900 bg-white hover:bg-zinc-100 ease text-zinc-900"
+      className="rounded flex- hidden items-center gap-4 justify-center border py-[.85rem] border-zinc-900 bg-white hover:bg-zinc-100 ease text-zinc-900"
     >
       <div>{googleIcon()}</div> Acessar com Google
     </button>
