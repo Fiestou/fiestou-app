@@ -170,7 +170,7 @@ export default function Acesso({ modal, page }: { modal?: string; page: any }) {
                   <Button loading={form.loading}>Avançar</Button>
                 </div>
 
-                <div className="flex items-center gap-4 my-6">
+                {/* <div className="flex items-center gap-4 my-6">
                   <div className="border-t w-full"></div>
                   <div>OU</div>
                   <div className="border-t w-full"></div>
@@ -178,7 +178,7 @@ export default function Acesso({ modal, page }: { modal?: string; page: any }) {
 
                 <div className="form-group">
                   <GoogleLogin />
-                </div>
+                </div> */}
 
                 <div className="hidden form-group text-center text-sm pt-4">
                   Quero se cadastrar como parceiro?{" "}
