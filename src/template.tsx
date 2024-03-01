@@ -6,7 +6,7 @@ import RegionConfirm from "./default/alerts/RegionConfirm";
 import { getImage } from "./helper";
 import Lgpd from "./default/alerts/lgpd";
 
-interface metaPage {
+interface MetaType {
   title?: string;
   image?: string;
   description?: string;
@@ -22,7 +22,7 @@ export default function Template({
 }: {
   children: React.ReactNode;
   scripts?: any;
-  metaPage?: metaPage;
+  metaPage?: MetaType;
   header?: HeaderType;
   footer?: FooterType;
 }) {

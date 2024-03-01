@@ -131,7 +131,7 @@ export default function SejaParceiro({
         content: HeaderFooter,
       }}
     >
-      <section className="bg-cyan-500 pt-[2rem] md:pt-24 relative">
+      <section className="bg-cyan-500 pb-24 md:pb-0 pt-[2rem] md:pt-24 relative">
         {getImage(content.main_cover, "default") && (
           <>
             {/* <div className="absolute inset-0 w-full h-full top-0 left-0 bg-zinc-900"></div> */}
