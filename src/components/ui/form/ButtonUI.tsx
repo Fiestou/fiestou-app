@@ -2,6 +2,7 @@ import { clean } from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { ReactNode } from "react";
 
 interface ButtonType {
   name?: string;
@@ -18,7 +19,7 @@ interface ButtonType {
   between?: boolean;
   disable?: boolean;
   othersAttrs?: any;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function Button(attr: ButtonType) {

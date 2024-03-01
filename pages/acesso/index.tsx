@@ -9,6 +9,7 @@ import { Button, Input, Label } from "@/src/components/ui/form";
 import Modal from "@/src/components/utils/Modal";
 import { UserType } from "@/src/models/user";
 import { RegisterUserMail } from "@/src/mail";
+import GoogleLogin from "@/src/components/pages/acesso/GoogleLogin";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -167,6 +168,16 @@ export default function Acesso({ modal, page }: { modal?: string; page: any }) {
 
                 <div className="form-group">
                   <Button loading={form.loading}>Avançar</Button>
+                </div>
+
+                <div className="flex items-center gap-4 my-6">
+                  <div className="border-t w-full"></div>
+                  <div>OU</div>
+                  <div className="border-t w-full"></div>
+                </div>
+
+                <div className="form-group">
+                  <GoogleLogin />
                 </div>
 
                 <div className="hidden form-group text-center text-sm pt-4">
