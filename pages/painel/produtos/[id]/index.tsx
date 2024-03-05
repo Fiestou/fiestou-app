@@ -25,6 +25,7 @@ import Img from "@/src/components/utils/ImgBase";
 import router from "next/router";
 import Categories from "@/src/components/pages/painel/produtos/produto/Categories";
 import { getStore, getUser } from "@/src/contexts/AuthContext";
+import axios from "axios";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -92,6 +93,7 @@ export default function Form({
 }) {
   const api = new Api();
 
+  const [subimitStatus, setSubimitStatus] = useState("" as string);
   const [placeholder, setPlaceholder] = useState(true as boolean);
 
   const [form, setForm] = useState(formInitial);
@@ -222,6 +224,8 @@ export default function Form({
       .map((item, key) => item.id);
 
     if (!!removeFiles.length) {
+      setSubimitStatus("upload_images");
+
       await api
         .media({
           dir: "products",
@@ -236,6 +240,8 @@ export default function Form({
     let gallery = handleGallery.filter((item) => !item?.remove && !!item?.id);
 
     if (!!uploadFiles.length) {
+      setSubimitStatus("upload_images");
+
       const upload = await api
         .media({
           dir: "products",
@@ -264,6 +270,8 @@ export default function Form({
 
     setHandleGallery(gallery);
 
+    setSubimitStatus("register_content");
+
     let request: any = await api.bridge({
       url: "products/register",
       data: {
@@ -274,7 +282,16 @@ export default function Form({
 
     if (request.response) {
       setFormValue({ sended: request.response });
-      router.push({ pathname: "/painel/produtos" });
+
+      setSubimitStatus("clean_cache");
+
+      await axios.get(`/api/cache?route=/produtos/${request.data.id}`);
+
+      setSubimitStatus("register_complete");
+
+      setTimeout(() => {
+        router.push({ pathname: "/painel/produtos" });
+      }, 1000);
     } else {
       await api
         .media({
@@ -969,6 +986,34 @@ export default function Form({
           </form>
         </div>
       </section>
+
+      {form.loading && (
+        <div className="fixed inset-0 bg-white flex justify-center items-center">
+          <div className="grid text-center gap-4">
+            <div className="text-zinc-900">
+              {subimitStatus == "upload_images"
+                ? "Enviando imagens..."
+                : subimitStatus == "register_content"
+                ? "Salvando produto..."
+                : subimitStatus == "clean_cache"
+                ? "Limpando cache..."
+                : subimitStatus == "register_complete"
+                ? "Salvo com sucesso!"
+                : ""}
+            </div>
+            <div className="text-2xl">
+              {subimitStatus == "register_complete" ? (
+                <Icon icon="fa-check-circle" className="text-green-500" />
+              ) : (
+                <Icon
+                  icon="fa-spinner-third"
+                  className="animate-spin text-yellow-500"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Template>
   );
 }
