@@ -3,10 +3,18 @@ import { useEffect, useState } from "react";
 import { ReactSortable } from "react-sortablejs";
 import HandleCategory from "./HandleCategory";
 import Modal from "@/src/components/utils/Modal";
-import { Input, Label, Select } from "@/src/components/ui/form";
+import { Button, Input, Label, Select } from "@/src/components/ui/form";
+import FileManager from "@/src/components/ui/form/FileManager";
+
+const formInitial = {
+  edit: "",
+  loading: false,
+};
 
 export default function HandleCategories({ list }: { list: Array<any> }) {
   const [listCategories, setListCategories] = useState([] as Array<any>);
+
+  const [form, setForm] = useState(formInitial);
 
   const [modal, setModal] = useState(false as boolean);
   const [triggerOrder, setTriggerOrder] = useState(-1 as number);
@@ -14,6 +22,11 @@ export default function HandleCategories({ list }: { list: Array<any> }) {
   const [editRelation, setEditRelation] = useState({} as RelationType);
   const handleEditRelation = (value: Object) => {
     setEditRelation({ ...editRelation, ...value });
+  };
+
+  const [metadataRelation, setMetadataRelation] = useState({} as any);
+  const handleMetadataRelation = (value: Object) => {
+    setMetadataRelation({ ...metadataRelation, ...value });
   };
 
   useEffect(() => {

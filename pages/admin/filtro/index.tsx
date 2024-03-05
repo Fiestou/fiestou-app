@@ -72,8 +72,14 @@ export default function Categorias() {
       feature: relation?.feature ?? false,
       closest: relation?.closest ?? [],
       metadata: metadataRelation,
-      image: !!relation?.image.length ? relation?.image[0].id : "",
+      image: !!relation?.image.length
+        ? relation?.image[0].id
+        : !!relation?.image?.id
+        ? relation?.image?.id
+        : 0,
     };
+
+    console.log(relation);
 
     const request: any = await api.bridge({
       url: "categories/register",
@@ -408,7 +414,7 @@ export default function Categorias() {
                   <div className="form-group w-full max-w-[4rem]">
                     <Label style="float">Máx</Label>
                     <Input
-                      defaultValue={metadataRelation?.limitSelect}
+                      defaultValue={metadataRelation?.limitSelect ?? 0}
                       onChange={(e: any) =>
                         handleMetadataRelation({
                           limitSelect: e.target.value,
@@ -429,7 +435,7 @@ export default function Categorias() {
                     }
                     className="py-2"
                     name="estilo"
-                    value={metadataRelation?.style}
+                    value={metadataRelation?.style ?? ""}
                     options={[
                       {
                         name: "Pequeno",
