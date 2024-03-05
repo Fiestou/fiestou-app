@@ -1,7 +1,7 @@
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import { StoreCategoryType } from "@/src/models/store";
 import Api from "@/src/services/api";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Modal from "../utils/Modal";
 import Check from "../ui/form/CheckUI";
 import Img from "../utils/ImgBase";
@@ -334,7 +334,7 @@ export default function Filter(params: any) {
                     {!!categoriesLevels[mainCategory.slug] &&
                       Object.values(categoriesLevels[mainCategory.slug]).map(
                         (level: any, index: any) => (
-                          <>
+                          <React.Fragment key={index}>
                             {level.map(
                               (category: any) =>
                                 !!activeChecked.includes(category.parent) && (
@@ -393,7 +393,7 @@ export default function Filter(params: any) {
                                 )
                             )}
                             <div className="w-full"></div>
-                          </>
+                          </React.Fragment>
                         )
                       )}
                   </div>

@@ -19,17 +19,22 @@ function runMiddleware(req: any, res: any, fn: any) {
 async function handler(req: any, res: any) {
   const url = !!req.query?.route ? `${req.query?.route}` : "/";
 
-  const redirect = !!req.query?.redirect ? `${req.query?.redirect}` : "/";
-
   try {
     // this should be the actual path not a rewritten path
     // e.g. for "/blog/[slug]" this should be "/blog/post-1"
     await runMiddleware(req, res, cors);
-    await res.revalidate(url);
+    const response = await res.revalidate(url);
 
-    const hash = new Date().toLocaleString();
+    if (!!req.query?.redirect) {
+      const hash = new Date().toLocaleString();
 
-    return res.redirect(307, `${redirect}?cache=true&hash=${btoa(hash)}`);
+      return res.redirect(
+        307,
+        `${req.query?.redirect}?cache=true&hash=${btoa(hash)}`
+      );
+    }
+
+    return res.status(200).json({ response: response });
   } catch (err) {
     // console.log(err);
     // If there was an error, Next.js will continue
