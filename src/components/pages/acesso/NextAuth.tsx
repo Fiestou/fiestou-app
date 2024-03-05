@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 export const googleIcon = () => {
   return (
@@ -38,22 +39,14 @@ export const googleIcon = () => {
   );
 };
 
-export default function GoogleLogin() {
-  const router = useRouter();
-
-  const handleAuth = () => {
-    router.push(
-      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_API_KEY}&redirect_uri=${process.env.APP_URL}/auth&response_type=code&scope=email%20profile`
-    );
-  };
-
+export default function NextAuth() {
   return (
     <button
       type="button"
-      onClick={() => handleAuth()}
-      className="rounded flex- hidden items-center gap-4 justify-center border py-[.85rem] border-zinc-900 bg-white hover:bg-zinc-100 ease text-zinc-900"
+      onClick={() => signIn("google")}
+      className="rounded flex items-center gap-4 justify-center border py-[.85rem] border-zinc-900 bg-white hover:bg-zinc-100 ease text-zinc-900"
     >
-      <div>{googleIcon()}</div> Acessar com Google
+      <div>{googleIcon()}</div> Continuar com Google
     </button>
   );
 }

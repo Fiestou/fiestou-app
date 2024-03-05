@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ReactSortable } from "react-sortablejs";
 import HandleCategory from "./HandleCategory";
 import Modal from "@/src/components/utils/Modal";
-import { Input, Label } from "@/src/components/ui/form";
+import { Input, Label, Select } from "@/src/components/ui/form";
 
 export default function HandleCategories({ list }: { list: Array<any> }) {
   const [listCategories, setListCategories] = useState([] as Array<any>);

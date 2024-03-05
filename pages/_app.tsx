@@ -1,4 +1,5 @@
 import type { AppProps } from "next/app";
+import { SessionProvider } from "next-auth/react";
 
 import "/public/scss/_shared.scss";
 import "/styles/globals.css";
@@ -6,7 +7,10 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { AuthProvider } from "@/src/contexts/AuthContext";
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function App({
+  Component,
+  pageProps: { session, ...pageProps },
+}: AppProps) {
   const router = useRouter();
 
   useEffect(() => {
@@ -16,8 +20,10 @@ export default function App({ Component, pageProps }: AppProps) {
   }, [router]);
 
   return (
-    <AuthProvider>
-      <Component {...pageProps} />
-    </AuthProvider>
+    <SessionProvider session={session}>
+      <AuthProvider>
+        <Component {...pageProps} />
+      </AuthProvider>
+    </SessionProvider>
   );
 }

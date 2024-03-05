@@ -121,7 +121,7 @@ export default function Lgpd({ content }: any) {
                   method="POST"
                   className="grid gap-4"
                 >
-                  {!!content?.script_list.length &&
+                  {!!content?.script_list?.length &&
                     content?.script_list.map((item: any, key: any) => (
                       <label className="flex items-start w-full" key={key}>
                         <div className="pr-2 pt-[1px]">

@@ -131,22 +131,24 @@ export default function SejaParceiro({
         content: HeaderFooter,
       }}
     >
-      <section className="bg-cyan-500 pb-24 md:pb-0 pt-[2rem] md:pt-24 relative">
+      <section
+        className="pb-24 md:pb-0 pt-[2rem] md:pt-24 relative"
+        style={{ backgroundColor: "#2dc4fe" }}
+      >
         {getImage(content.main_cover, "default") && (
           <>
-            {/* <div className="absolute inset-0 w-full h-full top-0 left-0 bg-zinc-900"></div> */}
             {!!content.main_cover && (
               <Img
                 size="7xl"
                 src={getImage(content.main_cover, "default")}
-                className="hidden md:block absolute inset-0 object-cover w-full h-full top-0 left-0"
+                className="hidden md:block absolute w-full bottom-0 left-0"
               />
             )}
             {!!content.main_cover_mobile && (
               <Img
                 size="7xl"
                 src={getImage(content.main_cover_mobile, "default")}
-                className="md:hidden absolute inset-0 object-cover w-full h-full top-0 left-0"
+                className="md:hidden absolute w-full bottom-0 left-0"
               />
             )}
           </>

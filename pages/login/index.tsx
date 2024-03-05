@@ -107,7 +107,7 @@ export default function Login() {
                   <h3 className="font-title text-zinc-900 font-bold text-3xl md:text-4xl text-center">
                     Bem vindo ao Fiestou
                   </h3>
-                  <div className="pt-2 text-sm text-base">
+                  <div className="pt-2 text-sm md:text-base">
                     Entre na sua conta ou faça seu cadastro
                   </div>
                 </div>

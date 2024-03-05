@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/src/components/ui/form";
 import { UserType } from "@/src/models/user";
+import { signOut } from "next-auth/react";
 
 export default function User({ user }: { user: UserType }) {
   const [dropdown, setDropdown] = useState<boolean>(false);
@@ -49,9 +50,14 @@ export default function User({ user }: { user: UserType }) {
             <div>
               <hr className="my-2" />
             </div>
-            <a href="/logout" className="hover:text-yellow-500 ease text-left">
+            <div
+              onClick={() =>
+                signOut({ callbackUrl: `${process.env.APP_URL}/logout` })
+              }
+              className="cursor-pointer hover:text-yellow-500 ease text-left"
+            >
               Sair da conta
-            </a>
+            </div>
           </div>
         </>
       )}

@@ -51,7 +51,8 @@ const nextConfig = {
     APP_URL: process.env.APP_URL,
     API_REST: process.env.API_REST,
     BASE_URL: process.env.BASE_URL,
-    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+    GOOGLE_ID: process.env.GOOGLE_ID,
+    GOOGLE_SECRET: process.env.GOOGLE_SECRET,
     TOKEN: process.env.TOKEN,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:

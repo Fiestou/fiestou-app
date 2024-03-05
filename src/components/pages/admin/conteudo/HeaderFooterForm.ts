@@ -9,10 +9,19 @@ export const HeaderFooterForm = [
         options: {
           dir: "site",
         },
-        column: "md:col-span-4",
+        column: "md:col-span-2",
       },
       {
-        label: "Ícone",
+        label: "Ícone de atalho",
+        name: "header_shortcut",
+        type: "media",
+        options: {
+          dir: "site",
+        },
+        column: "md:col-span-2",
+      },
+      {
+        label: "Ícone do navegador",
         name: "header_icon",
         type: "media",
         options: {

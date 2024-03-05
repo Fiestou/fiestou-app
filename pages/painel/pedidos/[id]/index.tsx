@@ -282,12 +282,57 @@ export default function Pedido({
                 >
                   <div className="form-group m-0 w-full">
                     <Label style="float">Status de processo</Label>
-                    <Select
+                    <div className="group/delivery relative appearance-none bg-transparent form-control focus:border-zinc-800 hover:border-zinc-400 ease">
+                      <button type="button" className="w-full">
+                        {deliveryTypes
+                          .filter((item: any) => item.value == deliveryStatus)
+                          .map((item: any, key: any) => (
+                            <div
+                              key={key}
+                              className="p-1 text-sm cursor-pointer text-zinc-500 hover:text-zinc-900 ease flex gap-1 items-center"
+                            >
+                              <div
+                                className={`p-1 rounded-full ${item.background}`}
+                              ></div>
+                              <div className="flex gap-1">
+                                <span>{item.icon}</span>
+                                <span>{item.name}</span>
+                              </div>
+                            </div>
+                          ))}
+                      </button>
+                      <div
+                        tabIndex={0}
+                        className="group-focus-within/delivery:block hidden w-full absolute bottom-0 left-0"
+                      >
+                        <div className="absolute bg-white rounded border top-0 left-0 w-full grid p-2">
+                          {deliveryTypes.map((item: any, key: any) => (
+                            <div
+                              key={key}
+                              className="p-1 text-sm cursor-pointer text-zinc-500 hover:text-zinc-900 ease flex gap-1 items-center"
+                              onClick={(e: any) => {
+                                setDeliveryStatus(item.value);
+                                e.target.blur();
+                              }}
+                            >
+                              <div
+                                className={`p-1 rounded-full ${item.background}`}
+                              ></div>
+                              <div className="flex gap-1">
+                                <span>{item.icon}</span>
+                                <span>{item.name}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {/* <Select
                       name="status_entrega"
                       onChange={(e: any) => setDeliveryStatus(e.target.value)}
                       value={data.deliveryStatus ?? "pending"}
                       options={deliveryTypes}
-                    />
+                    /> */}
                   </div>
                   <div className="text-zinc-900 text-right">
                     <Button

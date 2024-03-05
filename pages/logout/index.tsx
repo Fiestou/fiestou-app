@@ -2,6 +2,7 @@ import Api, { api } from "@/src/services/api";
 import Router from "next/router";
 import Cookies from "js-cookie";
 import { useEffect } from "react";
+import { signOut } from "next-auth/react";
 
 export async function getServerSideProps(ctx: any) {
   const response = new Api();

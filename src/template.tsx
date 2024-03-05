@@ -63,21 +63,31 @@ export default function Template({
 
         <title>{meta.title}</title>
 
-        {!!getImage(header?.content?.header_icon) && (
-          <>
-            <link
-              rel="icon"
-              href={getImage(header?.content?.header_icon, "lg")}
-              type="image/x-icon"
-            />
-            <link rel="shortcut" />
-            <link
-              rel="apple-touch-icon"
-              sizes="180x180"
-              href={getImage(header?.content?.header_icon, "lg")}
-            />
-          </>
-        )}
+        {!!header?.content?.header_icon &&
+          !!getImage(header?.content?.header_icon) && (
+            <>
+              <link
+                rel="shortcut icon"
+                href={getImage(header?.content?.header_icon, "lg")}
+              ></link>
+            </>
+          )}
+
+        {!!header?.content?.header_shortcut &&
+          !!getImage(header?.content?.header_shortcut) && (
+            <>
+              <link
+                rel="icon"
+                href={getImage(header?.content?.header_shortcut, "lg")}
+                type="image/x-icon"
+              />
+              <link
+                rel="apple-touch-icon"
+                sizes="180x180"
+                href={getImage(header?.content?.header_shortcut, "lg")}
+              />
+            </>
+          )}
 
         <meta name="theme-color" content="#2798c6" />
         <meta name="msapplication-navbutton-color" content="#2798c6" />
