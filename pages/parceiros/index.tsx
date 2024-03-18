@@ -56,7 +56,7 @@ export async function getStaticProps(ctx: any) {
   const DataSeo = request?.data?.query?.DataSeo ?? [];
   const content = request?.data?.query?.page[0] ?? [];
 
-  console.log(content);
+  // console.log(content);
 
   request = await api.get({
     url: "request/stores",
@@ -69,7 +69,7 @@ export async function getStaticProps(ctx: any) {
       HeaderFooter: HeaderFooter[0] ?? {},
       DataSeo: DataSeo[0] ?? {},
     },
-    revalidate: 60 * 60,
+    revalidate: 60 * 60 * 60,
   };
 }
 

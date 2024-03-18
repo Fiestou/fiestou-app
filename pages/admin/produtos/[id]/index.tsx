@@ -60,7 +60,7 @@ export default function Form({
 
   const handleGallery = product?.gallery ?? [];
 
-  console.log(handleGallery);
+  // console.log(handleGallery);
 
   return (
     !router.isFallback && (

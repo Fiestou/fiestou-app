@@ -30,7 +30,7 @@ export async function getServerSideProps(ctx: any) {
     ],
   });
 
-  // console.log(request, "<<");
+  // // console.log(request, "<<");
 
   return {
     props: {
@@ -40,7 +40,7 @@ export async function getServerSideProps(ctx: any) {
 }
 
 export default function Teste({ page }: { page: any }) {
-  console.log(page);
+  // console.log(page);
 
   return (
     <Template

@@ -58,6 +58,12 @@ export default function Listagem({
 
   const getProducts = async () => {
     const handleParams = router.query;
+
+    if (!!handleParams["categoria[]"]) {
+      handleParams["categorias"] = handleParams["categoria[]"];
+      delete handleParams["categoria[]"];
+    }
+
     setParams(handleParams);
 
     const api = new Api();

@@ -76,7 +76,7 @@ export async function getStaticProps(ctx: any) {
         Scripts: Scripts,
         DataSeo: DataSeo,
       },
-      revalidate: 60 * 60,
+      revalidate: 60 * 60 * 60,
     };
   }
 }

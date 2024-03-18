@@ -142,6 +142,10 @@ export function getFirstName(str: string) {
 export function getImage(image: any, size?: string) {
   if (!image) return "";
 
+  if (!!image?.medias) {
+    image = image?.medias;
+  }
+
   const img = !!image?.base_url ? image : image[0] ?? {};
 
   if (!!img?.base_url && !!img?.details?.sizes) {

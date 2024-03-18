@@ -68,7 +68,7 @@ export async function getStaticProps(ctx: any) {
       Scripts: Scripts[0] ?? {},
       HeaderFooter: HeaderFooter[0] ?? {},
     },
-    revalidate: 60,
+    revalidate: 60 * 60 * 60,
   };
 }
 

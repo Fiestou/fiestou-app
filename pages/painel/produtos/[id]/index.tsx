@@ -188,6 +188,7 @@ export default function Form({
     let handle = request.data ?? {};
     handle = {
       ...handle,
+      assembly: !!handle.assembly ? handle.assembly : "on",
       store: getStore(),
     };
 
@@ -319,13 +320,25 @@ export default function Form({
     >
       <section className="">
         <div className="container-medium py-6 lg:py-12">
-          <div className="pb-4">
-            <Breadcrumbs
-              links={[
-                { url: "/painel", name: "Painel" },
-                { url: "/painel/produtos", name: "Produtos" },
-              ]}
-            />
+          <div className="flex justify-between">
+            <div className="pb-4">
+              <Breadcrumbs
+                links={[
+                  { url: "/painel", name: "Painel" },
+                  { url: "/painel/produtos", name: "Produtos" },
+                ]}
+              />
+            </div>
+            {!!data?.id && (
+              <Link
+                href={`/produtos/${data.slug}`}
+                target="_blank"
+                className="whitespace-nowrap flex items-center gap-2 ease hover:text-zinc-950 font-semibold"
+              >
+                Acessar produto
+                <Icon icon="fa-link" className="text-xs mt-1" />
+              </Link>
+            )}
           </div>
           <div className="flex items-center">
             <Link passHref href="/painel/produtos">
@@ -340,6 +353,7 @@ export default function Form({
           </div>
         </div>
       </section>
+
       <section className="">
         <div className="container-medium pb-12">
           <form onSubmit={(e) => handleSubmit(e)} method="POST">
@@ -867,9 +881,9 @@ export default function Form({
                       <h4 className="text-2xl text-zinc-900 mb-2">
                         Transporte
                       </h4>
-                      <div className="grid md:grid-cols-3 gap-2">
+                      <div className="grid md:grid-cols-4 gap-4">
                         <div className="form-group">
-                          <Label>Este produto é frágil?</Label>
+                          <Label>Produto frágil?</Label>
                           <Select
                             value={data.fragility ?? "yes"}
                             name="fragilidade"
@@ -886,7 +900,7 @@ export default function Form({
                         </div>
 
                         <div className="form-group">
-                          <Label>Veículo recomendado</Label>
+                          <Label>Veículo</Label>
                           <Select
                             value={data.vehicle}
                             name="veiculo"
@@ -928,6 +942,29 @@ export default function Form({
                               })
                             }
                             placeholder="R$ 00,00"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <Label>Montagem</Label>
+                          <Select
+                            value={data.assembly}
+                            name="montagem"
+                            options={[
+                              {
+                                name: "Fornecer",
+                                value: "on",
+                              },
+                              {
+                                name: "Não fornecer",
+                                value: "off",
+                              },
+                            ]}
+                            onChange={(e: any) =>
+                              handleData({
+                                assembly: e.target.value,
+                              })
+                            }
                           />
                         </div>
                       </div>

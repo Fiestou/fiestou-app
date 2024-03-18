@@ -9,6 +9,7 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Editor from "@/src/components/ui/form/EditorUI";
 import FileManager from "@/src/components/ui/form/FileManager";
+import axios from "axios";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -53,6 +54,10 @@ export default function Form({ slug }: { slug: string }) {
     setContent({ ...content, ...value });
   };
 
+  const handleCache = async () => {
+    await axios.get(`/api/cache?route=/blog/${content.slug}`);
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
@@ -79,6 +84,8 @@ export default function Form({ slug }: { slug: string }) {
         },
       ],
     });
+
+    await handleCache();
 
     setContent(handle);
 
@@ -138,7 +145,7 @@ export default function Form({ slug }: { slug: string }) {
         <form onSubmit={(e: any) => handleSubmit(e)}>
           <section className="">
             <div className="container-medium pt-6 md:pt-12 pb-4 md:pb-8">
-              <div className="flex">
+              <div className="flex justify-between">
                 <div className="pb-4">
                   <Breadcrumbs
                     links={[
@@ -147,6 +154,14 @@ export default function Form({ slug }: { slug: string }) {
                     ]}
                   />
                 </div>
+                <Link
+                  href={`/api/cache?route=/blog/${content.slug}&redirect=/blog/${content.slug}`}
+                  target="_blank"
+                  className="whitespace-nowrap flex items-center gap-2 ease hover:text-zinc-950 font-semibold"
+                >
+                  Limpar cache
+                  <Icon icon="fa-sync" className="text-xs mt-1" />
+                </Link>
               </div>
               <div className="flex items-end">
                 <div className="w-full flex items-center">

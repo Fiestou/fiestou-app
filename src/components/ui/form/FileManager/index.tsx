@@ -38,24 +38,23 @@ export default function FileManager(attr: FileManagerType) {
   const [removeActive, setRemoveActive] = useState(false as boolean);
 
   const [placeholder, setPlaceholder] = useState([] as any);
-  const [selecteds, setSelecteds] = useState([] as Array<any>);
+  const [selecteds, setSelecteds] = useState({ medias: [] } as any);
 
   useEffect(() => {
-    setSelecteds(
-      ((Array.isArray(attr?.value) ? attr?.value : [attr?.value]) ??
-        []) as Array<any>
-    );
+    setSelecteds(attr?.value ?? { medias: [] });
   }, [attr]);
 
   const setSelected = (media: any) => {
     setRemoveActive(false);
-    setSelecteds(!!attr?.multiple ? [...selecteds, media] : [media]);
+    setSelecteds({
+      medias: !!attr?.multiple ? [...selecteds.medias, media] : [media],
+    });
   };
 
   const unsetSelected = (mediaId: any) => {
-    const medias = selecteds.filter((media: any) => media.id != mediaId);
+    const medias = selecteds.medias.filter((media: any) => media.id != mediaId);
 
-    setSelecteds(medias);
+    setSelecteds({ medias: medias });
     setRemoveActive(false);
 
     if (!!attr?.onChange) attr?.onChange(medias);
@@ -116,7 +115,7 @@ export default function FileManager(attr: FileManagerType) {
   const [modalStatus, setModalStatus] = useState(false as boolean);
 
   const removeSelection = async () => {
-    const removeFiles = selecteds.map((item, key) => item.id);
+    const removeFiles = selecteds.medias.map((item: any) => item.id);
 
     setMediaList(
       mediaList.filter((item: any) => !removeFiles.includes(item.id))
@@ -133,7 +132,7 @@ export default function FileManager(attr: FileManagerType) {
       .then((res: any) => res);
 
     setRemoveActive(false);
-    setSelecteds([]);
+    setSelecteds({ medias: [] });
   };
 
   const openModal = async () => {
@@ -151,7 +150,7 @@ export default function FileManager(attr: FileManagerType) {
   const closeModal = async () => {
     setModalStatus(false);
     setMediaList([]);
-    setSelecteds(attr?.value ?? []);
+    setSelecteds({ medias: attr?.value ?? [] });
   };
 
   return (
@@ -161,7 +160,7 @@ export default function FileManager(attr: FileManagerType) {
           attr?.options?.type == "thumb"
             ? "flex flex-row-reverse items-center"
             : "grid"
-        } ${!!selecteds.length ? "gap-2" : ""}`}
+        } ${!!selecteds.medias?.length ? "gap-2" : ""}`}
       >
         <Button
           type="button"
@@ -182,9 +181,9 @@ export default function FileManager(attr: FileManagerType) {
               : ""
           }`}
         >
-          {!!selecteds.length &&
-            selecteds
-              .filter((item) => !!getImage(item))
+          {!!selecteds.medias?.length &&
+            selecteds.medias
+              .filter((item: any) => !!getImage(item))
               .map((item: any, key: any) => (
                 <div
                   key={key}
@@ -243,7 +242,7 @@ export default function FileManager(attr: FileManagerType) {
               </Button>
             </div>
             <div className="w-full"></div>
-            {!!selecteds?.length && (
+            {!!selecteds.medias?.length && (
               <div className="w-fit">
                 <Button
                   type="button"
@@ -294,8 +293,9 @@ export default function FileManager(attr: FileManagerType) {
                           />
                         )}
                       </div>
-                      {!!selecteds?.filter((sel: any) => sel?.id == item?.id)
-                        .length ? (
+                      {!!selecteds.medias?.filter(
+                        (sel: any) => sel?.id == item?.id
+                      ).length ? (
                         <div
                           onClick={() => unsetSelected(item.id)}
                           className="absolute inset-0 w-full h-full border-4 border-yellow-400 rounded-md"

@@ -34,7 +34,7 @@ export default function Redirect(attr: RedirectType) {
     setIsChecked(checked);
     setRedirect({ ...redirect, ...{ target: checked } });
     !!attr?.onChange ? attr?.onChange(redirect) : {};
-    console.log(redirect, checked);
+    // console.log(redirect, checked);
   };
 
   return (

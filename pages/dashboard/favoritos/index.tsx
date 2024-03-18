@@ -117,7 +117,7 @@ export default function Favoritos({
 
     const products = request?.data?.query?.products ?? [];
     setProducts(products);
-    console.log(products);
+    // console.log(products);
   };
 
   useEffect(() => {

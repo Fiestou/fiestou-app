@@ -2,6 +2,17 @@ import Cookies from "js-cookie";
 
 const expires = { expires: 7 };
 
+export function GetCart() {
+  if (!!Cookies.get("fiestou.cart")) {
+    let cookie: any = Cookies.get("fiestou.cart");
+    let cart: any = JSON.parse(cookie);
+
+    return cart;
+  }
+
+  return [];
+}
+
 export function AddToCart(order: Object) {
   if (!Cookies.get("fiestou.cart")) {
     Cookies.set("fiestou.cart", JSON.stringify([]), expires);
@@ -19,7 +30,7 @@ export function AddToCart(order: Object) {
   return false;
 }
 
-export function removeToCart(key: any) {
+export function RemoveToCart(key: any) {
   if (!Cookies.get("fiestou.cart")) {
     Cookies.set("fiestou.cart", JSON.stringify([]), expires);
   }

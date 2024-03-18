@@ -7,6 +7,7 @@ import Api from "@/src/services/api";
 import { useRouter } from "next/router";
 import HandleField from "@/src/components/ui/form/HandleField";
 import { HandleGetFields } from "@/src/components/pages/admin/conteudo/ContentForm";
+import axios from "axios";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -38,8 +39,6 @@ export async function getServerSideProps(ctx: any) {
       },
     ],
   });
-
-  // console.log(request, "<<");
 
   return {
     props: {
@@ -80,6 +79,10 @@ export default function Form({
     setContent(handle);
   };
 
+  const handleCache = async () => {
+    if (!!page.publicUrl) await axios.get(`/api/cache?route=${page.publicUrl}`);
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
@@ -104,11 +107,12 @@ export default function Form({
       ],
     });
 
+    await handleCache();
+
     setContent(handle);
 
     if (request.response) {
       setFormValue({ loading: false, sended: request.response });
-      // router.push({ pathname: "/admin/conteudo" });
     } else {
       setFormValue({ loading: false, sended: request.response });
     }
@@ -168,9 +172,9 @@ export default function Form({
                 <div className="w-full">Produtos {">"} Title</div>
                 {!!page.publicUrl && (
                   <Link
-                    href={`/api/cache?redirect=${page.publicUrl}`}
+                    href={`/api/cache?route=${page.publicUrl}&redirect=${page.publicUrl}`}
                     target="_blank"
-                    className="whitespace-nowrap flex items-center gap-2 ease hover:text-zinc-900 font-semibold"
+                    className="whitespace-nowrap flex items-center gap-2 ease hover:text-zinc-950 font-semibold"
                   >
                     Limpar cache
                     <Icon icon="fa-sync" className="text-xs mt-1" />

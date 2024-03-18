@@ -46,7 +46,8 @@ export interface ProductType {
   schedulingPeriod?: string;
   schedulingTax?: number;
   schedulingDiscount?: number;
-  status?: string | number;
+  assembly?: string;
+  status?: string | number | boolean;
   updated_at?: string;
 }
 

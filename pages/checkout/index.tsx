@@ -145,7 +145,7 @@ export default function Checkout({
   const router = useRouter();
   const { isFallback } = useRouter();
 
-  console.log(checkout, "checkout");
+  // console.log(checkout, "checkout");
 
   const [form, setForm] = useState(FormInitialType);
 
@@ -446,19 +446,6 @@ export default function Checkout({
                                 placeholder="Bairro"
                               />
                             </div>
-                            <div className="w-full">
-                              <Input
-                                name="complemento"
-                                onChange={(e: any) =>
-                                  setAddress({
-                                    ...address,
-                                    complement: e.target.value,
-                                  })
-                                }
-                                defaultValue={address?.complement}
-                                placeholder="Complemento"
-                              />
-                            </div>
                           </div>
                           <div className="flex gap-2">
                             <div className="w-full">
@@ -480,6 +467,19 @@ export default function Checkout({
                               />
                             </div>
                           </div>
+                          <div className="w-full">
+                            <Input
+                              name="complemento"
+                              onChange={(e: any) =>
+                                setAddress({
+                                  ...address,
+                                  complement: e.target.value,
+                                })
+                              }
+                              defaultValue={address?.complement}
+                              placeholder="Complemento"
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -489,32 +489,49 @@ export default function Checkout({
                     <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
                       Detalhes de entrega
                     </h4>
-                    <div className="flex pt-2 flex-col gap-6">
-                      <div>
-                        <div className="form-group">
-                          <Label style="float">Recebimento</Label>
-                          <Select
-                            onChange={(e: any) => {
-                              setDeliverTo(e.target.value);
+                    <div className="flex pt-4 flex-col gap-6">
+                      <div className="grid grid-cols-3 gap-4">
+                        {[
+                          {
+                            name: "Entregar na portaria",
+                            value: "reception",
+                          },
+                          {
+                            name: "Deixar na porta",
+                            value: "door",
+                          },
+                          {
+                            name: "Estarei para receber",
+                            value: "for_me",
+                          },
+                        ].map((option: any, key: any) => (
+                          <div
+                            key={key}
+                            onClick={(e: any) => {
+                              setDeliverTo(option.value);
                             }}
-                            name="entregar_para"
-                            required
-                            options={[
-                              {
-                                name: "Entregar na portaria",
-                                value: "reception",
-                              },
-                              {
-                                name: "Deixar na porta",
-                                value: "door",
-                              },
-                              {
-                                name: "Estarei para receber",
-                                value: "for_me",
-                              },
-                            ]}
-                          />
-                        </div>
+                            className={`border ${
+                              deliverTo == option.value
+                                ? "border-yellow-400"
+                                : "hover:border-zinc-400"
+                            } p-3 md:p-4 cursor-pointer rounded ease flex gap-2 items-center`}
+                          >
+                            <div
+                              className={`${
+                                deliverTo == option.value
+                                  ? "border-zinc-400"
+                                  : ""
+                              } w-[1rem] h-[1rem] rounded-full border relative`}
+                            >
+                              {deliverTo == option.value && (
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
+                              )}
+                            </div>
+                            <div className="text-[.85rem] leading-tight">
+                              {option.name}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                       <div className="border relative rounded-lg py-4">
                         <div className="h-0 relative overflow-hidden">
@@ -646,7 +663,7 @@ export default function Checkout({
                     </div>
 
                     {!!checkout?.terms_list && (
-                      <div className="links-underline bg-zinc-200 rounded grid gap-2 px-3 py-2 text-[.8rem] leading-tight">
+                      <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
                         {checkout?.terms_list.map((term: any, key: any) => (
                           <div key={key} className="flex gap-2 pb-1">
                             <div className="pt-[2px]">

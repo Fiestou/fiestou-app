@@ -53,7 +53,7 @@ export default function MeusDados({ user }: { user: UserType }) {
   const submitUser = (e: any) => {
     e.preventDefault();
 
-    // console.log(user);
+    // // console.log(user);
   };
 
   return (

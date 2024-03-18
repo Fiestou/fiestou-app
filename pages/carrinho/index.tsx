@@ -15,7 +15,7 @@ import {
   moneyFormat,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
-import { removeToCart } from "@/src/components/pages/carrinho";
+import { RemoveToCart } from "@/src/components/pages/carrinho";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Img from "@/src/components/utils/ImgBase";
 
@@ -99,7 +99,7 @@ export default function Carrinho({ cart }: { cart: any }) {
       endDate: findDates(datesHandle).maxDate,
     } as any);
 
-    removeToCart(key);
+    RemoveToCart(key);
   };
 
   return (

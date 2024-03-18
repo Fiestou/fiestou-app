@@ -61,7 +61,7 @@ export async function getStaticProps(ctx: any) {
       HeaderFooter: HeaderFooter[0] ?? {},
       DataSeo: DataSeo[0] ?? {},
     },
-    revalidate: 60 * 60,
+    revalidate: 60 * 60 * 60,
   };
 }
 

@@ -4,7 +4,7 @@ import Img from "../utils/ImgBase";
 import { getExtenseData, getImage } from "@/src/helper";
 
 export default function PostItem({ post }: any) {
-  console.log(post);
+  // // console.log(post);
 
   return (
     <>

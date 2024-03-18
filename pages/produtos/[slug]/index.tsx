@@ -23,7 +23,7 @@ import {
 import { Button } from "@/src/components/ui/form";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { AddToCart } from "@/src/components/pages/carrinho";
+import { AddToCart, GetCart } from "@/src/components/pages/carrinho";
 import Badge from "@/src/components/utils/Badge";
 import {
   AttributeProductOrderType,
@@ -108,8 +108,6 @@ export async function getStaticProps(ctx: any) {
     const DataSeo = request?.data?.DataSeo ?? {};
     const Scripts = request?.data?.Scripts ?? {};
 
-    console.log(product, "<<");
-
     return {
       props: {
         product: product,
@@ -120,7 +118,7 @@ export async function getStaticProps(ctx: any) {
         DataSeo: DataSeo,
         Scripts: Scripts,
       },
-      revalidate: 60,
+      revalidate: 60 * 60 * 60,
     };
   }
 }
@@ -156,11 +154,11 @@ export default function Produto({
     comments: comments?.length,
   };
 
-  const [share, setShare] = useState(false);
+  const [share, setShare] = useState(false as boolean);
   const baseUrl = `https://fiestou.com.br/produtos/${product?.slug}`;
 
-  const [loadCart, setLoadCart] = useState(false);
-  const [resume, setResume] = useState(false);
+  const [loadCart, setLoadCart] = useState(false as boolean);
+  const [resume, setResume] = useState(false as boolean);
 
   const [productToCart, setProductToCart] = useState<ProductOrderType>({
     product: product?.id,
@@ -279,12 +277,36 @@ export default function Produto({
 
   const [cartModal, setCartModal] = useState(false as boolean);
 
+  const [inCart, setInCart] = useState(false as boolean);
+  const [unavailable, setUnavailable] = useState([] as Array<string>);
+
+  const handleCart = (dates?: Array<string>) => {
+    let handle = GetCart()
+      .filter((item: any) => item.product == product.id)
+      .map((item: any) => item);
+
+    let handleDates = [...(!!dates ? dates : unavailable)];
+
+    if (!!handle.length) {
+      handle = handle[0];
+
+      if (!!handle?.details?.dateEnd) {
+        handleDates.push(handle?.details?.dateEnd);
+      }
+
+      setInCart(handle);
+    }
+
+    setUnavailable(handleDates);
+  };
+
   const sendToCart = (e: any) => {
     e.preventDefault();
 
     setLoadCart(true);
 
     if (AddToCart(productToCart)) {
+      handleCart();
       setCartModal(true);
     } else {
       setLoadCart(true);
@@ -417,11 +439,11 @@ export default function Produto({
     let request: any = await api.get({
       url: "request/product",
       data: {
-        slug: product.slug,
+        slug: product?.slug,
       },
     });
 
-    // console.log(request.data, "<--");
+    handleCart(request.data.unavailable);
 
     setProductUpdated(request.data);
   };
@@ -449,7 +471,10 @@ export default function Produto({
               {store?.title}
             </Link>
           </div>
-          <div>Este parceiro não disponibiliza montagem</div>
+          <div>
+            Este parceiro {product?.assembly == "on" ? "" : "não"} disponibiliza
+            montagem
+          </div>
           <div className="py-2">
             <div className="border-t border-dashed"></div>
           </div>
@@ -754,91 +779,93 @@ export default function Produto({
                   </div>
                 </div>
                 <div className="grid gap-6">
-                  {/* {!!product?.attributes &&
-                    (product?.attributes ?? [])?.map((attribute, index) => (
-                      <div key={index} className="md:pt-4">
-                        <div className="font-title text-zinc-900 font-bold py-4 text-sm lg:text-lg">
-                          {attribute.title}
-                        </div>
-                        <div className="border-b">
-                          {attribute?.variations &&
-                            attribute?.variations.map((item, key) => (
-                              <label
-                                key={key}
-                                className="flex border-t py-2 gap-4 items-center"
-                              >
-                                <div className="w-full py-1">{item.title}</div>
-                                <div className="w-fit py-1 whitespace-nowrap">
-                                  {!!item.price
-                                    ? `R$ ${moneyFormat(item.price)}`
-                                    : ""}
-                                </div>
-                                <div className="w-fit">
-                                  {attribute.selectType == "radio" && (
-                                    <input
-                                      type="radio"
-                                      onChange={() =>
-                                        updateOrder(
-                                          {
-                                            id: item.id,
-                                            title: item.title ?? "",
-                                            price: item.price,
-                                            quantity: 1,
-                                          },
-                                          attribute
-                                        )
-                                      }
-                                      className="form-control"
-                                      name={attribute.title}
-                                    />
-                                  )}
-                                  {attribute.selectType == "checkbox" && (
-                                    <input
-                                      type="checkbox"
-                                      onChange={() =>
-                                        updateOrder(
-                                          {
-                                            id: item.id,
-                                            title: item.title ?? "",
-                                            price: item.price,
-                                            quantity: 1,
-                                          },
-                                          attribute
-                                        )
-                                      }
-                                      className="form-control"
-                                      name={attribute.title}
-                                    />
-                                  )}
-                                  {attribute.selectType == "quantity" && (
-                                    <div className="flex gap-2">
+                  {/*
+                    {!!product?.attributes &&
+                      (product?.attributes ?? [])?.map((attribute, index) => (
+                        <div key={index} className="md:pt-4">
+                          <div className="font-title text-zinc-900 font-bold py-4 text-sm lg:text-lg">
+                            {attribute.title}
+                          </div>
+                          <div className="border-b">
+                            {attribute?.variations &&
+                              attribute?.variations.map((item, key) => (
+                                <label
+                                  key={key}
+                                  className="flex border-t py-2 gap-4 items-center"
+                                >
+                                  <div className="w-full py-1">{item.title}</div>
+                                  <div className="w-fit py-1 whitespace-nowrap">
+                                    {!!item.price
+                                      ? `R$ ${moneyFormat(item.price)}`
+                                      : ""}
+                                  </div>
+                                  <div className="w-fit">
+                                    {attribute.selectType == "radio" && (
                                       <input
-                                        type="number"
-                                        onChange={(e) =>
+                                        type="radio"
+                                        onChange={() =>
                                           updateOrder(
                                             {
                                               id: item.id,
                                               title: item.title ?? "",
                                               price: item.price,
-                                              quantity: parseInt(
-                                                e.target.value ?? 1
-                                              ),
+                                              quantity: 1,
                                             },
                                             attribute
                                           )
                                         }
-                                        min={0}
-                                        className="form-control text-center my-[.1rem] p-2 w-[4rem] h-[2rem]"
+                                        className="form-control"
                                         name={attribute.title}
                                       />
-                                    </div>
-                                  )}
-                                </div>
-                              </label>
-                            ))}
+                                    )}
+                                    {attribute.selectType == "checkbox" && (
+                                      <input
+                                        type="checkbox"
+                                        onChange={() =>
+                                          updateOrder(
+                                            {
+                                              id: item.id,
+                                              title: item.title ?? "",
+                                              price: item.price,
+                                              quantity: 1,
+                                            },
+                                            attribute
+                                          )
+                                        }
+                                        className="form-control"
+                                        name={attribute.title}
+                                      />
+                                    )}
+                                    {attribute.selectType == "quantity" && (
+                                      <div className="flex gap-2">
+                                        <input
+                                          type="number"
+                                          onChange={(e) =>
+                                            updateOrder(
+                                              {
+                                                id: item.id,
+                                                title: item.title ?? "",
+                                                price: item.price,
+                                                quantity: parseInt(
+                                                  e.target.value ?? 1
+                                                ),
+                                              },
+                                              attribute
+                                            )
+                                          }
+                                          min={0}
+                                          className="form-control text-center my-[.1rem] p-2 w-[4rem] h-[2rem]"
+                                          name={attribute.title}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                </label>
+                              ))}
+                          </div>
                         </div>
-                      </div>
-                    ))} */}
+                      ))}
+                  */}
 
                   <div className="md:flex justify-between items-end gap-2">
                     <div className="w-full">
@@ -848,7 +875,7 @@ export default function Produto({
                       <div className="calendar relative">
                         <Calendar
                           required
-                          unavailable={productUpdated?.unavailable ?? []}
+                          unavailable={unavailable ?? []}
                           onChange={(emit: any) => handleDetails(emit)}
                         />
                         {!productUpdated?.title && (
@@ -874,25 +901,35 @@ export default function Produto({
                         </div>
 
                         <div className="relative grid w-fit p-3">
-                          <Button
-                            type={
-                              !!productToCart?.details?.dateStart
-                                ? "submit"
-                                : "button"
-                            }
-                            style={
-                              !!productToCart?.details?.dateStart
-                                ? "btn-yellow"
-                                : "btn-light"
-                            }
-                            className={`${
-                              !!productToCart?.details?.dateStart
-                                ? ""
-                                : "opacity-50 bg-zinc-200"
-                            } whitespace-nowrap py-2 px-5 md:px-8 md:py-4`}
-                          >
-                            Adicionar
-                          </Button>
+                          {!inCart ? (
+                            <Button
+                              type={
+                                !!productToCart?.details?.dateStart
+                                  ? "submit"
+                                  : "button"
+                              }
+                              style={
+                                !!productToCart?.details?.dateStart
+                                  ? "btn-yellow"
+                                  : "btn-light"
+                              }
+                              className={`${
+                                !!productToCart?.details?.dateStart
+                                  ? ""
+                                  : "opacity-50 bg-zinc-200"
+                              } whitespace-nowrap py-2 px-5 md:px-8 md:py-4`}
+                            >
+                              Adicionar
+                            </Button>
+                          ) : (
+                            <Button
+                              href="/carrinho"
+                              style="btn-light"
+                              className={`whitespace-nowrap py-2 px-5 md:px-8 md:py-4`}
+                            >
+                              Acessar carrinho
+                            </Button>
+                          )}
                           <style jsx global>{`
                             html {
                               padding-bottom: ${layout.isMobile
@@ -920,7 +957,7 @@ export default function Produto({
                       title="Compartilhe:"
                       status={share}
                       size="sm"
-                      close={() => setShare(false)}
+                      close={() => setShare(false as boolean)}
                     >
                       <ShareModal
                         url={baseUrl}
@@ -1030,7 +1067,7 @@ export default function Produto({
 
       <SidebarCart
         status={cartModal}
-        close={() => router.push({ pathname: "/produtos" })}
+        close={() => setCartModal(false as boolean)}
       />
 
       <Newsletter />

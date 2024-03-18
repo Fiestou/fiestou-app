@@ -226,13 +226,13 @@ export default function Conta({
   const removeLocation = (e: any, remove: any) => {
     e.preventDefault();
 
-    console.log(locations, remove);
+    // console.log(locations, remove);
 
     let handleLocations = (locations ?? []).filter(
       (locate: AddressType, index: any) => locate.zipCode != remove.zipCode
     );
 
-    console.log(handleLocations);
+    // console.log(handleLocations);
 
     handleForm({ edit: -1 });
 

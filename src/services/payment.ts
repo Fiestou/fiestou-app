@@ -39,7 +39,7 @@ class Payment {
       .post("/api/stripe/create-stripe-session", data)
       .then(({ data }: any) => data)
       .catch((response: any) => {
-        console.log("catch: ", response);
+        // console.log("catch: ", response);
       });
   }
 
@@ -58,7 +58,7 @@ class Payment {
       .post("/api/stripe/get-stripe-session", { session: session })
       .then(({ data }: any) => data)
       .catch((response: any) => {
-        console.log(response);
+        // console.log(response);
       });
   }
 }

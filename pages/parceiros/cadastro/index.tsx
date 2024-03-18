@@ -85,7 +85,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
     });
 
     if (request.response) {
-      console.log(request, store, user);
+      // console.log(request, store, user);
       setStep(2);
     }
 
@@ -98,7 +98,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
     setForm({ ...form, loading: true });
 
     if (true) {
-      // console.log(store, user);
+      // // console.log(store, user);
       setStep(3);
     }
 
@@ -111,7 +111,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
     setForm({ ...form, loading: true });
 
     if (true) {
-      // console.log(store, user);
+      // // console.log(store, user);
       setStep(4);
     }
 

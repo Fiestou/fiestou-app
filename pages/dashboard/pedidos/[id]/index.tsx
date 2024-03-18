@@ -223,7 +223,7 @@ export default function Pedido({
 
     const handle: OrderType = request?.data ?? {};
 
-    // console.log(handle);
+    // // console.log(handle);
 
     if (
       !!handle?.metadata?.id &&

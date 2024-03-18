@@ -56,7 +56,7 @@ export async function middleware(req: any) {
       return NextResponse.redirect(permanentLink);
     }
 
-    // console.log(token, user);
+    // // console.log(token, user);
   }
 
   return NextResponse.next();

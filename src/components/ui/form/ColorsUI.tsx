@@ -106,7 +106,7 @@ export default function Colors(attr: ColorType) {
             key={key}
             onClick={(e: any) => HandleColors(item.value)}
             className={`${
-              value?.indexOf(item.value) > -1
+              value?.includes(item.value)
                 ? "border-zinc-800"
                 : "border-zinc-200"
             } group p-2 border hover:border-zinc-400 ease rounded-md cursor-pointer relative`}

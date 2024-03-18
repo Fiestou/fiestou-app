@@ -20,7 +20,7 @@ const SendSMS = async (data: any) => {
   })
     .then((response) => response.text())
     .then((result) => result)
-    .catch((error) => console.log("error", error));
+    .catch((error) => // console.log("error", error));
 
   return request;
 };
@@ -37,7 +37,7 @@ export const RegisterUserSMS = async (user: any, content: MessageType) => {
 
   const handleSendSMS = await SendSMS(data);
 
-  console.log("RegisterUserSMS: ", handleSendSMS);
+  // console.log("RegisterUserSMS: ", handleSendSMS);
 };
 
 export const RegisterOrderSMS = async (
@@ -78,9 +78,9 @@ export const RegisterOrderSMS = async (
 
     const handleSendSMS = await SendSMS(data);
 
-    console.log("RegisterOrderSMS: ", handleSendSMS);
+    // console.log("RegisterOrderSMS: ", handleSendSMS);
   } else {
-    console.log("RegisterOrderSMS: no phone", user);
+    // console.log("RegisterOrderSMS: no phone", user);
   }
 };
 
@@ -102,9 +102,9 @@ export const CompleteOrderSMS = async (
 
     const handleSendSMS = await SendSMS(data);
 
-    console.log("CompleteOrderSMS: ", handleSendSMS);
+    // console.log("CompleteOrderSMS: ", handleSendSMS);
   } else {
-    console.log("CompleteOrderSMS: no phone", user);
+    // console.log("CompleteOrderSMS: no phone", user);
   }
 };
 
@@ -131,7 +131,7 @@ export const PartnerNewOrderSMS = async (
 
       const handleSendSMS = await SendSMS(data);
 
-      console.log("PartnerNewOrderSMS: ", handleSendSMS);
+      // console.log("PartnerNewOrderSMS: ", handleSendSMS);
     });
 };
 
@@ -162,8 +162,8 @@ export const ChangeDeliveryStatusSMS = async (
 
     const handleSendSMS = SendSMS(data);
 
-    console.log("ChangeDeliveryStatusSMS: ", handleSendSMS);
+    // console.log("ChangeDeliveryStatusSMS: ", handleSendSMS);
   } else {
-    console.log("ChangeDeliveryStatusSMS: no phone", user);
+    // console.log("ChangeDeliveryStatusSMS: no phone", user);
   }
 };

@@ -5,7 +5,7 @@ export default function Stripe() {
   const submitOrder = async (e: any) => {
     e.preventDefault();
 
-    console.log("submitOrder");
+    // console.log("submitOrder");
 
     const payment = new Payment();
     const stripe = await loadStripe(
@@ -30,7 +30,7 @@ export default function Stripe() {
       ],
     });
 
-    console.log(checkoutSession);
+    // console.log(checkoutSession);
 
     return true;
 
