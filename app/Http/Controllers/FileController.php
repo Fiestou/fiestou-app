@@ -30,14 +30,22 @@ class FileController extends Controller
 
 	public function ListMedias(Request $request){
 
+        $auth = Auth::user();
+
         $selecteds = $request->has('selecteds') ? $request->selecteds : [];
 
-        $medias = Media::where('user_id', $this->user->id)
-                        ->whereNotIn('id', $selecteds)
-                        ->orderBy('id', 'DESC')
-                        ->get()->toArray();
+        $medias = Media::whereNotIn('id', $selecteds)
+                        ->where(["application_id" => -1])
+                        ->orderBy('id', 'DESC');
+
+        if($auth->person != "master"){
+            $medias = $medias->where('user_id', $this->user->id);
+        }
+
+        $medias = $medias->get()->toArray();
 
         $selecteds = Media::where('user_id', $this->user->id)
+                    ->where(["application_id" => -1])
                     ->whereIn('id', $selecteds)
                     ->orderBy('id', 'DESC')
                     ->get()->toArray();
@@ -50,6 +58,7 @@ class FileController extends Controller
 
         return response()->json([
             'response'  => true,
+            'auth' => $auth,
             'medias'    => $medias,
         ]);
 	}
