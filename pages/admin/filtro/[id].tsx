@@ -116,7 +116,7 @@ export default function Categorias({
       ...(relation?.closest ?? []),
     ];
 
-    // // console.log(
+    // console.log(
     //   closest.filter((value, index) => closest.indexOf(value) === index)
     // );
 
@@ -287,7 +287,7 @@ export default function Categorias({
   const handleCollapse = (slug: string) => {
     var collapse: Array<string> = form.edit;
 
-    // console.log(collapse);
+    console.log(collapse);
 
     handleForm({
       edit: collapse.includes(slug)

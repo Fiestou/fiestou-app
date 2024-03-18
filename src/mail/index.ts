@@ -20,7 +20,7 @@ const MailSend = async (data: any) => {
   })
     .then((response) => response.text())
     .then((result) => result)
-    .catch((error) => // console.log("error", error));
+    .catch((error) => console.log("error", error));
 
   return request;
 };
@@ -37,7 +37,7 @@ export const RegisterUserMail = async (user: any, content: ContentType) => {
 
   const handleMailSend = await MailSend(data);
 
-  // console.log("RegisterUserMail: ", handleMailSend);
+  console.log("RegisterUserMail: ", handleMailSend);
 };
 
 export const RegisterOrderMail = async (
@@ -83,7 +83,7 @@ export const RegisterOrderMail = async (
 
   const handleMailSend = await MailSend(data);
 
-  // console.log("RegisterOrderMail: ", handleMailSend);
+  console.log("RegisterOrderMail: ", handleMailSend);
 };
 
 export const CompleteOrderMail = async (
@@ -103,7 +103,7 @@ export const CompleteOrderMail = async (
 
   const handleMailSend = await MailSend(data);
 
-  // console.log("CompleteOrderMail: ", handleMailSend);
+  console.log("CompleteOrderMail: ", handleMailSend);
 };
 
 export const PartnerNewOrderMail = async (
@@ -123,7 +123,7 @@ export const PartnerNewOrderMail = async (
 
     const handleMailSend = await MailSend(data);
 
-    // console.log("PartnerNewOrderMail: ", handleMailSend);
+    console.log("PartnerNewOrderMail: ", handleMailSend);
   });
 };
 
@@ -153,5 +153,5 @@ export const ChangeDeliveryStatusMail = async (
 
   const handleMailSend = MailSend(data);
 
-  // console.log("ChangeDeliveryStatusMail: ", handleMailSend);
+  console.log("ChangeDeliveryStatusMail: ", handleMailSend);
 };

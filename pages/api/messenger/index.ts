@@ -31,10 +31,10 @@ export default async function handler(
 
   transporter.sendMail(mailData, function (err: any, info: any) {
     if (err) {
-      // // console.log(err);
+      // console.log(err);
       res.status(500).json({ err: err });
     } else {
-      // // console.log(info);
+      // console.log(info);
       res.status(200).json({ info: info, body: mailData });
     }
   });

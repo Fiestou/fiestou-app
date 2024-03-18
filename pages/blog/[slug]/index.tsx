@@ -99,7 +99,7 @@ export async function getStaticProps(ctx: any) {
 
   const post = request?.data?.query?.post ?? [];
 
-  // console.log(request?.data);
+  console.log(request?.data);
 
   const posts = request?.data?.query?.posts ?? [];
   const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];

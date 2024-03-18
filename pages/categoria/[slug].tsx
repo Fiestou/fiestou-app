@@ -46,7 +46,7 @@ export async function getStaticProps(ctx: any) {
     ctx
   );
 
-  // console.log(request, "<< category");
+  console.log(request, "<< category");
 
   const category = request?.data?.category ?? {};
   const products = request?.data?.products ?? [];

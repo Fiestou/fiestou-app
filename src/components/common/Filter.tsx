@@ -78,7 +78,7 @@ export default function Filter(params: any) {
   };
 
   const renderCategoriesForm = (slug: any) => {
-    // // console.log(slug, categoriesLevels);
+    // console.log(slug, categoriesLevels);
     const render: any = [<></>];
 
     return render;

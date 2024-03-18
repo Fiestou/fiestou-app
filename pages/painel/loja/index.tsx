@@ -352,7 +352,7 @@ export default function Loja({
 
     handleForm({ loading: true });
 
-    // console.log(store);
+    console.log(store);
 
     const request: any = await api.bridge({
       url: "stores/register",

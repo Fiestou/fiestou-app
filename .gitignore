@@ -9,6 +9,10 @@ dist/
 .next/
 .env
 
+public/robots.txt
+public/sitemap-0.xml
+public/sitemap.xml
+
 # Compiled Java class files
 *.class
 

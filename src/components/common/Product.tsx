@@ -8,7 +8,7 @@ import LikeButton from "../ui/LikeButton";
 export default function Product({ product }: { product: ProductType | any }) {
   const imageCover = !!product?.gallery?.length ? product?.gallery[0] : {};
 
-  // // console.log(product, "<<");
+  // console.log(product, "<<");
 
   let store: StoreType = product?.store ?? {};
 

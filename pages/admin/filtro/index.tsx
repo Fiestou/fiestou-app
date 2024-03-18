@@ -79,14 +79,14 @@ export default function Categorias() {
         : 0,
     };
 
-    // console.log(relation);
+    console.log(relation);
 
     const request: any = await api.bridge({
       url: "categories/register",
       data: rel,
     });
 
-    // console.log(relation, "rel");
+    console.log(relation, "rel");
 
     if (request.response) {
       setListRelation(request?.data);
@@ -127,11 +127,11 @@ export default function Categorias() {
         return list.map((item: any, current: number) => {
           if (item.id == id && newPos <= list.length) {
             let saveCurrent = Object.assign({}, item);
-            // console.log(saveCurrent);
+            console.log(saveCurrent);
 
             list.map((old: any, i: number) => {
               if (old.order == newPos) {
-                // console.log(old);
+                console.log(old);
                 // list[i]["order"] = saveCurrent["order"];
                 // saveCurrent["order"] = newPos;
               }
@@ -147,7 +147,7 @@ export default function Categorias() {
 
       let handle: any = findLevel(listRelation);
 
-      // // console.log(handle);
+      // console.log(handle);
 
       // setListRelation(handle as Array<RelationType>);
     }

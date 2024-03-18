@@ -27,7 +27,7 @@ export default function Paginate({
     };
   }
 
-  // // console.log(handle, current, paginate.length - 1, "<");
+  // console.log(handle, current, paginate.length - 1, "<");
 
   return (
     <div className="flex gap-1 justify-center">

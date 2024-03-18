@@ -74,7 +74,7 @@ export default function Contact({
   DataSeo: any;
 }) {
   const api = new Api();
-  // console.log(content);
+  console.log(content);
 
   const [data, setData] = useState({} as any);
   const [form, setForm] = useState({

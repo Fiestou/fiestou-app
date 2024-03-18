@@ -399,7 +399,7 @@ export default function Form({
                         <label className="text-zinc-900 font-bold">
                           Exibir na minha loja
                         </label>
-                        <Input readonly value={data.status ?? "visible"} />
+                        {data.status ?? "visible"}
                       </div>
                     </div>
                   </div>

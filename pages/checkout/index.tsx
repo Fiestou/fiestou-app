@@ -145,7 +145,7 @@ export default function Checkout({
   const router = useRouter();
   const { isFallback } = useRouter();
 
-  // console.log(checkout, "checkout");
+  console.log(checkout, "checkout");
 
   const [form, setForm] = useState(FormInitialType);
 

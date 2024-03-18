@@ -14,7 +14,7 @@ export async function getServerSideProps(ctx: any) {
     ctx
   );
 
-  // console.log(request, "<<");
+  console.log(request, "<<");
 
   return {
     props: {
