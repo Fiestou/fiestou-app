@@ -123,23 +123,28 @@
                                                                     <td colspan="2" valign="middle" id="credit"
                                                                         style="border-radius: 6px; border: 0; color: #8a8a8a; font-family: 'Helvetica Neue',Helvetica,Roboto,Arial,sans-serif; font-size: 12px; line-height: 150%; text-align: center; padding: 24px 0;"
                                                                         align="center">
-                                                                        <p style="margin: 0 0 16px;">Fiestou —
+                                                                        <p style="margin: 0 0 16px;">
                                                                             <a target="_blank"
                                                                                 style="display: inline-block;padding: 0 0.5rem;"
-                                                                                href="https://www.fiestou.com.br/"> site
+                                                                                href="https://www.fiestou.com.br/"> Fiestou
                                                                             </a>
+                                                                            —
+                                                                            <a target="_blank"
+                                                                                style="display: inline-block;padding: 0 0.5rem;"
+                                                                                href="https://www.facebook.com/Fiestou.com.br">
+                                                                                <img src="https://api.fiestou.com.br/images/icon-facebook.svg" width="24"/> </a>
                                                                             <a target="_blank"
                                                                                 style="display: inline-block;padding: 0 0.5rem;"
                                                                                 href="https://br.pinterest.com/Fiestouapp/">
-                                                                                pinterest </a>
+                                                                                <img src="https://api.fiestou.com.br/images/icon-pinterest.svg" width="24"/> </a>
                                                                             <a target="_blank"
                                                                                 style="display: inline-block;padding: 0 0.5rem;"
                                                                                 href="https://www.instagram.com/fiestou/">
-                                                                                youtube </a>
+                                                                                <img src="https://api.fiestou.com.br/images/icon-youtube.svg" width="24"/> </a>
                                                                             <a target="_blank"
                                                                                 style="display: inline-block;padding: 0 0.5rem;"
                                                                                 href="https://www.tiktok.com/@fiestou.app">
-                                                                                tiktok </a>
+                                                                                <img src="https://api.fiestou.com.br/images/icon-tiktok.svg" width="24"/> </a>
                                                                         </p>
                                                                     </td>
                                                                 </tr>

@@ -46,6 +46,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
     Route::group([ 'prefix' => 'auth' ], function(){
         Route::post('/checkin', [AuthController::class, 'CheckIn']);
         Route::post('/login', [AuthController::class, 'Login']);
+        Route::post('/external-auth', [AuthController::class, 'ExternalAuth']);
         Route::post('/register', [UsersController::class, 'Register']);
         Route::post('/pre-register', [UsersController::class, 'PreRegister']);
         Route::post('/recovery', [AuthController::class, 'Recovery']);
@@ -100,7 +101,6 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/withdraw/list', [WithdrawController::class, 'List']);
 
         //AUTHCONTROLLER
-        Route::post('/logout', [AuthController::class, 'Logout']);
         Route::post('/refresh', [AuthController::class, 'Refresh']);
         Route::post('/me', [AuthController::class, 'Me']);
 
@@ -129,12 +129,15 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
             Route::post('/upload-base64', [FileController::class, 'UploadBase64']);
         });
     });
+
+    Route::post('/logout', [AuthController::class, 'Logout']);
 });
 
 // CRON
 Route::group([ 'prefix' => 'cron' ], function(){
     Route::get('/normalize-file-data', [CronController::class, 'NormalizeFileData']);
     Route::get('/migrate', [CronController::class, 'MigrateData']);
+    Route::get('/normalize-media-content', [CronController::class, 'NormalizeMediaContent']);
 });
 
 // CONTENT

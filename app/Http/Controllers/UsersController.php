@@ -224,25 +224,52 @@ class UsersController extends Controller
 
     public function Update(Request $request)
     {
-        $request->validate([
-            'id' => "required"
-        ]);
-
         $auth = auth()->user();
 
-        $user = User::where([ 'id' => $request->get('id') ])->first();
+        if($auth->person == "master"){
 
-        if((isset($user->id) && $auth->id == $user->id) || (isset($user->id) && $auth->person == "master")){
+            if(!$request->get('id')){
+                return response()->json([
+                    'response'  => false,
+                    'message' => 'id required'
+                ], 422);
+            }
+
+            $user = User::where([ 'id' => $request->get('id') ])->first();
+        }
+        else{
+            $user = User::where([ 'id' => $auth->id ])->first();
+        }
+
+        if(isset($user->id)){
+
+            if($request->has('origin') && $request->get('origin') == "complete"){
+                $request->request->remove('origin');
+                $user->status = 1;
+            }
+
             $user->RequestToThis($request);
             $user->RequestToDetails($request->all());
 
             $user->hash = md5($user->email);
-            $user->name = $request->has('name') ? $request->get('name') : $user->name;
-            $user->date = $request->has('date') ? $request->get('date') : $user->date;
-            $user->email = $request->has('email') ? $request->get('email') : $user->email;
-            $user->login = $request->has('login') ? $request->get('email') : $user->email;
-            $user->person = $request->has('person') ? $request->get('person') : $user->person;
-            $user->status = $request->has('status') ? $request->get('status') : 1;
+
+            if($request->has('name'))
+                $user->name = $request->get('name');
+
+            if($request->has('date'))
+                $user->date = $request->get('date');
+
+            if($request->has('email'))
+                $user->email = $request->get('email');
+
+            if($request->has('login'))
+                $user->login = $request->get('email');
+
+            if($request->has('person'))
+                $user->person = $request->get('person');
+
+            if($request->has('status'))
+                $user->status = $request->get('status');
 
             try{
                 $user->save();
@@ -261,12 +288,80 @@ class UsersController extends Controller
 
             return response()->json([
                 'response'  => true,
+                'data' => $user
             ]);
         }
 
         return response()->json([
             'response'  => false,
-            'message'   => 'Erro ao salvar usuário <--'
+            'message'   => 'error user update'
+        ], 500);
+    }
+
+    public function Complete(Request $request)
+    {
+        $auth = auth()->user();
+
+        $user = User::where([ 'id' => $auth->id ])->first();
+
+        if(isset($user->id)){
+
+            $details = [];
+
+            $user->hash = md5($user->email);
+
+            if($request->has('name'))
+                $user->name = $request->get('name');
+
+            if($request->has('date'))
+                $user->date = $request->get('date');
+
+            if($request->has('email'))
+                $user->email = $request->get('email');
+
+            if($request->has('login'))
+                $user->login = $request->get('email');
+
+            if($request->has('person'))
+                $user->person = $request->get('person');
+
+            if($request->has('phone'))
+                $details = $request->get('phone');
+
+            try{
+
+                $user->status = 1;
+                $user->details = json_encode($details);
+
+                $user->save();
+            }
+            catch(\Exception $e){
+                return response()->json([
+                    'response'  => false,
+                    'message'   => 'Erro ao salvar usuário',
+                    'errors'    => $e->getMessage()
+                ], 500);
+            }
+
+            $user = User::where([ 'id' => $user->id ])->first();
+
+            $details['id'] = $user->id;
+            $details['hash'] = $user->hash ?? md5($user->email);
+            $details['name'] = $user->name;
+            $details['email'] = $user->email;
+            $details['type'] = $user->type;
+            $details['person'] = $user->person;
+            $details['status'] = $user->status;
+
+            return response()->json([
+                'response'  => true,
+                'user'      => $details
+            ]);
+        }
+
+        return response()->json([
+            'response'  => false,
+            'message'   => 'error user update'
         ], 500);
     }
 }

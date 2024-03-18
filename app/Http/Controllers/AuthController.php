@@ -79,6 +79,81 @@ class AuthController extends Controller
         ]);
     }
 
+    public function ExternalAuth(Request $request){
+
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $auth_hash = date("Y-m-d|H:i:s");
+
+        $email  = strtolower(trim($request->get('email')));
+
+        if(!User::where([ 'email' => $email ])->count()){
+            $user = new User;
+
+            $user->name = $request->has('name') ? $request->get('name') : "";
+            $user->hash = md5($email);
+            $user->email    = $email;
+            $user->login    = $email;
+            $user->type     = "user";
+            $user->person   = "client";
+            $user->password = bcrypt($auth_hash);
+            $user->details  = json_encode([]);
+            $user->status   = 0;
+            $user->save();
+        }
+
+        $user = User::where(['email' => $email])->first();
+
+        if(isset($user->id))
+        {
+            $user->remember = $user->password;
+            $user->password = bcrypt($auth_hash);
+            $user->save();
+
+            $credentials = [
+                'email'     => $request->get('email'),
+                'password'  => $auth_hash
+            ];
+
+            if(!$token = auth()->attempt($credentials))
+            {
+                return response()->json([
+                    'response'  => false,
+                    'message'   => 'email_or_password_invalid',
+                ]);
+            }
+
+            $store = Store::where("user", $user->id)
+                          ->first();
+
+            $details = !!$user->details ? json_decode($user->details, TRUE) : [];
+
+            $details['id']      = $user->id;
+            $details['hash']    = $user->hash ?? md5($user->email);
+            $details['name']    = $user->name;
+            $details['email']   = $user->email;
+            $details['type']    = $user->type;
+            $details['person']  = $user->person;
+            $details['status']  = $user->status;
+
+            $user = $details;
+
+            return response()->json([
+                'response'  => true,
+                'token'     => $token,
+                'user'      => $user,
+                'store'     => isset($store->id) ? $store->id : NULL
+            ]);
+        }
+
+        return response()->json([
+            'response'  => false,
+            'message'   => 'email_or_password_invalid'
+        ]);
+    }
+
     public function ValidateUser(Request $request){
 
         $this->validate($request, [

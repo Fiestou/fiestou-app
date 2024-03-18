@@ -27,6 +27,26 @@ class Content extends BaseModel
         'status',
     ];
 
+    public function recursiveContentCustom($custom = []){
+
+        foreach ($custom as $key => $value){
+            if(isset($value['medias'])){
+                $medias = [];
+
+                foreach ($value['medias'] as $media) {
+                    if(isset($media['id'])) $medias[] = $media['id'];
+                }
+
+                $custom[$key] = ['medias' => $medias];
+            }
+            elseif(is_array($value)){
+                $custom[$key] = $this->recursiveContentCustom($value);
+            }
+        }
+
+        return $custom;
+    }
+
     public function ContentCustom($request){
 
         $content = [];
@@ -34,6 +54,19 @@ class Content extends BaseModel
         foreach ($request as $key => $value){
             if(!in_array($key, $this->fillable) && $key != "id"){
                 $content[$key] = $value;
+
+                if(isset($value['medias'])){
+                    $medias = [];
+
+                    foreach ($value['medias'] as $media) {
+                        if(isset($media['id'])) $medias[] = $media['id'];
+                    }
+
+                    $content[$key] = ['medias' => $medias];
+                }
+                elseif(is_array($value)){
+                    $content[$key] = $this->recursiveContentCustom($value);
+                }
             }
         }
 
@@ -45,6 +78,22 @@ class Content extends BaseModel
         $this->content = json_encode($content);
 
         return $this->content;
+    }
+
+    public static function recursiveContentClear($custom = []){
+
+        $custom = json_decode(json_encode($custom), true);
+
+        foreach ($custom as $key => $value){
+            if(isset($value['medias'])){
+                $custom[$key] = ["medias" => Media::normalizeMedia($value['medias'])];
+            }
+            elseif(is_array($value)){
+                $custom[$key] = Content::recursiveContentClear($value);
+            }
+        }
+
+        return $custom;
     }
 
     public static function GraphResultClear($contents, $data = []){
@@ -98,6 +147,13 @@ class Content extends BaseModel
 
                     foreach($fields as $field){
                         $item[$field] = $item['content'][$field];
+
+                        if(isset($item['content'][$field]['medias'])){
+                            $item[$field] = ["medias" => Media::normalizeMedia($item['content'][$field]['medias'])];
+                        }
+                        elseif(is_array($item['content'][$field])){
+                            $item[$field] = Content::recursiveContentClear($item['content'][$field]);
+                        }
                     }
 
                     unset($item['content']);
@@ -451,6 +507,13 @@ class Content extends BaseModel
         foreach($this->content as $key => $item){
             if(!in_array($key, $this->fillable) || $key == 'title'){
                 $this->{$key} = $item;
+
+                if(isset($item->medias)){
+                    $this->{$key} = ["medias" => Media::normalizeMedia($item->medias)];
+                }
+                elseif(is_array($item)){
+                    $this->{$key} = Content::recursiveContentClear($item);
+                }
             }
         }
 

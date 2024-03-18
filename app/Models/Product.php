@@ -95,6 +95,10 @@ class Product extends BaseModel
                     $product->store->profile = $profile;
                 }
 
+                if(isset($product->unavailable) && !!$product->unavailable){
+                    $product->unavailable = json_decode($product->unavailable, TRUE);
+                }
+
                 if($deep){
                     if(isset($product->combinations) && !!$product->combinations) {
                         $combinations = json_decode($product->combinations, TRUE);

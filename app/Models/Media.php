@@ -26,6 +26,17 @@ class Media extends BaseModel
         'type'
     ];
 
+    public static function normalizeMedia($medias = []){
+
+        $mediaList = Media::whereIn("id", $medias)->get();
+
+        foreach ($mediaList as $key => $media) {
+            $media->details = json_decode($media->details);
+        }
+
+        return $mediaList;
+    }
+
     public function RemoveMedia()
     {
         $response = [];

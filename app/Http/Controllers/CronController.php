@@ -302,4 +302,62 @@ class CronController extends Controller
         $this->MigrateCategories();
         // $this->MigrateOrders();
     }
+
+    public function recursiveContent($details = []) {
+
+        foreach ($details as $key => $item) {
+            if($item){
+                foreach ($item as $indx => $value) {
+
+                    if(is_array($value) && isset($value[0]) && getType($value[0]) == "object" && isset($value[0]->file_name)){
+
+                        $medias = [];
+
+                        foreach($value as $media){
+                            $medias[] = $media->id;
+                        }
+
+                        $details[$key]->{$indx} = ["medias" => $medias];
+                    }
+                    elseif(is_array($value)){
+                        $details[$key]->{$indx} = $this->recursiveContent($value);
+                    }
+                }
+            }
+        }
+
+        return $details;
+    }
+
+    public function NormalizeMediaContent(){
+
+        $content = Content::get();
+
+        foreach ($content as $value) {
+
+            $details = json_decode($value->content);
+
+            if($details){
+
+                foreach ($details as $key => $detail) {
+                    if(is_array($detail) && isset($detail[0]) && getType($detail[0]) == "object" && isset($detail[0]->file_name)){
+
+                        $medias = [];
+
+                        foreach($detail as $media){
+                            $medias[] = $media->id;
+                        }
+
+                        $details->{$key} = ["medias" => $medias];
+                    }
+                    elseif(is_array($detail)){
+                        $details->{$key} = $this->recursiveContent($detail);
+                    }
+                }
+            }
+
+            $value->content = json_encode($details);
+            $value->save();
+        }
+    }
 }
