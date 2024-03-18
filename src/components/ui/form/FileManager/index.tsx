@@ -150,7 +150,7 @@ export default function FileManager(attr: FileManagerType) {
   const closeModal = async () => {
     setModalStatus(false);
     setMediaList([]);
-    setSelecteds({ medias: attr?.value ?? [] });
+    setSelecteds(attr?.value);
   };
 
   return (
