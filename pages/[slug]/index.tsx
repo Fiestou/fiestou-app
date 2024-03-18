@@ -31,7 +31,7 @@ export const getStaticPaths = async (req: NextApiRequest) => {
 
   return {
     paths: paths,
-    fallback: "blocking",
+    fallback: true,
   };
 };
 
