@@ -42,7 +42,7 @@ export async function middleware(req: any) {
 
     if (
       user.person == "client" &&
-      (url.includes("/painel") || url.includes("/admin"))
+      (url.includes("/painel/") || url.includes("/admin"))
     ) {
       permanentLink.pathname = "/dashboard";
       return NextResponse.redirect(permanentLink);
@@ -50,7 +50,7 @@ export async function middleware(req: any) {
 
     if (
       user.person == "master" &&
-      (url.includes("/dashboard") || url.includes("/painel"))
+      (url.includes("/dashboard") || url.includes("/painel/"))
     ) {
       permanentLink.pathname = "/admin";
       return NextResponse.redirect(permanentLink);
