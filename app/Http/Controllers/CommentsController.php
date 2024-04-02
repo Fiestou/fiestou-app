@@ -37,19 +37,18 @@ class CommentsController extends Controller
 
         $user = auth()->user();
 
-        $comment = new Comment;
-        $recovery = Comment::where(['product' => $request->get("product"), "user" => $user->id])
+        $comment = Comment::where(['product' => $request->get("product"), "user" => $user->id])
                            ->first();
 
-        if(isset($recovery->id)){
-            $comment = $recovery;
+        if(!isset($comment->id)){
+            $comment = new Comment;
         }
 
-        $comment->user  = $user->id;
-        $comment->product = $request->get("product");
-        $comment->text = $request->get("comment");
-        $comment->rate = $request->get("rate");
-        $comment->status = 1;
+        $comment->user      = $user->id;
+        $comment->product   = $request->get("product");
+        $comment->text      = $request->get("comment");
+        $comment->rate      = $request->get("rate");
+        $comment->status    = 1;
 
         if($request->has("parent")) $comment->parent = $request->get("parent");
 
@@ -64,6 +63,21 @@ class CommentsController extends Controller
         }
 
         DB::commit();
+
+        $product = Product::where(['id' => $request->get("product")])
+                          ->first();
+
+        if(isset($product->id)){
+
+            $count = Comment::where(['product' => $request->get("product")])
+                            ->count();
+
+            $sum = Comment::where(['product' => $request->get("product")])
+                          ->sum("rate");
+
+            $product->rate = $sum / $count;
+            $product->save();
+        }
 
         return response()->json([
             'response'  => true,

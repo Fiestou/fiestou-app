@@ -134,7 +134,7 @@ class ProductsController extends Controller
 
     public function Get(Request $request){
 
-        $product = Product::with(["store", "comments"])
+        $product = Product::with(["store", "comments.user"])
                           ->where('status', 1);
 
         if($request->has('id')){
@@ -150,6 +150,7 @@ class ProductsController extends Controller
         if(isset($product->id)){
             return response()->json([
                 'response'  => true,
+                '$product'  => $product,
                 'data'      => Product::normalize([$product])[0]
             ]);
         }

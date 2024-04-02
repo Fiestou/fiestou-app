@@ -8,6 +8,7 @@ use App\Models\Store;
 use App\Models\Media;
 use App\Models\Category;
 use App\Models\Comments;
+use App\Models\User;
 use Illuminate\Support\Str;
 use DB;
 
@@ -28,6 +29,7 @@ class Product extends BaseModel
         'priceSale',
         'quantityType',
         'quantity',
+        'rate',
         'availability',
         'unavailable',
         'weight',

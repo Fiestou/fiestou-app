@@ -12,6 +12,7 @@ class Comment extends BaseModel
     protected $table = 'comment';
     protected $fillable = [
         "id",
+        "user",
         "parent",
         "product",
         "text",
@@ -20,4 +21,8 @@ class Comment extends BaseModel
         "created_at",
         "updated_at"
     ];
+
+    public function user() {
+        return $this->belongsTo(User::class, 'user')->select('id', 'name');
+    }
 }
