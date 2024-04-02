@@ -324,8 +324,8 @@ export default function SejaParceiro({
               ></div>
             </div>
             <div className="grid md:flex gap-6 md:gap-16">
-              {!!roles.plans.length &&
-                roles.plans.map((item: any, key: any) => (
+              {!!roles?.plans?.length &&
+                roles?.plans.map((item: any, key: any) => (
                   <div
                     className={`${
                       key % 2 == 0 ? "bg-white" : "bg-zinc-900 text-white"
@@ -337,28 +337,29 @@ export default function SejaParceiro({
                         key % 2 == 0 ? "text-zinc-900" : ""
                       } w-full h-fit grid gap-1 md:gap-3 border-b pb-7`}
                     >
-                      <div className="font-bold">{item.plan_title}</div>
+                      <div className="font-bold">{item?.plan_title}</div>
                       <div className="font-title font-bold text-3xl md:text-5xl">
-                        R$ {moneyFormat(item.plan_price)}/mês
+                        R$ {moneyFormat(item?.plan_price)}/mês
                       </div>
-                      <div className="text-sm">{item.plan_description}</div>
+                      <div className="text-sm">{item?.plan_description}</div>
                     </div>
                     <div className="w-full h-full">
                       <div className="grid gap-4">
-                        {item.plan_resources
-                          .split(";")
-                          .filter((item: any) => !!item)
-                          .map((item: any, key: any) => (
-                            <div key={key} className="flex gap-3">
-                              <div>
-                                <Icon
-                                  icon="fa-check"
-                                  className="text-green-500"
-                                />
+                        {!!item?.plan_resources?.length &&
+                          item.plan_resources
+                            .split(";")
+                            .filter((item: any) => !!item)
+                            .map((item: any, key: any) => (
+                              <div key={key} className="flex gap-3">
+                                <div>
+                                  <Icon
+                                    icon="fa-check"
+                                    className="text-green-500"
+                                  />
+                                </div>
+                                <div className="w-full">{item}</div>
                               </div>
-                              <div className="w-full">{item}</div>
-                            </div>
-                          ))}
+                            ))}
                       </div>
                     </div>
                     {/* <div className="text-center mt-4 grid">
