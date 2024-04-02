@@ -126,6 +126,36 @@ export const PartnerForm = [
         name: "plain_description",
         type: "textarea",
       },
+      {
+        label: "Lista de planos",
+        name: "plans_list",
+        mainField: "plan_title",
+        type: "list",
+        singular: "Lista de planos",
+        plural: "Planos",
+        fields: [
+          {
+            label: "Título",
+            name: "plan_title",
+            type: "input",
+          },
+          {
+            label: "Valor",
+            name: "plan_price",
+            type: "input",
+          },
+          {
+            label: "Descrição",
+            name: "plan_description",
+            type: "textarea",
+          },
+          {
+            label: "Recursos",
+            name: "plan_resources",
+            type: "textarea",
+          },
+        ],
+      },
     ],
   },
   {

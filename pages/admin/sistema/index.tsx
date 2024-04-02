@@ -1,4 +1,5 @@
 import { Button, Input } from "@/src/components/ui/form";
+import List from "@/src/components/ui/form/ListUI";
 import Options from "@/src/components/ui/form/OptionsUI";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Api from "@/src/services/api";
@@ -180,8 +181,38 @@ export default function Sistema({ roles }: { roles: any }) {
                       </div>
                     </div>
                   </div>
+                  <div className="border-t pt-4 pb-2">
+                    <h4 className="text-2xl text-zinc-900 pb-6">Planos</h4>
+                    <List
+                      mainField="plan_title"
+                      items={data.plans}
+                      onChange={(value: any) => handleData({ plans: value })}
+                      form={[
+                        {
+                          label: "Título",
+                          name: "plan_title",
+                          type: "input",
+                        },
+                        {
+                          label: "Valor",
+                          name: "plan_price",
+                          type: "input",
+                        },
+                        {
+                          label: "Descrição",
+                          name: "plan_description",
+                          type: "textarea",
+                        },
+                        {
+                          label: "Recursos",
+                          name: "plan_resources",
+                          type: "textarea",
+                        },
+                      ]}
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex border-t pt-4 items-center gap-4">
                   <div className="w-full">
                     <Link
                       passHref

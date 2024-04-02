@@ -24,6 +24,7 @@ export interface ProductType {
   code?: string;
   sku?: string;
   price: number;
+  rate?: number;
   priceSale?: number;
   quantityType?: string | "manage";
   quantity?: number | string;
@@ -119,3 +120,11 @@ export const getPriceValue = (product: any) => {
     priceFromFor: !product?.attributes,
   } as PriceNumberType;
 };
+
+export interface CommentType {
+  user: {
+    name: string;
+  };
+  text: string;
+  rate: number;
+}

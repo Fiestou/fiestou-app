@@ -544,7 +544,7 @@ export default function Pedido({
             close={() => setModalRating(false)}
           >
             <form onSubmit={(e: any) => submitRate(e)} className="grid gap-4">
-              {order?.metadata?.status != "open" ? (
+              {!!order?.status ? (
                 <>
                   <div className="">
                     <div className="flex items-center gap-6">

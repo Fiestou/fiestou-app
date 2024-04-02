@@ -4,20 +4,12 @@ import Link from "next/link";
 import Img from "@/src/components/utils/ImgBase";
 import { StoreType } from "@/src/models/store";
 import LikeButton from "../ui/LikeButton";
+import { useEffect } from "react";
 
 export default function Product({ product }: { product: ProductType | any }) {
   const imageCover = !!product?.gallery?.length ? product?.gallery[0] : {};
 
-  // console.log(product, "<<");
-
   let store: StoreType = product?.store ?? {};
-
-  const comments = product?.comments ?? [];
-
-  const rate: { star: number; comments: number } = {
-    star: comments?.reduce((result: number, obj: any) => result + obj.rate, 0),
-    comments: comments?.length,
-  };
 
   return (
     <div className="group w-full h-full flex flex-col relative rounded-xl overflow-hidden">
@@ -45,32 +37,30 @@ export default function Product({ product }: { product: ProductType | any }) {
               </Link>
             </div>
             <div className="w-full pt-3 flex gap-2 md:gap-2 items-center">
-              <div>
-                <div className="inline-block bg-zinc-100 text-zinc-900 rounded text-xs px-2 py-1">
+              <div className="w-fit">
+                <div className="inline-block bg-zinc-100 whitespace-nowrap text-zinc-900 rounded text-xs px-2 py-1">
                   {product.comercialType == "selling"
                     ? "Para venda"
                     : "Para alugar"}
                 </div>
               </div>
-              <div className="relative">
-                <div className="flex pt-1 text-[.8rem] gap-1 text-zinc-200">
-                  {[1, 2, 3, 4, 5].map((item, key) => (
-                    <Icon key={key * 2000} icon="fa-star" type="fa" />
-                  ))}
+              {!!product.rate && (
+                <div className="relative h-[.5rem]">
+                  <div className="flex text-[.8rem] gap-1 text-zinc-200">
+                    {[1, 2, 3, 4, 5].map((item, key) => (
+                      <Icon key={key * 2000} icon="fa-star" type="fa" />
+                    ))}
+                  </div>
+                  <div
+                    style={{ width: `${(product.rate * 100) / 5}%` }}
+                    className="flex absolute top-0 left-0 text-[.8rem] gap-1 text-yellow-500 overflow-hidden"
+                  >
+                    {[1, 2, 3, 4, 5].map((item, key) => (
+                      <Icon key={key * 200} icon="fa-star" type="fa" />
+                    ))}
+                  </div>
                 </div>
-                <div
-                  className={`rate-star-${product.slug} flex h-full absolute top-0 left-0 text-[.8rem] gap-1 text-yellow-500 overflow-hidden`}
-                >
-                  {[1, 2, 3, 4, 5].map((item, key) => (
-                    <Icon key={key * 200} icon="fa-star" type="fa" />
-                  ))}
-                  <style>{`
-                    .rate-star-${product.slug}{
-                      width: ${(rate.star * 100) / 5}%
-                    }                
-                  `}</style>
-                </div>
-              </div>
+              )}
             </div>
             <div className="text-[.85rem] pt-2 text-zinc-900">
               <span className="inline-block">Fornecido por:</span>

@@ -11,14 +11,19 @@ export default function LikeButton({
   style?: string;
 }) {
   const [likes, setLikes] = useState([] as Array<number>);
+
   const handleLikes = (like: number) => {
-    const handleLike = !!likes.includes(like)
-      ? (likes ?? []).filter((value) => value !== like)
-      : [...likes, like];
+    let handleLikes: Array<number> = !!Cookies.get("fiestou.likes")
+      ? Object.values(JSON.parse(Cookies.get("fiestou.likes") ?? "[]"))
+      : [];
 
-    setLikes(handleLike);
+    handleLikes = !!handleLikes.includes(like)
+      ? (handleLikes ?? []).filter((value) => value !== like)
+      : [...handleLikes, like];
 
-    Cookies.set("fiestou.likes", JSON.stringify(handleLike), {
+    setLikes(handleLikes);
+
+    Cookies.set("fiestou.likes", JSON.stringify(handleLikes), {
       expires: 14,
     });
   };

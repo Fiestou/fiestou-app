@@ -13,7 +13,7 @@ import { Navigation, Pagination } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { getImage } from "@/src/helper";
+import { getImage, moneyFormat } from "@/src/helper";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -27,6 +27,16 @@ export async function getStaticProps(ctx: any) {
             {
               key: "slug",
               value: "seja-parceiro",
+              compare: "=",
+            },
+          ],
+        },
+        {
+          model: "roles",
+          filter: [
+            {
+              key: "slug",
+              value: "roles",
               compare: "=",
             },
           ],
@@ -56,12 +66,15 @@ export async function getStaticProps(ctx: any) {
     ctx
   );
 
+  const content = request?.data?.query?.page ?? [];
+  const roles = request?.data?.query?.roles ?? [];
   const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
   const DataSeo = request?.data?.query?.DataSeo ?? [];
 
   return {
     props: {
-      content: request?.data?.query?.page[0] ?? {},
+      content: content[0] ?? {},
+      roles: roles[0] ?? {},
       HeaderFooter: HeaderFooter[0] ?? {},
       DataSeo: DataSeo[0] ?? {},
     },
@@ -76,13 +89,17 @@ const FormInitialType = {
 
 export default function SejaParceiro({
   content,
+  roles,
   HeaderFooter,
   DataSeo,
 }: {
   content: any;
+  roles: any;
   HeaderFooter: any;
   DataSeo: any;
 }) {
+  console.log(roles);
+
   const api = new Api();
   const router = useRouter();
 
@@ -288,7 +305,6 @@ export default function SejaParceiro({
         </div>
       </section>
 
-      {/* 
       <section className="md:py-14 relative overflow-hidden">
         <div className="max-w-[88rem] pb-6 pt-14 md:p-14 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
@@ -307,49 +323,53 @@ export default function SejaParceiro({
                 }}
               ></div>
             </div>
-            <div className="flex gap-6 md:gap-16">
-              {[1, 2].map((item: any, key: any) => (
-                <div
-                  className={`${
-                    key % 2 == 0 ? "bg-white" : "bg-zinc-900 text-white"
-                  } w-full flex flex-col gap-7 p-10 rounded-xl`}
-                  key={key}
-                >
+            <div className="grid md:flex gap-6 md:gap-16">
+              {!!roles.plans.length &&
+                roles.plans.map((item: any, key: any) => (
                   <div
                     className={`${
-                      key % 2 == 0 ? "text-zinc-900" : ""
-                    } w-full h-fit grid gap-3 border-b pb-7`}
+                      key % 2 == 0 ? "bg-white" : "bg-zinc-900 text-white"
+                    } w-full flex flex-col gap-7 p-6 md:p-10 rounded-xl`}
+                    key={key}
                   >
-                    <div className="font-bold">Fiestou simples</div>
-                    <div className="font-title font-bold text-5xl">
-                      R$19/mês
+                    <div
+                      className={`${
+                        key % 2 == 0 ? "text-zinc-900" : ""
+                      } w-full h-fit grid gap-1 md:gap-3 border-b pb-7`}
+                    >
+                      <div className="font-bold">{item.plan_title}</div>
+                      <div className="font-title font-bold text-3xl md:text-5xl">
+                        R$ {moneyFormat(item.plan_price)}/mês
+                      </div>
+                      <div className="text-sm">{item.plan_description}</div>
                     </div>
-                    <div className="text-sm">ou RS199 por ano</div>
-                  </div>
-                  <div className="w-full h-full">
-                    <div className="grid gap-4">
-                      {[1, 2, 3, 4, 5].map((item: any, key: any) => (
-                        <div key={key} className="flex gap-3">
-                          <div>
-                            <Icon icon="fa-check" />
-                          </div>
-                          <div className="w-full">
-                            Entrega feita pela sua loja
-                          </div>
-                        </div>
-                      ))}
+                    <div className="w-full h-full">
+                      <div className="grid gap-4">
+                        {item.plan_resources
+                          .split(";")
+                          .filter((item: any) => !!item)
+                          .map((item: any, key: any) => (
+                            <div key={key} className="flex gap-3">
+                              <div>
+                                <Icon
+                                  icon="fa-check"
+                                  className="text-green-500"
+                                />
+                              </div>
+                              <div className="w-full">{item}</div>
+                            </div>
+                          ))}
+                      </div>
                     </div>
+                    {/* <div className="text-center mt-4 grid">
+                      <Button href="#">Quero este!</Button>
+                    </div> */}
                   </div>
-                  <div className="text-center mt-10 grid">
-                    <Button href="#">Quero este!</Button>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
       </section>
-      */}
 
       <section className="pt-10 md:py-14">
         <div className="container-medium">
@@ -358,7 +378,7 @@ export default function SejaParceiro({
               <div className="max-w-xl pb-4 md:pb-14">
                 <span>{content.faq_title}</span>
                 <h2
-                  className="font-title text-zinc-900 font-bold text-5xl mt-4"
+                  className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4"
                   dangerouslySetInnerHTML={{
                     __html: content.faq_text,
                   }}

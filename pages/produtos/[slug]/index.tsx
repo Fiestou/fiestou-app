@@ -3,9 +3,10 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 
 import Link from "next/link";
 import Template from "@/src/template";
-import Api, { defaultQuery } from "@/src/services/api";
+import Api from "@/src/services/api";
 import {
   AttributeType,
+  CommentType,
   ProductType,
   getPrice,
   getPriceValue,
@@ -13,8 +14,6 @@ import {
 import {
   dateBRFormat,
   dateFormat,
-  filterRepeatRemove,
-  getDate,
   getImage,
   getSummary,
   isMobileDevice,
@@ -49,6 +48,7 @@ import { RelationType } from "@/src/models/relation";
 import LikeButton from "@/src/components/ui/LikeButton";
 import SidebarCart from "@/src/components/common/SidebarCart";
 import RegionConfirm from "@/src/default/alerts/RegionConfirm";
+import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 
 export const getStaticPaths = async (ctx: any) => {
   const api = new Api();
@@ -111,7 +111,7 @@ export async function getStaticProps(ctx: any) {
     return {
       props: {
         product: product,
-        comments: comments?.rate ?? [],
+        comments: comments ?? [],
         store: store,
         categories: categories ?? {},
         HeaderFooter: HeaderFooter,
@@ -133,7 +133,7 @@ export default function Produto({
   Scripts,
 }: {
   product: ProductType;
-  comments: Array<any>;
+  comments: Array<CommentType>;
   store: StoreType;
   categories: any;
   HeaderFooter: any;
@@ -142,17 +142,12 @@ export default function Produto({
 }) {
   const api = new Api();
 
-  const { isFallback } = useRouter();
+  console.log(comments);
 
-  const router = useRouter();
+  const { isFallback } = useRouter();
 
   const imageCover =
     !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
-
-  const rate: { star: number; comments: number } = {
-    star: comments?.reduce((result, obj) => result + obj.rate, 0),
-    comments: comments?.length,
-  };
 
   const [share, setShare] = useState(false as boolean);
   const baseUrl = `https://fiestou.com.br/produtos/${product?.slug}`;
@@ -346,17 +341,17 @@ export default function Produto({
   const renderComments = () => (
     <>
       {!!comments?.length && (
-        <div className="mt-4 md:mt-10 bg-zinc-100 p-4 lg:p-10 rounded-xl">
-          <div className="font-title font-bold text-zinc-900 mb-5 md:mb-6">
+        <div className="mt-4 md:mt-10 bg-zinc-50 p-4 lg:p-8 rounded-xl">
+          <div className="font-title font-bold text-zinc-900 mb-4">
             {comments?.length} comentário
             {comments?.length == 1 ? "" : "s"}
           </div>
 
           <div className="grid gap-4">
-            {comments.map((item: any, key: any) => (
-              <div key={key} className="border-b pb-4">
+            {comments.map((item: CommentType, key: any) => (
+              <div key={key} className="border-t pt-4">
                 <div className="flex gap-2 items-center">
-                  <div className="relative overflow-hidden bg-zinc-300 p-4 rounded-full"></div>
+                  {/* <div className="relative overflow-hidden bg-zinc-200 p-4 rounded-full"></div> */}
                   <div className="w-full">
                     <div className="text-zinc-900 font-bold text-sm">
                       {item.user?.name ?? ""}
@@ -378,7 +373,7 @@ export default function Produto({
                     </div>
                   </div>
                 </div>
-                <div className="pt-3 text-sm">{item.comment}</div>
+                <div className="pt-3 text-sm">{item.text}</div>
               </div>
             ))}
           </div>
@@ -407,14 +402,13 @@ export default function Produto({
     return (
       <Swiper
         spaceBetween={16}
-        loop={true}
         breakpoints={{
           0: {
-            slidesPerView: 1.5,
+            slidesPerView: 1,
             centeredSlides: true,
           },
           640: {
-            slidesPerView: 2.5,
+            slidesPerView: 2,
             centeredSlides: false,
           },
           1024: {
@@ -668,7 +662,7 @@ export default function Produto({
                       {product?.title}
                     </h1>
                     <div className="flex flex-wrap items-center py-4 md:pb-6 gap-4">
-                      {!!rate?.comments && (
+                      {!!product?.rate && (
                         <div className="flex gap-1 items-center">
                           <Icon
                             icon="fa-star"
@@ -676,11 +670,11 @@ export default function Produto({
                             className="text-xs text-yellow-500"
                           />
                           <span className="font-bold text-zinc-900">
-                            {(rate.star / rate.comments).toFixed(1)}
+                            {product?.rate}
                           </span>
                           <span className="text-xs">
-                            ({rate?.comments} avaliaç
-                            {rate?.comments > 1 ? "ões" : "ão"})
+                            {comments.length}
+                            {comments.length > 1 ? " avaliações" : " avaliação"}
                           </span>
                         </div>
                       )}
@@ -1038,13 +1032,18 @@ export default function Produto({
       {!!product?.combinations && (
         <section className="py-20 md:pt-6">
           <div className="container-medium">
-            <div className="text-center md:text-left">
+            <div className="flex items-center gap-2">
+              <div>
+                <FDobleIcon icon="fa-puzzle-piece" size="sm" />
+              </div>
               <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
                 Combina com
               </h4>
             </div>
             <div className="mt-6 md:mt-8 -mx-4 md:mx-0">
-              {renderSlideProducts(product?.combinations ?? [])}
+              <div className="relative overflow-hidden rounded-xl">
+                {renderSlideProducts(product?.combinations ?? [])}
+              </div>
             </div>
           </div>
         </section>
@@ -1053,13 +1052,18 @@ export default function Produto({
       {!!match.length && (
         <section className="py-20 md:pt-6">
           <div className="container-medium">
-            <div className="text-center md:text-left">
+            <div className="flex items-center gap-2">
+              <div>
+                <FDobleIcon icon="fa-eye" size="sm" />
+              </div>
               <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
                 Veja também
               </h4>
             </div>
             <div className="mt-6 md:mt-8 -mx-4 md:mx-0">
-              {renderSlideProducts(match)}
+              <div className="relative overflow-hidden rounded-xl">
+                {renderSlideProducts(match)}
+              </div>
             </div>
           </div>
         </section>

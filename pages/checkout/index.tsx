@@ -476,8 +476,9 @@ export default function Checkout({
                                   complement: e.target.value,
                                 })
                               }
+                              required
                               defaultValue={address?.complement}
-                              placeholder="Complemento"
+                              placeholder="Complemento. Ex: Ap, Casa, Condomínio, etc..."
                             />
                           </div>
                         </div>
@@ -490,7 +491,7 @@ export default function Checkout({
                       Detalhes de entrega
                     </h4>
                     <div className="flex pt-4 flex-col gap-6">
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid md:grid-cols-3 gap-2 md:gap-4">
                         {[
                           {
                             name: "Entregar na portaria",
@@ -588,7 +589,7 @@ export default function Checkout({
                       </div>
                     </div>
                   </div>
-                  <div className="border-b pb-4"></div>
+                  <div className="border-b md:pb-4"></div>
 
                   <div className="grid gap-4 pb-4 md:pb-8 mb-0">
                     <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
@@ -653,12 +654,15 @@ export default function Checkout({
                       <div className="text-zinc-900 text-lg">Total</div>
                       <div className="whitespace-nowrap w-full text-right">
                         <div className="font-bold text-zinc-900 text-xl">
-                          R$ {moneyFormat(resume.total)} à vista
+                          <span className="lg:text-2xl">
+                            R$ {moneyFormat(resume.total)}
+                          </span>{" "}
+                          à vista
                         </div>
-                        <div className="text-xs">
+                        {/* <div className="text-xs">
                           ou em até 10x de R$ {moneyFormat(resume.total / 10)}{" "}
                           sem juros
-                        </div>
+                        </div> */}
                       </div>
                     </div>
 

@@ -93,37 +93,31 @@ export default function Favoritos({
   HeaderFooter: any;
   DataSeo: any;
 }) {
+  const api = new Api();
   const router = useRouter();
+
   const [products, setProducts] = useState([] as Array<number>);
 
-  const getLikes = async (likes: Array<number>) => {
-    const api = new Api();
-    let request: any = await api.call({
-      url: "request/graph",
-      data: [
-        {
-          with: { parent: "store", childs: "rate" },
-          model: "product as products",
-          filter: [
-            {
-              relation: "whereIn",
-              key: "id",
-              value: likes,
-            },
-          ],
-        },
-      ],
+  const getLikes = async () => {
+    let likes: any = Object.values(
+      JSON.parse(Cookies.get("fiestou.likes") ?? JSON.stringify([]))
+    );
+
+    let request: any = await api.get({
+      url: "request/products",
+      data: {
+        whereIn: likes,
+      },
     });
 
-    const products = request?.data?.query?.products ?? [];
-    setProducts(products);
-    console.log(products);
+    const handle = request.data;
+
+    setProducts(handle);
   };
 
   useEffect(() => {
     if (!!window) {
-      let cookieLikes = Cookies.get("fiestou.likes") ?? JSON.stringify([]);
-      getLikes(Object.values(JSON.parse(cookieLikes)));
+      getLikes();
     }
   }, []);
 
@@ -160,8 +154,8 @@ export default function Favoritos({
           </div>
         </section>
         <section className="">
-          <div className="container-medium pb-12">
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="container-medium pb-12 md:pb-32">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               {products &&
                 products.map((item, key) => (
                   <div key={key}>

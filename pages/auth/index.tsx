@@ -9,7 +9,6 @@ import { UserType } from "@/src/models/user";
 export async function getServerSideProps(ctx: any) {
   const { res }: any = ctx;
 
-  const api = new Api();
   const session: any = await getSession(ctx);
 
   if (!session) {
@@ -22,6 +21,8 @@ export async function getServerSideProps(ctx: any) {
   }
 
   const user = session.user;
+
+  const api = new Api();
 
   let auth: any = await api.bridge(
     {
