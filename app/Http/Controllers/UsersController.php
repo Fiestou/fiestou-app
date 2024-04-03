@@ -200,6 +200,7 @@ class UsersController extends Controller
             $user->type = "user";
             $user->person = $request->person;
             $user->password = bcrypt( $request->password );
+            $user->remember = bcrypt( $request->password );
             $user->status   = 0;
         }
 

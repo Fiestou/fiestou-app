@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ValidateUser;
 use App\Mail\RegisterUser;
+
 use Illuminate\Support\Facades\Redirect;
 use Carbon\Carbon;
 use JWTAuth;
@@ -12,6 +13,7 @@ use Auth;
 use Hash;
 
 use App\Models\User;
+use App\Models\Message;
 use App\Models\Store;
 
 class AuthController extends Controller
@@ -251,19 +253,9 @@ class AuthController extends Controller
 
             if($user->save())
             {
-                Mail::to($user->email)
-                    ->queue(
-                        (new ResetPassword([
-                                'actor' => $user,
-                                'token' => $token
-                            ]))
-                            ->onQueue('default')
-                    );
+                $content = '<div style="padding: 48px 48px 32px;"><p>Acesse o link abaixo para recuperar seu acesso: </p><p><a href="'.env('APP_URL').'/recuperar/senha?token='.$token.'&email='.$user->email.'" style="border-radius: 6px;text-decoration: none;display: inline-block;font-weight:600;color:black;background-color:#ffda4a;padding: .85rem 1.25rem;">Redefinir senha</a></p></div>';
 
-                return response()->json([
-                    'response' => true,
-                    'token' => $token
-                ]);
+                return Message::send($user->email, $user->name, "Recuperação de Senha", $content);
             }
 
             return response()->json([
@@ -274,8 +266,48 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'response'      => false,
+            'response'      => true,
             'message'       => 'actor_not_found'
+        ]);
+    }
+
+    public function Redefine(Request $request){
+
+        $request->validate([
+            'email'     => 'required|email',
+            'token'     => 'required',
+            'password'  => 'required',
+            'repeat'    => 'required|same:password'
+        ], [
+            'repeat.same' => 'error_repeat',
+        ]);
+
+        $user = User::where('email', $request->get("email"))->first();
+
+        if($user)
+        {
+            $details = $user->details ? json_decode($user->details, TRUE) : [];
+
+            if($details['remember_token'] == $request->get("token")){
+                unset($details['remember_token']);
+
+                $password = bcrypt($request->get("password"));
+                $user->password = $password;
+                $user->remember = $password;
+                $user->details = json_encode($details);
+
+                if($user->save()){
+
+                    return response()->json([
+                        'response' => true
+                    ]);
+                }
+            }
+        }
+
+        return response()->json([
+            'response'      => false,
+            'message'       => 'error'
         ]);
     }
 

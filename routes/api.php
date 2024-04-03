@@ -50,6 +50,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/register', [UsersController::class, 'Register']);
         Route::post('/pre-register', [UsersController::class, 'PreRegister']);
         Route::post('/recovery', [AuthController::class, 'Recovery']);
+        Route::post('/redefine', [AuthController::class, 'Redefine']);
     });
 
     //USERSCONTROLLER
