@@ -53,6 +53,7 @@ export default function Sms({ page }: { page: any }) {
           platformCommission: "",
           listItems: [],
           status: 1,
+          deliveryTo: "",
         },
         getContent("delivery")
       );
@@ -68,6 +69,7 @@ export default function Sms({ page }: { page: any }) {
           platformCommission: "",
           listItems: [],
           status: 1,
+          deliveryTo: "",
         },
         [],
         getContent("order")
@@ -84,6 +86,7 @@ export default function Sms({ page }: { page: any }) {
           platformCommission: "",
           listItems: [],
           status: 1,
+          deliveryTo: "",
         },
         getContent("order_complete")
       );

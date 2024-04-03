@@ -259,11 +259,13 @@ export default function Pedido({
 
         await CompleteOrderMail(handle, {
           subject: mailContent["order_complete_subject"],
+          image: mailContent["order_complete_image"],
           html: mailContent["order_complete_body"],
         });
 
         await PartnerNewOrderMail(handle, handle?.notificate ?? [], {
           subject: mailContent["partner_order_subject"],
+          image: mailContent["order_complete_image"],
           html: mailContent["partner_order_body"],
         });
       }

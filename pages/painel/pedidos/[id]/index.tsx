@@ -16,6 +16,8 @@ import { useRouter } from "next/router";
 import { ChangeDeliveryStatusMail } from "@/src/mail";
 import { deliveryTypes } from "@/src/models/delivery";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { deliveryToName } from "@/pages/checkout";
+import { ChangeDeliveryStatusSMS } from "@/src/sms";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -90,6 +92,7 @@ export default function Pedido({
   const router = useRouter();
 
   const [form, setForm] = useState(FormInitialType);
+  const [dropdownDelivery, setDropdownDelivery] = useState(false as boolean);
 
   const [data, setData] = useState((suborder ?? {}) as OrderType);
   const handleData = (value: Object) => {
@@ -101,6 +104,8 @@ export default function Pedido({
   );
   const notifyDelivery = async (e: any) => {
     e.preventDefault();
+
+    setDropdownDelivery(false);
 
     setForm({ ...form, loading: true });
 
@@ -116,8 +121,15 @@ export default function Pedido({
 
     if (!!request.response) {
       setData(handle);
+
+      await ChangeDeliveryStatusSMS(handle, {
+        subject: mailContent["delivery_subject"],
+        message: mailContent["delivery_body"],
+      });
+
       await ChangeDeliveryStatusMail(handle, {
         subject: mailContent["delivery_subject"],
+        image: mailContent["delivery_image"],
         html: mailContent["delivery_body"],
       });
     }
@@ -202,12 +214,15 @@ export default function Pedido({
                             <h5 className="font-title text-zinc-900 font-bold text-lg">
                               {item.quantity} x {item.product.title}
                             </h5>
-                            <div>{item.product.description}</div>
-                            <div className="text-sm">
-                              {!!item.product.sku && (
-                                <div>SKU: {item.product.sku}</div>
-                              )}
-                            </div>
+                            {!!item.product.description && (
+                              <div>{item.product.description}</div>
+                            )}
+
+                            {!!item.product.sku && (
+                              <div className="text-sm">
+                                SKU: {item.product.sku}
+                              </div>
+                            )}
                           </div>
                           <div className="font-title text-zinc-900 font-bold text-lg whitespace-nowrap">
                             R$ {moneyFormat(item.total)}
@@ -225,10 +240,7 @@ export default function Pedido({
                                 {!!item.details.dateEnd &&
                                   item.details.dateStart !=
                                     item.details.dateEnd &&
-                                  ` - ${dateBRFormat(
-                                    item.details.dateEnd
-                                  )}`}{" "}
-                                | {order.deliverySchedule}
+                                  ` - ${dateBRFormat(item.details.dateEnd)}`}
                               </div>
                             </div>
                           </>
@@ -263,13 +275,16 @@ export default function Pedido({
                 <div className="my-6 border-dashed border-t"></div>
                 <div>
                   <div className="font-bold font-title text-zinc-900 text-xl mb-4">
-                    Endereço de envio
+                    Entrega
+                  </div>
+                  <div>
+                    {deliveryToName[order.deliveryTo]}, {order.deliverySchedule}
                   </div>
                   <div>
                     {order?.deliveryAddress?.street},{" "}
-                    {order?.deliveryAddress?.number}
+                    {order?.deliveryAddress?.number} -{" "}
+                    {order?.deliveryAddress?.neighborhood}
                   </div>
-                  <div>{order?.deliveryAddress?.neighborhood}</div>
                   <div>CEP: {order?.deliveryAddress?.zipCode}</div>
                   <div>
                     {order?.deliveryAddress?.city} |{" "}
@@ -282,14 +297,18 @@ export default function Pedido({
                 >
                   <div className="form-group m-0 w-full">
                     <Label style="float">Status de processo</Label>
-                    <div className="group/delivery relative appearance-none bg-transparent form-control focus:border-zinc-800 hover:border-zinc-400 ease">
-                      <button type="button" className="w-full">
+                    <div className="relative">
+                      <button
+                        onClick={() => setDropdownDelivery(!dropdownDelivery)}
+                        type="button"
+                        className="w-full"
+                      >
                         {deliveryTypes
                           .filter((item: any) => item.value == deliveryStatus)
                           .map((item: any, key: any) => (
                             <div
                               key={key}
-                              className="p-1 text-sm cursor-pointer text-zinc-500 hover:text-zinc-900 ease flex gap-1 items-center"
+                              className="p-4 border rounded focus:border-zinc-800 hover:border-zinc-400 ease text-sm cursor-pointer text-zinc-500 hover:text-zinc-900 ease flex gap-1 items-center"
                             >
                               <div
                                 className={`p-1 rounded-full ${item.background}`}
@@ -301,31 +320,30 @@ export default function Pedido({
                             </div>
                           ))}
                       </button>
-                      <div
-                        tabIndex={0}
-                        className="group-focus-within/delivery:block hidden w-full absolute bottom-0 left-0"
-                      >
-                        <div className="absolute bg-white rounded border top-0 left-0 w-full grid p-2">
-                          {deliveryTypes.map((item: any, key: any) => (
-                            <div
-                              key={key}
-                              className="p-1 text-sm cursor-pointer text-zinc-500 hover:text-zinc-900 ease flex gap-1 items-center"
-                              onClick={(e: any) => {
-                                setDeliveryStatus(item.value);
-                                e.target.blur();
-                              }}
-                            >
+                      {dropdownDelivery && (
+                        <div className="w-full absolute bottom-0 left-0">
+                          <div className="absolute -mt-1 bg-white rounded border top-0 left-0 w-full grid p-2">
+                            {deliveryTypes.map((item: any, key: any) => (
                               <div
-                                className={`p-1 rounded-full ${item.background}`}
-                              ></div>
-                              <div className="flex gap-1">
-                                <span>{item.icon}</span>
-                                <span>{item.name}</span>
+                                key={key}
+                                className="p-1 text-sm cursor-pointer text-zinc-500 hover:text-zinc-900 ease flex gap-1 items-center"
+                                onClick={(e: any) => {
+                                  setDeliveryStatus(item.value);
+                                  e.target.blur();
+                                }}
+                              >
+                                <div
+                                  className={`p-1 rounded-full ${item.background}`}
+                                ></div>
+                                <div className="flex gap-1">
+                                  <span>{item.icon}</span>
+                                  <span>{item.name}</span>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                     {/* <Select
                       name="status_entrega"

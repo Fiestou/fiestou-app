@@ -13,6 +13,14 @@ export const EmailForm = [
         type: "input",
       },
       {
+        label: "Imagem destaque",
+        name: "register_image",
+        type: "media",
+        options: {
+          dir: "site",
+        },
+      },
+      {
         label: "Corpo do email",
         name: "register_body",
         type: "editor",
@@ -36,6 +44,14 @@ export const EmailForm = [
         label: "Assunto",
         name: "order_subject",
         type: "input",
+      },
+      {
+        label: "Imagem destaque",
+        name: "order_image",
+        type: "media",
+        options: {
+          dir: "site",
+        },
       },
       {
         label: "Corpo do email",
@@ -62,6 +78,14 @@ export const EmailForm = [
         type: "input",
       },
       {
+        label: "Imagem destaque",
+        name: "partner_order_image",
+        type: "media",
+        options: {
+          dir: "site",
+        },
+      },
+      {
         label: "Corpo do email",
         name: "partner_order_body",
         type: "editor",
@@ -84,6 +108,14 @@ export const EmailForm = [
         label: "Assunto",
         name: "order_complete_subject",
         type: "input",
+      },
+      {
+        label: "Imagem destaque",
+        name: "order_complete_image",
+        type: "media",
+        options: {
+          dir: "site",
+        },
       },
       {
         label: "Corpo do email",
@@ -109,6 +141,14 @@ export const EmailForm = [
         label: "Assunto",
         name: "delivery_subject",
         type: "input",
+      },
+      {
+        label: "Imagem destaque",
+        name: "delivery_image",
+        type: "media",
+        options: {
+          dir: "site",
+        },
       },
       {
         label: "Corpo do email",

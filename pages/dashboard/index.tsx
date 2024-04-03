@@ -7,7 +7,7 @@ import { useContext, useEffect, useState } from "react";
 import { getFirstName, replaceWord } from "@/src/helper";
 import { UserType } from "@/src/models/user";
 import Api from "@/src/services/api";
-import { Button } from "@/src/components/ui/form";
+import { signOut } from "next-auth/react";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export async function getStaticProps(ctx: any) {
@@ -192,12 +192,14 @@ export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
           </div>
         </div>
         <div className="text-center py-10">
-          <a
-            href="/logout"
-            className="font-semibold text-zinc-900 underline hover:text-yellow-500 ease whitespace-nowrap"
+          <div
+            onClick={() =>
+              signOut({ callbackUrl: `${process.env.APP_URL}/logout` })
+            }
+            className="font-semibold cursor-pointer text-zinc-900 underline hover:text-yellow-500 ease whitespace-nowrap"
           >
             Sair da conta
-          </a>
+          </div>
         </div>
       </section>
     </Template>

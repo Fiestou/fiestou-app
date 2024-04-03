@@ -27,6 +27,12 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
 
+export const deliveryToName: any = {
+  reception: "Entregar na portaria",
+  door: "Deixar na porta",
+  for_me: "Estarei para receber",
+};
+
 const FormInitialType = {
   sended: false,
   loading: false,
@@ -173,7 +179,7 @@ export default function Checkout({
   );
 
   const [schedule, setSchedule] = useState("" as string);
-  const [deliverTo, setDeliverTo] = useState("reception" as string);
+  const [deliveryTo, setDeliveryTo] = useState("reception" as string);
   const [locations, setLocations] = useState([] as Array<AddressType>);
   const [address, setAddress] = useState({} as AddressType);
 
@@ -266,7 +272,7 @@ export default function Checkout({
       total: total,
       deliverySchedule: schedule,
       deliveryAddress: address,
-      deliveryTo: deliverTo,
+      deliveryTo: deliveryTo,
       deliveryStatus: "pending",
       status: -1,
     };
@@ -301,6 +307,7 @@ export default function Checkout({
 
         await RegisterOrderMail(order, listCart, {
           subject: mailContent["order_subject"],
+          image: mailContent["order_image"],
           html: mailContent["order_body"],
         });
 
@@ -492,47 +499,34 @@ export default function Checkout({
                     </h4>
                     <div className="flex pt-4 flex-col gap-6">
                       <div className="grid md:grid-cols-3 gap-2 md:gap-4">
-                        {[
-                          {
-                            name: "Entregar na portaria",
-                            value: "reception",
-                          },
-                          {
-                            name: "Deixar na porta",
-                            value: "door",
-                          },
-                          {
-                            name: "Estarei para receber",
-                            value: "for_me",
-                          },
-                        ].map((option: any, key: any) => (
-                          <div
-                            key={key}
-                            onClick={(e: any) => {
-                              setDeliverTo(option.value);
-                            }}
-                            className={`border ${
-                              deliverTo == option.value
-                                ? "border-yellow-400"
-                                : "hover:border-zinc-400"
-                            } p-3 md:p-4 cursor-pointer rounded ease flex gap-2 items-center`}
-                          >
+                        {["reception", "door", "for_me"].map(
+                          (option: any, key: any) => (
                             <div
-                              className={`${
-                                deliverTo == option.value
-                                  ? "border-zinc-400"
-                                  : ""
-                              } w-[1rem] h-[1rem] rounded-full border relative`}
+                              key={key}
+                              onClick={(e: any) => {
+                                setDeliveryTo(option);
+                              }}
+                              className={`border ${
+                                deliveryTo == option
+                                  ? "border-yellow-400"
+                                  : "hover:border-zinc-400"
+                              } p-3 md:p-4 cursor-pointer rounded ease flex gap-2 items-center`}
                             >
-                              {deliverTo == option.value && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                              )}
+                              <div
+                                className={`${
+                                  deliveryTo == option ? "border-zinc-400" : ""
+                                } w-[1rem] h-[1rem] rounded-full border relative`}
+                              >
+                                {deliveryTo == option && (
+                                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
+                                )}
+                              </div>
+                              <div className="text-[.85rem] leading-tight">
+                                {deliveryToName[option]}
+                              </div>
                             </div>
-                            <div className="text-[.85rem] leading-tight">
-                              {option.name}
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        )}
                       </div>
                       <div className="border relative rounded-lg py-4">
                         <div className="h-0 relative overflow-hidden">

@@ -55,7 +55,14 @@ export const deliveryTypes = [
     icon: "⏱️",
     value: "waitingWithdrawal",
     background: "bg-blue-200",
-    description: "Aguardando para devolução",
+    description: "Aguardando o cliente retirar.",
+  },
+  {
+    name: "Chegando para recolher",
+    icon: "🚚",
+    value: "collect",
+    background: "bg-blue-300",
+    description: "Chegando para devolução",
   },
   {
     name: "Concluído",

@@ -80,6 +80,7 @@ export default function CadastreSe({ page }: { page: any }) {
     if (data.response) {
       await RegisterUserMail(data.user, {
         subject: page["register_subject"],
+        image: page["register_image"],
         html: page["register_body"],
       });
 
@@ -108,7 +109,7 @@ export default function CadastreSe({ page }: { page: any }) {
             <Link passHref href="/acesso">
               <div className="flex items-center h-fit md:text-lg gap-2 text-zinc-900">
                 <Icon icon="fa-long-arrow-left" />
-                <div className="font-bold font-title">Voltar</div>
+                <div className="font-bold font-title">voltar</div>
               </div>
             </Link>
           </div>

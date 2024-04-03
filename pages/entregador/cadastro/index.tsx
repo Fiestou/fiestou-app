@@ -118,7 +118,7 @@ export default function Cadastro({ user }: any) {
               <button type="button" onClick={backStep}>
                 <div className="flex items-center h-fit text-lg gap-2 text-zinc-900">
                   <Icon icon="fa-long-arrow-left" />
-                  <div className="font-bold font-title">Voltar</div>
+                  <div className="font-bold font-title">voltar</div>
                 </div>
               </button>
             )}

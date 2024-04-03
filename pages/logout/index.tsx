@@ -14,8 +14,6 @@ export async function getServerSideProps(ctx: any) {
     ctx
   );
 
-  console.log(request, "<<");
-
   return {
     props: {
       logout: true,
@@ -31,9 +29,7 @@ export default function Logout() {
 
     api.defaults.headers["Authorization"] = ``;
 
-    Router.push("/acesso");
-
-    return true;
+    window.location.href = "/acesso";
   };
 
   useEffect(() => {

@@ -11,6 +11,8 @@ import { UserType } from "@/src/models/user";
 import { RegisterUserMail } from "@/src/mail";
 import NextAuth from "@/src/components/pages/acesso/NextAuth";
 import { getSession } from "next-auth/react";
+import Message from "@/src/components/ui/form/MessageUI";
+import { RegisterUserSMS } from "@/src/sms";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -121,6 +123,7 @@ export default function Acesso({ modal, page }: { modal?: string; page: any }) {
   const resendConfirm = async () => {
     await RegisterUserMail(user, {
       subject: page["register_subject"],
+      image: page["register_image"],
       html: page["register_body"],
     });
 
@@ -144,7 +147,7 @@ export default function Acesso({ modal, page }: { modal?: string; page: any }) {
             <Link passHref href="/">
               <div className="flex items-center h-fit md:text-lg gap-2 text-zinc-900">
                 <Icon icon="fa-long-arrow-left" />
-                <div className="font-bold font-title">Voltar</div>
+                <div className="font-bold font-title">voltar</div>
               </div>
             </Link>
           </div>

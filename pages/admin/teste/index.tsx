@@ -40,8 +40,6 @@ export async function getServerSideProps(ctx: any) {
 }
 
 export default function Teste({ page }: { page: any }) {
-  console.log(page);
-
   return (
     <Template
       header={{

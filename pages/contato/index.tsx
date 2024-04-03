@@ -265,7 +265,7 @@ export default function Contact({
             </div>
 
             <div className="grid">
-              <Button className="">Envar</Button>
+              <Button className="">Enviar</Button>
             </div>
           </div>
         </form>

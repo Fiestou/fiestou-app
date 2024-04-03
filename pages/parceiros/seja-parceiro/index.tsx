@@ -345,7 +345,7 @@ export default function SejaParceiro({
                     </div>
                     <div className="w-full h-full">
                       <div className="grid gap-4">
-                        {!!item?.plan_resources?.length &&
+                        {!!item?.plan_resources?.split(";")?.length &&
                           item.plan_resources
                             .split(";")
                             .filter((item: any) => !!item)

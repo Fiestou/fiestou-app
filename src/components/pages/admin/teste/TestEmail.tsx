@@ -6,6 +6,7 @@ import {
   RegisterOrderMail,
   RegisterUserMail,
 } from "@/src/mail";
+import { OrderType } from "@/src/models/order";
 import { useState } from "react";
 
 const formInitial = {
@@ -17,6 +18,7 @@ export default function TestEmail({ page }: { page: any }) {
   const getContent = (type: string) => {
     return {
       subject: page[type + "_subject"],
+      image: page[type + "_image"],
       html: page[type + "_body"],
     } as ContentType;
   };
@@ -47,13 +49,24 @@ export default function TestEmail({ page }: { page: any }) {
       await ChangeDeliveryStatusMail(
         {
           user: { email: data.email, name: data.name },
-          deliveryStatus: "sent",
-          deliverySchedule: "",
+          deliveryStatus: "",
+          deliveryTo: "reception",
+          deliverySchedule: "Manhã - 09:00",
           total: 0,
           platformCommission: "",
           listItems: [],
+          deliveryAddress: {
+            zipCode: "15047099",
+            street: "Yole Spaolonze Ismael",
+            number: "441",
+            neighborhood: "JD Maria Lúcia",
+            complement: "Escola",
+            city: "São José do Rio Preto",
+            state: "SP",
+            country: "BRASIL",
+          },
           status: 1,
-        },
+        } as OrderType,
         getContent("delivery")
       );
     }
@@ -63,13 +76,26 @@ export default function TestEmail({ page }: { page: any }) {
         {
           user: { email: data.email, name: data.name },
           deliveryStatus: "",
-          deliverySchedule: "",
-          total: 0,
+          deliveryTo: "reception",
+          deliverySchedule: "Manhã - 09:00",
+          total: 290,
           platformCommission: "",
           listItems: [],
+          deliveryAddress: {
+            zipCode: "15047099",
+            street: "Yole Spaolonze Ismael",
+            number: "441",
+            neighborhood: "JD Maria Lúcia",
+            complement: "Escola",
+            city: "São José do Rio Preto",
+            state: "SP",
+            country: "BRASIL",
+          },
           status: 1,
-        },
-        [],
+        } as OrderType,
+        JSON.parse(
+          `[{"attributes":[],"details":{"dateStart":"2024-03-17","dateEnd":"2024-03-17","days":0,"schedulingDiscount":"0"},"product":{"unavailable":["2024-03-17"],"title":"Ursinho Azul","id":136,"store":{"id":19,"slug":"circus-festas","title":"Circus Festas"},"vehicle":null,"freeTax":null,"fragility":"no","comercialType":"renting","schedulingTax":null,"schedulingPeriod":null},"quantity":1,"total":20},{"attributes":[],"details":{"dateStart":"2024-03-17","dateEnd":"2024-03-17","days":0,"schedulingDiscount":"0"},"product":{"unavailable":["2024-03-17"],"title":"Miney Kit","id":198,"store":{"id":19,"slug":"circus-festas","title":"Circus Festas"},"vehicle":"pickup","freeTax":null,"fragility":"no","comercialType":"renting","schedulingTax":null,"schedulingPeriod":null},"quantity":1,"total":290}]`
+        ),
         getContent("order")
       );
     }
@@ -79,12 +105,23 @@ export default function TestEmail({ page }: { page: any }) {
         {
           user: { email: data.email, name: data.name },
           deliveryStatus: "",
-          deliverySchedule: "",
+          deliveryTo: "reception",
+          deliverySchedule: "Manhã - 09:00",
           total: 0,
           platformCommission: "",
           listItems: [],
+          deliveryAddress: {
+            zipCode: "15047099",
+            street: "Yole Spaolonze Ismael",
+            number: "441",
+            neighborhood: "JD Maria Lúcia",
+            complement: "Escola",
+            city: "São José do Rio Preto",
+            state: "SP",
+            country: "BRASIL",
+          },
           status: 1,
-        },
+        } as OrderType,
         getContent("order_complete")
       );
     }

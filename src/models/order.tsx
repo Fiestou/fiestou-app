@@ -32,6 +32,7 @@ export interface ItemOrderType {
     | "returned"
     | "canceled"
     | "waitingWithdrawal"
+    | "collect"
     | "transiting";
 }
 
@@ -43,7 +44,7 @@ export interface OrderType {
   store?: number | string;
   deliveryStatus: string;
   deliverySchedule: string;
-  deliveryTo?: string;
+  deliveryTo: string;
   total: number;
   platformCommission: number | string;
   notificate?: Array<any>;

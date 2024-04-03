@@ -28,6 +28,7 @@ export default function Stripe() {
           total: 1,
         },
       ],
+      deliveryTo: "",
     });
 
     console.log(checkoutSession);

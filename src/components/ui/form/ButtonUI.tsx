@@ -30,27 +30,29 @@ export default function Button(attr: ButtonType) {
 
   const style: any = {
     "btn-yellow": `btn bg-yellow-300 text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-yellow-400" : "opacity-75"
+      !attr?.disable ? "hover:bg-yellow-400" : "opacity-75 cursor-not-allowed"
     }`,
     "btn-success": `btn bg-green-500 text-white border border-transparent ${
-      !attr?.disable ? "hover:bg-green-600" : "opacity-75"
+      !attr?.disable ? "hover:bg-green-600" : "opacity-75 cursor-not-allowed"
     }`,
     "btn-white": `btn bg-white text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-zinc-100" : "opacity-75"
+      !attr?.disable ? "hover:bg-zinc-100" : "opacity-75 cursor-not-allowed"
     }`,
     "btn-light": `btn bg-zinc-100 text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-zinc-200" : "opacity-75"
+      !attr?.disable ? "hover:bg-zinc-200" : "opacity-75 cursor-not-allowed"
     }`,
     "btn-danger": `btn bg-red-500 text-white border border-transparent ${
-      !attr?.disable ? "hover:bg-red-700" : "opacity-75"
+      !attr?.disable ? "hover:bg-red-700" : "opacity-75 cursor-not-allowed"
     }`,
     "btn-dark": `btn bg-zinc-900 text-white border border-transparent ${
-      !attr?.disable ? "hover:bg-zinc-800" : "opacity-75"
+      !attr?.disable ? "hover:bg-zinc-800" : "opacity-75 cursor-not-allowed"
     }`,
     "btn-link": `text-zinc-900 underline font-bold p-0 border border-transparent`,
     "btn-transparent": `font-bold p-0 border border-transparent`,
     "btn-outline-light": `border text-zinc-900 ${
-      !attr?.disable ? "hover:border-zinc-300 hover:bg-zinc-50" : "opacity-75"
+      !attr?.disable
+        ? "hover:border-zinc-300 hover:bg-zinc-50"
+        : "opacity-75 cursor-not-allowed"
     }`,
   };
 
