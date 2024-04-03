@@ -132,19 +132,19 @@
                                                                             <a target="_blank"
                                                                                 style="display: inline-block;padding: 0 0.5rem;"
                                                                                 href="https://www.facebook.com/Fiestou.com.br">
-                                                                                <img src="https://api.fiestou.com.br/images/icon-facebook.svg" width="24"/> </a>
+                                                                                <img src="https://api.fiestou.com.br/images/icon-facebook.png" width="22"/> </a>
                                                                             <a target="_blank"
                                                                                 style="display: inline-block;padding: 0 0.5rem;"
                                                                                 href="https://br.pinterest.com/Fiestouapp/">
-                                                                                <img src="https://api.fiestou.com.br/images/icon-pinterest.svg" width="24"/> </a>
+                                                                                <img src="https://api.fiestou.com.br/images/icon-pinterest.png" width="22"/> </a>
                                                                             <a target="_blank"
                                                                                 style="display: inline-block;padding: 0 0.5rem;"
                                                                                 href="https://www.instagram.com/fiestou/">
-                                                                                <img src="https://api.fiestou.com.br/images/icon-youtube.svg" width="24"/> </a>
+                                                                                <img src="https://api.fiestou.com.br/images/icon-youtube.png" width="22"/> </a>
                                                                             <a target="_blank"
                                                                                 style="display: inline-block;padding: 0 0.5rem;"
                                                                                 href="https://www.tiktok.com/@fiestou.app">
-                                                                                <img src="https://api.fiestou.com.br/images/icon-tiktok.svg" width="24"/> </a>
+                                                                                <img src="https://api.fiestou.com.br/images/icon-tiktok.png" width="22"/> </a>
                                                                         </p>
                                                                     </td>
                                                                 </tr>
