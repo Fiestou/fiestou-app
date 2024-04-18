@@ -6,13 +6,62 @@ import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
 
+export async function getStaticProps(ctx: any) {
+  const api = new Api();
+  let request: any = await api.call(
+    {
+      url: "request/graph",
+      data: [
+        {
+          model: "page as DataSeo",
+          filter: [
+            {
+              key: "slug",
+              value: "seo",
+              compare: "=",
+            },
+          ],
+        },
+        {
+          model: "page as Scripts",
+          filter: [
+            {
+              key: "slug",
+              value: "scripts",
+              compare: "=",
+            },
+          ],
+        },
+      ],
+    },
+    ctx
+  );
+
+  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.data?.query?.Scripts ?? [];
+
+  return {
+    props: {
+      DataSeo: DataSeo[0] ?? {},
+      Scripts: Scripts[0] ?? {},
+    },
+    revalidate: 60 * 60 * 60,
+  };
+}
+
 const formInitial = {
   sended: false,
   loading: false,
   email: "",
 };
 
-export default function Senha() {
+export default function Senha({
+  DataSeo,
+  Scripts,
+}: {
+  DataSeo: any;
+  Scripts: any;
+}) {
   const api = new Api();
   const router = useRouter();
 
@@ -106,6 +155,11 @@ export default function Senha() {
 
   return (
     <Template
+      scripts={Scripts}
+      metaPage={{
+        title: `Recuperar senha | ${DataSeo?.site_text}`,
+        url: `recuperar`,
+      }}
       header={{
         template: "clean",
         position: "solid",

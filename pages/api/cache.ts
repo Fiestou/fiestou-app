@@ -25,6 +25,12 @@ async function handler(req: any, res: any) {
     await runMiddleware(req, res, cors);
     const response = await res.revalidate(url);
 
+    if (url.includes("produtos")) {
+      await res.revalidate("/");
+      await res.revalidate("/produtos");
+      await res.revalidate("/produtos/pagina/1");
+    }
+
     if (!!req.query?.redirect) {
       const hash = new Date().toLocaleString();
 

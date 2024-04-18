@@ -545,7 +545,10 @@ export default function Pedido({
             status={modalRating}
             close={() => setModalRating(false)}
           >
-            <form onSubmit={(e: any) => submitRate(e)} className="grid gap-4">
+            <form
+              onSubmit={(e: any) => submitRate(e)}
+              className="flex flex-col gap-4"
+            >
               {!!order?.status ? (
                 <>
                   <div className="">
@@ -568,7 +571,7 @@ export default function Pedido({
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="md:flex items-center gap-4">
                     <div className="relative">
                       <Label className="pt-1">
                         O que você achou do produto?

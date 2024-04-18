@@ -105,9 +105,19 @@ export default function Saque() {
                       <div>{getExtenseData(item.created_at)}</div>
                     </div>
                     <div className="w-[32rem] text-center">
-                      <div className="rounded-md bg-zinc-100 py-2">
-                        {!!item.status ? "Saque realizado" : "Em análise"}
-                      </div>
+                      {item.status == 1 ? (
+                        <div className="rounded-md bg-green-100 text-green-900 py-2">
+                          Aprovado
+                        </div>
+                      ) : item.status == 0 ? (
+                        <div className="rounded-md bg-blue-100 text-blue-900 py-2">
+                          Em análise
+                        </div>
+                      ) : (
+                        <div className="rounded-md bg-zinc-100 py-2">
+                          Negado
+                        </div>
+                      )}
                     </div>
                     <div className="w-[16rem] text-center flex gap-2">
                       <Link

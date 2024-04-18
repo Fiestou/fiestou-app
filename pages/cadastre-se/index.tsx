@@ -25,14 +25,37 @@ export async function getServerSideProps(ctx: any) {
           },
         ],
       },
+      {
+        model: "page as DataSeo",
+        filter: [
+          {
+            key: "slug",
+            value: "seo",
+            compare: "=",
+          },
+        ],
+      },
+      {
+        model: "page as Scripts",
+        filter: [
+          {
+            key: "slug",
+            value: "scripts",
+            compare: "=",
+          },
+        ],
+      },
     ],
   });
 
-  // console.log(request, "<<");
+  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.data?.query?.Scripts ?? [];
 
   return {
     props: {
       page: request?.data?.query?.page[0] ?? {},
+      DataSeo: DataSeo[0] ?? {},
+      Scripts: Scripts[0] ?? {},
     },
   };
 }
@@ -47,7 +70,15 @@ const FormInitialType = {
   redirect: "login",
 };
 
-export default function CadastreSe({ page }: { page: any }) {
+export default function CadastreSe({
+  page,
+  DataSeo,
+  Scripts,
+}: {
+  page: any;
+  DataSeo: any;
+  Scripts: any;
+}) {
   const api = new Api();
   const router = useRouter();
 
@@ -95,6 +126,11 @@ export default function CadastreSe({ page }: { page: any }) {
 
   return (
     <Template
+      scripts={Scripts}
+      metaPage={{
+        title: `Cadastre-se | ${DataSeo?.site_text}`,
+        url: `cadastre-se`,
+      }}
       header={{
         template: "clean",
         position: "solid",

@@ -45,6 +45,16 @@ export async function getStaticProps(ctx: any) {
             },
           ],
         },
+        {
+          model: "page as Scripts",
+          filter: [
+            {
+              key: "slug",
+              value: "scripts",
+              compare: "=",
+            },
+          ],
+        },
       ],
     },
     ctx
@@ -53,12 +63,14 @@ export async function getStaticProps(ctx: any) {
   const content = request?.data?.query?.page ?? [];
   const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
   const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.data?.query?.Scripts ?? [];
 
   return {
     props: {
       content: content[0] ?? {},
       HeaderFooter: HeaderFooter[0] ?? {},
       DataSeo: DataSeo[0] ?? {},
+      Scripts: Scripts[0] ?? {},
     },
     revalidate: 60 * 60 * 60,
   };
@@ -68,10 +80,12 @@ export default function Contact({
   content,
   HeaderFooter,
   DataSeo,
+  Scripts,
 }: {
   content: any;
   HeaderFooter: any;
   DataSeo: any;
+  Scripts: any;
 }) {
   const api = new Api();
   console.log(content);
@@ -84,6 +98,14 @@ export default function Contact({
 
   return (
     <Template
+      scripts={Scripts}
+      metaPage={{
+        title: `Contato | ${DataSeo?.site_text}`,
+        image: !!getImage(DataSeo?.site_image)
+          ? getImage(DataSeo?.site_image)
+          : "",
+        url: `contato`,
+      }}
       header={{
         template: "default",
         position: "fixed",

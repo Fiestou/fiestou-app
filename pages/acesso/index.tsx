@@ -41,13 +41,38 @@ export async function getServerSideProps(ctx: any) {
           },
         ],
       },
+      {
+        model: "page as DataSeo",
+        filter: [
+          {
+            key: "slug",
+            value: "seo",
+            compare: "=",
+          },
+        ],
+      },
+      {
+        model: "page as Scripts",
+        filter: [
+          {
+            key: "slug",
+            value: "scripts",
+            compare: "=",
+          },
+        ],
+      },
     ],
   });
+
+  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.Scripts ?? [];
 
   return {
     props: {
       modal: ctx.query?.modal ?? "",
       page: request?.data?.query?.page[0] ?? {},
+      DataSeo: DataSeo[0] ?? {},
+      Scripts: Scripts[0] ?? {},
     },
   };
 }
@@ -58,7 +83,17 @@ const formInitial = {
   email: "",
 };
 
-export default function Acesso({ modal, page }: { modal?: string; page: any }) {
+export default function Acesso({
+  modal,
+  page,
+  DataSeo,
+  Scripts,
+}: {
+  modal?: string;
+  page: any;
+  DataSeo: any;
+  Scripts: any;
+}) {
   const api = new Api();
 
   const router = useRouter();
@@ -132,6 +167,11 @@ export default function Acesso({ modal, page }: { modal?: string; page: any }) {
 
   return (
     <Template
+      scripts={Scripts}
+      metaPage={{
+        title: `Acesso | ${DataSeo?.site_text}`,
+        url: `acesso`,
+      }}
       header={{
         template: "clean",
         position: "solid",

@@ -92,6 +92,16 @@ export async function getStaticProps(ctx: any) {
             },
           ],
         },
+        {
+          model: "page as Scripts",
+          filter: [
+            {
+              key: "slug",
+              value: "scripts",
+              compare: "=",
+            },
+          ],
+        },
       ],
     },
     ctx
@@ -132,6 +142,7 @@ export default function Post({
 }) {
   return (
     <Template
+      scripts={Scripts}
       metaPage={{
         title: `${post?.title} | Blog | ${DataSeo?.site_text}`,
         image: !!getImage(DataSeo?.site_image)

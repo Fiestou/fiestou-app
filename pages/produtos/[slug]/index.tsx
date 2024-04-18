@@ -142,8 +142,6 @@ export default function Produto({
 }) {
   const api = new Api();
 
-  console.log(comments);
-
   const { isFallback } = useRouter();
 
   const imageCover =

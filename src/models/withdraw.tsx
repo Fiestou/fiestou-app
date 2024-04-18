@@ -1,8 +1,12 @@
+import { BankAccountType } from "./user";
+
 export interface WithdrawType {
+  id?: number;
   code: string;
   value: number;
-  bankAccount: string;
+  bankAccount: string | BankAccountType;
   metadata?: any;
-  status?: string;
-  created_at: string;
+  status?: number;
+  created_at?: string;
+  updated_at?: string;
 }

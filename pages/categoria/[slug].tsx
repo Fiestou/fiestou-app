@@ -35,7 +35,52 @@ export async function getStaticProps(ctx: any) {
 
   const params = ctx.params;
 
-  let request: any = await api.get(
+  let request: any = {};
+
+  request = await api.call(
+    {
+      url: "request/graph",
+      data: [
+        {
+          model: "page as HeaderFooter",
+          filter: [
+            {
+              key: "slug",
+              value: "menu",
+              compare: "=",
+            },
+          ],
+        },
+        {
+          model: "page as DataSeo",
+          filter: [
+            {
+              key: "slug",
+              value: "seo",
+              compare: "=",
+            },
+          ],
+        },
+        {
+          model: "page as Scripts",
+          filter: [
+            {
+              key: "slug",
+              value: "scripts",
+              compare: "=",
+            },
+          ],
+        },
+      ],
+    },
+    ctx
+  );
+
+  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
+  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.Scripts ?? [];
+
+  request = await api.get(
     {
       url: "request/category",
       data: {
@@ -46,17 +91,12 @@ export async function getStaticProps(ctx: any) {
     ctx
   );
 
-  console.log(request, "<< category");
-
   const category = request?.data?.category ?? {};
   const products = request?.data?.products ?? [];
 
   request = await api.get({ url: "content/products" }, ctx);
 
   const content = request?.data?.content ?? {};
-  const HeaderFooter = request?.data?.HeaderFooter ?? {};
-  const DataSeo = request?.data?.DataSeo ?? {};
-  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {

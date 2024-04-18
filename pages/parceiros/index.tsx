@@ -47,6 +47,16 @@ export async function getStaticProps(ctx: any) {
             },
           ],
         },
+        {
+          model: "page as Scripts",
+          filter: [
+            {
+              key: "slug",
+              value: "scripts",
+              compare: "=",
+            },
+          ],
+        },
       ],
     },
     ctx
@@ -54,6 +64,7 @@ export async function getStaticProps(ctx: any) {
 
   const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
   const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.data?.query?.Scripts ?? [];
   const content = request?.data?.query?.page[0] ?? [];
 
   console.log(content);
@@ -68,6 +79,7 @@ export async function getStaticProps(ctx: any) {
       content: content ?? {},
       HeaderFooter: HeaderFooter[0] ?? {},
       DataSeo: DataSeo[0] ?? {},
+      Scripts: Scripts[0] ?? {},
     },
     revalidate: 60 * 60 * 60,
   };
@@ -78,14 +90,17 @@ export default function Parceiros({
   content,
   HeaderFooter,
   DataSeo,
+  Scripts,
 }: {
   stores: Array<StoreType>;
   content: any;
   HeaderFooter: any;
   DataSeo: any;
+  Scripts: any;
 }) {
   return (
     <Template
+      scripts={Scripts}
       metaPage={{
         title: `${content.main_text} | ${DataSeo?.site_text}`,
         image: !!getImage(DataSeo?.site_image)

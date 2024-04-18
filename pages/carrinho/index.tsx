@@ -26,11 +26,43 @@ export async function getServerSideProps({
   req: NextApiRequest;
   res: NextApiResponse;
 }) {
+  const api = new Api();
+
   const parse = req.cookies["fiestou.cart"] ?? "";
   const cart = !!parse ? JSON.parse(parse) : [];
 
-  const api = new Api();
-  let request: any = await api.get({
+  let request: any = {};
+
+  request = await api.call({
+    url: "request/graph",
+    data: [
+      {
+        model: "page as DataSeo",
+        filter: [
+          {
+            key: "slug",
+            value: "seo",
+            compare: "=",
+          },
+        ],
+      },
+      {
+        model: "page as Scripts",
+        filter: [
+          {
+            key: "slug",
+            value: "scripts",
+            compare: "=",
+          },
+        ],
+      },
+    ],
+  });
+
+  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.data?.query?.Scripts ?? [];
+
+  request = await api.get({
     url: "request/products",
     data: {
       whereIn: cart.map((item: any) => item.product),
@@ -53,11 +85,21 @@ export async function getServerSideProps({
     props: {
       cart: cart,
       products: products,
+      DataSeo: DataSeo[0] ?? {},
+      Scripts: Scripts[0] ?? {},
     },
   };
 }
 
-export default function Carrinho({ cart }: { cart: any }) {
+export default function Carrinho({
+  cart,
+  DataSeo,
+  Scripts,
+}: {
+  cart: any;
+  DataSeo: any;
+  Scripts: any;
+}) {
   const [listCart, setListCart] = useState(cart);
 
   const [dates, setDates] = useState(
@@ -104,6 +146,11 @@ export default function Carrinho({ cart }: { cart: any }) {
 
   return (
     <Template
+      scripts={Scripts}
+      metaPage={{
+        title: `Carrinho | ${DataSeo?.site_text}`,
+        url: `carrinho`,
+      }}
       header={{
         template: "clean",
         position: "solid",

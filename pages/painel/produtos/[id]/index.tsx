@@ -106,7 +106,8 @@ export default function Form({
 
   const [data, setData] = useState({} as ProductType);
   const handleData = (value: Object) => {
-    setData((data) => ({ ...data, ...value }));
+    console.log({ ...data, ...value });
+    setData({ ...data, ...value });
   };
 
   const [handleGallery, setHandleGallery] = useState([] as Array<any>);
@@ -286,7 +287,7 @@ export default function Form({
 
       setSubimitStatus("clean_cache");
 
-      await axios.get(`/api/cache?route=/produtos/${request.data.id}`);
+      await axios.get(`/api/cache?route=/produtos/${request.data.slug}`);
 
       setSubimitStatus("register_complete");
 
@@ -489,7 +490,7 @@ export default function Form({
                               required
                               type="text"
                               name="preco_venda"
-                              placeholder="0,00"
+                              placeholder="0.00"
                             />
                           </div>
 
@@ -506,7 +507,7 @@ export default function Form({
                                 : {})}
                               type="text"
                               name="preco_promo"
-                              placeholder="0,00"
+                              placeholder="0.00"
                             />
                           </div>
                         </div>
@@ -701,7 +702,7 @@ export default function Form({
                             value={data?.weight}
                             type="text"
                             name="peso"
-                            placeholder="0,00 (kg)"
+                            placeholder="0.00 (kg)"
                           />
                         </div>
                         <div className="form-group">
@@ -713,7 +714,7 @@ export default function Form({
                             value={data?.length}
                             type="text"
                             name="comprimento"
-                            placeholder="0,00 (m)"
+                            placeholder="0.00 (m)"
                           />
                         </div>
 
@@ -726,7 +727,7 @@ export default function Form({
                             value={data?.width}
                             type="text"
                             name="largura"
-                            placeholder="0,00 (m)"
+                            placeholder="0.00 (m)"
                           />
                         </div>
 
@@ -739,7 +740,7 @@ export default function Form({
                             value={data?.height}
                             type="text"
                             name="altura"
-                            placeholder="0,00 (m)"
+                            placeholder="0.00 (m)"
                           />
                         </div>
                       </div>
@@ -941,7 +942,7 @@ export default function Form({
                                 freeTax: e.target.value,
                               })
                             }
-                            placeholder="R$ 00,00"
+                            placeholder="R$ 00.00"
                           />
                         </div>
 

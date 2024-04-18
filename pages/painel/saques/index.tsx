@@ -125,7 +125,7 @@ export default function Saque({
       data: handle,
     });
 
-    if (!!request?.code) {
+    if (!!request?.response) {
       router.reload();
 
       setModalWD(false);
@@ -149,36 +149,54 @@ export default function Saque({
         close={() => setModalWD(false)}
       >
         <div className="grid gap-6 items-start">
-          <div className="grid gap-1 text-sm">
-            <div
-              dangerouslySetInnerHTML={{ __html: content.modal_instruction }}
-            ></div>
-          </div>
-          <form onSubmit={(e) => RegisterWithdraw(e)} className="flex gap-4">
-            <div>
-              <Input
-                onChange={(e: any) => handleWithdraw({ value: e.target.value })}
-                placeholder="R$"
-                required
-                className="h-14 text-center"
-              />
+          {!!withdrawList?.filter((item: any) => item.status == 0)?.length ? (
+            <div className="rounded-md text-center text-sm bg-yellow-100 text-yellow-900 py-3 px-4">
+              É necessário aguardar a conclusão da última solicitação para
+              realizar outras.
             </div>
-            <div>
-              <Select
-                onChange={(e: any) =>
-                  handleWithdraw({ bankAccount: e.target.value })
-                }
-                required
-                className="h-14 text-center"
-                name={"account"}
-                options={[
-                  { value: "", name: "Conta bancária" },
-                  ...bankAccounts,
-                ]}
-              />
-            </div>
-            <Button loading={form.loading}>Confirmar</Button>
-          </form>
+          ) : (
+            <>
+              <div className="grid gap-1 text-sm">
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: content.modal_instruction,
+                  }}
+                ></div>
+              </div>
+              <form
+                onSubmit={(e) => RegisterWithdraw(e)}
+                className="grid gap-4"
+              >
+                <div>
+                  <Input
+                    onChange={(e: any) =>
+                      handleWithdraw({ value: e.target.value })
+                    }
+                    placeholder="R$"
+                    required
+                    className="h-14 text-center"
+                  />
+                </div>
+
+                <div>
+                  <Select
+                    onChange={(e: any) =>
+                      handleWithdraw({ bankAccount: e.target.value })
+                    }
+                    required
+                    className="h-14 text-center"
+                    name={"account"}
+                    options={[
+                      { value: "", name: "Conta bancária" },
+                      ...bankAccounts,
+                    ]}
+                  />
+                </div>
+
+                <Button loading={form.loading}>Confirmar</Button>
+              </form>
+            </>
+          )}
         </div>
       </Modal>
       <section className="">
@@ -193,7 +211,7 @@ export default function Saque({
           </div>
           <div className="grid md:flex gap-4 items-center w-full">
             <div className="w-full flex items-center">
-              <Link passHref href="/painel/saques">
+              <Link passHref href="/painel/">
                 <Icon
                   icon="fa-long-arrow-left"
                   className="mr-6 text-2xl text-zinc-900"
@@ -239,7 +257,6 @@ export default function Saque({
               <div className="w-[32rem]">Valor</div>
               <div className="w-[48rem]">Solicitado em</div>
               <div className="w-[32rem]">Status</div>
-              <div className="w-[16rem]"></div>
             </div>
             {!!withdrawList?.length &&
               withdrawList
@@ -259,17 +276,19 @@ export default function Saque({
                       <div>{getExtenseData(item.created_at)}</div>
                     </div>
                     <div className="w-[32rem] text-center">
-                      <div className="rounded-md bg-zinc-100 py-2">
-                        {!!item.status ? "Saque realizado" : "Em análise"}
-                      </div>
-                    </div>
-                    <div className="w-[16rem] text-center flex gap-2">
-                      <Link
-                        href={`saques/${item?.code}`}
-                        className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
-                      >
-                        <Icon icon="fa-eye" type="far" />
-                      </Link>
+                      {item.status == 1 ? (
+                        <div className="rounded-md bg-green-100 text-green-900 py-2">
+                          Aprovado
+                        </div>
+                      ) : item.status == 0 ? (
+                        <div className="rounded-md bg-blue-100 text-blue-900 py-2">
+                          Em análise
+                        </div>
+                      ) : (
+                        <div className="rounded-md bg-zinc-100 py-2">
+                          Negado
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

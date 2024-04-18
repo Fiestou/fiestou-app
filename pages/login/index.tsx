@@ -6,9 +6,53 @@ import { useRouter } from "next/router";
 import { decode as base64_decode } from "base-64";
 import { AuthContext } from "@/src/contexts/AuthContext";
 import { Button, Input, Label } from "@/src/components/ui/form";
+import Api from "@/src/services/api";
 
 interface QueryType {
   ref?: string;
+}
+
+export async function getStaticProps(ctx: any) {
+  const api = new Api();
+  let request: any = await api.call(
+    {
+      url: "request/graph",
+      data: [
+        {
+          model: "page as DataSeo",
+          filter: [
+            {
+              key: "slug",
+              value: "seo",
+              compare: "=",
+            },
+          ],
+        },
+        {
+          model: "page as Scripts",
+          filter: [
+            {
+              key: "slug",
+              value: "scripts",
+              compare: "=",
+            },
+          ],
+        },
+      ],
+    },
+    ctx
+  );
+
+  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.data?.query?.Scripts ?? [];
+
+  return {
+    props: {
+      DataSeo: DataSeo[0] ?? {},
+      Scripts: Scripts[0] ?? {},
+    },
+    revalidate: 60 * 60 * 60,
+  };
 }
 
 const FormInitialType = {
@@ -19,7 +63,13 @@ const FormInitialType = {
   alert: "",
 };
 
-export default function Login() {
+export default function Login({
+  DataSeo,
+  Scripts,
+}: {
+  DataSeo: any;
+  Scripts: any;
+}) {
   const { SignIn } = useContext(AuthContext);
 
   /* FORM */
@@ -71,9 +121,9 @@ export default function Login() {
 
   return (
     <Template
+      scripts={Scripts}
       metaPage={{
-        title: `Login`,
-        description: "",
+        title: `Login | ${DataSeo?.site_text}`,
         url: `login`,
       }}
       header={{

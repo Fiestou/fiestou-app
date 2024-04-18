@@ -3,7 +3,13 @@ import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import Payment from "@/src/services/payment";
 import { useEffect, useState } from "react";
-import { dateBRFormat, findDates, getZipCode, moneyFormat } from "@/src/helper";
+import {
+  dateBRFormat,
+  findDates,
+  getZipCode,
+  isCEPInRegion,
+  moneyFormat,
+} from "@/src/helper";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
 import { UserType } from "@/src/models/user";
@@ -26,6 +32,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
+import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 
 export const deliveryToName: any = {
   reception: "Entregar na portaria",
@@ -42,6 +49,35 @@ export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
   let request: any;
+
+  request = await api.call({
+    url: "request/graph",
+    data: [
+      {
+        model: "page as DataSeo",
+        filter: [
+          {
+            key: "slug",
+            value: "seo",
+            compare: "=",
+          },
+        ],
+      },
+      {
+        model: "page as Scripts",
+        filter: [
+          {
+            key: "slug",
+            value: "scripts",
+            compare: "=",
+          },
+        ],
+      },
+    ],
+  });
+
+  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.Scripts ?? [];
 
   const parse = ctx.req.cookies["fiestou.cart"] ?? "";
   const cart = !!parse ? JSON.parse(parse) : [];
@@ -126,6 +162,8 @@ export async function getServerSideProps(ctx: any) {
       roles: roles[0] ?? {},
       checkout: checkout[0] ?? {},
       mailContent: mailContent[0] ?? {},
+      DataSeo: DataSeo[0] ?? {},
+      Scripts: Scripts[0] ?? {},
     },
   };
 }
@@ -138,6 +176,8 @@ export default function Checkout({
   roles,
   checkout,
   mailContent,
+  DataSeo,
+  Scripts,
 }: {
   cart: Array<CartType>;
   user: UserType;
@@ -146,12 +186,12 @@ export default function Checkout({
   roles: any;
   checkout: any;
   mailContent: any;
+  DataSeo: any;
+  Scripts: any;
 }) {
   const api = new Api();
   const router = useRouter();
   const { isFallback } = useRouter();
-
-  console.log(checkout, "checkout");
 
   const [form, setForm] = useState(FormInitialType);
 
@@ -324,9 +364,25 @@ export default function Checkout({
     }
   };
 
+  // CONFIRM CEP
+  const [region, setRegion] = useState({} as any);
+
+  useEffect(() => {
+    if (!!window && !!Cookies.get("fiestou.region")) {
+      const handle: any = JSON.parse(Cookies.get("fiestou.region") ?? "");
+      setAddress({ zipCode: handle?.cep ?? "", number: "" });
+      setRegion(handle);
+    }
+  }, []);
+
   return (
     !isFallback && (
       <Template
+        scripts={Scripts}
+        metaPage={{
+          title: `Checkout | ${DataSeo?.site_text}`,
+          url: `checkout`,
+        }}
         header={{
           template: "clean",
           position: "solid",
@@ -358,6 +414,7 @@ export default function Checkout({
             </div>
           </div>
         </section>
+
         <section className="pt-6 md:py-12">
           <form onSubmit={(e: any) => submitOrder(e)}>
             <div className="container-medium">
@@ -367,6 +424,15 @@ export default function Checkout({
                     <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
                       Endereço de entrega
                     </h4>
+                    {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
+                      <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
+                        <Icon icon="fa-exclamation-triangle" className="mr-2" />
+                        <div>
+                          Sua região ainda não está disponível para nossos
+                          fornecedores.
+                        </div>
+                      </div>
+                    )}
                     {!!locations.length ? (
                       <div className="">
                         {locations.map((addr: AddressType, key: any) => (
@@ -677,7 +743,11 @@ export default function Checkout({
                       </div>
                     )}
                     <div className="grid relative p-1 md:p-0">
-                      {!!address?.street && !!schedule ? (
+                      {!!address?.street &&
+                      !!address?.complement &&
+                      !!schedule &&
+                      !!address?.zipCode &&
+                      !!isCEPInRegion(address?.zipCode) ? (
                         <Button
                           loading={form.loading}
                           style="btn-success"

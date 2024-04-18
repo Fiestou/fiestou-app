@@ -30,10 +30,10 @@ export interface ProductType {
   quantity?: number | string;
   availability?: number;
   unavailable?: Array<any>;
-  weight?: string;
-  length?: string;
-  width?: string;
-  height?: string;
+  weight?: string | number;
+  length?: string | number;
+  width?: string | number;
+  height?: string | number;
   attributes?: Array<AttributeType>;
   tags?: string;
   category?: Array<any>;

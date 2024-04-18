@@ -10,22 +10,26 @@ import Api from "@/src/services/api";
 export default function RegionConfirm() {
   const api = new Api();
   const [status, setStatus] = useState(false as boolean);
-  const [valid, setValid] = useState("" as string);
+  const [region, setRegion] = useState({} as any);
   const [cep, setCEP] = useState("" as string);
 
   const verifyCEP = async (e: any) => {
     e.preventDefault();
 
-    let request: any = await api.get({
-      url: "content/default",
-    });
+    // let request: any = await api.get({
+    //   url: "content/default",
+    // });
 
-    const handle = isCEPInRegion(cep) ? "valid" : "invalid";
+    const handle: any = {
+      cep: cep,
+      validate: isCEPInRegion(cep),
+    };
 
-    setValid(handle);
-    Cookies.set("fiestou.region", handle, { expires: 14 });
+    setRegion(handle);
 
-    if (handle == "valid") {
+    Cookies.set("fiestou.region", JSON.stringify(handle), { expires: 14 });
+
+    if (handle?.validate) {
       setTimeout(() => {
         setStatus(false);
       }, 2000);
@@ -36,7 +40,7 @@ export default function RegionConfirm() {
 
   useEffect(() => {
     if (!!window && !Cookies.get("fiestou.region")) {
-      setStatus(Cookies.get("fiestou.region") != "valid");
+      setStatus(true);
     }
   }, []);
 
@@ -45,15 +49,15 @@ export default function RegionConfirm() {
       <Modal
         status={status}
         title={
-          !!valid && valid != "valid"
+          !!region?.cep && !region?.validate
             ? "Aviso importante!"
             : "Informe sua região"
         }
         close={() => setStatus(false)}
       >
-        {!!valid && (
+        {!!region?.cep && (
           <>
-            {valid == "invalid" ? (
+            {!region?.validate ? (
               <div className="flex flex-col gap-8 text-center pt-5 md:pb-8">
                 <div className="text-xl md:text-2xl text-zinc-900 max-w-[32rem] mx-auto">
                   Sua região ainda não está disponível para nossos fornecedores.
@@ -84,7 +88,7 @@ export default function RegionConfirm() {
           </>
         )}
 
-        {!valid && (
+        {!region?.cep && (
           <form onSubmit={(e) => verifyCEP(e)} className="grid gap-4">
             <Input
               placeholder="Digite seu CEP..."

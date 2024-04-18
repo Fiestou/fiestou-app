@@ -5,6 +5,9 @@ import Head from "next/head";
 import RegionConfirm from "./default/alerts/RegionConfirm";
 import { getImage } from "./helper";
 import Lgpd from "./default/alerts/lgpd";
+import { useEffect, useState } from "react";
+import React from "react";
+import Script from "next/script";
 
 interface MetaType {
   title?: string;
@@ -33,19 +36,21 @@ export default function Template({
     url: `https://www.fiestou.com.br/${metaPage?.url}`,
   };
 
-  const renderLgpd = () => {
-    let hasError = false;
+  const [renderLgpd, setRenderLgpd] = useState(false as boolean);
 
-    if (typeof window !== "undefined") {
-      const hostname = window.location.hostname;
-      hasError =
-        hostname.includes("vercel") ||
-        hostname.includes("localhost") ||
-        hostname.includes("admin");
+  useEffect(() => {
+    if (!!window) {
+      const hostname = window.location.href;
+
+      setRenderLgpd(
+        !(
+          hostname.includes("vercel") ||
+          hostname.includes("localhost-") ||
+          hostname.includes("admin")
+        ) && !!scripts?.id
+      );
     }
-
-    return !hasError && <Lgpd content={scripts} />;
-  };
+  }, []);
 
   return (
     <>
@@ -112,31 +117,13 @@ export default function Template({
         <meta property="og:image:secure_url" content={meta.image} />
         <meta property="og:image:alt" content="Thumbnail" />
         <meta property="og:image:type" content="image/png" />
-
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-            if(new URLSearchParams(window.location.search).get('cache') == 'true'){
-              setTimeout(() => {
-                alert('limpeza de cache em execução');
-                window.location.href = window.location.href.split('?')[0]+'?cache=refresh';
-              }, 100)
-            }
-            if(new URLSearchParams(window.location.search).get('cache') == 'refresh'){
-              setTimeout(() => {                
-                const hash = new Date().toLocaleString()
-                window.location.href = window.location.href.split('?')[0]+'?hash='+btoa(hash);
-              }, 100)
-            }`,
-          }}
-        ></script>
       </Head>
 
       <Header {...header} />
       {children}
       <Footer {...footer} />
 
-      {renderLgpd()}
+      <Lgpd content={scripts} status={renderLgpd} />
     </>
   );
 }

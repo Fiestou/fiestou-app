@@ -18,11 +18,55 @@ import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.get({ url: "content/products" }, ctx);
+
+  let request: any = {};
+
+  request = await api.call(
+    {
+      url: "request/graph",
+      data: [
+        {
+          model: "page as HeaderFooter",
+          filter: [
+            {
+              key: "slug",
+              value: "menu",
+              compare: "=",
+            },
+          ],
+        },
+        {
+          model: "page as DataSeo",
+          filter: [
+            {
+              key: "slug",
+              value: "seo",
+              compare: "=",
+            },
+          ],
+        },
+        {
+          model: "page as Scripts",
+          filter: [
+            {
+              key: "slug",
+              value: "scripts",
+              compare: "=",
+            },
+          ],
+        },
+      ],
+    },
+    ctx
+  );
+
+  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
+  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Scripts = request?.data?.query?.Scripts ?? [];
+
+  request = await api.get({ url: "content/products" }, ctx);
 
   const content = request?.data?.content ?? {};
-  const HeaderFooter = request?.data?.HeaderFooter ?? {};
-  const DataSeo = request?.data?.DataSeo ?? {};
 
   request = await api.get(
     {
@@ -50,8 +94,9 @@ export async function getStaticProps(ctx: any) {
       products: request?.data ?? [],
       paginate: pages,
       content: content,
-      HeaderFooter: HeaderFooter,
-      DataSeo: DataSeo,
+      HeaderFooter: HeaderFooter[0] ?? {},
+      DataSeo: DataSeo[0] ?? {},
+      Scripts: Scripts[0] ?? {},
     },
     revalidate: 60 * 60 * 60,
   };
@@ -63,15 +108,18 @@ export default function Produtos({
   content,
   HeaderFooter,
   DataSeo,
+  Scripts,
 }: {
   paginate: Array<any>;
   products: Array<ProductType>;
   content: any;
   HeaderFooter: any;
   DataSeo: any;
+  Scripts: any;
 }) {
   return (
     <Template
+      scripts={Scripts}
       metaPage={{
         title: `Produtos | ${DataSeo?.site_text}`,
         image: !!getImage(DataSeo?.site_image)
