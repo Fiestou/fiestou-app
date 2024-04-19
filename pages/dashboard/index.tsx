@@ -106,6 +106,8 @@ export const menuDashboard = [
 ];
 
 export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
+  const { UserLogout } = useContext(AuthContext);
+
   const [user, setUser] = useState({} as UserType);
 
   useEffect(() => {
@@ -193,9 +195,7 @@ export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
         </div>
         <div className="text-center py-10">
           <div
-            onClick={() =>
-              signOut({ callbackUrl: `${process.env.APP_URL}/logout` })
-            }
+            onClick={() => UserLogout()}
             className="font-semibold cursor-pointer text-zinc-900 underline hover:text-yellow-500 ease whitespace-nowrap"
           >
             Sair da conta

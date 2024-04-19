@@ -13,6 +13,7 @@ import DobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import { BalanceType } from "@/src/models/order";
+import { signOut } from "next-auth/react";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -103,6 +104,8 @@ const menuSidebar: Array<{
 ];
 
 export default function Parceiro({ content }: { content: any }) {
+  const { UserLogout } = useContext(AuthContext);
+
   const api = new Api();
 
   const [balance, setBalance] = useState({} as BalanceType);
@@ -215,12 +218,12 @@ export default function Parceiro({ content }: { content: any }) {
                   </Link>
                 ))}
                 <div className="text-center self-center pt-4">
-                  <a
-                    href="/logout"
-                    className="underline text-zinc-900 p-5 font-semibold whitespace-nowrap"
+                  <div
+                    onClick={() => UserLogout()}
+                    className="cursor-pointer underline text-zinc-900 p-5 font-semibold whitespace-nowrap"
                   >
                     Sair da conta
-                  </a>
+                  </div>
                 </div>
               </div>
             </div>

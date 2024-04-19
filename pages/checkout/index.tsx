@@ -433,6 +433,14 @@ export default function Checkout({
                         </div>
                       </div>
                     )}
+
+                    {!address?.complement && (
+                      <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
+                        <Icon icon="fa-exclamation-triangle" className="mr-2" />
+                        <div>Seu endereço não possui complemento</div>
+                      </div>
+                    )}
+
                     {!!locations.length ? (
                       <div className="">
                         {locations.map((addr: AddressType, key: any) => (
@@ -669,6 +677,7 @@ export default function Checkout({
                   <h5 className="font-title text-xl text-zinc-900">
                     Resumo do pedido
                   </h5>
+
                   <div className="grid gap-6">
                     <div className="border-zinc-300">
                       <div className="font-bold text-zinc-900">

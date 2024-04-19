@@ -342,19 +342,6 @@ export default function Conta({
                                   placeholder="Bairro"
                                 />
                               </div>
-                              <div className="w-full">
-                                <Input
-                                  name="complemento"
-                                  onChange={(e: any) =>
-                                    handleAddress(
-                                      { complement: e.target.value },
-                                      key
-                                    )
-                                  }
-                                  defaultValue={locate?.complement}
-                                  placeholder="Complemento"
-                                />
-                              </div>
                             </div>
                             <div className="flex gap-2">
                               <div className="w-full">
@@ -375,6 +362,21 @@ export default function Conta({
                                   placeholder="UF"
                                 />
                               </div>
+                            </div>
+
+                            <div className="w-full">
+                              <Input
+                                name="complemento"
+                                onChange={(e: any) =>
+                                  handleAddress(
+                                    { complement: e.target.value },
+                                    key
+                                  )
+                                }
+                                required
+                                defaultValue={locate?.complement}
+                                placeholder="Complemento"
+                              />
                             </div>
                             <div className="flex justify-between items-center">
                               <label className="flex gap-2 items-center pt-2 text-zinc-900">

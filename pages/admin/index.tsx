@@ -1,6 +1,11 @@
+import { AuthContext } from "@/src/contexts/AuthContext";
 import Template from "@/src/template";
+import { signOut } from "next-auth/react";
+import { useContext } from "react";
 
 export default function Admin() {
+  const { UserLogout } = useContext(AuthContext);
+
   return (
     <Template
       header={{
@@ -23,9 +28,12 @@ export default function Admin() {
         </div>
 
         <div className="text-center mt-20">
-          <a href="/logout" className="underline text-zinc-900 font-semibold">
+          <div
+            onClick={() => UserLogout()}
+            className="underline text-zinc-900 font-semibold"
+          >
             Sair da conta
-          </a>
+          </div>
         </div>
       </section>
     </Template>

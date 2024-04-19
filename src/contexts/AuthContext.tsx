@@ -3,6 +3,7 @@ import Api, { api } from "@/src/services/api";
 import Router from "next/router";
 import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
+import { signOut } from "next-auth/react";
 
 type SignInData = {
   email: string;
@@ -12,6 +13,7 @@ type SignInData = {
 type AuthContextType = {
   isAuthenticated: boolean;
   SignIn: (data: SignInData) => Promise<UserType | any>;
+  UserLogout: Function;
 };
 
 export const AuthContext = createContext({} as AuthContextType);
@@ -102,8 +104,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }
 
+  async function UserLogout() {
+    await signOut({ callbackUrl: `${process.env.APP_URL}/logout` });
+    Router.push("/logout");
+  }
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, SignIn }}>
+    <AuthContext.Provider value={{ isAuthenticated, SignIn, UserLogout }}>
       {children}
     </AuthContext.Provider>
   );

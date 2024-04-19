@@ -2,12 +2,15 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import { menuDashboard } from "@/pages/dashboard";
 import { getFirstName } from "@/src/helper";
 import Link from "next/link";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Button } from "@/src/components/ui/form";
 import { UserType } from "@/src/models/user";
 import { signOut } from "next-auth/react";
+import { AuthContext } from "@/src/contexts/AuthContext";
 
 export default function User({ user }: { user: UserType }) {
+  const { UserLogout } = useContext(AuthContext);
+
   const [dropdown, setDropdown] = useState<boolean>(false);
 
   return (
@@ -51,9 +54,7 @@ export default function User({ user }: { user: UserType }) {
               <hr className="my-2" />
             </div>
             <div
-              onClick={() =>
-                signOut({ callbackUrl: `${process.env.APP_URL}/logout` })
-              }
+              onClick={() => UserLogout()}
               className="cursor-pointer hover:text-yellow-500 ease text-left"
             >
               Sair da conta

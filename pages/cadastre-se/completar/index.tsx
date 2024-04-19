@@ -4,10 +4,11 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Router from "next/router";
 import { getSession, signOut } from "next-auth/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
+import { AuthContext } from "@/src/contexts/AuthContext";
 
 export async function getServerSideProps(ctx: any) {
   const session: any = await getSession(ctx);
@@ -29,6 +30,8 @@ export async function getServerSideProps(ctx: any) {
 }
 
 export default function Completar({ auth }: any) {
+  const { UserLogout } = useContext(AuthContext);
+
   const expires = { expires: 14 };
 
   const api = new Api();
@@ -81,9 +84,7 @@ export default function Completar({ auth }: any) {
         <div className="relative py-6 md:py-20">
           <div className="mb-10 lg:-mb-5">
             <div
-              onClick={() =>
-                signOut({ callbackUrl: `${process.env.APP_URL}/logout` })
-              }
+              onClick={() => UserLogout()}
               className="cursor-pointer flex items-center h-fit md:text-lg gap-2 text-zinc-900"
             >
               <Icon icon="fa-long-arrow-left" />
