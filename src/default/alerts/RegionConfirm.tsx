@@ -6,6 +6,7 @@ import ShareModal from "@/src/components/utils/ShareModal";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
+import { getUser } from "@/src/contexts/AuthContext";
 
 export default function RegionConfirm() {
   const api = new Api();
@@ -13,8 +14,8 @@ export default function RegionConfirm() {
   const [region, setRegion] = useState({} as any);
   const [cep, setCEP] = useState("" as string);
 
-  const verifyCEP = async (e: any) => {
-    e.preventDefault();
+  const verifyCEP = async (e?: any) => {
+    e?.preventDefault();
 
     // let request: any = await api.get({
     //   url: "content/default",
@@ -40,6 +41,16 @@ export default function RegionConfirm() {
 
   useEffect(() => {
     if (!!window && !Cookies.get("fiestou.region")) {
+      const user = getUser();
+
+      if ((user?.address ?? []).filter((item: any) => !!item.zipCode).length) {
+        user.address
+          ?.filter((item: any) => !!item.zipCode)
+          .map((item: any) => {
+            setCEP(item.zipCode);
+          });
+      }
+
       setStatus(true);
     }
   }, []);
@@ -91,6 +102,7 @@ export default function RegionConfirm() {
         {!region?.cep && (
           <form onSubmit={(e) => verifyCEP(e)} className="grid gap-4">
             <Input
+              defaultValue={cep ?? ""}
               placeholder="Digite seu CEP..."
               onChange={(e: any) => setCEP(e.target.value)}
               className="h-14 text-center"

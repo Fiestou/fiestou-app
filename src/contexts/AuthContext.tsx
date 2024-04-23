@@ -105,8 +105,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function UserLogout() {
-    await signOut({ callbackUrl: `${process.env.APP_URL}/logout` });
-    Router.push("/logout");
+    const handleSignOut = await signOut({ redirect: false });
+
+    if (!!window) {
+      window.location.href = "/logout";
+    } else {
+      Router.push("/logout");
+    }
   }
 
   return (

@@ -7,7 +7,7 @@ export async function middleware(req: any) {
   let token = req.cookies.get("fiestou.authtoken");
 
   if (!token) {
-    if (url.includes("/dashboard") || url.includes("/painel")) {
+    if (url.includes("/dashboard") || url.includes("/painel/")) {
       permanentLink.pathname = "/acesso";
       return NextResponse.redirect(permanentLink);
     }
