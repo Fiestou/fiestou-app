@@ -158,7 +158,7 @@ export default function Categoria({
         content: HeaderFooter,
       }}
     >
-      <section className="bg-cyan-500 pt-24 md:pt-32 relative">
+      <section className="bg-cyan-500  pt-24 md:pt-32 relative">
         <div className="container-medium relative pb-4 md:pb-20 text-white">
           <div className="flex items-end">
             <div className="w-full">

@@ -341,6 +341,7 @@ export default function Produto({
       {!!comments?.length && (
         <div className="mt-4 md:mt-10 bg-zinc-50 p-4 lg:p-8 rounded-xl">
           <div className="font-title font-bold text-zinc-900 mb-4">
+            <Icon icon="fa-comments" type="fal" className="mr-2" />
             {comments?.length} comentário
             {comments?.length == 1 ? "" : "s"}
           </div>
@@ -581,7 +582,7 @@ export default function Produto({
       </section>
       <section className="md:pb-20">
         <div className="container-medium">
-          <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-10 items-start">
+          <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-8 items-start">
             <div className="w-full md:w-1/2 md:pb-4">
               {!!product?.gallery && (
                 <div className="relative -mx-4 md:mx-0 md:mb-10">
@@ -1016,6 +1017,68 @@ export default function Produto({
                       )}
                     </div>
                   )}
+                  <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none">
+                    <div className="flex gap-2">
+                      <div className="w-[1.25rem] flex justify-center">
+                        <Icon
+                          icon="fa-shield-check"
+                          type="fa"
+                          className="text-yellow-400 text-base"
+                        />
+                      </div>
+                      <div>
+                        <strong className="text-zinc-950">
+                          Pagamento seguro:
+                        </strong>{" "}
+                        Receba o item no dia marcado ou devolvemos o dinheiro
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="w-[1.25rem] flex justify-center">
+                        <Icon
+                          icon="fa-undo"
+                          type="far"
+                          className="text-yellow-400 text-base"
+                        />
+                      </div>
+                      <div>
+                        <strong className="text-zinc-950">
+                          Cancelamento fácil:
+                        </strong>{" "}
+                        1 dia antes da entrega, pode cancelar o pedido.
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="w-[1.25rem] flex justify-center">
+                        <Icon
+                          icon="fa-badge-check"
+                          type="fa"
+                          className="text-yellow-400 text-base"
+                        />
+                      </div>
+                      <div>
+                        <strong className="text-zinc-950">
+                          Parceiro confiável:
+                        </strong>{" "}
+                        Garantia do Fiestou da entrega.
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="w-[1.25rem] flex justify-center">
+                        <Icon
+                          icon="fa-truck"
+                          type="far"
+                          className="text-yellow-400 text-base"
+                        />
+                      </div>
+                      <div>
+                        <strong className="text-zinc-950">
+                          Entrega em 24h:
+                        </strong>{" "}
+                        Esse produto é entregue com 1 dia de antecedência.
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </form>
             </div>

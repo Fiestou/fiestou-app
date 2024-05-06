@@ -16,7 +16,17 @@ export async function getServerSideProps(ctx: any) {
     url: "request/graph",
     data: [
       {
-        model: "page",
+        model: "page as account",
+        filter: [
+          {
+            key: "slug",
+            value: "account",
+            compare: "=",
+          },
+        ],
+      },
+      {
+        model: "page as mail",
         filter: [
           {
             key: "slug",
@@ -48,12 +58,15 @@ export async function getServerSideProps(ctx: any) {
     ],
   });
 
+  const account = request?.data?.query?.account ?? [];
+  const mail = request?.data?.query?.mail ?? [];
   const DataSeo = request?.data?.query?.DataSeo ?? [];
   const Scripts = request?.data?.query?.Scripts ?? [];
 
   return {
     props: {
-      page: request?.data?.query?.page[0] ?? {},
+      account: account[0] ?? {},
+      mail: mail[0] ?? {},
       DataSeo: DataSeo[0] ?? {},
       Scripts: Scripts[0] ?? {},
     },
@@ -71,11 +84,13 @@ const FormInitialType = {
 };
 
 export default function CadastreSe({
-  page,
+  account,
+  mail,
   DataSeo,
   Scripts,
 }: {
-  page: any;
+  account: any;
+  mail: any;
   DataSeo: any;
   Scripts: any;
 }) {
@@ -84,12 +99,57 @@ export default function CadastreSe({
 
   const query: PageQueryType = router.query;
 
+  const roles = [
+    {
+      code: "number",
+      label: "É necessário que a senha possua pelo menos um número.",
+    },
+    { code: "min", label: "A senha precisa ter pelo menos 6 caracteres." },
+    { code: "equal", label: "As senhas precisam ser iguais." },
+  ];
+  const [errors, setErrors] = useState([] as Array<string>);
+  const [complete, setComplete] = useState([] as Array<string>);
+
   const [form, setForm] = useState(FormInitialType);
   const [email, setEmail] = useState(base64_decode(query.ref ?? ""));
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
   const [password, setPassword] = useState("");
-  const [re_password, setRePassword] = useState("");
+  const [repeat, setRepeat] = useState("");
+
+  useEffect(() => {
+    if (password) {
+      let handleErrors = errors;
+      let handleComplete = complete;
+
+      if (password == repeat) {
+        handleErrors = handleErrors.filter((role) => role != "equal");
+        handleComplete = [...handleComplete, "equal"];
+      } else {
+        handleErrors = [...handleErrors, "equal"];
+        handleComplete = handleComplete.filter((role) => role != "equal");
+      }
+
+      if (/\d/.test(password)) {
+        handleErrors = handleErrors.filter((role) => role != "number");
+        handleComplete = [...handleComplete, "number"];
+      } else {
+        handleErrors = [...handleErrors, "number"];
+        handleComplete = handleComplete.filter((role) => role != "number");
+      }
+
+      if (password.length >= 6) {
+        handleErrors = handleErrors.filter((role) => role != "min");
+        handleComplete = [...handleComplete, "min"];
+      } else {
+        handleErrors = [...handleErrors, "min"];
+        handleComplete = handleComplete.filter((role) => role != "min");
+      }
+
+      setErrors(handleErrors);
+      setComplete(handleComplete);
+    }
+  }, [password, repeat]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -104,15 +164,15 @@ export default function CadastreSe({
         email: email,
         person: "client",
         password: password,
-        re_password: re_password,
+        re_password: repeat,
       },
     });
 
     if (data.response) {
       await RegisterUserMail(data.user, {
-        subject: page["register_subject"],
-        image: page["register_image"],
-        html: page["register_body"],
+        subject: mail["register_subject"],
+        image: mail["register_image"],
+        html: mail["register_body"],
       });
 
       router.push({
@@ -209,22 +269,53 @@ export default function CadastreSe({
                 </div>
 
                 <div className="form-group">
-                  <Label>Confirme seu senha</Label>
+                  <Label>Repita a senha</Label>
                   <Input
-                    onChange={(e: any) => setRePassword(e.target.value)}
+                    onChange={(e: any) => setRepeat(e.target.value)}
                     type="password"
                     name="confirm_senha"
                     required
                   />
                 </div>
 
-                <div className="mt-4 text-sm leading-tight">
-                  Termos de uso - Lorem ipsum dolor sit amet tetu. Sagittis
-                  lectus morbvolutpat scelerisque.
+                <div className="form-group">
+                  <div className="border p-4 rounded grid text-sm">
+                    {roles.map((role: any, key: any) => (
+                      <div key={key} className="flex items-center gap-1">
+                        <div className="relative p-2">
+                          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                            {!!errors.includes(role.code) ? (
+                              <Icon icon="fa-times" className="text-red-500" />
+                            ) : !!complete.includes(role.code) ? (
+                              <Icon
+                                icon="fa-check"
+                                className="text-green-500"
+                              />
+                            ) : (
+                              <Icon icon="fa-minus" />
+                            )}
+                          </span>
+                        </div>
+                        <div>{role.label}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
+                {!!account?.terms_text && (
+                  <div
+                    className="mt-4 text-xs leading-tight"
+                    dangerouslySetInnerHTML={{ __html: account?.terms_text }}
+                  ></div>
+                )}
+
                 <div className="form-group">
-                  <Button loading={form.loading}>Cadastrar agora</Button>
+                  <Button
+                    disable={!!errors.length && !!complete.length}
+                    loading={form.loading}
+                  >
+                    Cadastrar agora
+                  </Button>
                 </div>
 
                 <div className="text-center pt-4 text-sm">
@@ -243,6 +334,14 @@ export default function CadastreSe({
           </div>
         </div>
       </div>
+      <style global jsx>
+        {`
+          p a {
+            color: #00a7eb;
+            text-decoration: underline;
+          }
+        `}
+      </style>
     </Template>
   );
 }

@@ -40,7 +40,7 @@ export default function Select(attr: SelectType) {
               ? "opacity-50 bg-zinc-100 placeholder-zinc-500"
               : "focus:border-zinc-800  hover:border-zinc-400"
           } ease`}
-          value={attr?.value}
+          defaultValue={attr?.value}
           onChange={(e) => (!!attr?.onChange ? attr?.onChange(e) : {})}
           {...(!!attr?.required ? { required: true } : {})}
         >

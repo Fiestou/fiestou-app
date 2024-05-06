@@ -364,7 +364,6 @@ export default function Checkout({
     }
   };
 
-  // CONFIRM CEP
   const [region, setRegion] = useState({} as any);
 
   useEffect(() => {

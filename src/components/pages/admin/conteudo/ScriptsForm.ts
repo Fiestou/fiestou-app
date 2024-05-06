@@ -10,10 +10,7 @@ export const ScriptsForm = [
       {
         label: "Termo de consentimento",
         name: "lgpd_description",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
     ],
   },

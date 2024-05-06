@@ -120,7 +120,7 @@ export default function Listagem({
 
       <div className="py-8"></div>
       <section className="pt-4 md:pt-8 relative"></section>
-      <div className="container-medium -mb-1">
+      <div className="container-medium">
         <Breadcrumbs
           links={[
             { url: "/produtos", name: "Produtos" },
@@ -132,7 +132,9 @@ export default function Listagem({
         />
       </div>
 
-      <Filter {...params} />
+      <div className="relative pt-5">
+        <Filter {...params} />
+      </div>
 
       <section className="container-medium md:pt-4">
         {!!placeholder ? (

@@ -17,6 +17,8 @@ import "swiper/css/pagination";
 import Product from "@/src/components/common/Product";
 import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
+import { useEffect } from "react";
+import axios from "axios";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -97,8 +99,8 @@ export default function Home({
       }}
     >
       <section
-        className="pt-16 md:pt-24 relative"
-        style={{ backgroundColor: "#2dc4fe" }}
+        className="bg-cyan-500 pt-16 md:pt-24 relative"
+        style={{ backgroundColor: "#2dc3ff" }}
       >
         {getImage(content.main_cover, "default") && (
           <>
@@ -151,6 +153,45 @@ export default function Home({
               </Button>
             </div>
           </form>
+        </div>
+      </section>
+
+      <section className="py-14">
+        <div className="container-medium">
+          <div className="max-w-2xl mx-auto text-center pb-6 md:pb-8">
+            <span>{content.feature_title}</span>
+            <h2
+              className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
+              dangerouslySetInnerHTML={{ __html: content.feature_text }}
+            ></h2>
+          </div>
+          <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6">
+            {/* <div className="hidden md:block order-1 w-1/2 text-right md:text-center md:w-fit p-2">
+              <Button className="swiper-products-prev p-5 rounded-full">
+                <Icon
+                  icon="fa-arrow-left"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                />
+              </Button>
+            </div> */}
+            <div className="order-3 md:order-2 grid md:grid-cols-2 lg:grid-cols-4 gap-4 w-full relative overflow-hidden">
+              {!!products.length &&
+                products.map((item: any, key: any) => (
+                  <Product key={key} product={item} />
+                ))}
+            </div>
+            {/* <div className="hidden md:block order-2 md:order-3 w-1/2 text-left md:text-center md:w-fit p-2">
+              <Button className="swiper-products-next p-5 rounded-full">
+                <Icon
+                  icon="fa-arrow-right"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                />
+              </Button>
+            </div> */}
+          </div>
+          <div className="text-center mt-10">
+            <Button href="/produtos">Ver todos os produtos</Button>
+          </div>
         </div>
       </section>
 
@@ -292,72 +333,6 @@ export default function Home({
             <div className="text-center mt-10">
               <Button href="/produtos">Ver todos os produtos</Button>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-14">
-        <div className="container-medium">
-          <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{content.feature_title}</span>
-            <h2
-              className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-              dangerouslySetInnerHTML={{ __html: content.feature_text }}
-            ></h2>
-          </div>
-          <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6 -mx-[1rem] xl:-mx-[4rem]">
-            <div className="hidden md:block order-1 w-1/2 text-right md:text-center md:w-fit p-2">
-              <Button className="swiper-products-prev p-5 rounded-full">
-                <Icon
-                  icon="fa-arrow-left"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
-              </Button>
-            </div>
-            <div className="order-3 md:order-2 w-full relative overflow-hidden">
-              <Swiper
-                spaceBetween={16}
-                modules={[Navigation]}
-                navigation={{
-                  prevEl: ".swiper-products-prev", // define o botão anterior
-                  nextEl: ".swiper-products-next", // define o botão próximo
-                }}
-                loop={true}
-                breakpoints={{
-                  0: {
-                    slidesPerView: 1.5,
-                    centeredSlides: true,
-                  },
-                  640: {
-                    slidesPerView: 2.5,
-                    centeredSlides: false,
-                  },
-                  1024: {
-                    slidesPerView: 3,
-                    centeredSlides: false,
-                  },
-                }}
-                className="swiper-equal"
-              >
-                {!!products.length &&
-                  products.map((item: any, key: any) => (
-                    <SwiperSlide key={key}>
-                      <Product product={item} />
-                    </SwiperSlide>
-                  ))}
-              </Swiper>
-            </div>
-            <div className="hidden md:block order-2 md:order-3 w-1/2 text-left md:text-center md:w-fit p-2">
-              <Button className="swiper-products-next p-5 rounded-full">
-                <Icon
-                  icon="fa-arrow-right"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
-              </Button>
-            </div>
-          </div>
-          <div className="text-center mt-10">
-            <Button href="/produtos">Ver todos os produtos</Button>
           </div>
         </div>
       </section>

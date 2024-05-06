@@ -258,18 +258,18 @@ export default function Lgpd({ content, status }: any) {
             id="allowed"
             className={`${
               warning ? "" : "hidden"
-            } fixed w-full max-w-5xl overflow-hidden bottom-0 p-3 left-1/2 -translate-x-1/2 z-20`}
+            } fixed w-fit overflow-hidden bottom-0 p-1 md:p-3 md:left-1/2 md:-translate-x-1/2 z-20`}
           >
-            <div className="grid shadow-lg bg-white text-sm rounded text-center p-4 gap-4">
+            <div className="flex flex-col md:flex-row items-center justify-center md:justify-between text-center md:text-left shadow-lg bg-white text-sm rounded p-2 md:p-3 gap-2 md:gap-4">
               <div className="grid gap-2">
-                <div className="font-semibold text-zinc-900">
-                  {content?.lgpd_text}
+                <div className="">
+                  <div
+                    className=""
+                    dangerouslySetInnerHTML={{
+                      __html: `${content?.lgpd_description}`,
+                    }}
+                  ></div>
                 </div>
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: content?.lgpd_description,
-                  }}
-                ></div>
                 <style>{`
                 #allowed a {
                   color: var(--bs-info) !important;
@@ -277,20 +277,20 @@ export default function Lgpd({ content, status }: any) {
                 }
               `}</style>
               </div>
-              <div className="grid md:flex gap-2 md:gap-8 justify-center">
-                <button
+              <div className="flex gap-2 md:gap-8 md:justify-center">
+                {/* <button
                   type="button"
                   onClick={() => setModal(true)}
                   className="btn hover:bg-zinc-100 whitespace-nowrap px-3 py-2"
                   aria-label={""}
                 >
                   Ajustar
-                </button>
+                </button> */}
                 <button
                   type="submit"
                   form="lgpd_form"
                   aria-label={""}
-                  className="btn bg-yellow-300 text-zinc-900 whitespace-nowrap hover:bg-yellow-300 px-4 py-2"
+                  className="btn bg-yellow-300 text-zinc-900 whitespace-nowrap hover:bg-yellow-300 md:py-2 md:px-4 px-3 py-1"
                 >
                   Ok, continuar
                 </button>

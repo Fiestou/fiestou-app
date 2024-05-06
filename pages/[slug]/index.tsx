@@ -274,7 +274,9 @@ export default function Store({
         </h3>
       </div>
 
-      <Filter store={store?.slug} />
+      <div className="relative pt-5">
+        <Filter store={store?.slug} />
+      </div>
 
       <section className="py-4 md:pb-20">
         <div className="container-medium">

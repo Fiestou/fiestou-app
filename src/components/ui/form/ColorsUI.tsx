@@ -94,7 +94,7 @@ export default function Colors(attr: ColorType) {
             <input
               key={key}
               type="checkbox"
-              defaultChecked
+              defaultChecked={true}
               value={item}
               name={attr.name ?? "color"}
             />

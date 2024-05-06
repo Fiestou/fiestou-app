@@ -29,4 +29,14 @@ export const AccountForm = [
       },
     ],
   },
+  {
+    title: "Aviso de uso de dados",
+    fields: [
+      {
+        label: "Texto",
+        name: "terms_text",
+        type: "editor",
+      },
+    ],
+  },
 ];

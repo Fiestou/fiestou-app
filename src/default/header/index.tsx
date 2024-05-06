@@ -28,7 +28,7 @@ export function Header(props: HeaderType) {
     template: "default",
     position: "fixed",
     pathname: pathname,
-    background: "bg-cyan-500",
+    background: "bg-cyan-500 ",
     scroll: false,
     ...props,
   });

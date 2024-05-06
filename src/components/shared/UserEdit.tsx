@@ -426,7 +426,7 @@ export default function UserEdit({ user }: { user: UserType }) {
           )}
         </div>
       </form>
-      {/*  */}
+      {/* 
       <form
         onSubmit={(e: any) => handleSubmit(e)}
         method="POST"
@@ -453,7 +453,7 @@ export default function UserEdit({ user }: { user: UserType }) {
           )}
         </div>
       </form>
-      {/*  */}
+
       <form
         onSubmit={(e: any) => handleSubmit(e)}
         method="POST"
@@ -482,7 +482,6 @@ export default function UserEdit({ user }: { user: UserType }) {
           )}
         </div>
       </form>
-      {/*  */}
       <form
         onSubmit={(e: any) => handleSubmit(e)}
         method="POST"
@@ -513,7 +512,7 @@ export default function UserEdit({ user }: { user: UserType }) {
           )}
         </div>
       </form>
-      {/*  */}
+      */}
     </>
   );
 }

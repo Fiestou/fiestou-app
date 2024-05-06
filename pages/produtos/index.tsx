@@ -140,8 +140,8 @@ export default function Produtos({
     >
       <RegionConfirm />
 
-      <section className="bg-cyan-500 pt-24 md:pt-32 relative">
-        <div className="container-medium relative pb-14 md:pb-20 text-white">
+      <section className="bg-cyan-500  pt-24 md:pt-32 relative">
+        <div className="container-medium relative pb-14 md:pb-16 text-white">
           <div className="flex items-end">
             <div className="w-full">
               <div className="pb-4">
@@ -168,11 +168,13 @@ export default function Produtos({
         </div>
       </section>
 
-      <div className="relative mt-[-3rem] md:mt-[-4.5rem]">
-        <Filter />
+      <div className="relative pb-16 -mt-7">
+        <div className="absolute w-full">
+          <Filter />
+        </div>
       </div>
 
-      <section className="container-medium md:pt-6">
+      <section className="container-medium">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 py-6">
           {!!products?.length &&
             products?.map((item, key) => (

@@ -160,7 +160,7 @@ export default function Post({
         content: HeaderFooter,
       }}
     >
-      <section className="bg-cyan-500 pt-24 md:pt-40 relative">
+      <section className="bg-cyan-500  pt-24 md:pt-40 relative">
         <div className="container-medium relative pb-4 md:pb-10 text-white">
           <div className="grid text-center">
             <div className="pb-4">
@@ -181,7 +181,7 @@ export default function Post({
 
       {!!getImage(post?.image) && (
         <section className="relative px-4">
-          <div className="absolute left-0 w-full h-1/2 bg-cyan-500"></div>
+          <div className="absolute left-0 w-full h-1/2 bg-cyan-500 "></div>
           <div className="w-full mx-auto max-w-[56rem] relative rounded-xl overflow-hidden">
             <div className="aspect-[4/2] bg-zinc-100">
               <Img
