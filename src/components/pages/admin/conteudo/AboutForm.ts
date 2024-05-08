@@ -78,10 +78,7 @@ export const AboutForm = [
       {
         label: "Texto",
         name: "about_text",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Imagem lateral",

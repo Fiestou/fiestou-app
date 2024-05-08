@@ -10,10 +10,9 @@ export const PartnerForm = [
       {
         label: "Descrição",
         name: "main_description",
-        type: "textarea",
+        type: "editor",
         options: {
           formate: "line",
-          plugin: "quill",
         },
       },
       {
@@ -48,10 +47,7 @@ export const PartnerForm = [
       {
         label: "Termos de uso",
         name: "form_term",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Texto do botão",
@@ -76,10 +72,7 @@ export const PartnerForm = [
       {
         label: "Descrição",
         name: "works_description",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Explicação",
@@ -209,10 +202,7 @@ export const PartnerForm = [
       {
         label: "Descrição",
         name: "cta_description",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Imagem lateral",

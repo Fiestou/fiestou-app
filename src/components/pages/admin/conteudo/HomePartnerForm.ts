@@ -5,10 +5,9 @@ export const HomePartnerForm = [
       {
         label: "Mensagem de boas vindas",
         name: "main_text",
-        type: "textarea",
+        type: "editor",
         options: {
           formate: "line",
-          plugin: "quill",
         },
       },
     ],

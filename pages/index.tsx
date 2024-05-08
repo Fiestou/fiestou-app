@@ -30,21 +30,7 @@ export async function getStaticProps(ctx: any) {
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
-
-  request = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "blog as posts",
-          limit: 3,
-        },
-      ],
-    },
-    ctx
-  );
-
-  const blog = request?.data?.query?.posts ?? [];
+  const blog = request?.data?.posts ?? [];
 
   return {
     props: {

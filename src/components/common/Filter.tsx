@@ -185,7 +185,7 @@ export default function Filter(params: any) {
         <div className="h-[56px]"></div>
         <div
           className={`w-full z-[20] top-0 left-0 ${
-            stick ? "fixed mt-[70px]" : "absolute"
+            stick ? "fixed mt-[62px] md:mt-[70px]" : "absolute"
           }`}
         >
           <div
@@ -201,7 +201,7 @@ export default function Filter(params: any) {
                   type="button"
                   style="btn-outline-light border-0"
                   onClick={() => openModal()}
-                  className="font-normal px-3 md:pl-8 md:pr-7 h-full hover:bg-zinc-50"
+                  className="font-normal px-3 md:pl-8 md:pr-7 h-full hover:bg-zinc-100"
                 >
                   {!!count && (
                     <div className="relative -mr-1 rounded-full bg-yellow-300 p-[.55rem] text-[.55rem] font-bold">

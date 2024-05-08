@@ -1,283 +1,25 @@
-import Image from "next/image";
-import Link from "next/link";
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import { Button, Label, Select } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
-import { getImage } from "@/src/helper";
 import { useEffect, useState } from "react";
-import Img from "@/src/components/utils/ImgBase";
-import Modal from "@/src/components/utils/Modal";
-import Input from "@/src/components/ui/form/InputUI";
-import FileManager from "@/src/components/ui/form/FileManager";
-import { RelationType } from "@/src/models/relation";
-import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
-const formInitial = {
-  edit: "",
-  loading: false,
-};
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import HandleCategories from "@/src/components/pages/admin/filtro/HandleCategories";
 
 export default function Categorias() {
   const api = new Api();
 
   const [listRelation, setListRelation] = useState([] as Array<any>);
 
-  const [form, setForm] = useState(formInitial);
-  const handleForm = (value: Object) => {
-    setForm({ ...form, ...value });
-  };
-
-  const [itemRemove, setItemRemove] = useState(0 as number);
-  const sendRemove = async () => {
-    setItemRemove(0);
-
+  const sendReorder = async () => {
     const request: any = await api.bridge({
-      url: "categories/remove",
-      data: {
-        id: itemRemove,
-      },
+      url: "categories/reorder",
+      data: { list: listRelation },
     });
-
-    if (request.response) {
-      setListRelation(request?.data);
-      setModalRelation(false);
-    }
-
-    handleForm({ loading: false });
-
-    return request;
   };
 
-  const [modalRelation, setModalRelation] = useState(false as boolean);
-
-  const [editRelation, setEditRelation] = useState({} as RelationType);
-  const handleEditRelation = (value: Object) => {
-    setEditRelation({ ...editRelation, ...value });
-  };
-
-  const [metadataRelation, setMetadataRelation] = useState({} as any);
-  const handleMetadataRelation = (value: Object) => {
-    setMetadataRelation({ ...metadataRelation, ...value });
-  };
-
-  const sendRelation = async (relation: RelationType) => {
-    const rel: RelationType = {
-      id: relation?.id ?? 0,
-      title: relation?.title ?? "",
-      slug: relation?.slug ?? relation?.title,
-      multiple: relation?.multiple ?? true,
-      parent: relation?.parent ?? "",
-      feature: relation?.feature ?? false,
-      closest: relation?.closest ?? [],
-      metadata: metadataRelation,
-      image: !!relation?.image.length
-        ? relation?.image[0].id
-        : !!relation?.image?.id
-        ? relation?.image?.id
-        : 0,
-    };
-
-    console.log(relation);
-
-    const request: any = await api.bridge({
-      url: "categories/register",
-      data: rel,
-    });
-
-    console.log(relation, "rel");
-
-    if (request.response) {
-      setListRelation(request?.data);
-      setModalRelation(false);
-    }
-
-    handleForm({ loading: false });
-
-    return request;
-  };
-
-  const saveRelation = async (e: any) => {
-    e.preventDefault();
-
-    handleForm({ loading: true });
-
-    const request: any = await sendRelation(editRelation);
-
-    if (request.response) {
-      setEditRelation({} as RelationType);
-    }
-
-    handleForm({ loading: false });
-  };
-
-  const [retract, setRetract] = useState([] as Array<number>);
-  const retractGroup = (item: number) => {
-    const handle = retract.includes(item)
-      ? retract.filter((id) => id != item)
-      : [...retract, item];
-
-    setRetract(handle);
-  };
-
-  const reorderList = (newPos: number, id: number) => {
-    if (newPos > -1) {
-      const findLevel = (list: Array<any>) => {
-        return list.map((item: any, current: number) => {
-          if (item.id == id && newPos <= list.length) {
-            let saveCurrent = Object.assign({}, item);
-            console.log(saveCurrent);
-
-            list.map((old: any, i: number) => {
-              if (old.order == newPos) {
-                console.log(old);
-                // list[i]["order"] = saveCurrent["order"];
-                // saveCurrent["order"] = newPos;
-              }
-            });
-
-            // list[current] = saveCurrent;
-          }
-          // else if (!!item?.childs.length) {
-          //   list[key] = findLevel(item.childs);
-          // }
-        });
-      };
-
-      let handle: any = findLevel(listRelation);
-
-      // console.log(handle);
-
-      // setListRelation(handle as Array<RelationType>);
-    }
-  };
-
-  const renderCategory = (item: any, key: number) => {
-    return (
-      <div key={item.id} className="relative">
-        <div className="px-3 py-2 rounded bg-zinc-100 hover:bg-zinc-200 ease flex gap-2 items-center justify-between">
-          <div onClick={() => retractGroup(item.id)} className="cursor-pointer">
-            <Icon
-              icon={
-                !retract.includes(item.id) ? "fa-caret-down" : "fa-caret-up"
-              }
-              type="fa"
-              className="text-sm px-1"
-            />
-          </div>
-          {!!getImage(item.image) && (
-            <div className="aspect-[1/1] max-w-[2rem]">
-              <Img
-                className="w-full h-full object-contain"
-                src={getImage(item.image)}
-              />
-            </div>
-          )}
-          <div className="w-full">{item.title}</div>
-          {!!itemRemove ? (
-            <div className="relative w-full z-[10]">
-              {itemRemove == item.id && (
-                <div className="bg-white top-0 right-0 -mt-2 -mr-2 absolute w-full max-w-[32rem] p-3 border rounded-lg">
-                  <div className="pb-4 text-sm">
-                    Ao excluir este item também serão excluídos todos
-                    relacionamentos desta categoria com produtos e todas as
-                    subcategorias. Deseja continuar com esta ação?
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setItemRemove(0)}
-                      className="text-sm cursor-pointer hover:text-cyan-600 hover:underline"
-                    >
-                      cancelar
-                    </button>
-                    <div
-                      onClick={() => sendRemove()}
-                      className="text-sm whitespace-nowrap cursor-pointer hover:text-red-800 text-red-500 hover:underline"
-                    >
-                      confirmar e excluir
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <div
-                className="text-sm cursor-pointer hover:text-cyan-600 hover:underline"
-                onClick={() => setItemRemove(item.id)}
-              >
-                excluir
-              </div>
-              <div
-                className="text-sm cursor-pointer hover:text-cyan-600 hover:underline"
-                onClick={() => {
-                  setModalRelation(true);
-                  setEditRelation(item);
-                  setMetadataRelation(item.metadata);
-                }}
-              >
-                editar
-              </div>
-            </>
-          )}
-          <div className="group hidden relative">
-            <div className="relative px-2">
-              <Icon icon="fa-ellipsis-v" className="text-lg" />
-              <input className="opacity-0 absolute cursor-pointer top-0 left-0 h-[1.5rem] w-[1.5rem]" />
-            </div>
-            <div className="border rounded-lg p-3 text-sm gap-2 bg-white absolute right-0 bottom-0 hidden group-focus-within:grid">
-              <button
-                onClick={() => reorderList(item.order - 1, item.id)}
-                className="whitespace-nowrap hover:underline"
-              >
-                mover para cima
-              </button>
-              <button
-                onClick={() => reorderList(item.order + 1, item.id)}
-                className="whitespace-nowrap hover:underline"
-              >
-                mover para baixo
-              </button>
-            </div>
-          </div>
-        </div>
-        <div
-          className={`${
-            retract.includes(item.id)
-              ? "h-0 overflow-hidden opacity-0 py-1"
-              : "py-2"
-          } relative pl-3 flex`}
-        >
-          <div className="flex flex-col">
-            <div className="hover:border-cyan-400 rounded-bl cursor-pointer h-full ease pl-4 pt-3 border-l border-b"></div>
-            <div className="pt-2"></div>
-          </div>
-          <div className="w-full">
-            <div className="">
-              {!!item?.childs &&
-                item?.childs.map((child: RelationType, key: number) =>
-                  renderCategory(child, key)
-                )}
-            </div>
-            <div
-              onClick={() => {
-                setModalRelation(true);
-                setEditRelation({
-                  title: "",
-                  parent: item.id,
-                });
-              }}
-              className="cursor-pointer hover:text-cyan-600 text-sm px-2 underline"
-            >
-              Adicionar
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  useEffect(() => {
+    sendReorder();
+  }, [listRelation]);
 
   const getCategories = async () => {
     const api = new Api();
@@ -319,7 +61,7 @@ export default function Categorias() {
               </div>
             </div>
             <div className="flex gap-6 w-fit">
-              <Button
+              {/* <Button
                 onClick={() => {
                   setModalRelation(true);
                   setEditRelation({} as RelationType);
@@ -328,178 +70,20 @@ export default function Categorias() {
                 className="whitespace-nowrap"
               >
                 Novo filtro
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
       </section>
+
       <section className="">
         <div className="container-medium pb-12">
-          {listRelation.map((item: RelationType, key: any) =>
-            renderCategory(item, key)
-          )}
+          <HandleCategories
+            list={listRelation}
+            emitEdit={(handleList: any) => setListRelation(handleList)}
+          />
         </div>
       </section>
-      {modalRelation && (
-        <Modal
-          title={!!editRelation.id ? "Editando" : "Adicionando"}
-          status={modalRelation}
-          close={() => setModalRelation(false)}
-        >
-          <form onSubmit={(e) => saveRelation(e)} className="grid gap-2">
-            <div className="form-group">
-              <Label style="float">Nome</Label>
-              <Input
-                defaultValue={editRelation?.title}
-                onChange={(e: any) =>
-                  handleEditRelation({
-                    title: e.target.value,
-                  })
-                }
-                required
-                className="py-2"
-              />
-            </div>
-            <div className="form-group">
-              <Label style="float">Destacar categoria</Label>
-              <Select
-                onChange={(e: any) =>
-                  handleEditRelation({
-                    feature: e.target.value == "on",
-                  })
-                }
-                className="py-2"
-                name="destaque"
-                value={!!editRelation?.feature ? "on" : "off"}
-                options={[
-                  {
-                    name: "Não",
-                    value: "off",
-                  },
-                  {
-                    name: "Sim",
-                    value: "on",
-                  },
-                ]}
-              />
-            </div>
-
-            {!editRelation?.parent && (
-              <div className="flex gap-4">
-                <div className="form-group w-full">
-                  <Label style="float">Quantidade de seleção</Label>
-                  <Select
-                    onChange={(e: any) =>
-                      handleEditRelation({
-                        multiple: e.target.value,
-                      })
-                    }
-                    className="py-2"
-                    name="destaque"
-                    value={!!editRelation?.multiple}
-                    options={[
-                      {
-                        name: "Múltipla",
-                        value: true,
-                      },
-                      {
-                        name: "Única",
-                        value: false,
-                      },
-                    ]}
-                  />
-                </div>
-
-                {!!editRelation?.multiple && (
-                  <div className="form-group w-full max-w-[4rem]">
-                    <Label style="float">Máx</Label>
-                    <Input
-                      defaultValue={metadataRelation?.limitSelect ?? 0}
-                      onChange={(e: any) =>
-                        handleMetadataRelation({
-                          limitSelect: e.target.value,
-                        })
-                      }
-                      required
-                      className="py-2"
-                    />
-                  </div>
-                )}
-                <div className="form-group w-full max-w-[12rem]">
-                  <Label style="float">Tamanho do elemento</Label>
-                  <Select
-                    onChange={(e: any) =>
-                      handleMetadataRelation({
-                        style: e.target.value,
-                      })
-                    }
-                    className="py-2"
-                    name="estilo"
-                    value={metadataRelation?.style ?? ""}
-                    options={[
-                      {
-                        name: "Pequeno",
-                        value: "md",
-                      },
-                      {
-                        name: "Médio",
-                        value: "lg",
-                      },
-                      {
-                        name: "Grande",
-                        value: "xl",
-                      },
-                    ]}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="form-group">
-              <FileManager
-                multiple={false}
-                value={editRelation?.image ?? []}
-                onChange={(value: any) => {
-                  handleEditRelation({
-                    image: value,
-                  });
-                }}
-                options={{
-                  dir: "categories",
-                  type: "thumb",
-                }}
-                className="py-[.6rem] text-sm"
-              />
-            </div>
-
-            <div className="mt-5 flex items-center">
-              <div className="w-full">
-                <Button
-                  onClick={() => {
-                    setModalRelation(false);
-                    setEditRelation({} as RelationType);
-                  }}
-                  type="button"
-                  style="btn-outline-light"
-                  className="text-sm py-[.65rem] h-full px-4 border-0"
-                  title="Cancelar"
-                >
-                  cancelar
-                </Button>
-              </div>
-              <div className="w-fit">
-                <Button
-                  loading={form.loading}
-                  style="btn-yellow"
-                  className="text-sm py-[.65rem] h-full px-4"
-                >
-                  salvar
-                </Button>
-              </div>
-            </div>
-          </form>
-        </Modal>
-      )}
     </Template>
   ) : (
     <></>

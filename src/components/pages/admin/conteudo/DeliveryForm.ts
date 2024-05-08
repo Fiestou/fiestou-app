@@ -10,11 +10,7 @@ export const DeliveryForm = [
       {
         label: "Descrição",
         name: "main_description",
-        type: "textarea",
-        options: {
-          formate: "line",
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Imagem de fundo",
@@ -38,10 +34,7 @@ export const DeliveryForm = [
       {
         label: "Termos de uso",
         name: "form_term",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Texto do botão",
@@ -66,10 +59,7 @@ export const DeliveryForm = [
       {
         label: "Descrição",
         name: "works_description",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Explicação",
@@ -148,10 +138,7 @@ export const DeliveryForm = [
       {
         label: "Descrição",
         name: "cta_description",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Imagem lateral",

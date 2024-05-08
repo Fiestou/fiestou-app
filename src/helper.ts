@@ -139,6 +139,19 @@ export function getFirstName(str: string) {
   return str.split(" ")[0];
 }
 
+export function shortId(): string {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const charactersLength = characters.length;
+  let id = "";
+
+  for (let i = 0; i < 6; i++) {
+    id += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+
+  return id;
+}
+
 export function getImage(image: any, size?: string) {
   if (!image) return "";
 

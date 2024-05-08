@@ -18,11 +18,7 @@ export const FaqForm = [
       {
         label: "Descrição",
         name: "main_description",
-        type: "textarea",
-        options: {
-          formate: "line",
-          plugin: "quill",
-        },
+        type: "editor",
       },
     ],
   },
@@ -62,10 +58,7 @@ export const FaqForm = [
       {
         label: "Descrição",
         name: "cta_description",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Imagem lateral",

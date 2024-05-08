@@ -11,7 +11,7 @@ interface FileManagerType {
   aspect?: string;
   onChange?: Function;
   id?: string;
-  value?: Array<any>;
+  value?: any;
   loading?: boolean;
   placeholder?: string;
   className?: string;
@@ -42,7 +42,7 @@ export default function FileManager(attr: FileManagerType) {
 
   useEffect(() => {
     setSelecteds(attr?.value ?? { medias: [] });
-  }, [attr]);
+  }, [attr.value]);
 
   const setSelected = (media: any) => {
     setRemoveActive(false);
@@ -172,17 +172,17 @@ export default function FileManager(attr: FileManagerType) {
           {attr?.placeholder ?? "Selecionar"}
         </Button>
 
-        <div
-          className={`grid gap-2 w-full ${
-            attr?.multiple && attr?.options?.type != "thumb"
-              ? "grid-cols-4"
-              : attr?.options?.type == "thumb"
-              ? "max-w-[4rem]"
-              : ""
-          }`}
-        >
-          {!!selecteds.medias?.length &&
-            selecteds.medias
+        {!!selecteds.medias?.length && (
+          <div
+            className={`grid gap-2 w-full ${
+              attr?.multiple && attr?.options?.type != "thumb"
+                ? "grid-cols-4"
+                : attr?.options?.type == "thumb"
+                ? "max-w-[4rem]"
+                : ""
+            }`}
+          >
+            {selecteds.medias
               .filter((item: any) => !!getImage(item))
               .map((item: any, key: any) => (
                 <div
@@ -223,7 +223,8 @@ export default function FileManager(attr: FileManagerType) {
                   </div>
                 </div>
               ))}
-        </div>
+          </div>
+        )}
       </div>
 
       {modalStatus && (

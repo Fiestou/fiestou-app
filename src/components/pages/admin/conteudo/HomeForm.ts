@@ -10,10 +10,9 @@ export const HomeForm = [
       {
         label: "Descrição",
         name: "main_description",
-        type: "textarea",
+        type: "editor",
         options: {
           formate: "line",
-          plugin: "quill",
         },
       },
       {

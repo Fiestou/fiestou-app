@@ -26,10 +26,7 @@ export const ContactForm = [
       {
         label: "Termos de uso",
         name: "form_term",
-        type: "textarea",
-        options: {
-          plugin: "quill",
-        },
+        type: "editor",
       },
       {
         label: "Texto do botão",

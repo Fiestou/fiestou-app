@@ -186,11 +186,23 @@ export default function Pedido({
             <div className={`bg-white relative rounded-full`}>
               <div
                 className={`${
-                  checkedLevel <= key
+                  checkedLevel == validDeliveryTypes.length - 1 &&
+                  checkedLevel == key
+                    ? "bg-green-400"
+                    : checkedLevel <= key
                     ? "bg-zinc-400 animate-pulse"
                     : "bg-yellow-300"
-                } p-3 rounded-full`}
-              ></div>
+                } p-3 rounded-full relative`}
+              >
+                {(checkedLevel > key ||
+                  checkedLevel == validDeliveryTypes.length - 1) && (
+                  <Icon
+                    icon="fa-check"
+                    className="text-white absolute text-xs mt-[1px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    type="far"
+                  />
+                )}
+              </div>
             </div>
           </div>
           <div className="w-full pl-3 pb-8">
@@ -475,6 +487,7 @@ export default function Pedido({
                             {order?.deliveryAddress?.state} -{" "}
                             {order?.deliveryAddress?.country}
                           </div>
+                          <div>{order?.deliveryAddress?.complement}</div>
                         </div>
                       </div>
 
