@@ -173,7 +173,7 @@ export default function Filter(params: any) {
       handleStick();
       startQueryHandle();
     }
-  }, []);
+  }, [router.query]);
 
   return (
     <form action="/produtos/listagem" method="GET">
