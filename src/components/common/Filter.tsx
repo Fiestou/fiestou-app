@@ -32,32 +32,34 @@ export default function Filter(params: any) {
     setQuery({ ...query, ...value });
   };
   const startQueryHandle = () => {
-    console.log(router.query);
+    const routerQuery: any = router.query;
 
     const handleQuery: any = {
       categories: [],
     };
 
-    if (!!router.query?.categorias?.length) {
+    if (!!routerQuery["categoria[]"] && !!routerQuery["categoria[]"].length) {
+      console.log(routerQuery["categoria[]"]);
+
       handleQuery["categories"] =
-        typeof router.query?.categorias == "string"
-          ? [router.query?.categorias]
-          : router.query?.categorias;
+        typeof routerQuery["categoria[]"] == "string"
+          ? [routerQuery["categoria[]"]]
+          : routerQuery["categoria[]"];
     }
 
-    if (!!router.query?.cores?.length) {
+    if (!!routerQuery?.cores?.length) {
       handleQuery["colors"] =
-        typeof router.query?.cores == "string"
-          ? [router.query?.cores]
-          : router.query?.cores;
+        typeof routerQuery?.cores == "string"
+          ? [routerQuery?.cores]
+          : routerQuery?.cores;
     }
 
-    if (!!router.query?.range) {
-      handleQuery["range"] = router.query.range;
+    if (!!routerQuery?.range) {
+      handleQuery["range"] = routerQuery.range;
     }
 
-    if (!!router.query?.ordem) {
-      handleQuery["order"] = router.query.ordem;
+    if (!!routerQuery?.ordem) {
+      handleQuery["order"] = routerQuery.ordem;
     }
 
     setQuery({ ...query, ...handleQuery });
