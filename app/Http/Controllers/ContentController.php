@@ -96,9 +96,13 @@ class ContentController extends Controller
                                ->orderBy("id", "desc")
                                ->get();
 
-            $blog = Content::where(["type" => "blog", "status" => 1])
+            $posts = Content::where(["type" => "blog", "status" => 1])
                             ->limit(3)
                             ->get();
+
+            foreach ($posts as $key => $post) {
+                $posts[$key] = $post->setCustomContent();
+            }
 
             $products = Product::normalize($products, false);
 
@@ -106,7 +110,7 @@ class ContentController extends Controller
                         "content"       => $content->setCustomContent(),
                         "categories"    => $categories,
                         "products"      => $products,
-                        "posts"         => $blog
+                        "posts"         => $posts
                 	]);
 
             return response()->json([
