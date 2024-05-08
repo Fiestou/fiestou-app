@@ -153,8 +153,23 @@ class CategoriesController extends Controller
 
         return response()->json([
             'response'  => true,
-            'data'      => $categories,
+            'data'      => Category::normalize([$category])[0],
             'log'       => [$request->get('closest'), $request->get('metadata')]
+        ]);
+    }
+
+    public function Reorder(Request $request){
+
+        $request->validate([
+            "list" => "required",
+        ]);
+
+        $list = $request->get('list');
+
+        Category::reorderApply($list);
+
+        return response()->json([
+            'response'  => true
         ]);
     }
 

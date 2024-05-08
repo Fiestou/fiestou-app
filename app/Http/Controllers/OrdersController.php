@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Store;
 use App\Models\Suborder;
 use App\Models\Product;
+use App\Models\Message;
 
 class OrdersController extends Controller
 {
@@ -192,6 +193,7 @@ class OrdersController extends Controller
         DB::beginTransaction();
 
         if($order->save()){
+            Message::RegisterOrderMail();
 
             $suborders = [];
 
@@ -258,6 +260,9 @@ class OrdersController extends Controller
             $order->metadata    = json_encode($metadata);
 
             if($metadata['status'] == 'complete'){
+                Message::CompleteOrderMail();
+                Message::PartnerNewOrderMail();
+
                 $order->status = 1;
                 $order->deliveryStatus = 'processing';
                 Suborder::where('order', $order->id)->update(['status' => 1, 'deliveryStatus' => 'processing']);
@@ -269,6 +274,7 @@ class OrdersController extends Controller
             }
 
             if($order->save()){
+
                 return response()->json([
                     'response'  => true
                 ]);

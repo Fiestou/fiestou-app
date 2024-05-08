@@ -11,6 +11,26 @@ use DB;
 
 class Message extends BaseModel
 {
+    public static function RegisterUserMail(){
+        return true;
+    }
+
+    public static function RegisterOrderMail(){
+        return true;
+    }
+
+    public static function CompleteOrderMail(){
+        return true;
+    }
+
+    public static function PartnerNewOrderMail(){
+        return true;
+    }
+
+    public static function ChangeDeliveryStatusMail(){
+        return true;
+    }
+
     public static function send($to, $name, $subject, $content){
 
         $data = [

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\RegisterUser;
 use App\Models\User;
 use Illuminate\Support\Str;
+use App\Models\Message;
 
 class UsersController extends Controller
 {
@@ -206,7 +207,7 @@ class UsersController extends Controller
 
         try{
             if($user->save()){
-                // Mail::to($request->email)->queue((new RegisterUser(['user' => $user]))->onQueue('default'));
+                Message::RegisterUserMail();
             }
          }
          catch(\Exception $e){

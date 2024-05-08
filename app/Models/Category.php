@@ -36,6 +36,20 @@ class Category extends BaseModel
         return $this->hasMany(Category::class, 'parent', 'id')->orderBy('category.order', 'ASC')->orderBy('category.id', 'DESC');
     }
 
+    public static function reorderApply($list){
+
+        foreach ($list as $key => $item) {
+            $category = Category::where(['id' => $item['id']])->first();
+            $category->order = $key;
+
+            if(isset($item['childs']) && !!$item['childs']){
+                Category::reorderApply($item['childs']);
+            }
+
+            $category->save();
+        }
+    }
+
     public static function parents($parent, $parents = []){
         $handle = Category::select(["id", "parent"])
                           ->where("id", $parent)
@@ -77,6 +91,8 @@ class Category extends BaseModel
 
                 if(!!$category->image){
                     $category->image->details = !!$category->image->details ? json_decode($category->image->details) : [];
+
+                    $category->image = ["medias" => [$category->image]];
                 }
 
                 if(isset($category->childs) && !empty($category->childs)){

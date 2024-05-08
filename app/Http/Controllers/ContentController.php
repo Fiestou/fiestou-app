@@ -29,6 +29,19 @@ class ContentController extends Controller
         }
     }
 
+    public function getContent(Request $request){
+        $request->validate([
+            'type' => 'required'
+        ]);
+
+        return response()->json([
+            'response'  => true,
+            'data'      => []
+        ]);
+    }
+
+    // OLD
+
     public function getDefault($json = false){
 
         $HeaderFooter = Content::where(["slug" => "menu", "type" => "page"])
@@ -79,16 +92,21 @@ class ContentController extends Controller
 
             $products = Product::with(["store"])
                                ->where(['status' => 1])
-                               ->limit(10)
+                               ->limit(12)
                                ->orderBy("id", "desc")
                                ->get();
+
+            $blog = Content::where(["type" => "blog", "status" => 1])
+                            ->limit(3)
+                            ->get();
 
             $products = Product::normalize($products, false);
 
             $data = array_merge($this->getDefault(), [
                         "content"       => $content->setCustomContent(),
                         "categories"    => $categories,
-                        "products"      => $products
+                        "products"      => $products,
+                        "posts"         => $blog
                 	]);
 
             return response()->json([

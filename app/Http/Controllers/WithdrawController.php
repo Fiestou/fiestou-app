@@ -14,14 +14,41 @@ use App\Models\Suborder;
 
 class WithdrawController extends Controller
 {
-    public function Get(Request $request){}
+    public function Get(Request $request){
+
+        $request->validate([
+            'slug' => 'required',
+        ]);
+
+        $withdraw = Withdraw::where(['code' => $request->get("slug")])->first();
+
+        $store  = Store::where(['id' => $withdraw->store])->first();
+        $user   = User::where(['id' => $store->user])->first();
+
+        $user->store = $store;
+        $user->details = json_decode($user->details);
+
+        unset($user->details->profile);
+        unset($user->details->bankAccounts);
+        unset($user->store->openClose);
+
+        $withdraw->bankAccount = !!$withdraw->bankAccount ? json_decode($withdraw->bankAccount) : [];
+
+        return response()->json([
+            'response'  => true,
+            'data'      => [
+                    "partner" => $user,
+                    "withdraw" => $withdraw
+                ]
+        ]);
+    }
 
     public function Register(Request $request){
 
         $request->validate([
-            'bankAccount' => 'required',
-            'value' => 'required',
-            'code' => 'required'
+            'bankAccount'   => 'required',
+            'value'         => 'required',
+            'code'          => 'required'
         ]);
 
         $user = auth()->user();
@@ -77,6 +104,27 @@ class WithdrawController extends Controller
                 'data'      => $withdraw
             ]);
         }
+    }
+
+    public function Update(Request $request){
+
+        $request->validate([
+            'code' => 'required',
+            'status' => 'required'
+        ]);
+
+        $withdraw = Withdraw::where(['code' => $request->get("code")])->first();
+        $withdraw->status = $request->get("status");
+
+        if($request->has("bankAccount"))
+            $withdraw->bankAccount = json_encode($request->get("bankAccount"));
+
+        $withdraw->save();
+
+        return response()->json([
+            'response'  => true,
+            'data'      => $withdraw
+        ]);
     }
 
     public function List(Request $request){

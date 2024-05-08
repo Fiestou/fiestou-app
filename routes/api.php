@@ -11,6 +11,7 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\CronController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\SmsController;
+use App\Http\Controllers\HooksController;
 
 use App\Http\Controllers\WithdrawController;
 use App\Http\Controllers\OrdersController;
@@ -76,6 +77,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         // CATEGORIES
         Route::post('/categories/list', [CategoriesController::class, 'List']);
         Route::post('/categories/get', [CategoriesController::class, 'Get']);
+        Route::post('/categories/reorder', [CategoriesController::class, 'Reorder']);
         Route::post('/categories/register', [CategoriesController::class, 'Register']);
         Route::post('/categories/remove', [CategoriesController::class, 'Remove']);
 
@@ -99,6 +101,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         // WITHDRAW
         Route::post('/withdraw/get', [WithdrawController::class, 'Get']);
         Route::post('/withdraw/register', [WithdrawController::class, 'Register']);
+        Route::post('/withdraw/update', [WithdrawController::class, 'update']);
         Route::post('/withdraw/list', [WithdrawController::class, 'List']);
 
         //AUTHCONTROLLER
@@ -139,6 +142,11 @@ Route::group([ 'prefix' => 'cron' ], function(){
     Route::get('/normalize-file-data', [CronController::class, 'NormalizeFileData']);
     Route::get('/migrate', [CronController::class, 'MigrateData']);
     Route::get('/normalize-media-content', [CronController::class, 'NormalizeMediaContent']);
+});
+
+// HOOKS
+Route::group([ 'prefix' => 'hooks' ], function(){
+    Route::post('/stripe', [HooksController::class, 'Stripe']);
 });
 
 // CONTENT
