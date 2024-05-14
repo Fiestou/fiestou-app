@@ -487,7 +487,9 @@ export default function Pedido({
                             {order?.deliveryAddress?.state} -{" "}
                             {order?.deliveryAddress?.country}
                           </div>
-                          <div>{order?.deliveryAddress?.complement}</div>
+                          <div>
+                            complemento: {order?.deliveryAddress?.complement}
+                          </div>
                         </div>
                       </div>
 

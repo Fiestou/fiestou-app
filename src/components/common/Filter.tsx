@@ -33,14 +33,20 @@ export default function Filter(params: any) {
   };
   const startQueryHandle = () => {
     const routerQuery: any = router.query;
+    console.log(routerQuery);
 
     const handleQuery: any = {
       categories: [],
     };
 
-    if (!!routerQuery["categoria[]"] && !!routerQuery["categoria[]"].length) {
-      console.log(routerQuery["categoria[]"]);
+    if (!!routerQuery?.categorias?.length) {
+      handleQuery["categories"] =
+        typeof routerQuery?.categorias == "string"
+          ? [routerQuery?.categorias]
+          : routerQuery?.categorias;
+    }
 
+    if (!!routerQuery["categoria[]"] && !!routerQuery["categoria[]"].length) {
       handleQuery["categories"] =
         typeof routerQuery["categoria[]"] == "string"
           ? [routerQuery["categoria[]"]]
@@ -62,6 +68,7 @@ export default function Filter(params: any) {
       handleQuery["order"] = routerQuery.ordem;
     }
 
+    console.log(handleQuery);
     setQuery({ ...query, ...handleQuery });
   };
 
@@ -221,6 +228,7 @@ export default function Filter(params: any) {
               </div>
               <input
                 type="text"
+                name="busca"
                 defaultValue={params?.busca ?? ""}
                 className="w-full p-4"
                 placeholder="O que você precisa?"

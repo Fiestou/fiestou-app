@@ -148,7 +148,10 @@ export default function SejaParceiro({
         content: HeaderFooter,
       }}
     >
-      <section className="bg-cyan-500 pb-24 md:pb-0 pt-[2rem] md:pt-24 relative">
+      <section
+        className="pb-24 md:pb-0 pt-[2rem] md:pt-24 relative"
+        style={{ backgroundColor: "#2dc3ff" }}
+      >
         {getImage(content.main_cover, "default") && (
           <>
             {!!content.main_cover && (
