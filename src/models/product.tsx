@@ -91,11 +91,13 @@ export interface PriceStringType {
 }
 
 export const getPrice = (product: any) => {
-  let priceHigh: number = product?.price;
-  let priceLow: number = product?.priceSale;
+  let priceHigh: number = parseFloat(product?.price);
+  let priceLow: number = parseFloat(product?.priceSale);
 
   return {
-    price: moneyFormat(priceLow ?? priceHigh),
+    price: moneyFormat(
+      priceLow > 0 && priceLow < priceHigh ? priceLow : priceHigh
+    ),
     priceLow: moneyFormat(priceLow) ?? "",
     priceHigh: moneyFormat(priceHigh),
     priceFromFor: !product?.attributes,
