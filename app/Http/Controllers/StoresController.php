@@ -59,7 +59,7 @@ class StoresController extends Controller
             $store->cover = json_decode($store->cover);
             $store->profile = json_decode($store->profile);
             $store->openClose = json_decode($store->openClose);
-            $store->meta = json_decode($store->meta);
+            // $store->meta = json_decode($store->meta);
 
             return response()->json([
                 'response'  => true,

@@ -256,6 +256,120 @@ class FileController extends Controller
         ]);
     }
 
+    public function UploadFiles(Request $request){
+
+        $request->validate([
+            'index' => 'required',
+            'medias' => 'required|array',
+            'medias.*' => 'file|mimes:jpeg,png,jpg,gif,webp'
+        ]);
+
+        $dir    = $request->has('dir') ? $request->get('dir') : false;
+        $index  = $request->index;
+        $app    = $request->has('app') ? $request->get('app') : NULL;
+        $files  = $request->file('medias');
+
+        $user           = auth()->user();
+        $image_sizes    = config('image.image_sizes');
+        $quality        = 100;
+        $max_width      = 1900;
+
+        $s3 = Storage::disk('s3');
+
+        $medias = [];
+        $log    = [];
+
+        foreach($files as $file) {
+            if (in_array($file->getClientOriginalExtension(), ['jpeg', 'png', 'jpg', 'gif', 'webp'])) {
+                $uploads_path  = env('UPLOADS_S3') . '/';
+                $uploads_path .= !!$dir ? Str::slug($dir, '-') . '/' : NULL;
+                $uploads_path .= $index . '/';
+                $uploads_path .= date('d-m-Y') . '/';
+
+                $image      = Image::make($file->getRealPath());
+                $imageTitle = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                $imageName  = rand(0, 3000).'-'.Str::slug($imageTitle, '-');
+                $extension  = '.webp';
+
+                $file_size  = $file->getSize() / 1024 / 1024; // Convert bytes to MB
+                $width      = $image->width();
+                $height     = $image->height();
+                $resized_image  = ($width > $max_width) ? $image->resize($max_width, null, function ($img) {
+                                        $img->aspectRatio();
+                                    })->stream('webp', $quality) : $image->stream('webp', $quality);
+
+                if($s3->put($uploads_path . $imageName.'.webp', $resized_image)){
+
+                    $sizes = ['default' => $uploads_path . $imageName.'.webp'];
+
+                    foreach($image_sizes as $image_size){
+
+                        $size_with_filename = $image_size['name'] . '-' . $imageName.'.webp';
+
+                        $make       = Image::make($file->getRealPath());
+                        $max_width  = $image_size['width'];
+                        $resized    = ($width > $max_width) ? $make->resize($max_width, null, function ($img) {
+                                            $img->aspectRatio();
+                                        })->stream('webp', $quality) : $make->stream('webp', $quality);
+
+                        $path = $s3->put($uploads_path . $size_with_filename, $resized);
+                        $path = $s3->get($uploads_path . $size_with_filename);
+
+                        $sizes[$image_size['name']] = $uploads_path . $size_with_filename;
+                    }
+
+                    $media                  = new Media();
+                    $media->application_id  = $app;
+                    $media->user_id         = $user->id;
+                    $media->title           = $imageTitle;
+                    $media->slug            = $imageName;
+                    $media->base_url        = 'https://d3hwvozn85ys0n.cloudfront.net/';
+                    $media->description     = '';
+                    $media->file_name       = $imageTitle.'.webp';
+                    $media->file_size       = $file_size;
+                    $media->path            = $uploads_path;
+                    $media->permanent_url   = $uploads_path . $imageName.'.webp';
+                    $media->extension       = '.webp';
+                    $media->details         = json_encode(['sizes' => $sizes]);
+                    $media->permissions     = json_encode([]);
+                    $media->type            = 'image';
+
+                    if(!$media->save()){
+
+                        foreach($image_sizes as $image_size){
+                            $s3->delete($uploads_path . $image_size['name'] . '-' . $imageName.'.webp');
+                        }
+
+                        $feedback = [
+                            'status' => false,
+                            'media' => 'Erro ao enviar o arquivo: '.$imageTitle
+                        ];
+                    }
+                    else{
+                        $feedback = [
+                            'status' => true,
+                            'media' => $media
+                        ];
+                    }
+
+                    array_push($medias, $feedback);
+                }
+            } else {
+                $feedback = [
+                    'status' => false,
+                    'media' => 'Tipo de arquivo não suportado: ' . $file->getClientOriginalName()
+                ];
+                array_push($medias, $feedback);
+            }
+        }
+
+        return response()->json([
+            'response'  => true,
+            'log'      => $log,
+            'medias'    => $medias
+        ]);
+    }
+
     public function UploadBase64(Request $request){
 
         $request->validate([
