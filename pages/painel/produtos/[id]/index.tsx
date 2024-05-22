@@ -697,7 +697,7 @@ export default function Form({
                           <Label>Peso</Label>
                           <Input
                             onChange={(e: any) =>
-                              handleData({ weight: e.target.value })
+                              handleData({ weight: parseFloat(e.target.value) })
                             }
                             value={data?.weight}
                             type="text"
@@ -709,7 +709,7 @@ export default function Form({
                           <Label>Comprimento</Label>
                           <Input
                             onChange={(e: any) =>
-                              handleData({ length: e.target.value })
+                              handleData({ length: parseFloat(e.target.value) })
                             }
                             value={data?.length}
                             type="text"
@@ -722,7 +722,7 @@ export default function Form({
                           <Label>Largura</Label>
                           <Input
                             onChange={(e: any) =>
-                              handleData({ width: e.target.value })
+                              handleData({ width: parseFloat(e.target.value) })
                             }
                             value={data?.width}
                             type="text"
@@ -735,7 +735,7 @@ export default function Form({
                           <Label>Altura</Label>
                           <Input
                             onChange={(e: any) =>
-                              handleData({ height: e.target.value })
+                              handleData({ height: parseFloat(e.target.value) })
                             }
                             value={data?.height}
                             type="text"

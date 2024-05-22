@@ -3,6 +3,7 @@ import { AttributeType } from "@/src/models/product";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useState } from "react";
+import { shortId } from "@/src/helper";
 
 export default function Variations({
   attribute,
@@ -14,30 +15,27 @@ export default function Variations({
   const [collapseStatus, setCollapseStatus] = useState("");
   const [collapseTrash, setCollapseTrash] = useState("");
 
-  const [variations, setVariations] = useState(
-    attribute?.variations ?? Array<any>
-  );
+  const [variations, setVariations] = useState([] as Array<any>);
 
   const addVariation = () => {
     let rebuilt = variations;
     const add: any = {
-      id: uid(),
+      id: shortId(),
       title: `Variação ${variations.length + 1}`,
       price: 0,
     };
     rebuilt.push(add);
-    setVariations(rebuilt);
     emitVariations(rebuilt);
     setCollapseStatus(add.id);
   };
 
   const removeVariation = (id: string) => {
     let removed = variations.filter((variation, key) => id != variation.id);
-    setVariations(removed);
+
     emitVariations(removed);
   };
 
-  const updateVariation = (value: Object, id: string) => {
+  const updateVariation = (value: any, id: string) => {
     let update = variations.map((variation, key) =>
       id == variation.id
         ? {
@@ -46,9 +44,12 @@ export default function Variations({
           }
         : variation
     );
-    setVariations(update);
     emitVariations(update);
   };
+
+  useEffect(() => {
+    setVariations(attribute?.variations);
+  }, [attribute]);
 
   return (
     <>
@@ -94,7 +95,7 @@ export default function Variations({
                               variation.id
                             )
                           }
-                          value={variation.priceSale}
+                          value={variation.price ?? ""}
                           type="text"
                           name="preco_promo"
                           placeholder="R$ 0,00"

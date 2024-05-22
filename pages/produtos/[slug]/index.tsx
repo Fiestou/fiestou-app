@@ -49,6 +49,8 @@ import LikeButton from "@/src/components/ui/LikeButton";
 import SidebarCart from "@/src/components/common/SidebarCart";
 import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
+import Checkbox from "@/src/components/ui/form/CheckboxUI";
+import QtdInput from "@/src/components/ui/form/QtdUI";
 
 export const getStaticPaths = async (ctx: any) => {
   const api = new Api();
@@ -206,10 +208,14 @@ export default function Produto({
     setProductToCart(handle);
   };
 
+  const [activeVariations, setActiveVariations] = useState([] as Array<any>);
   const updateOrder = (
     value: VariationProductOrderType,
     attr: AttributeType
   ) => {
+    let handleVariations: any = {};
+
+    let limit = attr?.limit ?? 0;
     let orderUpdate: ProductOrderType = productToCart;
 
     if (
@@ -233,31 +239,25 @@ export default function Produto({
           }
 
           if (attr.selectType == "checkbox") {
-            if (
-              !!variations.filter((item: any) => item.id == value.id).length
-            ) {
-              variations = variations.filter(
-                (item: any) => item.id != value.id
-              );
-            } else {
-              variations.push(value);
-            }
+            variations = !!variations.filter((item: any) => item.id == value.id)
+              .length
+              ? variations.filter((item: any) => item.id != value.id)
+              : !limit || variations.length < limit
+              ? [...variations, value]
+              : variations;
           }
 
           if (attr.selectType == "quantity") {
-            if (
-              !!variations.filter((item: any) => item.id == value.id).length
-            ) {
-              variations = variations
-                .map((item: any) =>
-                  item.id == value.id
-                    ? { ...item, quantity: value.quantity }
-                    : item
-                )
-                .filter((item: any) => !!item.quantity);
-            } else {
-              variations.push(value);
-            }
+            variations = !!variations.filter((item: any) => item.id == value.id)
+              .length
+              ? variations
+                  .map((item: any) =>
+                    item.id == value.id
+                      ? { ...item, quantity: value.quantity }
+                      : item
+                  )
+                  .filter((item: any) => !!item.quantity)
+              : [...variations, value];
           }
 
           orderUpdate.attributes[key].variations = variations;
@@ -265,6 +265,13 @@ export default function Produto({
       }
     );
 
+    orderUpdate.attributes.map((attribute: AttributeProductOrderType) => {
+      attribute.variations.map((item: any) => {
+        handleVariations[item.id] = item;
+      });
+    });
+
+    setActiveVariations(handleVariations);
     updateOrderTotal(orderUpdate);
   };
 
@@ -772,93 +779,114 @@ export default function Produto({
                   </div>
                 </div>
                 <div className="grid gap-6">
-                  {/*
-                    {!!product?.attributes &&
-                      (product?.attributes ?? [])?.map((attribute, index) => (
-                        <div key={index} className="md:pt-4">
-                          <div className="font-title text-zinc-900 font-bold py-4 text-sm lg:text-lg">
-                            {attribute.title}
-                          </div>
-                          <div className="border-b">
-                            {attribute?.variations &&
-                              attribute?.variations.map((item, key) => (
-                                <label
-                                  key={key}
-                                  className="flex border-t py-2 gap-4 items-center"
-                                >
-                                  <div className="w-full py-1">{item.title}</div>
-                                  <div className="w-fit py-1 whitespace-nowrap">
-                                    {!!item.price
-                                      ? `R$ ${moneyFormat(item.price)}`
-                                      : ""}
-                                  </div>
-                                  <div className="w-fit">
-                                    {attribute.selectType == "radio" && (
-                                      <input
-                                        type="radio"
-                                        onChange={() =>
-                                          updateOrder(
-                                            {
-                                              id: item.id,
-                                              title: item.title ?? "",
-                                              price: item.price,
-                                              quantity: 1,
-                                            },
-                                            attribute
-                                          )
-                                        }
-                                        className="form-control"
-                                        name={attribute.title}
-                                      />
-                                    )}
-                                    {attribute.selectType == "checkbox" && (
-                                      <input
-                                        type="checkbox"
-                                        onChange={() =>
-                                          updateOrder(
-                                            {
-                                              id: item.id,
-                                              title: item.title ?? "",
-                                              price: item.price,
-                                              quantity: 1,
-                                            },
-                                            attribute
-                                          )
-                                        }
-                                        className="form-control"
-                                        name={attribute.title}
-                                      />
-                                    )}
-                                    {attribute.selectType == "quantity" && (
-                                      <div className="flex gap-2">
-                                        <input
-                                          type="number"
-                                          onChange={(e) =>
-                                            updateOrder(
-                                              {
-                                                id: item.id,
-                                                title: item.title ?? "",
-                                                price: item.price,
-                                                quantity: parseInt(
-                                                  e.target.value ?? 1
-                                                ),
-                                              },
-                                              attribute
-                                            )
-                                          }
-                                          min={0}
-                                          className="form-control text-center my-[.1rem] p-2 w-[4rem] h-[2rem]"
-                                          name={attribute.title}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                </label>
-                              ))}
-                          </div>
+                  {/* {JSON.stringify(activeVariations)} */}
+                  {!!product?.attributes &&
+                    (product?.attributes ?? [])?.map((attribute, index) => (
+                      <div key={index} className="md:pt-4">
+                        <div className="font-title text-zinc-900 font-bold py-4 text-sm lg:text-lg">
+                          {attribute.title}
                         </div>
-                      ))}
-                  */}
+                        <div className="border-b">
+                          {attribute?.variations &&
+                            attribute?.variations.map((item, key) => (
+                              <label
+                                key={key}
+                                className="flex border-t py-2 gap-4 items-center"
+                              >
+                                {attribute.selectType == "radio" && (
+                                  <div className="w-fit">
+                                    <div
+                                      onClick={() => {
+                                        updateOrder(
+                                          {
+                                            id: item.id,
+                                            title: item.title ?? "",
+                                            price: item.price,
+                                            quantity: 1,
+                                          },
+                                          attribute
+                                        );
+                                      }}
+                                    >
+                                      <Checkbox
+                                        checked={!!activeVariations[item.id]}
+                                        type="radio"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                                {attribute.selectType == "checkbox" && (
+                                  <div className="w-fit">
+                                    <div
+                                      onClick={() => {
+                                        updateOrder(
+                                          {
+                                            id: item.id,
+                                            title: item.title ?? "",
+                                            price: item.price,
+                                            quantity: 1,
+                                          },
+                                          attribute
+                                        );
+                                      }}
+                                    >
+                                      <Checkbox
+                                        checked={!!activeVariations[item.id]}
+                                        type="checkbox"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="w-full py-1">{item.title}</div>
+                                <div className="w-fit py-1 whitespace-nowrap">
+                                  {!!item.price
+                                    ? `R$ ${moneyFormat(item.price)}`
+                                    : ""}
+                                </div>
+                                {attribute.selectType == "quantity" && (
+                                  <div className="w-fit">
+                                    <QtdInput
+                                      value={0}
+                                      emitQtd={(value: number) =>
+                                        updateOrder(
+                                          {
+                                            id: item.id,
+                                            title: item.title ?? "",
+                                            price: item.price,
+                                            quantity: value ?? 1,
+                                          },
+                                          attribute
+                                        )
+                                      }
+                                      className="max-w-[8rem]"
+                                    />
+
+                                    {/* <input
+                                      type="number"
+                                      onChange={(e) =>
+                                        updateOrder(
+                                          {
+                                            id: item.id,
+                                            title: item.title ?? "",
+                                            price: item.price,
+                                            quantity: parseInt(
+                                              e.target.value ?? 1
+                                            ),
+                                          },
+                                          attribute
+                                        )
+                                      }
+                                      min={0}
+                                      className="form-control text-center my-[.1rem] p-2 w-[4rem] h-[2rem]"
+                                      name={attribute.title}
+                                    /> */}
+                                  </div>
+                                )}
+                              </label>
+                            ))}
+                        </div>
+                      </div>
+                    ))}
 
                   <div className="md:flex justify-between items-end gap-2">
                     <div className="w-full">

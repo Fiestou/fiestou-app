@@ -1,6 +1,6 @@
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Button from "@/src/components/ui/form/ButtonUI";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { v4 as uid } from "uuid";
 import Label from "./LabelUI";
 import HandleField from "./HandleField";
@@ -19,16 +19,16 @@ export default function List(attr: ListType) {
   const [modalItemStatus, setModalItemStatus] = useState(-1);
   const [collapseTrash, setCollapseTrash] = useState(-1);
 
-  const [lisItems, setListItem] = useState(attr.items);
+  const [lisItems, setListItem] = useState([] as Array<any>);
   const addItem = () => {
     setListItem([
-      ...lisItems,
+      ...(lisItems ?? []),
       {
         id: uid(),
       },
     ]);
 
-    setModalItemStatus(lisItems.length);
+    setModalItemStatus(lisItems?.length);
   };
 
   const removeItem = (index: number) => {
@@ -51,6 +51,10 @@ export default function List(attr: ListType) {
 
     if (!!attr?.onChange) attr.onChange(updated);
   };
+
+  useEffect(() => {
+    setListItem(attr.items);
+  }, [attr.items]);
 
   return (
     <div className="border border-zinc-300 hover:border-zinc-400 focus-within:border-zinc-500 ease rounded-md p-2 grid gap-2">

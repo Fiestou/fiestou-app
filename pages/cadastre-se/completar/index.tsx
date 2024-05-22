@@ -139,17 +139,9 @@ export default function Completar({ auth }: any) {
                     name="celular"
                     required
                   />
-                </div>
-
-                <div className="form-group">
-                  <Label>Data de nascimento</Label>
-                  <Input
-                    defaultValue={data.date}
-                    onChange={(e: any) => handleData({ date: e.target.value })}
-                    type="date"
-                    name="nascimento"
-                    required
-                  />
+                  <div className="text-sm">
+                    * Usaremos seu contato apenas para notificações de pedidos.
+                  </div>
                 </div>
 
                 <div className="form-group">

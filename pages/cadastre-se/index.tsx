@@ -113,6 +113,7 @@ export default function CadastreSe({
   const [form, setForm] = useState(FormInitialType);
   const [email, setEmail] = useState(base64_decode(query.ref ?? ""));
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [date, setDate] = useState("");
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
@@ -162,6 +163,7 @@ export default function CadastreSe({
         name: name,
         date: date,
         email: email,
+        phone: phone,
         person: "client",
         password: password,
         re_password: repeat,
@@ -256,6 +258,20 @@ export default function CadastreSe({
                     name="email"
                     required
                   />
+                </div>
+
+                <div className="form-group">
+                  <Label>Celular</Label>
+                  <Input
+                    value={phone}
+                    onChange={(e: any) => setPhone(e.target.value)}
+                    type="text"
+                    name="celular"
+                    required
+                  />
+                  <div className="text-sm">
+                    * Usaremos seu contato apenas para notificações de pedidos.
+                  </div>
                 </div>
 
                 <div className="form-group">

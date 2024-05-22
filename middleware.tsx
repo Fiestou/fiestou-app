@@ -21,6 +21,11 @@ export async function middleware(req: any) {
   if (!!token) {
     let user = JSON.parse(req.cookies.get("fiestou.user")?.value ?? "[]");
 
+    if (!user.status && url.includes("/dashboard")) {
+      permanentLink.pathname = "/cadastre-se/completar";
+      return NextResponse.redirect(permanentLink);
+    }
+
     if (url.includes("/login")) {
       permanentLink.pathname = "/admin";
       return NextResponse.redirect(permanentLink);

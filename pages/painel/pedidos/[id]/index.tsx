@@ -122,10 +122,12 @@ export default function Pedido({
     if (!!request.response) {
       setData(handle);
 
-      await ChangeDeliveryStatusSMS(handle, {
-        subject: mailContent["delivery_subject"],
-        message: mailContent["delivery_body"],
-      });
+      if (["pending", "collect", "sent"].includes(deliveryStatus)) {
+        await ChangeDeliveryStatusSMS(handle, {
+          subject: mailContent["delivery_subject"],
+          message: mailContent["delivery_body"],
+        });
+      }
 
       await ChangeDeliveryStatusMail(handle, {
         subject: mailContent["delivery_subject"],

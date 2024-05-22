@@ -208,6 +208,11 @@ export default function Sistema({ roles }: { roles: any }) {
                           name: "plan_resources",
                           type: "textarea",
                         },
+                        {
+                          label: "Link do produto",
+                          name: "plan_url",
+                          type: "input",
+                        },
                       ]}
                     />
                   </div>

@@ -66,7 +66,7 @@ export interface AttributeProductOrderType {
 
 export interface ProductOrderType {
   product: any;
-  attributes: Array<AttributeProductOrderType>;
+  attributes: any; // Array<AttributeProductOrderType>;
   quantity: number;
   details?: Object | any;
   total: number;

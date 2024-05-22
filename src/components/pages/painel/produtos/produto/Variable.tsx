@@ -4,6 +4,7 @@ import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useState } from "react";
 import Variations from "./Variations";
+import { shortId } from "@/src/helper";
 
 export default function Variable({
   product,
@@ -20,7 +21,7 @@ export default function Variable({
   const addAttribute = () => {
     let rebuilt = attributes;
     let add: AttributeType = {
-      id: uid(),
+      id: shortId(),
       title: `Rascunho ${attributes.length + 1}`,
       variations: [],
       selectType: "radio",
@@ -28,14 +29,12 @@ export default function Variable({
       priceType: "on",
     };
     rebuilt.push(add);
-    setAttributes(rebuilt);
     emitAttributes(rebuilt);
     setModalAttrStatus(add.id);
   };
 
   const removeAttribute = (id: string) => {
     let removed = attributes.filter((attribute, key) => id != attribute.id);
-    setAttributes(removed);
     emitAttributes(removed);
   };
 
@@ -48,7 +47,6 @@ export default function Variable({
           }
         : attribute;
     });
-    setAttributes(updated);
     emitAttributes(updated);
   };
 
@@ -206,7 +204,7 @@ export default function Variable({
                           },
                           {
                             value: "checkbox",
-                            name: "Seleção aberta",
+                            name: "Seleção múltipla",
                           },
                           {
                             value: "quantity",
@@ -216,13 +214,12 @@ export default function Variable({
                         className="text-sm p-3"
                       />
                     </div>
-                    {(attribute?.selectType == "checkbox" ||
-                      attribute?.selectType == "quantity") && (
+                    {attribute?.selectType == "checkbox" && (
                       <div className="w-1/4 form-group">
                         <Label style="light">Limite de seleção</Label>
                         <Input
                           type="number"
-                          value={attribute.limit}
+                          value={attribute.limit ?? ""}
                           onChange={(e: any) =>
                             updateAttribute(
                               { limit: e.target.value },
@@ -248,11 +245,11 @@ export default function Variable({
                         options={[
                           {
                             value: "on",
-                            name: "Incluir valores",
+                            name: "Somar valor",
                           },
                           {
                             value: "off",
-                            name: "Apenas seleção",
+                            name: "Não somar valor",
                           },
                         ]}
                         className="text-sm p-3"

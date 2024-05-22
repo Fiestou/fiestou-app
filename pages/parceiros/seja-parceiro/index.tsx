@@ -362,9 +362,11 @@ export default function SejaParceiro({
                             ))}
                       </div>
                     </div>
-                    {/* <div className="text-center mt-4 grid">
-                      <Button href="#">Quero este!</Button>
-                    </div> */}
+                    <div className="text-center mt-4 grid">
+                      <Button target="_blank" href={item?.plan_url}>
+                        Selecionar
+                      </Button>
+                    </div>
                   </div>
                 ))}
             </div>
