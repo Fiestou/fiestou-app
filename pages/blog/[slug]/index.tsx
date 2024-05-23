@@ -13,24 +13,12 @@ import Newsletter from "@/src/components/common/Newsletter";
 export const getStaticPaths = async (ctx: any) => {
   const api = new Api();
 
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "blog as posts",
-        },
-      ],
-    },
-    ctx
-  );
+  let request: any = await api.content({ url: `post` });
 
-  const posts = request?.data?.query?.posts ?? [];
-
-  const paths = posts
-    .filter((post: any) => !!post.slug)
-    .map((post: any) => {
-      return { params: { slug: post.slug } };
+  const paths = request.data
+    .filter((slug: any) => !!slug)
+    .map((slug: any) => {
+      return { params: { slug: slug } };
     });
 
   return {
@@ -44,98 +32,34 @@ export async function getStaticProps(ctx: any) {
 
   const { slug } = ctx.params;
 
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "blog as post",
-          filter: [
-            {
-              key: "slug",
-              value: slug,
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "blog as posts",
-          limit: 3,
-        },
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "blog",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as Scripts",
-          filter: [
-            {
-              key: "slug",
-              value: "scripts",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
+  let request: any = await api.content({ url: `post/${slug}` });
 
-  const post = request?.data?.query?.post ?? [];
-
-  console.log(request?.data);
-
-  const posts = request?.data?.query?.posts ?? [];
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.data?.query?.Scripts ?? [];
+  const Post = request?.data?.Post ?? {};
+  const Related = request?.data?.Related ?? [];
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {
-      post: post[0] ?? {},
-      posts: posts ?? [],
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
+      Post: Post,
+      Related: Related,
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
   };
 }
 
 export default function Post({
-  post,
-  posts,
+  Post,
+  Related,
   HeaderFooter,
   DataSeo,
   Scripts,
 }: {
-  post: any;
-  posts: Array<any>;
+  Post: any;
+  Related: Array<any>;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;
@@ -144,11 +68,9 @@ export default function Post({
     <Template
       scripts={Scripts}
       metaPage={{
-        title: `${post?.title} | Blog | ${DataSeo?.site_text}`,
-        image: !!getImage(DataSeo?.site_image)
-          ? getImage(DataSeo?.site_image)
-          : "",
-        url: `blog/${post?.slug}`,
+        title: `${Post?.title} | Blog | ${DataSeo?.site_text}`,
+        image: !!getImage(Post?.image) ? getImage(Post?.image) : "",
+        url: `blog/${Post?.slug}`,
       }}
       header={{
         template: "default",
@@ -170,23 +92,23 @@ export default function Post({
               />
             </div>
             <h1 className="font-title font-bold text-4xl md:text-5xl mb-4">
-              {post?.title}
+              {Post?.title}
             </h1>
             <div className="text-base font-medium opacity-70">
-              {getExtenseData(post?.created_at)}
+              {getExtenseData(Post?.created_at)}
             </div>
           </div>
         </div>
       </section>
 
-      {!!getImage(post?.image) && (
+      {!!getImage(Post?.image) && (
         <section className="relative px-4">
           <div className="absolute left-0 w-full h-1/2 bg-cyan-500 "></div>
           <div className="w-full mx-auto max-w-[56rem] relative rounded-xl overflow-hidden">
             <div className="aspect-[4/2] bg-zinc-100">
               <Img
                 size="7xl"
-                src={getImage(post?.image)}
+                src={getImage(Post?.image)}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -197,7 +119,7 @@ export default function Post({
       <section className="my-10 pb-20">
         <div className="container-medium">
           <div className="mx-auto max-w-[40rem] grid gap-4">
-            {post?.blocks.map((item: any, key: any) => (
+            {Post?.blocks.map((item: any, key: any) => (
               <div
                 key={key}
                 dangerouslySetInnerHTML={{ __html: item.content }}
@@ -207,7 +129,7 @@ export default function Post({
         </div>
       </section>
 
-      <section className="xl:py-14">
+      <section className="xl:pb-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
             <h2 className="font-title text-zinc-900 font-bold text-2xl md:text-4xl mt-2">
@@ -215,8 +137,8 @@ export default function Post({
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4 md:gap-6">
-            {!!posts?.length &&
-              posts.map((post: any, key: any) => (
+            {!!Related?.length &&
+              Related.map((post: any, key: any) => (
                 <div key={key}>
                   <PostItem post={post} />
                 </div>

@@ -22,22 +22,23 @@ import axios from "axios";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.get({ url: "content/home" }, ctx);
 
-  const categories = request?.data?.categories ?? [];
-  const content = request?.data?.content ?? {};
-  const products = request?.data?.products ?? [];
+  let request: any = await api.content({ url: `home` });
+
+  const Categories = request?.data?.Categories ?? [];
+  const Home = request?.data?.Home ?? {};
+  const Products = request?.data?.Products ?? [];
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
-  const blog = request?.data?.posts ?? [];
+  const Blog = request?.data?.Blog ?? [];
 
   return {
     props: {
-      categories: categories,
-      products: products,
-      content: content,
-      blog: blog,
+      Categories: Categories,
+      Products: Products,
+      Home: Home,
+      Blog: Blog,
       HeaderFooter: HeaderFooter,
       DataSeo: DataSeo,
       Scripts: Scripts,
@@ -47,18 +48,18 @@ export async function getStaticProps(ctx: any) {
 }
 
 export default function Home({
-  content,
-  categories,
-  products,
-  blog,
+  Home,
+  Categories,
+  Products,
+  Blog,
   HeaderFooter,
   DataSeo,
   Scripts,
 }: {
-  content: any;
-  categories: Array<RelationType>;
-  products: Array<ProductType>;
-  blog: Array<any>;
+  Home: any;
+  Categories: Array<RelationType>;
+  Products: Array<ProductType>;
+  Blog: Array<any>;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;
@@ -88,19 +89,19 @@ export default function Home({
         className="bg-cyan-500 pt-16 md:pt-24 relative"
         style={{ backgroundColor: "#2dc3ff" }}
       >
-        {getImage(content.main_cover, "default") && (
+        {getImage(Home?.main_cover, "default") && (
           <>
-            {!!content.main_cover && (
+            {!!Home?.main_cover && (
               <Img
                 size="7xl"
-                src={getImage(content.main_cover, "default")}
+                src={getImage(Home?.main_cover, "default")}
                 className="hidden md:block absolute w-full bottom-0 left-0"
               />
             )}
-            {!!content.main_cover_mobile && (
+            {!!Home?.main_cover_mobile && (
               <Img
                 size="7xl"
-                src={getImage(content.main_cover_mobile, "default")}
+                src={getImage(Home?.main_cover_mobile, "default")}
                 className="md:hidden absolute w-full bottom-0 left-0"
               />
             )}
@@ -110,18 +111,18 @@ export default function Home({
           <div className="grid text-center md:text-left">
             <h1
               className="font-title text-underline font-bold text-4xl lg:text-6xl mb-2 md:mb-4"
-              dangerouslySetInnerHTML={{ __html: content.main_text }}
+              dangerouslySetInnerHTML={{ __html: Home?.main_text }}
             ></h1>
             <div
               className="text-lg text-underline md:text-3xl md:max-w-xl"
-              dangerouslySetInnerHTML={{ __html: content.main_description }}
+              dangerouslySetInnerHTML={{ __html: Home?.main_description }}
             ></div>
             <div className="pt-4 md:pt-6">
               <Button
-                href={content?.main_redirect?.url ?? "#"}
+                href={Home?.main_redirect?.url ?? "#"}
                 className="md:text-lg px-4 py-2 md:py-4 md:px-8"
               >
-                {content?.main_redirect?.label ?? ""}
+                {Home?.main_redirect?.label ?? ""}
               </Button>
             </div>
           </div>
@@ -145,15 +146,15 @@ export default function Home({
       <section className="py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-8">
-            <span>{content.feature_title}</span>
+            <span>{Home?.feature_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-              dangerouslySetInnerHTML={{ __html: content.feature_text }}
+              dangerouslySetInnerHTML={{ __html: Home?.feature_text }}
             ></h2>
           </div>
           <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6">
             {/* <div className="hidden md:block order-1 w-1/2 text-right md:text-center md:w-fit p-2">
-              <Button className="swiper-products-prev p-5 rounded-full">
+              <Button className="swiper-Products-prev p-5 rounded-full">
                 <Icon
                   icon="fa-arrow-left"
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -161,13 +162,13 @@ export default function Home({
               </Button>
             </div> */}
             <div className="order-3 md:order-2 grid md:grid-cols-2 lg:grid-cols-4 gap-4 w-full relative overflow-hidden">
-              {!!products.length &&
-                products.map((item: any, key: any) => (
+              {!!Products.length &&
+                Products.map((item: any, key: any) => (
                   <Product key={key} product={item} />
                 ))}
             </div>
             {/* <div className="hidden md:block order-2 md:order-3 w-1/2 text-left md:text-center md:w-fit p-2">
-              <Button className="swiper-products-next p-5 rounded-full">
+              <Button className="swiper-Products-next p-5 rounded-full">
                 <Icon
                   icon="fa-arrow-right"
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -184,10 +185,10 @@ export default function Home({
       <section className="py-12 md:py-20">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{content.works_title}</span>
+            <span>{Home?.works_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-              dangerouslySetInnerHTML={{ __html: content.works_text }}
+              dangerouslySetInnerHTML={{ __html: Home?.works_text }}
             ></h2>
           </div>
           <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6 -mx-[1rem] xl:-mx-[4rem]">
@@ -223,8 +224,8 @@ export default function Home({
                 }}
                 className="swiper-equal"
               >
-                {!!content.works_steps &&
-                  content.works_steps.map((item: any, key: any) => (
+                {!!Home?.works_steps &&
+                  Home?.works_steps.map((item: any, key: any) => (
                     <SwiperSlide key={key}>
                       <div className="border h-full rounded-lg">
                         <div className="aspect-square bg-zinc-100">
@@ -261,15 +262,15 @@ export default function Home({
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-xl mx-auto text-center pb-14">
-              <span>{content.categories_title}</span>
+              <span>{Home?.Categories_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-                dangerouslySetInnerHTML={{ __html: content.categories_text }}
+                dangerouslySetInnerHTML={{ __html: Home?.Categories_text }}
               ></h2>
               <div
                 className="pt-4"
                 dangerouslySetInnerHTML={{
-                  __html: content.categories_description,
+                  __html: Home?.Categories_description,
                 }}
               ></div>
             </div>
@@ -288,10 +289,9 @@ export default function Home({
                   },
                 }}
               >
-                {!!categories &&
-                  categories
-                    .filter((item: any) => !!item?.feature)
-                    .map((item: any, key: any) => (
+                {!!Categories &&
+                  Categories.filter((item: any) => !!item?.feature).map(
+                    (item: any, key: any) => (
                       <SwiperSlide key={key}>
                         <Link passHref href={`/categoria/${item?.slug}`}>
                           <div className="group grid gap-2 text-center">
@@ -313,7 +313,8 @@ export default function Home({
                           </div>
                         </Link>
                       </SwiperSlide>
-                    ))}
+                    )
+                  )}
               </Swiper>
             </div>
             <div className="text-center mt-10">
@@ -327,15 +328,15 @@ export default function Home({
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-4xl mx-auto text-center pb-8 md:pb-14">
-              <span>{content.partner_title}</span>
+              <span>{Home?.partner_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-                dangerouslySetInnerHTML={{ __html: content.partner_text }}
+                dangerouslySetInnerHTML={{ __html: Home?.partner_text }}
               ></h2>
             </div>
             <div className="flex justify-center gap-2 md:gap-12">
-              {!!content.partner_list &&
-                content.partner_list.map((item: any, key: any) => (
+              {!!Home?.partner_list &&
+                Home?.partner_list.map((item: any, key: any) => (
                   <Link
                     key={key}
                     href={item?.partner_item_link}
@@ -357,13 +358,13 @@ export default function Home({
                 <h4
                   className="font-title font-bold max-w-[30rem] text-zinc-900 text-5xl"
                   dangerouslySetInnerHTML={{
-                    __html: content.partner_text_secondary,
+                    __html: Home?.partner_text_secondary,
                   }}
                 ></h4>
                 <div
                   className="max-w-[20rem]"
                   dangerouslySetInnerHTML={{
-                    __html: content.partner_description_secondary,
+                    __html: Home?.partner_description_secondary,
                   }}
                 ></div>
                 <div className="md:pt-4">
@@ -374,9 +375,9 @@ export default function Home({
               </div>
               <div className="w-full">
                 <div className="aspect-[2/2]">
-                  {!!getImage(content.partner_image) && (
+                  {!!getImage(Home?.partner_image) && (
                     <Img
-                      src={getImage(content.partner_image)}
+                      src={getImage(Home?.partner_image)}
                       className="w-full h-full object-contain"
                     />
                   )}
@@ -392,17 +393,17 @@ export default function Home({
           <div className="lg:flex justify-center">
             <div className="w-full">
               <div className="max-w-xl pb-14">
-                <span>{content.quotes_title}</span>
+                <span>{Home?.quotes_title}</span>
                 <h2
                   className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4"
                   dangerouslySetInnerHTML={{
-                    __html: content.quotes_text,
+                    __html: Home?.quotes_text,
                   }}
                 ></h2>
                 <div
                   className="pt-4"
                   dangerouslySetInnerHTML={{
-                    __html: content.quotes_description,
+                    __html: Home?.quotes_description,
                   }}
                 ></div>
                 <div className="pt-10">
@@ -414,10 +415,10 @@ export default function Home({
               </div>
             </div>
             <div className="w-full lg:max-w-[30rem]">
-              {!!content.quotes_list && (
+              {!!Home?.quotes_list && (
                 <>
                   <div>
-                    {content.quotes_list.length > 1 ? (
+                    {Home?.quotes_list.length > 1 ? (
                       <Swiper
                         pagination={{
                           el: ".swiper-quotes-pagination",
@@ -435,8 +436,8 @@ export default function Home({
                           },
                         }}
                       >
-                        {!!content.quotes_list.map &&
-                          content.quotes_list.map((item: any, key: any) => (
+                        {!!Home?.quotes_list.map &&
+                          Home?.quotes_list.map((item: any, key: any) => (
                             <SwiperSlide key={key}>
                               <div className="w-full">
                                 <div className="flex gap-4 items-center">
@@ -467,7 +468,7 @@ export default function Home({
                           ))}
                       </Swiper>
                     ) : (
-                      content.quotes_list.map((item: any, key: any) => (
+                      Home?.quotes_list.map((item: any, key: any) => (
                         <div key={key} className="w-full">
                           <div className="flex gap-4 items-center">
                             {item?.quote_image && (
@@ -494,7 +495,7 @@ export default function Home({
                       ))
                     )}
                   </div>
-                  {content.quotes_list.length > 1 && (
+                  {Home?.quotes_list.length > 1 && (
                     <div className="flex gap-2 pt-4 items-center">
                       <span className="swiper-quotes-pagination w-auto pr-3"></span>
                       <Button className="swiper-quotes-prev p-4 rounded-full">
@@ -521,21 +522,21 @@ export default function Home({
       <section className="pb-14 xl:py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{content.blog_subtitle}</span>
+            <span>{Home?.Blog_subtitle}</span>
             <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
-              {content.blog_title}
+              {Home?.Blog_title}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-10 md:gap-6">
-            {!!blog?.length &&
-              blog.map((post: any, key: any) => (
+            {!!Blog?.length &&
+              Blog.map((post: any, key: any) => (
                 <div key={key}>
                   <PostItem post={post} />
                 </div>
               ))}
           </div>
           <div className="text-center mt-10">
-            <Button href="/blog">Mais postagens</Button>
+            <Button href="/Blog">Mais postagens</Button>
           </div>
         </div>
       </section>

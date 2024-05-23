@@ -13,77 +13,32 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "faq",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as Scripts",
-          filter: [
-            {
-              key: "slug",
-              value: "scripts",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
 
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.data?.query?.Scripts ?? [];
+  let request: any = await api.content({ url: `faq` });
+
+  const Faq = request?.data?.Faq ?? {};
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {
-      content: request?.data?.query?.page[0] ?? {},
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
+      Faq: Faq,
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
     revalidate: 60 * 60 * 60,
   };
 }
 
 export default function Ajuda({
-  content,
+  Faq,
   HeaderFooter,
   DataSeo,
   Scripts,
 }: {
-  content: any;
+  Faq: any;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;
@@ -94,11 +49,11 @@ export default function Ajuda({
     <Template
       scripts={Scripts}
       metaPage={{
-        title: `${content.main_text} | ${DataSeo?.site_text}`,
+        title: `${Faq?.main_text} | ${DataSeo?.site_text}`,
         image: !!getImage(DataSeo?.site_image)
           ? getImage(DataSeo?.site_image)
           : "",
-        description: `${content.main_description} - ${DataSeo?.site_description}`,
+        description: `${Faq?.main_description} - ${DataSeo?.site_description}`,
         url: `faq`,
       }}
       header={{
@@ -120,17 +75,17 @@ export default function Ajuda({
               </div>
               <h1
                 className="font-title font-bold text-4xl md:text-5xl mb-4"
-                dangerouslySetInnerHTML={{ __html: content.main_text }}
+                dangerouslySetInnerHTML={{ __html: Faq?.main_text }}
               ></h1>
               <div
                 className="text-lg md:text-2xl font-semibold"
-                dangerouslySetInnerHTML={{ __html: content.main_description }}
+                dangerouslySetInnerHTML={{ __html: Faq?.main_description }}
               ></div>
             </div>
-            {!!getImage(content.main_icons) && (
+            {!!getImage(Faq?.main_icons) && (
               <div className="w-fit">
                 <Img
-                  src={getImage(content.main_icons)}
+                  src={getImage(Faq?.main_icons)}
                   className="w-auto max-w-full"
                 />
               </div>
@@ -142,8 +97,8 @@ export default function Ajuda({
       <section className="py-1 md:py-10">
         <div className="container-medium">
           <div className="">
-            {!!content.main_text &&
-              content.faq_list.map((item: any, key: any) => (
+            {!!Faq?.main_text &&
+              Faq?.faq_list.map((item: any, key: any) => (
                 <div key={key} className="border-b py-6">
                   <div
                     onClick={() =>
@@ -183,20 +138,20 @@ export default function Ajuda({
               <h4
                 className="font-title font-bold max-w-[30rem] text-3xl md:text-4xl"
                 dangerouslySetInnerHTML={{
-                  __html: cleanText(content.cta_description),
+                  __html: cleanText(Faq?.cta_description),
                 }}
               ></h4>
-              {!!content?.cta_button?.url && (
+              {!!Faq?.cta_button?.url && (
                 <div className="pt-2">
-                  <Button href={content.cta_button.url}>
-                    {content.cta_button.label ?? "Enviar mensagem"}
+                  <Button href={Faq?.cta_button.url}>
+                    {Faq?.cta_button.label ?? "Enviar mensagem"}
                   </Button>
                 </div>
               )}
             </div>
-            {!!content.cta_image && (
+            {!!Faq?.cta_image && (
               <div className="w-full">
-                <Img className="w-full" src={getImage(content.cta_image)} />
+                <Img className="w-full" src={getImage(Faq?.cta_image)} />
               </div>
             )}
           </div>

@@ -11,84 +11,38 @@ import Img from "@/src/components/utils/ImgBase";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "contato",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as Scripts",
-          filter: [
-            {
-              key: "slug",
-              value: "scripts",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
 
-  const content = request?.data?.query?.page ?? [];
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.data?.query?.Scripts ?? [];
+  let request: any = await api.content({ url: `contact` });
+
+  const Contact = request?.data?.Contact ?? {};
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {
-      content: content[0] ?? {},
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
+      Contact: Contact,
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
     revalidate: 60 * 60 * 60,
   };
 }
 
 export default function Contact({
-  content,
+  Contact,
   HeaderFooter,
   DataSeo,
   Scripts,
 }: {
-  content: any;
+  Contact: any;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;
 }) {
   const api = new Api();
-  console.log(content);
+  console.log(Contact);
 
   const [data, setData] = useState({} as any);
   const [form, setForm] = useState({
@@ -125,17 +79,17 @@ export default function Contact({
               </div>
               <h1
                 className="font-title font-bold text-4xl md:text-5xl mb-4"
-                dangerouslySetInnerHTML={{ __html: content.main_text }}
+                dangerouslySetInnerHTML={{ __html: Contact?.main_text }}
               ></h1>
               <div
                 className="text-lg md:text-2xl font-semibold"
-                dangerouslySetInnerHTML={{ __html: content.main_description }}
+                dangerouslySetInnerHTML={{ __html: Contact?.main_description }}
               ></div>
             </div>
-            {!!getImage(content.main_icons) && (
+            {!!getImage(Contact?.main_icons) && (
               <div className="w-fit">
                 <Img
-                  src={getImage(content.main_icons)}
+                  src={getImage(Contact?.main_icons)}
                   className="w-auto max-w-full"
                 />
               </div>
@@ -163,8 +117,8 @@ export default function Contact({
                 Telefone
               </h3>
               <div className="text-sm grid">
-                <span>{content.contact_phone}</span>
-                <span>{content.contact_phone_support}</span>
+                <span>{Contact?.contact_phone}</span>
+                <span>{Contact?.contact_phone_support}</span>
               </div>
             </div>
           </div>
@@ -186,11 +140,11 @@ export default function Contact({
                 E-mail
               </h3>
               <div className="text-sm grid">
-                <a href={`mail:${content.contact_email}`}>
-                  <span>{content.contact_email}</span>
+                <a href={`mail:${Contact?.contact_email}`}>
+                  <span>{Contact?.contact_email}</span>
                 </a>
-                <a href={`mail:${content.contact_email_support}`}>
-                  <span>{content.contact_email_support}</span>
+                <a href={`mail:${Contact?.contact_email_support}`}>
+                  <span>{Contact?.contact_email_support}</span>
                 </a>
               </div>
             </div>
@@ -212,7 +166,7 @@ export default function Contact({
               <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
                 Local
               </h3>
-              <div className="text-sm grid">{content.contact_address}</div>
+              <div className="text-sm grid">{Contact?.contact_address}</div>
             </div>
           </div>
         </div>

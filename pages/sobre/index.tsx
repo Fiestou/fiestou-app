@@ -19,78 +19,32 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "sobre",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as Scripts",
-          filter: [
-            {
-              key: "slug",
-              value: "scripts",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
 
-  const content = request?.data?.query?.page ?? [];
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.data?.query?.Scripts ?? [];
+  let request: any = await api.content({ url: `about` });
+
+  const About = request?.data?.About ?? {};
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {
-      content: content[0] ?? {},
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
+      About: About,
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
     revalidate: 60 * 60 * 60,
   };
 }
 
 export default function Sobre({
-  content,
+  About,
   HeaderFooter,
   DataSeo,
   Scripts,
 }: {
-  content: any;
+  About: any;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;
@@ -103,7 +57,7 @@ export default function Sobre({
         image: !!getImage(DataSeo?.site_image)
           ? getImage(DataSeo?.site_image)
           : "",
-        description: clean(content.main_description),
+        description: clean(About?.main_description),
         url: `sobre`,
       }}
       header={{
@@ -125,17 +79,17 @@ export default function Sobre({
               </div>
               <h1
                 className="font-title font-bold text-4xl md:text-5xl mb-4"
-                dangerouslySetInnerHTML={{ __html: content.main_text }}
+                dangerouslySetInnerHTML={{ __html: About?.main_text }}
               ></h1>
               <div
                 className="text-lg md:text-2xl font-semibold"
-                dangerouslySetInnerHTML={{ __html: content.main_description }}
+                dangerouslySetInnerHTML={{ __html: About?.main_description }}
               ></div>
             </div>
-            {!!getImage(content.main_icons) && (
+            {!!getImage(About?.main_icons) && (
               <div className="w-fit">
                 <Img
-                  src={getImage(content.main_icons)}
+                  src={getImage(About?.main_icons)}
                   className="w-auto max-w-full"
                 />
               </div>
@@ -149,7 +103,7 @@ export default function Sobre({
           <div className="max-w-3xl mx-auto text-center pb-6 md:pb-14">
             <h2
               className="font-title text-zinc-900 font-bold text-3xl md:text-5xl mt-2"
-              dangerouslySetInnerHTML={{ __html: content.works_text }}
+              dangerouslySetInnerHTML={{ __html: About?.works_text }}
             ></h2>
           </div>
           <div className="">
@@ -169,8 +123,8 @@ export default function Sobre({
               }}
               className="swiper-equal swiper-visible"
             >
-              {!!content.works_text &&
-                content.works_list.map((item: any, key: any) => (
+              {!!About?.works_text &&
+                About?.works_list.map((item: any, key: any) => (
                   <SwiperSlide key={key}>
                     <div className="border h-full rounded-lg p-6 md:p-10">
                       <div className="p-8 text-yellow-400 relative">
@@ -205,17 +159,17 @@ export default function Sobre({
               <div className="w-full grid gap-4 md:gap-8">
                 <h4
                   className="font-title font-bold max-w-[30rem] text-4xl text-zinc-900"
-                  dangerouslySetInnerHTML={{ __html: content.about_title }}
+                  dangerouslySetInnerHTML={{ __html: About?.about_title }}
                 ></h4>
                 <div
                   className="max-w-[30rem] md:text-lg"
-                  dangerouslySetInnerHTML={{ __html: content.about_text }}
+                  dangerouslySetInnerHTML={{ __html: About?.about_text }}
                 ></div>
               </div>
-              {!!content.about_image && (
+              {!!About?.about_image && (
                 <div className="w-full">
                   <Img
-                    src={getImage(content.about_image)}
+                    src={getImage(About?.about_image)}
                     className="w-full rounded-xl"
                   />
                 </div>
@@ -228,10 +182,10 @@ export default function Sobre({
       <section className="py-10 md:pt-20 relative overflow-hidden">
         <div className="container-medium">
           <div className="max-w-3xl mx-auto text-center pb-6 md:pb-14">
-            <span>{content.args_title}</span>
+            <span>{About?.args_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-3xl md:text-5xl mt-2"
-              dangerouslySetInnerHTML={{ __html: content.args_text }}
+              dangerouslySetInnerHTML={{ __html: About?.args_text }}
             ></h2>
           </div>
           <div className="">
@@ -251,8 +205,8 @@ export default function Sobre({
               }}
               className="swiper-equal swiper-visible"
             >
-              {!!content.args_list &&
-                content.args_list.map((item: any, key: any) => (
+              {!!About?.args_list &&
+                About?.args_list.map((item: any, key: any) => (
                   <SwiperSlide key={key}>
                     <div className="border h-full rounded-lg p-6 md:p-10">
                       <div className="p-8 text-yellow-400 relative">

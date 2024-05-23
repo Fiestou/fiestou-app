@@ -8,6 +8,7 @@ import { useRouter } from "next/router";
 import { encode as base64_encode, decode as base64_decode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import { RegisterUserMail } from "@/src/mail";
+import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -111,12 +112,14 @@ export default function CadastreSe({
   const [complete, setComplete] = useState([] as Array<string>);
 
   const [form, setForm] = useState(FormInitialType);
-  const [email, setEmail] = useState(base64_decode(query.ref ?? ""));
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [date, setDate] = useState("");
-  const [password, setPassword] = useState("");
-  const [repeat, setRepeat] = useState("");
+  const [email, setEmail] = useState(base64_decode(query.ref ?? "") as string);
+  const [name, setName] = useState("" as string);
+  const [phone, setPhone] = useState("" as string);
+  const [date, setDate] = useState("" as string);
+  const [password, setPassword] = useState("" as string);
+  const [repeat, setRepeat] = useState("" as string);
+
+  const [token, setToken] = useState("" as string);
 
   useEffect(() => {
     if (password) {
@@ -325,9 +328,15 @@ export default function CadastreSe({
                   ></div>
                 )}
 
+                <div className="flex justify-center pt-4">
+                  <HCaptchaComponent
+                    onVerify={(token: string) => setToken(token)}
+                  />
+                </div>
+
                 <div className="form-group">
                   <Button
-                    disable={!!errors.length && !!complete.length}
+                    disable={(!!errors.length && !!complete.length) || !token}
                     loading={form.loading}
                   >
                     Cadastrar agora

@@ -12,85 +12,87 @@ import PostItem from "@/src/components/common/PostItem";
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "blog as posts",
-        },
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "blog",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as Scripts",
-          filter: [
-            {
-              key: "slug",
-              value: "scripts",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
+  // let request: any = await api.call(
+  //   {
+  //     url: "request/graph",
+  //     data: [
+  //       {
+  //         model: "blog as posts",
+  //       },
+  //       {
+  //         model: "page",
+  //         filter: [
+  //           {
+  //             key: "slug",
+  //             value: "blog",
+  //             compare: "=",
+  //           },
+  //         ],
+  //       },
+  //       {
+  //         model: "page as HeaderFooter",
+  //         filter: [
+  //           {
+  //             key: "slug",
+  //             value: "menu",
+  //             compare: "=",
+  //           },
+  //         ],
+  //       },
+  //       {
+  //         model: "page as DataSeo",
+  //         filter: [
+  //           {
+  //             key: "slug",
+  //             value: "seo",
+  //             compare: "=",
+  //           },
+  //         ],
+  //       },
+  //       {
+  //         model: "page as Scripts",
+  //         filter: [
+  //           {
+  //             key: "slug",
+  //             value: "scripts",
+  //             compare: "=",
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //   },
+  //   ctx
+  // );
 
-  const content = request?.data?.query?.page ?? [];
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.Scripts ?? [];
-  const posts = request?.data?.query?.posts ?? [];
+  let request: any = await api.content({ url: `blog` });
+
+  const Blog = request?.data?.Blog ?? {};
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
+  const Posts = request?.data?.Posts ?? [];
 
   return {
     props: {
-      posts: posts,
-      content: content[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
-      HeaderFooter: HeaderFooter[0] ?? {},
+      Posts: Posts,
+      Blog: Blog,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
+      HeaderFooter: HeaderFooter,
     },
     revalidate: 60 * 60 * 60,
   };
 }
 
 export default function Post({
-  posts,
-  content,
+  Posts,
+  Blog,
   HeaderFooter,
   DataSeo,
   Scripts,
 }: {
-  posts: Array<any>;
-  content: any;
+  Posts: Array<any>;
+  Blog: any;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;
@@ -120,21 +122,21 @@ export default function Post({
           <div className="flex">
             <div className="w-full">
               <div className="pb-4">
-                <Breadcrumbs links={[{ url: "/sobre", name: "Sobre" }]} />
+                <Breadcrumbs links={[{ url: "/blog", name: "Blog" }]} />
               </div>
               <h1
                 className="font-title font-bold text-4xl md:text-5xl mb-4"
-                dangerouslySetInnerHTML={{ __html: content.blog_text }}
+                dangerouslySetInnerHTML={{ __html: Blog?.blog_text }}
               ></h1>
               <div
                 className="text-lg md:text-2xl font-semibold"
-                dangerouslySetInnerHTML={{ __html: content.blog_description }}
+                dangerouslySetInnerHTML={{ __html: Blog?.blog_description }}
               ></div>
             </div>
-            {!!getImage(content.blog_icons) && (
+            {!!getImage(Blog?.blog_icons) && (
               <div className="w-fit">
                 <Img
-                  src={getImage(content.blog_icons)}
+                  src={getImage(Blog?.blog_icons)}
                   className="w-auto max-w-full"
                 />
               </div>
@@ -142,11 +144,11 @@ export default function Post({
           </div>
         </div>
       </section>
-      <section className="py-10 md:py-20 relative overflow-hidden">
+      <section className="py-10 md:pb-20 relative overflow-hidden">
         <div className="container-medium grid gap-6 md:gap-10">
           <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {!!posts.length &&
-              posts.map((post: any, key: any) => (
+            {!!Posts.length &&
+              Posts.map((post: any, key: any) => (
                 <div key={key} className="w-full pb-6">
                   <PostItem post={post} />
                 </div>

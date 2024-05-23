@@ -9,6 +9,7 @@ import Api from "@/src/services/api";
 import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
 import { AuthContext } from "@/src/contexts/AuthContext";
+import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
 
 export async function getServerSideProps(ctx: any) {
   const session: any = await getSession(ctx);
@@ -37,6 +38,8 @@ export default function Completar({ auth }: any) {
   const api = new Api();
 
   const [loading, setLoading] = useState(false as boolean);
+
+  const [token, setToken] = useState("" as string);
 
   const [data, setData] = useState({} as any);
   const handleData = (value: any) => {
@@ -144,8 +147,16 @@ export default function Completar({ auth }: any) {
                   </div>
                 </div>
 
+                <div className="flex justify-center pt-4">
+                  <HCaptchaComponent
+                    onVerify={(token: string) => setToken(token)}
+                  />
+                </div>
+
                 <div className="form-group">
-                  <Button loading={loading}>Cadastrar agora</Button>
+                  <Button disable={!token} loading={loading}>
+                    Cadastrar agora
+                  </Button>
                 </div>
               </form>
             </div>

@@ -13,70 +13,25 @@ import { Navigation, Pagination } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { getImage, moneyFormat } from "@/src/helper";
+import { clean, getImage, moneyFormat } from "@/src/helper";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "seja-parceiro",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "roles",
-          filter: [
-            {
-              key: "slug",
-              value: "roles",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
 
-  const content = request?.data?.query?.page ?? [];
-  const roles = request?.data?.query?.roles ?? [];
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  let request: any = await api.content({ url: `become-partner` });
+
+  const Partner = request?.data?.Partner ?? {};
+  const Roles = request?.data?.Roles ?? {};
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {
-      content: content[0] ?? {},
-      roles: roles[0] ?? {},
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
+      Partner: Partner,
+      Roles: Roles,
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
     },
   };
 }
@@ -88,18 +43,18 @@ const FormInitialType = {
 };
 
 export default function SejaParceiro({
-  content,
-  roles,
+  Partner,
+  Roles,
   HeaderFooter,
   DataSeo,
+  Scripts,
 }: {
-  content: any;
-  roles: any;
+  Partner: any;
+  Roles: any;
   HeaderFooter: any;
   DataSeo: any;
+  Scripts: any;
 }) {
-  console.log(roles);
-
   const api = new Api();
   const router = useRouter();
 
@@ -137,10 +92,18 @@ export default function SejaParceiro({
 
   return (
     <Template
+      scripts={Scripts}
+      metaPage={{
+        title: `Seja um parceiro | ${DataSeo?.site_text}`,
+        image: !!getImage(Partner?.main_cover)
+          ? getImage(Partner?.main_cover)
+          : "",
+        description: clean(Partner?.main_description),
+        url: `parceiros/seja-parceiro/`,
+      }}
       header={{
         template: "default",
         position: "fixed",
-        background: "bg-transparent",
         content: HeaderFooter,
       }}
       footer={{
@@ -152,19 +115,19 @@ export default function SejaParceiro({
         className="pb-24 md:pb-0 pt-[2rem] md:pt-24 relative"
         style={{ backgroundColor: "#2dc3ff" }}
       >
-        {getImage(content.main_cover, "default") && (
+        {getImage(Partner?.main_cover, "default") && (
           <>
-            {!!content.main_cover && (
+            {!!Partner?.main_cover && (
               <Img
                 size="7xl"
-                src={getImage(content.main_cover, "default")}
+                src={getImage(Partner?.main_cover, "default")}
                 className="hidden md:block absolute w-full bottom-0 left-0"
               />
             )}
-            {!!content.main_cover_mobile && (
+            {!!Partner?.main_cover_mobile && (
               <Img
                 size="7xl"
-                src={getImage(content.main_cover_mobile, "default")}
+                src={getImage(Partner?.main_cover_mobile, "default")}
                 className="md:hidden absolute w-full bottom-0 left-0"
               />
             )}
@@ -175,11 +138,11 @@ export default function SejaParceiro({
             <div className="w-full">
               <h1
                 className="font-title font-bold text-4xl md:text-6xl mb-4"
-                dangerouslySetInnerHTML={{ __html: content.main_text }}
+                dangerouslySetInnerHTML={{ __html: Partner?.main_text }}
               ></h1>
               <div
                 className="text-xl md:text-3xl font-semibold"
-                dangerouslySetInnerHTML={{ __html: content.main_description }}
+                dangerouslySetInnerHTML={{ __html: Partner?.main_description }}
               ></div>
             </div>
             <div className="w-full md:max-w-[26rem] mb-6 md:mb-10">
@@ -196,7 +159,7 @@ export default function SejaParceiro({
                     <h2
                       className="font-bold font-title text-3xl text-center pb-4"
                       dangerouslySetInnerHTML={{
-                        __html: content.form_title,
+                        __html: Partner?.form_title,
                       }}
                     ></h2>
                     <div className="form-group">
@@ -232,13 +195,13 @@ export default function SejaParceiro({
                     <div
                       className="form-group text-zinc-500 py-1 text-sm leading-tight"
                       dangerouslySetInnerHTML={{
-                        __html: content.form_term,
+                        __html: Partner?.form_term,
                       }}
                     ></div>
 
                     <div className="form-group">
                       <Button loading={form.loading}>
-                        {content.form_button}
+                        {Partner?.form_button}
                       </Button>
                     </div>
                   </div>
@@ -252,11 +215,11 @@ export default function SejaParceiro({
       <section className="pt-14 md:pt-20 pb-5 md:pb-20 relative overflow-hidden">
         <div className="container-medium">
           <div className="max-w-xl mx-auto text-center pb-10 md:pb-14">
-            <span>{content.works_title}</span>
+            <span>{Partner?.works_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
               dangerouslySetInnerHTML={{
-                __html: content.works_text,
+                __html: Partner?.works_text,
               }}
             ></h2>
           </div>
@@ -277,8 +240,8 @@ export default function SejaParceiro({
             }}
             className="swiper-equal swiper-visible"
           >
-            {!!content.works_list &&
-              content.works_list.map((item: any, key: any) => (
+            {!!Partner?.works_list &&
+              Partner?.works_list.map((item: any, key: any) => (
                 <SwiperSlide key={key}>
                   <div className="border h-full rounded-lg p-6 md:p-10">
                     <div className="p-8 text-yellow-400 relative">
@@ -309,23 +272,23 @@ export default function SejaParceiro({
         <div className="max-w-[88rem] pb-6 pt-14 md:p-14 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-xl mx-auto text-center pb-10 md:pb-14">
-              <span>{content.plain_title}</span>
+              <span>{Partner?.plain_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
                 dangerouslySetInnerHTML={{
-                  __html: content.plain_text,
+                  __html: Partner?.plain_text,
                 }}
               ></h2>
               <div
                 className="pt-4"
                 dangerouslySetInnerHTML={{
-                  __html: content.plain_description,
+                  __html: Partner?.plain_description,
                 }}
               ></div>
             </div>
             <div className="grid md:flex gap-6 md:gap-16">
-              {!!roles?.plans?.length &&
-                roles?.plans.map((item: any, key: any) => (
+              {!!Roles?.plans?.length &&
+                Roles?.plans.map((item: any, key: any) => (
                   <div
                     className={`${
                       key % 2 == 0 ? "bg-white" : "bg-zinc-900 text-white"
@@ -379,17 +342,17 @@ export default function SejaParceiro({
           <div className="grid lg:flex justify-center">
             <div className="w-full">
               <div className="max-w-xl pb-4 md:pb-14">
-                <span>{content.faq_title}</span>
+                <span>{Partner?.faq_title}</span>
                 <h2
                   className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4"
                   dangerouslySetInnerHTML={{
-                    __html: content.faq_text,
+                    __html: Partner?.faq_text,
                   }}
                 ></h2>
                 <div
                   className="pt-4"
                   dangerouslySetInnerHTML={{
-                    __html: content.faq_description,
+                    __html: Partner?.faq_description,
                   }}
                 ></div>
                 <Img
@@ -399,8 +362,8 @@ export default function SejaParceiro({
               </div>
             </div>
             <div className="w-full lg:max-w-[40rem]">
-              {!!content.faq_list &&
-                content.faq_list.map((item: any, key: any) => (
+              {!!Partner?.faq_list &&
+                Partner?.faq_list.map((item: any, key: any) => (
                   <div key={key} className="border-b py-4">
                     <div
                       onClick={() =>
@@ -439,24 +402,24 @@ export default function SejaParceiro({
               <h4
                 className="font-title font-bold max-w-[30rem] text-4xl"
                 dangerouslySetInnerHTML={{
-                  __html: content.cta_text,
+                  __html: Partner?.cta_text,
                 }}
               ></h4>
               <div
                 className="max-w-[24rem]"
                 dangerouslySetInnerHTML={{
-                  __html: content.cta_description,
+                  __html: Partner?.cta_description,
                 }}
               ></div>
               <div className="pt-2">
-                <Button href="#">{content.cta_button}</Button>
+                <Button href="#">{Partner?.cta_button}</Button>
               </div>
             </div>
             <div className="w-full">
               <div className="aspect-square relative">
-                {!!getImage(content.cta_image, "xl") && (
+                {!!getImage(Partner?.cta_image, "xl") && (
                   <Img
-                    src={getImage(content.cta_image, "xl")}
+                    src={getImage(Partner?.cta_image, "xl")}
                     className="w-full h-full object-contain absolute inset-0"
                   />
                 )}

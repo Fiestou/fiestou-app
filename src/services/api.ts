@@ -66,7 +66,14 @@ class Api {
     return await this.request({ requestType, url, data, opts }, ctx);
   }
 
+  async content({ url }: any, ctx?: any) {
+    url = `${process.env.BASE_URL}/api/content/${url}`;
+    return await this.request({ requestType: "get", url }, ctx);
+  }
+
   call({ requestType, url, data, opts }: ApiRequestType, ctx?: any) {
+    console.log(data);
+
     url = `${process.env.BASE_URL}/api/${url}`;
     data = { graphs: data };
     return this.request({ requestType, url, data, opts }, ctx);
