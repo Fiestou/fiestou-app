@@ -202,7 +202,7 @@ class UsersController extends Controller
             $user->person = $request->person;
             $user->password = bcrypt( $request->password );
             $user->remember = bcrypt( $request->password );
-            $user->status   = 0;
+            $user->status   = 1;
         }
 
         try{

@@ -152,9 +152,17 @@ Route::group([ 'prefix' => 'hooks' ], function(){
 // CONTENT
 Route::group([ 'prefix' => 'content' ], function(){
     Route::post('/default', [ContentController::class, 'Default']);
-    Route::post('/home', [ContentController::class, 'Home']);
     Route::post('/products', [ContentController::class, 'Products']);
     Route::post('/product', [ContentController::class, 'Product']);
+    Route::get('/home', [ContentController::class, 'Home']);
+    Route::get('/about', [ContentController::class, 'About']);
+    Route::get('/faq', [ContentController::class, 'Faq']);
+    Route::get('/become-partner', [ContentController::class, 'BecomePartner']);
+    Route::get('/partners', [ContentController::class, 'Partners']);
+    Route::get('/blog', [ContentController::class, 'Blog']);
+    Route::get('/post/{slug?}', [ContentController::class, 'Post']);
+    Route::get('/contact', [ContentController::class, 'Contact']);
+    Route::get('/communicate/{slug?}', [ContentController::class, 'Communicate']);
 });
 
 // REST / GRAPH
