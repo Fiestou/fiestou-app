@@ -222,8 +222,8 @@ class ProductsController extends Controller
             $product->gallery = json_encode($request->get('gallery'));
         }
 
-        if($request->has('attributes') && !empty($request->get('attributes'))){
-            $product->attributes = json_encode($request->get('attributes'));
+        if($request->has('attributes')){
+            $product->attributes = json_encode($request->get('attributes') ?? []);
         }
 
         if($request->has('combinations') && !empty($request->get('combinations'))){
