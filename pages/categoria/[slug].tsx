@@ -158,8 +158,8 @@ export default function Categoria({
         content: HeaderFooter,
       }}
     >
-      <section className="bg-cyan-500  pt-24 md:pt-32 relative">
-        <div className="container-medium relative pb-4 md:pb-20 text-white">
+      <section className="bg-cyan-500 pt-24 md:pt-32 relative">
+        <div className="container-medium relative pb-4 md:pb-16 text-white">
           <div className="flex items-end">
             <div className="w-full">
               <div className="pb-4">
@@ -188,7 +188,7 @@ export default function Categoria({
         </div>
       </section>
 
-      <div className="relative mt-[-3rem] md:mt-[-4.5rem]">
+      <div className="relative mt-[-1.85rem]">
         <Filter {...params} />
       </div>
 

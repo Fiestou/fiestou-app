@@ -20,7 +20,6 @@ import { ItemOrderType, OrderType } from "@/src/models/order";
 import shortUUID from "short-uuid";
 import Partner from "@/src/components/common/Partner";
 import { loadStripe } from "@stripe/stripe-js";
-import { RegisterOrderMail } from "@/src/mail";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
@@ -33,12 +32,8 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
 import RegionConfirm from "@/src/default/alerts/RegionConfirm";
-
-export const deliveryToName: any = {
-  reception: "Entregar na portaria",
-  door: "Deixar na porta",
-  for_me: "Estarei para receber",
-};
+import Pagarme from "@/src/services/pagarme";
+import { deliveryToName } from "@/src/models/delivery";
 
 const FormInitialType = {
   sended: false,
@@ -48,69 +43,29 @@ const FormInitialType = {
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
-  let request: any;
+  const parseCart = ctx.req.cookies["fiestou.cart"] ?? "";
+  const cart = !!parseCart ? JSON.parse(parseCart) : [];
 
-  request = await api.call({
-    url: "request/graph",
-    data: [
-      {
-        model: "page as DataSeo",
-        filter: [
-          {
-            key: "slug",
-            value: "seo",
-            compare: "=",
-          },
-        ],
-      },
-      {
-        model: "page as Scripts",
-        filter: [
-          {
-            key: "slug",
-            value: "scripts",
-            compare: "=",
-          },
-        ],
-      },
-    ],
-  });
-
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.Scripts ?? [];
-
-  const parse = ctx.req.cookies["fiestou.cart"] ?? "";
-  const cart = !!parse ? JSON.parse(parse) : [];
-
-  let user: UserType = !!ctx.req.cookies["fiestou.user"]
-    ? JSON.parse(ctx.req.cookies["fiestou.user"])
-    : {};
-
-  request = await api.bridge(
+  let request: any = await api.bridge(
     {
-      url: "users/get",
+      url: `checkout/create`,
       data: {
-        ref: user.email,
+        products: cart.map((item: any) => item.product),
       },
     },
     ctx
   );
 
-  user = request?.data ?? ({} as UserType);
+  const DataSeo: any = request?.data?.DataSeo ?? {};
+  const Scripts: any = request?.data?.Scripts ?? {};
+  const Roles = request?.data?.query?.Roles ?? {};
+  const CheckoutPageContent = request?.data?.query?.content ?? {};
 
-  request = await api.get({
-    url: "request/products",
-    data: {
-      whereIn: cart.map((item: any) => item.product),
-    },
-  });
-
-  const products = request?.data ?? [];
+  const user: UserType = request?.data?.user ?? {};
+  const products: Array<ProductType> = request?.data?.products ?? [];
 
   cart.map((item: any, key: any) => {
-    let handle = products.find(
-      (prod: any, index: any) => prod.id == item.product
-    );
+    let handle = products.find((product: any) => product.id == item.product);
 
     if (!!handle) {
       cart[key]["product"] = handle;
@@ -131,26 +86,11 @@ export async function getServerSideProps(ctx: any) {
             },
           ],
         },
-        {
-          model: "roles",
-        },
-        {
-          model: "page as checkout",
-          filter: [
-            {
-              key: "slug",
-              value: "checkout",
-              compare: "=",
-            },
-          ],
-        },
       ],
     },
     ctx
   );
 
-  const roles = request?.data?.query?.roles ?? [];
-  const checkout = request?.data?.query?.checkout ?? [];
   const mailContent = request?.data?.query?.mailContent ?? [];
 
   return {
@@ -159,11 +99,11 @@ export async function getServerSideProps(ctx: any) {
       user: user,
       token: !!ctx.req.cookies["fiestou.authtoken"],
       products: products,
-      roles: roles[0] ?? {},
-      checkout: checkout[0] ?? {},
+      Roles: Roles,
+      CheckoutPageContent: CheckoutPageContent,
+      DataSeo: DataSeo ?? {},
+      Scripts: Scripts ?? {},
       mailContent: mailContent[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
     },
   };
 }
@@ -173,8 +113,8 @@ export default function Checkout({
   user,
   token,
   products,
-  roles,
-  checkout,
+  Roles,
+  CheckoutPageContent,
   mailContent,
   DataSeo,
   Scripts,
@@ -183,43 +123,48 @@ export default function Checkout({
   user: UserType;
   token: boolean;
   products: Array<ProductType>;
-  roles: any;
-  checkout: any;
+  Roles: any;
+  CheckoutPageContent: any;
   mailContent: any;
   DataSeo: any;
   Scripts: any;
 }) {
   const api = new Api();
-  const router = useRouter();
+
+  const platformCommission = Roles?.platformCommission ?? 5;
+
+  let stores: Array<StoreType> = [];
+
+  products.map((product: any, key: any) => {
+    stores[product.store.id] = product.store;
+  });
+
   const { isFallback } = useRouter();
 
   const [form, setForm] = useState(FormInitialType);
 
-  const [listCart, setListCart] = useState(cart as Array<CartType>);
-
-  let dates = listCart.map((item: any) => item.details.dateStart);
-  let subtotal = listCart.reduce((acumulador: number, item: any) => {
-    return acumulador + item.total;
-  }, 0);
-
-  const [resume, setResume] = useState({
-    subtotal: subtotal,
-    total: subtotal,
-    startDate: findDates(dates).minDate,
-    endDate: findDates(dates).maxDate,
-  } as any);
-
-  const platformCommission = roles?.platformCommission ?? 5;
-
-  let stores = products.map((product: any, key: any) => product.store);
-
-  stores = stores.filter(
-    (obj: any, index: any) =>
-      stores.findIndex((item) => item.id === obj.id) === index
-  );
-
   const [schedule, setSchedule] = useState("" as string);
   const [deliveryTo, setDeliveryTo] = useState("reception" as string);
+
+  const [listCart, setListCart] = useState([] as Array<CartType>);
+  const [resume, setResume] = useState({} as any);
+  useEffect(() => {
+    let dates = cart.map((item: any) => item.details.dateStart);
+    let subtotal = cart.reduce((acumulador: number, item: any) => {
+      return acumulador + item.total;
+    }, 0);
+
+    setResume({
+      subtotal: subtotal,
+      total: subtotal,
+      startDate: findDates(dates).minDate,
+      endDate: findDates(dates).maxDate,
+    });
+
+    setListCart(cart);
+  }, [cart]);
+
+  const [customLocation, setCustomLocation] = useState(false as boolean);
   const [locations, setLocations] = useState([] as Array<AddressType>);
   const [address, setAddress] = useState({} as AddressType);
 
@@ -261,6 +206,7 @@ export default function Checkout({
 
     cart.map((item: any, key: any) => {
       const cartItem = Object.assign({}, item);
+
       let product: any =
         products.find((prod: any) => prod.id == cartItem.product.id) ?? {};
 
@@ -317,60 +263,24 @@ export default function Checkout({
       status: -1,
     };
 
-    const sendOrderToClient: any = await api.bridge({
+    const registerOrder: any = await api.bridge({
       url: "orders/register",
       data: order,
     });
 
-    if (!!sendOrderToClient.response) {
-      const orderId = sendOrderToClient.data.id;
+    if (!!registerOrder.response) {
+      Cookies.remove("fiestou.cart");
 
-      const payment = new Payment();
-      const stripe = await loadStripe(
-        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-      );
-      const checkoutSession: any = await payment.createSession({
-        ...order,
-        id: orderId,
-      });
-
-      if (!!checkoutSession?.session?.id) {
-        await api.bridge({
-          url: "orders/register-meta",
-          data: {
-            id: orderId,
-            metadata: checkoutSession?.session,
-          },
-        });
-
-        Cookies.remove("fiestou.cart");
-
-        await RegisterOrderMail(order, listCart, {
-          subject: mailContent["order_subject"],
-          image: mailContent["order_image"],
-          html: mailContent["order_body"],
-        });
-
-        const result = await stripe?.redirectToCheckout({
-          sessionId: checkoutSession?.session.id,
-        });
-
-        setForm({ ...form, loading: false });
-
-        if (result?.error) {
-          alert(result.error.message);
-        }
-      }
+      window.location.href = `/dashboard/pedidos/pagamento/${registerOrder.data.id}`;
     }
-  };
 
-  const [region, setRegion] = useState({} as any);
+    setForm({ ...form, loading: false });
+  };
 
   useEffect(() => {
     if (!!window && !!Cookies.get("fiestou.region")) {
       const handle: any = JSON.parse(Cookies.get("fiestou.region") ?? "");
       setAddress({ zipCode: handle?.cep ?? "", number: "" });
-      setRegion(handle);
     }
   }, []);
 
@@ -390,396 +300,417 @@ export default function Checkout({
           template: "clean",
         }}
       >
-        <section className="pt-6 md:pt-12">
-          <div className="container-medium pb-4 md:pb-0">
-            <div className="pb-4 md:pt-6">
-              <Breadcrumbs
-                links={[
-                  { url: "/produtos", name: "Produtos" },
-                  { url: "/carrinho", name: "Carrinho" },
-                ]}
-              />
-            </div>
-            <div className="flex items-center">
-              <Link passHref href="/carrinho">
-                <Icon
-                  icon="fa-long-arrow-left"
-                  className="mr-4 md:mr-6 text-2xl text-zinc-900"
-                />
-              </Link>
-              <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900">
-                Finalizar
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="pt-6 md:py-12">
+        <section className="py-6 md:py-10">
           <form onSubmit={(e: any) => submitOrder(e)}>
-            <div className="container-medium">
+            <div className="container-medium pb-12">
               <div className="grid md:flex gap-4 md:gap-10 items-start">
-                <div className="grid gap-6 md:gap-10 w-full">
-                  <div className="grid gap-4 border-b pb-8 mb-0">
-                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                      Endereço de entrega
-                    </h4>
-                    {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
-                      <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
-                        <Icon icon="fa-exclamation-triangle" className="mr-2" />
-                        <div>
-                          Sua região ainda não está disponível para nossos
-                          fornecedores.
-                        </div>
-                      </div>
-                    )}
-
-                    {!address?.complement && (
-                      <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
-                        <Icon icon="fa-exclamation-triangle" className="mr-2" />
-                        <div>Seu endereço não possui complemento</div>
-                      </div>
-                    )}
-
-                    {!!locations.length ? (
-                      <div className="">
-                        {locations.map((addr: AddressType, key: any) => (
-                          <div className="relative" key={key}>
-                            {addr?.street == address?.street &&
-                              addr?.number == address?.number && (
-                                <div className="absolute rounded-md border-2 border-yellow-500 inset-0"></div>
-                              )}
-                            <label
-                              className={`${
-                                addr?.street == address?.street &&
-                                addr?.number == address?.number &&
-                                "text-yellow-600"
-                              } flex gap-3 p-4 items-center`}
-                            >
-                              <div className="pr-2">
-                                <input
-                                  type="radio"
-                                  checked={
-                                    addr?.street == address?.street &&
-                                    addr?.number == address?.number
-                                  }
-                                  onChange={() => setAddress(addr)}
-                                />
-                              </div>
-                              <div>
-                                <div>
-                                  {addr.street}, {addr.number}
-                                </div>
-                                <div>
-                                  {addr.neighborhood} - {addr.city} |{" "}
-                                  {addr.state}
-                                </div>
-                                <div>
-                                  CEP: {addr.zipCode} - {addr.country}
-                                </div>
-                              </div>
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div>
-                        <div className="grid gap-2">
-                          <Input
-                            name="cep"
-                            onChange={(e: any) => handleZipCode(e.target.value)}
-                            required
-                            defaultValue={address?.zipCode}
-                            placeholder="CEP"
-                          />
-                          <div className="flex gap-2">
-                            <div className="w-full">
-                              <Input
-                                name="rua"
-                                readonly
-                                required
-                                defaultValue={address?.street}
-                                placeholder="Rua"
-                              />
-                            </div>
-                            <div className="w-[10rem]">
-                              <Input
-                                name="numero"
-                                onChange={(e: any) =>
-                                  setAddress({
-                                    ...address,
-                                    number: e.target.value,
-                                  })
-                                }
-                                required
-                                defaultValue={address?.number}
-                                placeholder="Número"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="w-full">
-                              <Input
-                                name="bairro"
-                                readonly
-                                required
-                                defaultValue={address?.neighborhood}
-                                placeholder="Bairro"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="w-full">
-                              <Input
-                                name="cidade"
-                                readonly
-                                required
-                                defaultValue={address?.city}
-                                placeholder="Cidade"
-                              />
-                            </div>
-                            <div className="w-[10rem]">
-                              <Input
-                                name="estado"
-                                readonly
-                                required
-                                defaultValue={address?.state}
-                                placeholder="UF"
-                              />
-                            </div>
-                          </div>
-                          <div className="w-full">
-                            <Input
-                              name="complemento"
-                              onChange={(e: any) =>
-                                setAddress({
-                                  ...address,
-                                  complement: e.target.value,
-                                })
-                              }
-                              required
-                              defaultValue={address?.complement}
-                              placeholder="Complemento. Ex: Ap, Casa, Condomínio, etc..."
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mb-0 relative overflow-hidden">
-                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                      Detalhes de entrega
-                    </h4>
-                    <div className="flex pt-4 flex-col gap-6">
-                      <div className="grid md:grid-cols-3 gap-2 md:gap-4">
-                        {["reception", "door", "for_me"].map(
-                          (option: any, key: any) => (
-                            <div
-                              key={key}
-                              onClick={(e: any) => {
-                                setDeliveryTo(option);
-                              }}
-                              className={`border ${
-                                deliveryTo == option
-                                  ? "border-yellow-400"
-                                  : "hover:border-zinc-400"
-                              } p-3 md:p-4 cursor-pointer rounded ease flex gap-2 items-center`}
-                            >
-                              <div
-                                className={`${
-                                  deliveryTo == option ? "border-zinc-400" : ""
-                                } w-[1rem] h-[1rem] rounded-full border relative`}
-                              >
-                                {deliveryTo == option && (
-                                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                                )}
-                              </div>
-                              <div className="text-[.85rem] leading-tight">
-                                {deliveryToName[option]}
-                              </div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                      <div className="border relative rounded-lg py-4">
-                        <div className="h-0 relative overflow-hidden">
-                          {!schedule && (
-                            <input readOnly name="agendamento" required />
-                          )}
-                        </div>
-                        <div className="absolute top-0 left-0 bg-white text-sm -mt-3 px-1 mx-1">
-                          Horário
-                        </div>
-                        <Swiper
-                          spaceBetween={0}
-                          breakpoints={{
-                            0: {
-                              slidesPerView: 4.5,
-                            },
-                            1024: {
-                              slidesPerView: 7.5,
-                            },
-                          }}
-                        >
-                          {[
-                            { period: "Manhã", time: "09:00" },
-                            { period: "Manhã", time: "10:00" },
-                            { period: "Manhã", time: "11:00" },
-                            { period: "Manhã", time: "12:00" },
-                            { period: "Tarde", time: "13:00" },
-                            { period: "Tarde", time: "14:00" },
-                            { period: "Tarde", time: "15:00" },
-                            { period: "Tarde", time: "16:00" },
-                            { period: "Tarde", time: "17:00" },
-                            { period: "Noite", time: "18:00" },
-                            { period: "Noite", time: "19:00" },
-                            { period: "Noite", time: "20:00" },
-                            { period: "Noite", time: "21:00" },
-                          ].map((item: any, key) => (
-                            <SwiperSlide key={key} className="pl-4">
-                              <div
-                                onClick={() =>
-                                  setSchedule(`${item.period} - ${item.time}`)
-                                }
-                                className={`${
-                                  schedule == item.period + " - " + item.time
-                                    ? "text-yellow-500"
-                                    : "text-zinc-500 hover:text-zinc-900"
-                                }  ease cursor-pointer`}
-                              >
-                                <div className="text-xs">{item.period}</div>
-                                <div className="font-semibold">{item.time}</div>
-                              </div>
-                            </SwiperSlide>
-                          ))}
-                        </Swiper>
+                <div className="grid gap-6 w-full">
+                  <div className="pb-4 md:pb-6 border-b">
+                    <div className="pb-4">
+                      <Breadcrumbs
+                        links={[
+                          { url: "/produtos", name: "Produtos" },
+                          { url: "/carrinho", name: "Carrinho" },
+                        ]}
+                      />
+                    </div>
+                    <div className="flex items-center">
+                      <Link passHref href="/carrinho">
+                        <Icon
+                          icon="fa-long-arrow-left"
+                          className="mr-4 md:mr-6 text-2xl text-zinc-900"
+                        />
+                      </Link>
+                      <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900">
+                        Finalizar
                       </div>
                     </div>
                   </div>
-                  <div className="border-b md:pb-4"></div>
 
-                  <div className="grid gap-4 pb-4 md:pb-8 mb-0">
-                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                      Fornecedores
-                    </h4>
-                    <div className="grid lg:grid-cols-2 gap-4">
-                      {stores.map((store: any, key: any) => (
-                        <div key={key}>
-                          <Partner params={store} />
+                  <div className="grid gap-6 md:gap-10">
+                    <div className="grid gap-4 mb-0">
+                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                        Endereço de entrega
+                      </h4>
+                      {!!address?.zipCode &&
+                        !isCEPInRegion(address?.zipCode) && (
+                          <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
+                            <Icon
+                              icon="fa-exclamation-triangle"
+                              className="mr-2"
+                            />
+                            <div>
+                              Sua região ainda não está disponível para nossos
+                              fornecedores.
+                            </div>
+                          </div>
+                        )}
+
+                      {!address?.complement && (
+                        <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
+                          <Icon
+                            icon="fa-exclamation-triangle"
+                            className="mr-2"
+                          />
+                          <div>Seu endereço não possui complemento</div>
                         </div>
-                      ))}
+                      )}
+
+                      {!!locations.length && !customLocation && (
+                        <div className="grid gap-2">
+                          <div className="">
+                            {locations.map((addr: AddressType, key: any) => (
+                              <div
+                                className={`${
+                                  addr == address
+                                    ? "border-yellow-400"
+                                    : "border-zinc-200 hover:border-zinc-400"
+                                } rounded-md border ease cursor-pointer`}
+                                key={key}
+                                onClick={() => {
+                                  setAddress(addr);
+                                }}
+                              >
+                                <div className={`flex gap-3 p-4 items-center`}>
+                                  <div className="pr-2">
+                                    <div
+                                      className={`${
+                                        addr?.street == address?.street
+                                          ? "border-zinc-400"
+                                          : "border-zinc-300"
+                                      } w-[1rem] h-[1rem] rounded-full border relative`}
+                                    >
+                                      {addr?.street == address?.street && (
+                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div>
+                                      {addr.street}, {addr.number}
+                                    </div>
+                                    <div>
+                                      {addr.neighborhood} - {addr.city} |{" "}
+                                      {addr.state}
+                                    </div>
+                                    <div>
+                                      CEP: {addr.zipCode} - {addr.country}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {!customLocation && (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => setCustomLocation(true)}
+                                className="text-sm underline text-zinc-900 hover:text-yellow-500 ease"
+                              >
+                                Entregar em outro endereço
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {!!locations.length && !!customLocation && (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => setCustomLocation(false)}
+                            className="text-sm underline text-zinc-900 hover:text-yellow-500 ease"
+                          >
+                            Selecionar meu endereço
+                          </button>
+                        </div>
+                      )}
+
+                      {(!locations.length || customLocation) && (
+                        <div>
+                          <div className="grid gap-2">
+                            <Input
+                              name="cep"
+                              onChange={(e: any) =>
+                                handleZipCode(e.target.value)
+                              }
+                              required
+                              defaultValue={address?.zipCode}
+                              placeholder="CEP"
+                            />
+                            <div className="flex gap-2">
+                              <div className="w-full">
+                                <Input
+                                  name="rua"
+                                  readonly
+                                  required
+                                  defaultValue={address?.street}
+                                  placeholder="Rua"
+                                />
+                              </div>
+                              <div className="w-[10rem]">
+                                <Input
+                                  name="numero"
+                                  onChange={(e: any) =>
+                                    setAddress({
+                                      ...address,
+                                      number: e.target.value,
+                                    })
+                                  }
+                                  required
+                                  defaultValue={address?.number}
+                                  placeholder="Número"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="w-full">
+                                <Input
+                                  name="bairro"
+                                  readonly
+                                  required
+                                  defaultValue={address?.neighborhood}
+                                  placeholder="Bairro"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="w-full">
+                                <Input
+                                  name="cidade"
+                                  readonly
+                                  required
+                                  defaultValue={address?.city}
+                                  placeholder="Cidade"
+                                />
+                              </div>
+                              <div className="w-[10rem]">
+                                <Input
+                                  name="estado"
+                                  readonly
+                                  required
+                                  defaultValue={address?.state}
+                                  placeholder="UF"
+                                />
+                              </div>
+                            </div>
+                            <div className="w-full">
+                              <Input
+                                name="complemento"
+                                onChange={(e: any) =>
+                                  setAddress({
+                                    ...address,
+                                    complement: e.target.value,
+                                  })
+                                }
+                                required
+                                defaultValue={address?.complement}
+                                placeholder="Complemento. Ex: Ap, Casa, Condomínio, etc..."
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mb-0 relative overflow-hidden">
+                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                        Detalhes de entrega
+                      </h4>
+                      <div className="flex pt-4 flex-col gap-6">
+                        <div className="grid md:grid-cols-3 gap-2 md:gap-4">
+                          {["reception", "door", "for_me"].map(
+                            (option: any, key: any) => (
+                              <div
+                                key={key}
+                                onClick={(e: any) => {
+                                  setDeliveryTo(option);
+                                }}
+                                className={`border ${
+                                  deliveryTo == option
+                                    ? "border-yellow-400"
+                                    : "hover:border-zinc-400"
+                                } p-3 md:p-4 cursor-pointer rounded-md ease flex gap-2 items-center`}
+                              >
+                                <div
+                                  className={`${
+                                    deliveryTo == option
+                                      ? "border-zinc-400"
+                                      : ""
+                                  } w-[1rem] h-[1rem] rounded-full border relative`}
+                                >
+                                  {deliveryTo == option && (
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
+                                  )}
+                                </div>
+                                <div className="text-[.85rem] leading-tight">
+                                  {deliveryToName[option]}
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                        <div className="border relative rounded-lg py-4">
+                          <div className="h-0 relative overflow-hidden">
+                            {!schedule && (
+                              <input readOnly name="agendamento" required />
+                            )}
+                          </div>
+                          <div className="absolute top-0 left-0 bg-white text-sm -mt-3 px-1 mx-1">
+                            Horário
+                          </div>
+                          <Swiper
+                            spaceBetween={0}
+                            breakpoints={{
+                              0: {
+                                slidesPerView: 4.5,
+                              },
+                              1024: {
+                                slidesPerView: 7.5,
+                              },
+                            }}
+                          >
+                            {[
+                              { period: "Manhã", time: "09:00" },
+                              { period: "Manhã", time: "10:00" },
+                              { period: "Manhã", time: "11:00" },
+                              { period: "Manhã", time: "12:00" },
+                              { period: "Tarde", time: "13:00" },
+                              { period: "Tarde", time: "14:00" },
+                              { period: "Tarde", time: "15:00" },
+                              { period: "Tarde", time: "16:00" },
+                              { period: "Tarde", time: "17:00" },
+                              { period: "Noite", time: "18:00" },
+                              { period: "Noite", time: "19:00" },
+                              { period: "Noite", time: "20:00" },
+                              { period: "Noite", time: "21:00" },
+                            ].map((item: any, key) => (
+                              <SwiperSlide key={key} className="pl-4">
+                                <div
+                                  onClick={() =>
+                                    setSchedule(`${item.period} - ${item.time}`)
+                                  }
+                                  className={`${
+                                    schedule == item.period + " - " + item.time
+                                      ? "text-yellow-500"
+                                      : "text-zinc-500 hover:text-zinc-900"
+                                  }  ease cursor-pointer`}
+                                >
+                                  <div className="text-xs">{item.period}</div>
+                                  <div className="font-semibold">
+                                    {item.time}
+                                  </div>
+                                </div>
+                              </SwiperSlide>
+                            ))}
+                          </Swiper>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 pb-4 md:pb-8 mb-0">
+                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                        Fornecedores
+                      </h4>
+                      <div className="grid lg:grid-cols-2 gap-4">
+                        {stores.map((store: any, key: any) => (
+                          <div key={key}>
+                            <Partner params={store} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="w-full md:mb-[2rem] grid gap-6 max-w-[30rem] relative bg-zinc-100 p-4 md:p-8 rounded-md">
-                  <h5 className="font-title text-xl text-zinc-900">
-                    Resumo do pedido
-                  </h5>
+                <div className="w-full md:max-w-[28rem] md:mb-[2rem] relative">
+                  <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
+                    <div className="font-title font-bold text-zinc-900 text-xl mb-6">
+                      Resumo
+                    </div>
 
-                  <div className="grid gap-6">
-                    <div className="border-zinc-300">
-                      <div className="font-bold text-zinc-900">
-                        Data da locação
-                      </div>
-                      <div>
-                        {dateBRFormat(resume.startDate)}
-                        {resume.endDate != resume.startDate
-                          ? ` - ${dateBRFormat(resume.endDate)}`
-                          : ""}
-                        {!!schedule ? ` | ${schedule}` : ""}
-                      </div>
-                    </div>
-                    <div>
-                      <hr className="my-0 border-zinc-300" />
-                    </div>
-                    <div className="flex">
-                      <div className="w-full whitespace-nowrap">
-                        Subtotal ({listCart.length}{" "}
-                        {listCart.length == 1 ? "item" : "itens"})
-                      </div>
-                      <div className="whitespace-nowrap">
-                        R$ {moneyFormat(resume.subtotal)}
-                      </div>
-                    </div>
-                    {/* <div className="rounded-md bg-red-100 text-sm text-zinc-900 p-3 md:p-3 grid gap-2">
-                      <div className="flex items-center gap-2 font-bold">
-                        <Icon
-                          icon="fa-exclamation-triangle"
-                          type="fa"
-                          className="text-xs text-red-500"
-                        />
-                        <span className="">Atenção</span>
-                      </div>
-                      <div className="text-xs">
-                        Para os produtos alugados, requeremos que retornem tudo
-                        que estava na descrição e com as mesmas condições, que
-                        foram apresentados. Obrigado e aproveite.
-                      </div>
-                    </div> */}
-
-                    <div className="flex">
-                      <div className="text-zinc-900 text-lg">Total</div>
-                      <div className="whitespace-nowrap w-full text-right">
-                        <div className="font-bold text-zinc-900 text-xl">
-                          <span className="lg:text-2xl">
-                            R$ {moneyFormat(resume.total)}
-                          </span>{" "}
-                          à vista
+                    <div className="grid gap-2">
+                      <div className="flex items-start justify-between">
+                        <div className="font-bold text-sm text-zinc-900 flex items-center">
+                          <Icon
+                            icon="fa-calendar"
+                            className="text-sm mr-2 opacity-75"
+                          />
+                          Data da locação
                         </div>
-                        {/* <div className="text-xs">
-                          ou em até 10x de R$ {moneyFormat(resume.total / 10)}{" "}
-                          sem juros
-                        </div> */}
+                        <div className="whitespace-nowrap text-right text-sm">
+                          {dateBRFormat(resume.startDate)}{" "}
+                          {resume.endDate != resume.startDate
+                            ? `- ${dateBRFormat(resume.endDate)}`
+                            : ""}
+                          <div>{schedule}</div>
+                        </div>
                       </div>
-                    </div>
 
-                    {!!checkout?.terms_list && (
-                      <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
-                        {checkout?.terms_list.map((term: any, key: any) => (
-                          <div key={key} className="flex gap-2 pb-1">
-                            <div className="pt-[2px]">
-                              <input type="checkbox" required />
-                            </div>
-                            <div
-                              dangerouslySetInnerHTML={{
-                                __html: term.term_description,
-                              }}
-                            ></div>
-                          </div>
-                        ))}
+                      <div className="border-t"></div>
+
+                      <div className="flex">
+                        <div className="w-full whitespace-nowrap">
+                          Subtotal ({listCart.length}{" "}
+                          {listCart.length == 1 ? "item" : "itens"})
+                        </div>
+                        <div className="whitespace-nowrap">
+                          R$ {moneyFormat(resume.subtotal)}
+                        </div>
                       </div>
-                    )}
-                    <div className="grid relative p-1 md:p-0">
-                      {!!address?.street &&
-                      !!address?.complement &&
-                      !!schedule &&
-                      !!address?.zipCode &&
-                      !!isCEPInRegion(address?.zipCode) ? (
-                        <Button
-                          loading={form.loading}
-                          style="btn-success"
-                          className="py-6 px-3"
-                        >
-                          Confirmar e efetuar pagamento
-                        </Button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="btn bg-green-500 text-white border border-transparent opacity-40 py-6 px-3 text cursor-not-allowed"
-                        >
-                          Confirmar e efetuar pagamento
-                        </button>
+
+                      <div className="border-t"></div>
+
+                      <div className="flex gap-2 md:mb-4">
+                        <div className="w-full text-zinc-900 font-bold">
+                          Total
+                        </div>
+                        <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
+                          R$ {moneyFormat(resume.total)}
+                        </div>
+                      </div>
+
+                      {!!CheckoutPageContent?.terms_list && (
+                        <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
+                          {CheckoutPageContent?.terms_list.map(
+                            (term: any, key: any) => (
+                              <div key={key} className="flex gap-2 pb-1">
+                                <div className="pt-[2px]">
+                                  <input type="checkbox" required />
+                                </div>
+                                <div
+                                  dangerouslySetInnerHTML={{
+                                    __html: term.term_description,
+                                  }}
+                                ></div>
+                              </div>
+                            )
+                          )}
+                        </div>
                       )}
 
-                      <div className="border-t text-xs grayscale mt-4 pt-2 opacity-50 flex justify-center items-center gap-2">
-                        <span>pagamento via:</span>
-
-                        <Img
-                          src="/images/stripe.png"
-                          size="md"
-                          className="w-[4rem]"
-                        />
+                      <div className="grid fixed z-10 md:relative bg-white md:bg-transparent bottom-0 left-0 w-full p-1 md:p-0">
+                        {!!address?.street &&
+                        !!address?.complement &&
+                        !!schedule &&
+                        !!address?.zipCode &&
+                        !!isCEPInRegion(address?.zipCode) ? (
+                          <Button
+                            loading={form.loading}
+                            style="btn-success"
+                            className="py-4 md:py-6 px-3"
+                          >
+                            Confirmar e efetuar pagamento
+                          </Button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn bg-green-500 text-white border border-transparent opacity-40 py-4 md:py-6 px-3 text cursor-not-allowed"
+                          >
+                            Confirmar e efetuar pagamento
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

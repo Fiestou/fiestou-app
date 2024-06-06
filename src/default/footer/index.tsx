@@ -35,7 +35,7 @@ export function Footer(props: FooterType) {
   if (params.template == "default") {
     return (
       <div>
-        <div className="container-medium pt-14">
+        <div className="container-medium py-14">
           <div className="grid md:flex items-start text-center md:text-left gap-4 md:gap-8">
             <div className="w-full md:max-w-[24rem]">
               <div className="w-full max-w-[150px] inline-block">
@@ -113,61 +113,48 @@ export function Footer(props: FooterType) {
             </div>
           </div>
         </div>
-        <div className="max-w-[88rem] mx-auto pt-10">
-          <hr />
+
+        <div className="container-medium border-y py-4">
+          <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-6">
+            <Img
+              src="/images/pagarme/selo-horizontal.png"
+              className="w-full max-w-[18rem]"
+            />
+
+            <Img
+              src="/images/pagarme/flags.png"
+              className="w-full max-w-[24rem]"
+            />
+          </div>
         </div>
+
         <div className="container-medium">
-          <div className="grid md:flex py-4 text-sm md:flex-wrap justify-center md:justify-between items-center gap-4 md:gap-10">
-            <div className="w-full md:w-fit md:flex text-center">
-              <div>
+          <div className="py-4 text-sm grid md:flex justify-center text-center">
+            <div>
+              <span>
                 © {new Date().getFullYear()} Fiestou. Todos os direitos
                 reservados.
-              </div>
-              <div className="hidden md:block px-1">|</div>
-              <div>
-                <button id="lgpd_reset">LGPD</button>
-              </div>
-              <div className="hidden md:block px-1">|</div>
-              <div>
-                Desenvolvido por
-                <a
-                  href="https://8pdev.studio/"
-                  target="_blank"
-                  className="hover:underline hover:text-rose-600 ease font-semibold pl-1"
-                  rel="noreferrer"
-                >
-                  oitop
-                </a>
-              </div>
+              </span>
+              <span className="hidden md:inline-block px-1">|</span>
+              <span>
+                <button id="lgpd_reset" className="hover:underline">
+                  LGPD
+                </button>
+              </span>
+              <span className="hidden md:inline-block px-1">|</span>
             </div>
-            <div className="max-w-[20rem] flex justify-center items-center gap-2 md:gap-4 lg:gap-6">
-              <div className="w-[5rem]">
-                <a
-                  href="https://aws.amazon.com/pt/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Img src="/images/aws.png" size="md" />
-                </a>
-              </div>
-              <div className="w-[5rem]">
-                <a href="https://vercel.com/" target="_blank" rel="noreferrer">
-                  <Img src="/images/vercel.png" size="md" />
-                </a>
-              </div>
-              <div className="w-[4rem]">
-                <a
-                  href="https://stripe.com/br"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Img src="/images/stripe.png" size="md" />
-                </a>
-              </div>
+
+            <div>
+              Desenvolvido por
+              <a
+                href="https://8pdev.studio/"
+                target="_blank"
+                className="hover:underline hover:text-rose-600 ease font-semibold pl-1"
+                rel="noreferrer"
+              >
+                oitop
+              </a>
             </div>
-            {/* <div>Politica de privacidade</div>
-            <div>Termos de serviços</div>
-            <div>Configurações de Cookies</div> */}
           </div>
         </div>
       </div>

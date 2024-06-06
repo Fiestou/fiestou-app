@@ -13,7 +13,8 @@ interface ButtonType {
   id?: string;
   href?: string;
   target?: string;
-  loading?: boolean | false;
+  loading?: boolean;
+  checked?: boolean;
   alt?: string;
   title?: string;
   between?: boolean;
@@ -60,19 +61,28 @@ export default function Button(attr: ButtonType) {
     <>
       <span
         className={`${
-          attr?.loading ? "opacity-0" : ""
+          !!attr?.loading || !!attr?.checked ? "opacity-0" : ""
         } h-full flex items-center w-100 ${
           attr?.between ? "justify-between" : "justify-center"
         } gap-2`}
       >
         {attr?.children}
       </span>
-      {!attr?.href && attr?.loading && (
+      {!!attr?.checked ? (
         <div
           className={`absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2`}
         >
-          <Icon icon="fa-spinner-third" className="animate-spin" />
+          <Icon icon="fa-check-circle" type="fal" className="text-2xl" />
         </div>
+      ) : (
+        !attr?.href &&
+        !!attr?.loading && (
+          <div
+            className={`absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2`}
+          >
+            <Icon icon="fa-spinner-third" className="animate-spin" />
+          </div>
+        )
       )}
     </>
   );
@@ -93,7 +103,9 @@ export default function Button(attr: ButtonType) {
       {...attrs}
       {...attr?.othersAttrs}
       type={`${
-        !!attr?.loading || !!attr?.disable ? "button" : attr?.type ?? "submit"
+        !!attr?.loading || !!attr?.checked || !!attr?.disable
+          ? "button"
+          : attr?.type ?? "submit"
       }`}
       onClick={(e) =>
         !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : {}

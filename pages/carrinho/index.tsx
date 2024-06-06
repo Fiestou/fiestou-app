@@ -186,6 +186,7 @@ export default function Carrinho({
                       </div>
                     </div>
                   </div>
+
                   {!!listCart.length &&
                     listCart.map((item: any, key: any) => (
                       <div
@@ -275,50 +276,61 @@ export default function Carrinho({
                   </Button>
                 </div>
 
-                <div className="w-full mb-[3rem] grid gap-6 max-w-[30rem] relative bg-zinc-50 p-4 md:p-8 rounded-md">
-                  <h5 className="font-title text-xl text-zinc-900">
-                    Resumo do pedido
-                  </h5>
-                  <div className="grid gap-6">
-                    <div className="border-zinc-300">
-                      <div className="font-bold text-zinc-900">
-                        Data da locação
-                      </div>
-                      <div>
-                        {dateBRFormat(resume.startDate)}{" "}
-                        {resume.endDate != resume.startDate
-                          ? `- ${dateBRFormat(resume.endDate)}`
-                          : ""}
-                      </div>
-                    </div>
-                    <div>
-                      <hr className="my-0 border-zinc-300" />
-                    </div>
-                    <div className="flex">
-                      <div className="w-full whitespace-nowrap">
-                        Subtotal ({listCart.length}{" "}
-                        {listCart.length == 1 ? "item" : "itens"})
-                      </div>
-                      <div className="whitespace-nowrap">
-                        R$ {moneyFormat(resume.subtotal)}
-                      </div>
-                    </div>
-                    <div className="flex border-t border-zinc-300 pt-4">
-                      <div className="text-zinc-900 text-lg">Total</div>
-                      <div className="whitespace-nowrap w-full text-right">
-                        <div className="font-bold text-zinc-900 text-xl">
-                          R$ {moneyFormat(resume.total)} à vista
+                <div className="w-full md:max-w-[28rem] md:mb-[2rem] relative">
+                  <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
+                    <h5 className="font-title pb-6 text-zinc-900 md:text-xl font-bold">
+                      Resumo
+                    </h5>
+
+                    <div className="grid gap-2">
+                      <div className="flex justify-between">
+                        <div className="font-bold text-sm text-zinc-900 flex items-center">
+                          <Icon
+                            icon="fa-calendar"
+                            className="text-sm mr-2 opacity-75"
+                          />
+                          Data da locação
                         </div>
-                        <div className="text-xs">
-                          ou em até 10x de R$ {moneyFormat(resume.total / 10)}{" "}
-                          sem juros
+                        <div className="whitespace-nowrap">
+                          {dateBRFormat(resume.startDate)}{" "}
+                          {resume.endDate != resume.startDate
+                            ? `- ${dateBRFormat(resume.endDate)}`
+                            : ""}
                         </div>
                       </div>
-                    </div>
-                    <div className="grid fixed md:relative bottom-0 left-0 w-full p-1 md:p-0">
-                      <Button href="checkout" className="py-6 mb-4 md:mb-0">
-                        Avançar para o pagamento
-                      </Button>
+
+                      <div className="border-t"></div>
+
+                      <div className="flex">
+                        <div className="w-full whitespace-nowrap">
+                          Subtotal ({listCart.length}{" "}
+                          {listCart.length == 1 ? "item" : "itens"})
+                        </div>
+                        <div className="whitespace-nowrap">
+                          R$ {moneyFormat(resume.subtotal)}
+                        </div>
+                      </div>
+
+                      <div className="border-t"></div>
+
+                      <div className="flex gap-2 mb-4">
+                        <div className="w-full text-zinc-900 font-bold">
+                          Total
+                        </div>
+                        <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
+                          R$ {moneyFormat(resume.total)}
+                        </div>
+                      </div>
+
+                      <div className="grid fixed md:relative bottom-0 left-0 w-full p-1 md:p-0">
+                        <Button
+                          style="btn-success"
+                          href="checkout"
+                          className="py-6 mb-4 md:mb-0"
+                        >
+                          Confirmar e combinar entrega
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

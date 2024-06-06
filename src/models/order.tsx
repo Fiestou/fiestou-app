@@ -39,7 +39,7 @@ export interface ItemOrderType {
 export interface OrderType {
   id?: string;
   hash?: string;
-  user?: any;
+  user?: UserType;
   order?: number | string;
   store?: number | string;
   deliveryStatus: string;
@@ -51,6 +51,6 @@ export interface OrderType {
   listItems: Array<ProductOrderType>;
   deliveryAddress?: AddressType;
   metadata?: any;
-  status: number;
+  status: number; // -2: canceled | -1: processing | 0: open | 1: paid
   created_at?: string;
 }

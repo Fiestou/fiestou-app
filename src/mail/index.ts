@@ -2,7 +2,7 @@ import { OrderType } from "../models/order";
 import { deliveryTypes } from "../models/delivery";
 import { getImage, moneyFormat } from "../helper";
 import { CartType } from "../models/cart";
-import { deliveryToName } from "@/pages/checkout";
+import { deliveryToName } from "@/pages/checkout/index_";
 
 export interface ContentType {
   subject: string;

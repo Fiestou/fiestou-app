@@ -106,7 +106,7 @@ export default function Form({
 
   const [data, setData] = useState({} as ProductType);
   const handleData = (value: Object) => {
-    console.log({ ...data, ...value });
+    console.log(value);
     setData({ ...data, ...value });
   };
 

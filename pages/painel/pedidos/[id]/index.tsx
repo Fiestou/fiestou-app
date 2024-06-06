@@ -16,7 +16,7 @@ import { useRouter } from "next/router";
 import { ChangeDeliveryStatusMail } from "@/src/mail";
 import { deliveryTypes } from "@/src/models/delivery";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { deliveryToName } from "@/pages/checkout";
+import { deliveryToName } from "@/pages/checkout/index_";
 import { ChangeDeliveryStatusSMS } from "@/src/sms";
 
 export async function getServerSideProps(ctx: any) {

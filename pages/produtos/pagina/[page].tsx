@@ -183,7 +183,7 @@ export default function Produtos({
       <RegionConfirm />
 
       <section className="bg-cyan-500  pt-24 md:pt-32 relative">
-        <div className="container-medium relative pb-14 md:pb-20 text-white">
+        <div className="container-medium relative pb-14 md:pb-16 text-white">
           <div className="flex items-end">
             <div className="w-full">
               <div className="pb-4">
@@ -210,7 +210,7 @@ export default function Produtos({
         </div>
       </section>
 
-      <div className="relative mt-[-3rem] md:mt-[-4.5rem]">
+      <div className="relative mt-[-1.85rem]">
         <Filter />
       </div>
 
