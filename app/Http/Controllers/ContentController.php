@@ -62,7 +62,7 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data'      => array_merge(
-                                    $this->getDefault(),
+                                    Content::getDefault(),
                                     [
                                         "Home"          => $content->setCustomContent(),
                                         "Categories"    => $categories,
@@ -88,7 +88,7 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data'      => array_merge(
-                                    $this->getDefault(),
+                                    Content::getDefault(),
                                     ["About" => $content->setCustomContent()]
                                 )
             ]);
@@ -109,7 +109,7 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data'      => array_merge(
-                                    $this->getDefault(),
+                                    Content::getDefault(),
                                     ["Faq" => $content->setCustomContent()]
                                 )
             ]);
@@ -133,7 +133,7 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data'      => array_merge(
-                                    $this->getDefault(),
+                                    Content::getDefault(),
                                     [
                                         "Stores"    => Store::normalize($stores),
                                         "Partners"  => $content->setCustomContent()
@@ -157,7 +157,7 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data'      => array_merge(
-                                    $this->getDefault(),
+                                    Content::getDefault(),
                                     ["Partner" => $content->setCustomContent()]
                                 )
             ]);
@@ -185,7 +185,7 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data'      => array_merge(
-                                    $this->getDefault(),
+                                    Content::getDefault(),
                                     [
                                         "Blog"  => $blog->setCustomContent(),
                                         "Posts" => $posts
@@ -225,7 +225,7 @@ class ContentController extends Controller
                 return response()->json([
                     'response'  => true,
                     'data'      => array_merge(
-                                        $this->getDefault(),
+                                        Content::getDefault(),
                                         [
                                             "Post"      => $post->setCustomContent(),
                                             "Related"   => $related
@@ -263,7 +263,7 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data'      => array_merge(
-                                    $this->getDefault(),
+                                    Content::getDefault(),
                                     ["Contact" => $content->setCustomContent()]
                                 )
             ]);
@@ -288,7 +288,7 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data'      => array_merge(
-                                    $this->getDefault(),
+                                    Content::getDefault(),
                                     ["Communicate" => $content->setCustomContent()]
                                 )
             ]);
@@ -315,7 +315,7 @@ class ContentController extends Controller
 
         if(isset($content->id)){
 
-            $data = array_merge($this->getDefault(), [
+            $data = array_merge(Content::getDefault(), [
                         "content" => $content->setCustomContent()
                     ]);
 
@@ -345,7 +345,7 @@ class ContentController extends Controller
                 $category->childs = Category::reduceLevel($category->childs);
             }
 
-            $data = array_merge($this->getDefault(), [
+            $data = array_merge(Content::getDefault(), [
                 "content" => $content->setCustomContent(),
                 "categories" => $categories
             ]);
@@ -353,6 +353,27 @@ class ContentController extends Controller
             return response()->json([
                 'response'  => true,
                 'data' => $data
+            ]);
+        }
+
+        return response()->json([
+            'response'  => false
+        ]);
+    }
+
+    public function Order(Request $request){
+
+        $content = Content::where(["slug" => "email", "type" => "page"])
+                          ->first();
+
+        if(isset($content->id)){
+
+            return response()->json([
+                'response'  => true,
+                'data'      => array_merge(
+                                    Content::getDefault(),
+                                    ["mailContent" => $content->setCustomContent()]
+                                )
             ]);
         }
 
@@ -432,38 +453,7 @@ class ContentController extends Controller
         ]);
     }
 
-    public function getDefault($json = false){
-
-        $HeaderFooter = Content::where(["slug" => "menu", "type" => "page"])
-                               ->first();
-
-        $DataSeo = Content::where(["slug" => "seo", "type" => "page"])
-                          ->first();
-
-        $Scripts = Content::where(["slug" => "scripts", "type" => "page"])
-                          ->first();
-
-        $Roles = Content::where(["slug" => "roles", "type" => "roles"])
-                        ->first();
-
-        $data = [
-            "HeaderFooter"  => isset($HeaderFooter->id) ? $HeaderFooter->setCustomContent() : [],
-            "DataSeo"       => isset($DataSeo->id)      ? $DataSeo->setCustomContent()      : [],
-            "Scripts"       => isset($Scripts->id)      ? $Scripts->setCustomContent()      : [],
-            "Roles"         => isset($Roles->id)        ? $Roles->setCustomContent()        : []
-        ];
-
-        if($json){
-            return response()->json([
-                'response'  => true,
-                'data'      => $data
-            ]);
-        }
-
-        return $data;
-    }
-
     public function Default(Request $request){
-        return $this->getDefault(true);
+        return Content::getDefault(true);
     }
 }

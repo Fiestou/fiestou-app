@@ -20,6 +20,8 @@ use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\StoresController;
 use App\Http\Controllers\CommentsController;
 use App\Http\Controllers\CategoriesController;
+use App\Http\Controllers\CheckoutController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +70,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/orders/get', [OrdersController::class, 'Get']);
         Route::post('/orders/register', [OrdersController::class, 'Register']);
         Route::post('/orders/register-meta', [OrdersController::class, 'RegisterMeta']);
+        Route::post('/orders/processing', [OrdersController::class, 'Processing']);
 
         // SUBORDERS
         Route::post('/suborders/list', [SubordersController::class, 'List']);
@@ -103,6 +106,9 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/withdraw/register', [WithdrawController::class, 'Register']);
         Route::post('/withdraw/update', [WithdrawController::class, 'update']);
         Route::post('/withdraw/list', [WithdrawController::class, 'List']);
+
+        // CHECKOUT
+        Route::post('/checkout/create', [CheckoutController::class, 'Create']);
 
         //AUTHCONTROLLER
         Route::post('/refresh', [AuthController::class, 'Refresh']);
@@ -147,13 +153,14 @@ Route::group([ 'prefix' => 'cron' ], function(){
 // HOOKS
 Route::group([ 'prefix' => 'hooks' ], function(){
     Route::post('/stripe', [HooksController::class, 'Stripe']);
+    Route::post('/pagarme', [HooksController::class, 'Pagarme']);
 });
 
 // CONTENT
 Route::group([ 'prefix' => 'content' ], function(){
-    Route::post('/default', [ContentController::class, 'Default']);
     Route::post('/products', [ContentController::class, 'Products']);
     Route::post('/product', [ContentController::class, 'Product']);
+    Route::get('/default', [ContentController::class, 'Default']);
     Route::get('/home', [ContentController::class, 'Home']);
     Route::get('/about', [ContentController::class, 'About']);
     Route::get('/faq', [ContentController::class, 'Faq']);
@@ -163,6 +170,7 @@ Route::group([ 'prefix' => 'content' ], function(){
     Route::get('/post/{slug?}', [ContentController::class, 'Post']);
     Route::get('/contact', [ContentController::class, 'Contact']);
     Route::get('/communicate/{slug?}', [ContentController::class, 'Communicate']);
+    Route::get('/order', [ContentController::class, 'Order']);
 });
 
 // REST / GRAPH

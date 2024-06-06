@@ -27,6 +27,37 @@ class Content extends BaseModel
         'status',
     ];
 
+    public static function getDefault($json = false){
+
+        $HeaderFooter = Content::where(["slug" => "menu", "type" => "page"])
+                               ->first();
+
+        $DataSeo = Content::where(["slug" => "seo", "type" => "page"])
+                          ->first();
+
+        $Scripts = Content::where(["slug" => "scripts", "type" => "page"])
+                          ->first();
+
+        $Roles = Content::where(["slug" => "roles", "type" => "roles"])
+                        ->first();
+
+        $data = [
+            "HeaderFooter"  => isset($HeaderFooter->id) ? $HeaderFooter->setCustomContent() : [],
+            "DataSeo"       => isset($DataSeo->id)      ? $DataSeo->setCustomContent()      : [],
+            "Scripts"       => isset($Scripts->id)      ? $Scripts->setCustomContent()      : [],
+            "Roles"         => isset($Roles->id)        ? $Roles->setCustomContent()        : []
+        ];
+
+        if($json){
+            return response()->json([
+                'response'  => true,
+                'data'      => $data
+            ]);
+        }
+
+        return $data;
+    }
+
     public function recursiveContentCustom($custom = []){
 
         foreach ($custom as $key => $value){

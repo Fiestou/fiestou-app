@@ -168,7 +168,7 @@ class OrdersController extends Controller
         $order->deliveryStatus      = $request->get("deliveryStatus");
         $order->deliveryTo          = $request->get("deliveryTo") ?? "";
         $order->listItems           = json_encode($listItems);
-        $order->status              = -1;
+        $order->status              = 0;
 
         foreach ($listItems as $key => $item) {
             $product = Product::where('id', $item['product']['id'])
@@ -202,7 +202,7 @@ class OrdersController extends Controller
 
                 if (!isset($suborders[$index])) {
                     $suborders[$index] = [
-                        "listItems"     => [],
+                        "listItems" => [],
                         "total"    => 0
                     ];
                 }
@@ -239,7 +239,32 @@ class OrdersController extends Controller
 
         return response()->json([
             'response'  => true,
-            'data' => $order
+            'data'      => $order
+        ]);
+    }
+
+    public function Processing(Request $request){
+
+        $request->validate([
+            "id" => "required"
+        ]);
+
+        $user   = auth()->user();
+        $order  = Order::where(['id' => $request->get('id'), "user" => $user->id])
+                       ->first();
+
+        if(isset($order->id)){
+            $order->status = -1;
+
+            if($order->save()){
+                return response()->json([
+                    'response'  => true
+                ]);
+            }
+        }
+
+        return response()->json([
+            'response'  => false
         ]);
     }
 
