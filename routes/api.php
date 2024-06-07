@@ -92,6 +92,9 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/products/form', [ProductsController::class, 'Form']);
         Route::post('/products/register', [ProductsController::class, 'Register']);
         Route::post('/products/remove', [ProductsController::class, 'Remove']);
+        Route::get('/products/gallery/{id}', [ProductsController::class, 'GetGallery']);
+        Route::post('/products/remove-gallery', [ProductsController::class, 'RemoveGallery']);
+        Route::post('/products/upload-gallery', [ProductsController::class, 'UploadGallery']);
 
         // STORES
         Route::post('/stores/get', [StoresController::class, 'Get']);
@@ -100,6 +103,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/stores/customers', [StoresController::class, 'Customers']);
         Route::post('/stores/register', [StoresController::class, 'Register']);
         Route::post('/stores/remove', [StoresController::class, 'Remove']);
+        Route::get('/stores/products', [StoresController::class, 'Products']);
 
         // WITHDRAW
         Route::post('/withdraw/get', [WithdrawController::class, 'Get']);

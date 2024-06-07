@@ -213,4 +213,49 @@ class StoresController extends Controller
             'response'  => false
         ], 500);
     }
+
+    public function Products(Request $request){
+
+        $user   = auth()->user();
+        $store  = Store::where(["user" => $user->id])
+                       ->first();
+
+        $log = [];
+        $metadata = [];
+        $products = Product::where('status', '<>', 0)
+                            ->where('store', $store->id)
+                            ->with(["store"]);
+
+        if($request->has('busca') && $request->get('busca')){
+            $busca = $request->get('busca');
+            $products = $products->where(function ($query) use ($busca) {
+                $busca = is_array($busca) ? $busca : [$busca];
+                foreach($busca as $term){
+                    $query->orWhere('tags', "like", '%'.$term.'%');
+                    $query->orWhere('title', "like", '%'.$term.'%');
+                    $query->orWhere('subtitle', "like", '%'.$term.'%');
+                    $query->orWhere('description', "like", '%'.$term.'%');
+                }
+            });
+        }
+
+        $count = $products;
+        $metadata['count'] = $count->count();
+
+        if($request->has('limit') && $request->get('limit')){
+            $products = $products->limit($request->get('limit'));
+        }
+
+        if($request->has('offset') && $request->get('offset')){
+            $products = $products->offset($request->get('offset'));
+        }
+
+        $products = $products->orderBy('created_at', $request->has('ordem') && $request->get('ordem') == "asc" ? "asc" : "desc");
+
+        return response()->json([
+            'response'  => true,
+            'data'      => Product::normalize($products->get(), false),
+            'metadata'  => $metadata
+        ]);
+    }
 }

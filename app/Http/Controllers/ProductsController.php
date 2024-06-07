@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
@@ -30,8 +31,7 @@ class ProductsController extends Controller
                 ], 500);
             }
 
-            $product = Product::where(['status' => 1])
-                              ->where('id', (int) $request->get('id'))
+            $product = Product::where('id', (int) $request->get('id'))
                               ->where('store', $store->id)
                               ->first();
 
@@ -55,10 +55,6 @@ class ProductsController extends Controller
         $metadata = [];
         $products = Product::where(['status' => 1])
                            ->with(["store"]);
-
-        // if($request->has('select') && $request->get('select')){
-        //     $products = $products->selectRaw('id, created_at, updated_at, ' . $request->get('select'));
-        // }
 
         if($request->has('store') && $request->get('store')){
             $store = Store::where(["id" => $request->get('store')])->first();
@@ -202,8 +198,7 @@ class ProductsController extends Controller
         $product = new Product;
 
         if($request->has('id') && isset($store->id)){
-            $product = Product::where(['status' => 1])
-                              ->where('id', (int) $request->get('id'))
+            $product = Product::where('id', (int) $request->get('id'))
                               ->where('store', $store->id)
                               ->first();
         }
@@ -218,9 +213,9 @@ class ProductsController extends Controller
             $product->slug = Str::slug($request->get('title'));
         }
 
-        if($request->has('gallery') && !empty($request->get('gallery'))){
-            $product->gallery = json_encode($request->get('gallery'));
-        }
+        // if($request->has('gallery') && !empty($request->get('gallery'))){
+        //     $product->gallery = json_encode($request->get('gallery'));
+        // }
 
         if($request->has('attributes')){
             $product->attributes = json_encode($request->get('attributes') ?? []);
@@ -287,6 +282,146 @@ class ProductsController extends Controller
         return response()->json([
             'response'  => true,
             'data'    => $product
+        ]);
+    }
+
+    public function GetGallery(Request $request, $id){
+
+        $user = auth()->user();
+
+        $store = Store::where(["user" => $user->id])
+                       ->first();
+
+        $product = Product::with(["store", "comments.user"])
+                          ->where(['id' => $id, "store" => $store->id])
+                          ->first();
+
+        $gallery = [];
+
+        if(isset($product->id)){
+
+            if(isset($product->gallery) && !!$product->gallery){
+                $medias = Media::whereIn('id', json_decode($product->gallery, TRUE))->get();
+
+                foreach ($medias as $key => $item) {
+                    $item->details = json_decode($item->details);
+                }
+
+                $gallery = $medias;
+            }
+        }
+
+        return response()->json([
+            'response'  => true,
+            'product'   => $product,
+            'data'      => $gallery
+        ]);
+    }
+
+    public function RemoveGallery(Request $request){
+
+        $request->validate([
+            "id"        => "required",
+            "medias"    => "required"
+        ]);
+
+        $user   = auth()->user();
+        $store  = Store::where(["user" => $user->id])
+                       ->first();
+
+        $feedback   = [];
+        $removed    = [];
+
+        $medias = Media::whereIn('id', $request->get('medias'))
+                       ->where('user_id', $user->id)
+                       ->get();
+
+        foreach($medias as $media){
+
+            $has_error = false;
+
+            foreach($media->RemoveMedia() as $md){
+                if($md != true){
+                    $has_error = true;
+                    array_merge($feedback, $md);
+                }
+            }
+
+            if(!$has_error){
+                $removed[] = $media->id;
+            }
+        }
+
+        Media::whereIn('id', $removed)
+             ->delete();
+
+        $product = Product::where('id', $request->get('id'))
+                        ->where('store', $store->id)
+                        ->first();
+
+        $gallery = json_decode($product->gallery, TRUE);
+
+        $filteredGallery = array_values(array_filter($gallery, function($id) use ($removed) {
+            return !in_array($id, $removed);
+        }));
+
+        $product->gallery = json_encode($filteredGallery);
+        $product->save();
+
+        return response()->json([
+            'response'  => true,
+            'feedback'  => $feedback,
+            'gallery'   => $filteredGallery,
+            'data'      => $removed
+        ]);
+    }
+
+    public function UploadGallery(Request $request) {
+
+        $request->validate([
+            'medias'    => 'required|array',
+            'medias.*'  => 'required|file|mimes:jpeg,jpg,JPG,JPEG,webp,png,gif|max:6000'
+        ]);
+
+        $user   = auth()->user();
+        $store  = Store::where(["user" => $user->id])
+                       ->first();
+
+        $files  = $request->file('medias');
+
+        $medias = Media::MakeUpload($files, "/products/".$store->id."/".date('d-m-Y')."/", $store->id);
+
+        if($request->has('product') && !!$request->get('product')){
+            $product = Product::where('id', $request->get('product'))
+                            ->where('store', $store->id)
+                            ->first();
+        }
+        else{
+            $product = new Product;
+            $product->title     = "Rascunho #".rand(0, 3000);
+            $product->slug      = Str::slug($product->title);
+            $product->store     = $store->id;
+            $product->status    = -1;
+            $product->category  = json_encode([]);
+            $product->gallery   = json_encode([]);
+        }
+
+        $gallery = !!$product->gallery ? json_decode($product->gallery, TRUE) : [];
+
+        foreach ($medias as $media) {
+            $gallery[] = $media->id;
+            $media->details = json_decode($media->details);
+        }
+
+        $product->gallery = json_encode($gallery);
+        $product->save();
+
+        return response()->json([
+            'response'  => true,
+            'data'      => [
+                "product"   => $product->id,
+                "medias"    => $medias
+            ]
         ]);
     }
 }
