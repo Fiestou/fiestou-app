@@ -520,36 +520,41 @@ export default function Checkout({
                       </h4>
                       <div className="flex pt-4 flex-col gap-6">
                         <div className="grid md:grid-cols-3 gap-2 md:gap-4">
-                          {["reception", "door", "for_me"].map(
-                            (option: any, key: any) => (
+                          {[
+                            { type: "reception", icon: "🏢" },
+                            { type: "door", icon: "🚪" },
+                            { type: "for_me", icon: "📦" },
+                          ].map((option: any, key: any) => (
+                            <div
+                              key={key}
+                              onClick={(e: any) => {
+                                setDeliveryTo(option.type);
+                              }}
+                              className={`border ${
+                                deliveryTo == option.type
+                                  ? "border-yellow-400"
+                                  : "hover:border-zinc-400"
+                              } p-3 md:p-4 cursor-pointer rounded-md ease flex gap-2 items-center`}
+                            >
                               <div
-                                key={key}
-                                onClick={(e: any) => {
-                                  setDeliveryTo(option);
-                                }}
-                                className={`border ${
-                                  deliveryTo == option
-                                    ? "border-yellow-400"
-                                    : "hover:border-zinc-400"
-                                } p-3 md:p-4 cursor-pointer rounded-md ease flex gap-2 items-center`}
+                                className={`${
+                                  deliveryTo == option.type
+                                    ? "border-zinc-400"
+                                    : ""
+                                } w-[1rem] h-[1rem] rounded-full border relative`}
                               >
-                                <div
-                                  className={`${
-                                    deliveryTo == option
-                                      ? "border-zinc-400"
-                                      : ""
-                                  } w-[1rem] h-[1rem] rounded-full border relative`}
-                                >
-                                  {deliveryTo == option && (
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                                  )}
-                                </div>
-                                <div className="text-[.85rem] leading-tight">
-                                  {deliveryToName[option]}
-                                </div>
+                                {deliveryTo == option.type && (
+                                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
+                                )}
                               </div>
-                            )
-                          )}
+                              <div className="text-[.85rem] leading-tight text-nowrap">
+                                {deliveryToName[option.type]}
+                              </div>
+                              <span className="text-lg self-end">
+                                {option.icon}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                         <div className="border relative rounded-lg py-4">
                           <div className="h-0 relative overflow-hidden">
@@ -647,9 +652,7 @@ export default function Checkout({
                           <div>{schedule}</div>
                         </div>
                       </div>
-
                       <div className="border-t"></div>
-
                       <div className="flex">
                         <div className="w-full whitespace-nowrap">
                           Subtotal ({listCart.length}{" "}
@@ -662,15 +665,32 @@ export default function Checkout({
 
                       <div className="border-t"></div>
 
-                      <div className="flex gap-2 md:mb-4">
-                        <div className="w-full text-zinc-900 font-bold">
-                          Total
+                      <div className="flex items-start justify-between">
+                        <div className="font-bold text-sm text-zinc-900 flex items-center">
+                          <Icon
+                            icon="fa-truck"
+                            className="text-sm mr-1 opacity-75"
+                          />
+                          Frete
+                        </div>
+                        <div className="grid text-right">
+                          <s className="text-xs">R$ 24,00</s>
+                          <div className="whitespace-nowrap font-semibold text-sm">
+                            Gratuito
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t"></div>
+
+                      <div className="flex gap-4 md:mb-4">
+                        <div className="w-full pt-1 text-zinc-900 font-bold">
+                          TOTAL
                         </div>
                         <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
                           R$ {moneyFormat(resume.total)}
                         </div>
                       </div>
-
                       {!!CheckoutPageContent?.terms_list && (
                         <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
                           {CheckoutPageContent?.terms_list.map(
@@ -689,7 +709,6 @@ export default function Checkout({
                           )}
                         </div>
                       )}
-
                       <div className="grid fixed z-10 md:relative bg-white md:bg-transparent bottom-0 left-0 w-full p-1 md:p-0">
                         {!!address?.street &&
                         !!address?.complement &&

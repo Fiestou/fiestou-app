@@ -26,7 +26,7 @@ export async function getServerSideProps(ctx: any) {
 
   let auth: any = await api.bridge(
     {
-      requestType: "post",
+      method: "post",
       url: "auth/external-auth",
       data: { email: user.email, name: user.name },
     },

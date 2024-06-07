@@ -9,11 +9,11 @@ export interface BankAccountType {
 }
 
 export interface UserType {
-  id: string | number;
+  id?: string | number;
   hash?: string;
   name: string;
   email: string;
-  date: string;
+  date?: string;
   type?: string;
   person?: string;
   status?: number;

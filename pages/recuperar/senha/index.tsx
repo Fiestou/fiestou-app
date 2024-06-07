@@ -133,7 +133,7 @@ export default function Senha({
       setFormValue({ loading: true });
 
       const request: any = await api.bridge({
-        requestType: "post",
+        method: "post",
         url: "auth/redefine",
         data: {
           password: password,

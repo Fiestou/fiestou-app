@@ -4,8 +4,6 @@ import { ProductOrderType } from "@/src/models/product";
 import axios from "axios";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -15,11 +13,8 @@ export default async function handler(
   const headers = {
     accept: "application/json",
     "content-type": "application/json",
-    authorization:
-      "Basic c2tfdGVzdF81M2E3ZDVmYzhlMjc0N2ZlOTM0YjlkNTlkZTI0YzlmOTo=",
+    authorization: `Basic c2tfdGVzdF81M2E3ZDVmYzhlMjc0N2ZlOTM0YjlkNTlkZTI0YzlmOTo=`,
   };
-
-  // console.error(payment, "payment");
 
   try {
     const response = await axios.post(
@@ -27,8 +22,6 @@ export default async function handler(
       payment,
       { headers }
     );
-
-    console.log(response);
 
     res.status(200).json({ response: true, data: response.data });
   } catch (error: any) {

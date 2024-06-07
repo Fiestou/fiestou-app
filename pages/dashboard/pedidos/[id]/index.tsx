@@ -25,6 +25,7 @@ import {
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { deliveryTypes } from "@/src/models/delivery";
 import { CompleteOrderSMS, PartnerNewOrderSMS } from "@/src/sms";
+import Pagarme from "@/src/services/pagarme";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -75,6 +76,7 @@ export default function Pedido({
     setForm({ ...form, ...value });
   };
 
+  const [cancel, setCancel] = useState(false as boolean);
   const [order, setOrder] = useState({} as OrderType);
   const [products, setProducts] = useState([] as Array<any>);
 
@@ -109,6 +111,12 @@ export default function Pedido({
     }
 
     handleForm({ loading: false });
+  };
+
+  const submitCancel = async () => {
+    const pagarme = new Pagarme();
+
+    const request = await pagarme.cancelOrder(order);
   };
 
   const [resume, setResume] = useState({} as any);
@@ -309,6 +317,7 @@ export default function Pedido({
               </div>
             </div>
           </section>
+
           <section className="">
             <div className="container-medium pb-12">
               <div className="grid md:flex align-top gap-10 md:gap-20">
@@ -481,25 +490,6 @@ export default function Pedido({
                         </div>
                       </div>
 
-                      {/* 
-                      <div>
-                        <hr className="my-0" />
-                      </div>
-
-                      <div className="grid gap-2">
-                        <div className="text-zinc-900 font-bold">
-                          Forma de pagamento
-                        </div>
-                        <div className="text-sm">
-                          Pagamento com cartão de crédito
-                          <br />
-                          MasterCard****2367
-                          <br />
-                          Validade: 09/2024
-                        </div>
-                      </div>
-                      */}
-
                       <div>
                         <hr className="my-0" />
                       </div>
@@ -530,7 +520,7 @@ export default function Pedido({
 
                       <div className="flex items-center gap-2">
                         <div className="w-full font-title text-zinc-900 font-bold">
-                          Valor total
+                          TOTAL
                         </div>
                         <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
                           R$ {moneyFormat(order.total)}
@@ -538,10 +528,50 @@ export default function Pedido({
                       </div>
                     </div>
                   </div>
+
+                  {order.status != -2 && false && (
+                    <button
+                      type="button"
+                      onClick={() => setCancel(true)}
+                      className="text-center mx-auto block mt-4 hover:underline text-zinc-950 ease"
+                    >
+                      cancelar pedido
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           </section>
+
+          <Modal
+            title="Cancelar pedido"
+            status={cancel}
+            close={() => setCancel(false)}
+          >
+            <div className="grid gap-6">
+              <div className="text-center">
+                Ao cancelar seu pedido, uma taxa de serviço poderá ser cobrada e
+                seus itens voltarão para o estoque. Deseja mesmo continuar?
+              </div>
+              <div className="grid gap-2 justify-center">
+                <Button
+                  type="button"
+                  style="btn-danger"
+                  className="text-sm"
+                  onClick={() => submitCancel()}
+                >
+                  Continuar e cancelar pedido
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setCancel(false)}
+                  className="text-center text-sm mx-auto block mt-4 hover:underline text-zinc-950 ease"
+                >
+                  Voltar
+                </button>
+              </div>
+            </div>
+          </Modal>
 
           <Modal
             title="Avaliação de produto"

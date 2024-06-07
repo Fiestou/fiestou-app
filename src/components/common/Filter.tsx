@@ -205,12 +205,11 @@ export default function Filter(params: any) {
 
           <div className="container-medium">
             <div className="flex border rounded-lg bg-white overflow-hidden relative">
-              <div className="w-fit relative border-r">
+              <div className="w-fit relative p-1">
                 <Button
                   type="button"
-                  style="btn-outline-light border-0"
                   onClick={() => openModal()}
-                  className="font-normal px-3 md:pl-8 md:pr-7 h-full hover:bg-zinc-100"
+                  className="font-normal py-2 px-3 md:pl-8 md:pr-7 h-full"
                 >
                   {!!count && (
                     <div className="relative -mr-1 rounded-full bg-yellow-300 p-[.55rem] text-[.55rem] font-bold">

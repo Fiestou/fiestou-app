@@ -715,7 +715,6 @@ export default function Checkout({
                         foram apresentados. Obrigado e aproveite.
                       </div>
                     </div> */}
-
                     <div className="flex">
                       <div className="text-zinc-900 text-lg">Total</div>
                       <div className="whitespace-nowrap w-full text-right">
@@ -731,7 +730,6 @@ export default function Checkout({
                         </div> */}
                       </div>
                     </div>
-
                     {!!checkout?.terms_list && (
                       <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
                         {checkout?.terms_list.map((term: any, key: any) => (

@@ -23,7 +23,7 @@ export async function getServerSideProps(ctx: any) {
     let user = {};
 
     const data: any = await api.bridge({
-      requestType: "post",
+      method: "post",
       url: "auth/checkin",
       data: { ref: ref },
     });
@@ -70,7 +70,7 @@ export default function Cadastro({ user }: any) {
     setForm({ ...form, loading: true });
 
     const data: any = await api.bridge({
-      requestType: "post",
+      method: "post",
       url: form.action,
       data: {
         ...form,

@@ -11,7 +11,7 @@ export default async function handler(
   const post = req.body;
 
   const { data }: any = await api.bridge({
-    requestType: "post",
+    method: "post",
     url: post.action,
     data: post,
   });

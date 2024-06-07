@@ -26,6 +26,7 @@ import router from "next/router";
 import Categories from "@/src/components/pages/painel/produtos/produto/Categories";
 import { getStore, getUser } from "@/src/contexts/AuthContext";
 import axios from "axios";
+import Gallery from "@/src/components/pages/painel/produtos/produto/Gallery";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -110,42 +111,6 @@ export default function Form({
     setData({ ...data, ...value });
   };
 
-  const [handleGallery, setHandleGallery] = useState([] as Array<any>);
-  const handleGalleryPreview = async (e: any) => {
-    let files = e.target.files ?? [];
-    let gallery: any = handleGallery;
-
-    for (let i = 0; i < files.length; i++) {
-      let file = e.target.files[i];
-
-      let base64: any = await new Promise((resolve, reject) => {
-        let reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-      });
-
-      gallery = [...gallery, { base64, fileName: file.name }];
-    }
-
-    setHandleGallery(gallery);
-    return gallery;
-  };
-
-  const removeGalleryItem = (obj: any) => {
-    const handle = handleGallery.map((item: any) => {
-      return obj == item
-        ? {
-            ...item,
-            remove: true,
-          }
-        : item;
-    });
-
-    setHandleGallery(handle);
-    handleData({ gallery: handle });
-  };
-
   const [colors, setColors] = useState([] as Array<any>);
   const handleColors = (value: any) => {
     handleData({ color: value.join("|") });
@@ -169,7 +134,7 @@ export default function Form({
           return {
             id: item.id,
             slug: item.slug,
-            image: getImage(item.gallery[0]) ?? [],
+            image: [],
             title: item.title,
           } as RelationType;
         });
@@ -200,7 +165,7 @@ export default function Form({
         ? handle?.color?.split("|")
         : [handle?.color]
     );
-    setHandleGallery(handle?.gallery ?? []);
+
     setCategories(handle?.category ?? []);
 
     setPlaceholder(false);
@@ -217,69 +182,11 @@ export default function Form({
 
     setFormValue({ loading: true });
 
-    const uploadFiles = handleGallery.filter(
-      (item) => !item?.remove && !item?.id
-    );
-
-    const removeFiles = handleGallery
-      .filter((item) => !!item?.remove && !!item?.id)
-      .map((item, key) => item.id);
-
-    if (!!removeFiles.length) {
-      setSubimitStatus("upload_images");
-
-      await api
-        .media({
-          dir: "products",
-          app: data?.store,
-          index: data?.store,
-          method: "remove",
-          medias: removeFiles,
-        })
-        .then((res: any) => res);
-    }
-
-    let gallery = handleGallery.filter((item) => !item?.remove && !!item?.id);
-
-    if (!!uploadFiles.length) {
-      setSubimitStatus("upload_images");
-
-      const upload = await api
-        .media({
-          dir: "products",
-          app: data?.store,
-          index: data?.store,
-          method: "upload",
-          medias: uploadFiles,
-        })
-        .then((data: any) => data);
-
-      if (upload.response && !!upload.medias) {
-        upload.medias.map((item: any, key: any) => {
-          let media = item.media;
-          media["details"] = JSON.parse(media.details);
-
-          gallery.push({
-            id: media.id,
-            base_url: media.base_url,
-            permanent_url: media.permanent_url,
-            details: media.details,
-            preview: media.base_url + media.details?.sizes["lg"],
-          });
-        });
-      }
-    }
-
-    setHandleGallery(gallery);
-
     setSubimitStatus("register_content");
 
     let request: any = await api.bridge({
       url: "products/register",
-      data: {
-        ...data,
-        gallery: gallery.map((item) => item.id),
-      },
+      data: data,
     });
 
     if (request.response) {
@@ -294,18 +201,6 @@ export default function Form({
       setTimeout(() => {
         router.push({ pathname: "/painel/produtos" });
       }, 1000);
-    } else {
-      await api
-        .media({
-          dir: "products",
-          app: data?.store,
-          index: data?.store,
-          method: "remove",
-          medias: gallery.map((item) => item.id),
-        })
-        .then((res: any) => res);
-
-      setFormValue({ loading: false, sended: request.response });
     }
   };
 
@@ -349,7 +244,7 @@ export default function Form({
               />
             </Link>
             <div className="font-title font-bold text-2xl md:text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-              {data.title ? "Editar produto" : "Novo produto"}
+              {data.id ? "Editar produto" : "Novo produto"}
             </div>
           </div>
         </div>
@@ -429,49 +324,12 @@ export default function Form({
                         </div>
 
                         <div className="form-group">
-                          <Label>Fotos</Label>
-                          <FileInput
-                            name="cover"
-                            id="cover"
-                            onChange={async (e: any) =>
-                              handleData({
-                                gallery: await handleGalleryPreview(e),
-                              })
+                          <Gallery
+                            product={data.id}
+                            emitProduct={(productID: number) =>
+                              handleData({ id: productID })
                             }
-                            multiple
-                            loading={form.loading}
-                            remove={(e: any) => {}}
-                            aspect="aspect-[4/2] md:aspect-[8/2]"
                           />
-                          <div className="grid gap-4 grid-cols-5 mt-4">
-                            {!!handleGallery.length &&
-                              handleGallery
-                                .filter((item) => !item.remove)
-                                .map((item: any, key: any) => (
-                                  <div key={key} className="w-full group">
-                                    <div className="relative rounded-md bg-zinc-100 overflow-hidden aspect-square">
-                                      <Img
-                                        src={
-                                          !!item.base_url
-                                            ? getImage(item, "thumb")
-                                            : item.base64
-                                        }
-                                        className="absolute object-contain h-full inset-0 w-full"
-                                      />
-                                      <button
-                                        onClick={() => removeGalleryItem(item)}
-                                        className="opacity-0 group-hover:opacity-100 ease absolute top-0 right-0 m-1 p-3 rounded-full bg-zinc-200 hover:bg-red-600 text-zinc-500 hover:text-white"
-                                        type="button"
-                                      >
-                                        <Icon
-                                          icon="fa-times"
-                                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                                        />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                          </div>
                         </div>
                       </div>
                     </div>

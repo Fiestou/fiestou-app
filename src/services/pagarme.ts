@@ -17,6 +17,10 @@ class Pagarme {
     return request;
   }
 
+  async cancelOrder(order: OrderType) {
+    return await this.request("/cancel-order", { order: order });
+  }
+
   async createOrder(order: OrderType, payment: PaymentType) {
     const data: any = {
       customer: {

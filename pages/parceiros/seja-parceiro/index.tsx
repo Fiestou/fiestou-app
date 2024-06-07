@@ -32,6 +32,7 @@ export async function getStaticProps(ctx: any) {
       Roles: Roles,
       HeaderFooter: HeaderFooter,
       DataSeo: DataSeo,
+      Scripts: Scripts,
     },
   };
 }
@@ -104,6 +105,7 @@ export default function SejaParceiro({
       header={{
         template: "default",
         position: "fixed",
+        background: "bg-transparent",
         content: HeaderFooter,
       }}
       footer={{
@@ -112,7 +114,7 @@ export default function SejaParceiro({
       }}
     >
       <section
-        className="pb-24 md:pb-0 pt-[2rem] md:pt-24 relative"
+        className="bg-cyan-500 pt-16 md:pt-24 relative"
         style={{ backgroundColor: "#2dc3ff" }}
       >
         {getImage(Partner?.main_cover, "default") && (

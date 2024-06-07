@@ -32,7 +32,7 @@ export default function SejaEntregador() {
     setForm({ ...form, loading: true });
 
     const data: any = await api.bridge({
-      requestType: "post",
+      method: "post",
       url: form.action,
       data: {
         ...form,

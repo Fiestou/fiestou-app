@@ -114,7 +114,7 @@ export default function Acesso({
     setFormValue({ loading: true });
 
     const data: any = await api.bridge({
-      requestType: "post",
+      method: "post",
       url: "auth/checkin",
       data: { ref: form.email },
     });

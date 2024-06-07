@@ -40,7 +40,7 @@ export const RegisterUserMail = async (user: any, content: ContentType) => {
   html = `${image}<div style="padding: 24px 48px 32px;">${html}</div>`;
 
   const data = {
-    email: user.email,
+    email: user?.email,
     subject: content.subject,
     content: html,
   };
@@ -94,9 +94,9 @@ export const RegisterOrderMail = async (
     deliveryToName[order.deliveryTo]
   }, às ${order.deliverySchedule} <br/>${address}</p>`;
 
-  const user = order.user;
+  const user: any = order.user ?? {};
 
-  let html = `${content.html}`.replace(/\{user_name\}/g, user.name);
+  let html = `${content.html}`.replace(/\{user_name\}/g, user?.name ?? "");
   html = `${html}`.replace(/\{items_order\}/g, table);
   html = `${html}`.replace(/\{order_code\}/g, `#${order.id}`);
 
@@ -105,7 +105,7 @@ export const RegisterOrderMail = async (
   html = `${image}<div style="padding: 24px 48px 32px;">${html}</div>`;
 
   const data = {
-    email: user.email,
+    email: user?.email,
     subject: content.subject,
     content: html,
   };
@@ -126,14 +126,14 @@ export const CompleteOrderMail = async (
       )}" style="width:100%;height:auto;" />`
     : "";
 
-  const user = order.user;
+  const user: any = order.user ?? {};
 
-  let html = `${content.html}`.replace(/\{user_name\}/g, user.name);
+  let html = `${content.html}`.replace(/\{user_name\}/g, user?.name ?? "");
   html = `${html}`.replace(/\{order_code\}/g, `#${order.id}`);
   html = `${image}<div style="padding: 24px 48px 32px;">${html}</div>`;
 
   const data = {
-    email: user.email,
+    email: user?.email,
     subject: content.subject,
     content: html,
   };
@@ -183,7 +183,7 @@ export const ChangeDeliveryStatusMail = async (
       )}" style="width:100%;height:auto;" />`
     : "";
 
-  const user = order.user;
+  const user: any = order.user ?? {};
 
   let status: any = {};
 
@@ -193,13 +193,13 @@ export const ChangeDeliveryStatusMail = async (
     }
   });
 
-  let html = `${content.html}`.replace(/\{user_name\}/g, user.name);
+  let html = `${content.html}`.replace(/\{user_name\}/g, user?.name ?? "");
   html = `${html}`.replace(/\{status_delivery\}/g, status?.name);
   html = `${html}`.replace(/\{order_code\}/g, `#${order.id}`);
   html = `${image}<div style="padding: 24px 48px 32px;">${html}</div>`;
 
   const data = {
-    email: user.email,
+    email: user?.email,
     subject: content.subject,
     content: html,
   };

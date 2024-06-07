@@ -18,7 +18,7 @@ export async function getServerSideProps(
 
   request = await api.bridge(
     {
-      requestType: "post",
+      method: "post",
       url: "users/list",
       data: {
         filter: [

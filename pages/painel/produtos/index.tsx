@@ -64,11 +64,9 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
   const [products, setProducts] = useState([] as Array<any>);
   const getProducts = async () => {
-    let request: any = await api.get({
-      url: "request/products",
-      data: {
-        store: Cookies.get("fiestou.store"),
-      },
+    let request: any = await api.bridge({
+      method: "get",
+      url: `stores/products`,
     });
 
     setPlaceholder(false);
