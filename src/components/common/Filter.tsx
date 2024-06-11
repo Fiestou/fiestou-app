@@ -234,7 +234,11 @@ export default function Filter(params: any) {
               />
               <div className="p-1">
                 <Button className="px-3 py-2 h-full">
-                  <Icon icon="fa-search" className="md:text-lg rounded-none" />
+                  <Icon
+                    icon="fa-search"
+                    type="far"
+                    className="md:text-lg rounded-none"
+                  />
                 </Button>
               </div>
             </div>
