@@ -78,7 +78,7 @@ export default function Recuperar({
     setFormValue({ loading: true });
 
     const request: any = await api.bridge({
-      requestType: "post",
+      method: "post",
       url: "auth/recovery",
       data: { email: email },
     });

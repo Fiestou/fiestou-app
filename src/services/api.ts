@@ -22,7 +22,7 @@ if (token) {
 // });
 
 interface ApiRequestType {
-  requestType?: string;
+  method?: string;
   url: string;
   data?: any;
   opts?: Object;
@@ -31,7 +31,7 @@ interface ApiRequestType {
 class Api {
   constructor() {}
 
-  async request({ requestType, url, data, opts }: ApiRequestType, ctx?: any) {
+  async request({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     return await new Promise((resolve, reject) => {
       if (!!ctx?.req) {
         const authtoken = !!ctx?.req.cookies
@@ -43,7 +43,7 @@ class Api {
         }
       }
 
-      api[requestType == "get" ? "get" : "post"](url, data ?? {}, opts ?? {})
+      api[method == "get" ? "get" : "post"](url, data ?? {}, opts ?? {})
         .then(({ data }: any) => {
           resolve(data);
         })
@@ -61,36 +61,36 @@ class Api {
     return this.request({ url, data, opts }, ctx);
   }
 
-  async get({ requestType, url, data, opts }: ApiRequestType, ctx?: any) {
+  async get({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.BASE_URL}/api/${url}`;
-    return await this.request({ requestType, url, data, opts }, ctx);
+    return await this.request({ method, url, data, opts }, ctx);
   }
 
   async content({ url }: any, ctx?: any) {
     url = `${process.env.BASE_URL}/api/content/${url}`;
-    return await this.request({ requestType: "get", url }, ctx);
+    return await this.request({ method: "get", url }, ctx);
   }
 
-  call({ requestType, url, data, opts }: ApiRequestType, ctx?: any) {
+  async call({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     console.log(data);
 
     url = `${process.env.BASE_URL}/api/${url}`;
     data = { graphs: data };
-    return this.request({ requestType, url, data, opts }, ctx);
+    return this.request({ method, url, data, opts }, ctx);
   }
 
-  bridge({ requestType, url, data, opts }: ApiRequestType, ctx?: any) {
+  async bridge({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.API_REST}${url}`;
-    return this.request({ requestType, url, data, opts }, ctx);
+    return this.request({ method, url, data, opts }, ctx);
   }
 
-  graph({ requestType, url, data, opts }: ApiRequestType, ctx?: any) {
+  async graph({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.API_REST}${url}`;
     data = { graphs: data };
-    return this.request({ requestType, url, data, opts }, ctx);
+    return this.request({ method, url, data, opts }, ctx);
   }
 
-  media(data: {
+  async media(data: {
     index: any;
     dir: any;
     method?: string;
@@ -111,9 +111,9 @@ class Api {
     return this.request({ url, data });
   }
 
-  auth({ requestType, url, data, opts }: ApiRequestType, ctx?: any) {
+  async auth({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.API_REST}${url}`;
-    return this.request({ requestType, url, data, opts }, ctx);
+    return this.request({ method, url, data, opts }, ctx);
   }
 }
 

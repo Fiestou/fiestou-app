@@ -5,6 +5,7 @@ import Img from "@/src/components/utils/ImgBase";
 import { StoreType } from "@/src/models/store";
 import LikeButton from "../ui/LikeButton";
 import { useEffect } from "react";
+import { getImage } from "@/src/helper";
 
 export default function Product({ product }: { product: ProductType | any }) {
   const imageCover = !!product?.gallery?.length ? product?.gallery[0] : {};
@@ -16,9 +17,9 @@ export default function Product({ product }: { product: ProductType | any }) {
       <div>
         <Link passHref href={`/produtos/${product?.slug}`}>
           <div className="aspect-[4.3/3] bg-zinc-100 relative overflow-hidden">
-            {!!imageCover?.details?.sizes["lg"] && (
+            {!!getImage(imageCover) && (
               <Img
-                src={imageCover.base_url + imageCover.details?.sizes["default"]}
+                src={getImage(imageCover)}
                 size="md"
                 className="absolute scale-[1.01] group-hover:scale-[1.05] ease object-cover h-full inset-0 w-full"
               />
