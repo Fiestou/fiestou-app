@@ -4,6 +4,7 @@ import { phoneAreaCode, phoneJustNumber } from "../helper";
 import { OrderType } from "@/src/models/order";
 import { ProductOrderType } from "../models/product";
 import { PaymentType } from "@/pages/dashboard/pedidos/pagamento/[id]";
+import Api from "./api";
 
 class Pagarme {
   constructor() {}
@@ -22,6 +23,8 @@ class Pagarme {
   }
 
   async createOrder(order: OrderType, payment: PaymentType) {
+    const api = new Api();
+
     const customer: any = {
       address: {
         country: "BR",
@@ -79,7 +82,22 @@ class Pagarme {
       payments: [payment],
     };
 
-    return await this.request("/create-order", { payment: data });
+    try {
+      const request = await this.request("/create-order", { payment: data });
+
+      if (!!request.response) {
+        await api.bridge({
+          url: "orders/processing",
+          data: {
+            id: order.id,
+          },
+        });
+      }
+
+      return request;
+    } catch (error) {
+      return { response: false, data: error };
+    }
   }
 }
 

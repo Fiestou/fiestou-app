@@ -260,13 +260,6 @@ export default function Pagamento({
       feedback: "",
     });
 
-    let updateOrder: any = await api.bridge({
-      url: "orders/processing",
-      data: {
-        id: orderId,
-      },
-    });
-
     const handlePayment: any = payment;
 
     if (handlePayment.payment_method == "credit_card") {
