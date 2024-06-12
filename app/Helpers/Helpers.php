@@ -23,11 +23,28 @@ if(!function_exists('slugify')){
 	    	"/(ç)/"
 	    ];
 
-	    $string 		= preg_replace($acento, explode(" ","a A e E i I o O u U n N C c"), $string);
-	    $string 		= strtolower($string);
+	    $string = preg_replace($acento, explode(" ","a A e E i I o O u U n N C c"), $string);
+	    $string = strtolower($string);
 
 	    return $string;
 	}
+}
+
+if(!function_exists('moneyFormat')){
+    function moneyFormat($amount) {
+        return number_format($amount, 2, ',', '.');
+    }
+}
+
+if (!function_exists('cleanHTMLtoSMS')) {
+    function cleanHTMLtoSMS($text) {
+
+        $text = preg_replace('/\r\n|\r|\n/', ' - ', $text);
+
+        $text = strip_tags($text);
+
+        return $text;
+    }
 }
 
 if(!function_exists('isJson')){

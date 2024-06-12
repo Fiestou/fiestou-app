@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\Store;
+use App\Models\Message;
 use App\Models\Suborder;
 use App\Models\Product;
 
@@ -142,6 +143,8 @@ class SubordersController extends Controller
 
             $order->deliveryStatus  = $request->get("deliveryStatus");
             $order->status          = $request->get("status") ?? 1;
+
+            Message::ChangeDeliveryStatus($order);
 
             DB::beginTransaction();
 

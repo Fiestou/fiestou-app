@@ -175,6 +175,7 @@ Route::group([ 'prefix' => 'content' ], function(){
     Route::get('/contact', [ContentController::class, 'Contact']);
     Route::get('/communicate/{slug?}', [ContentController::class, 'Communicate']);
     Route::get('/order', [ContentController::class, 'Order']);
+    Route::get('/register', [ContentController::class, 'Register']);
 });
 
 // REST / GRAPH

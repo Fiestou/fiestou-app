@@ -87,7 +87,7 @@
                                                                                 <tr>
                                                                                     <td valign="top" style="padding: 0px">
                                                                                         <div id="body_content_inner"
-                                                                                            style="text-align:center;color: #222222; font-family: 'Helvetica Neue',Helvetica,Roboto,Arial,sans-serif; font-size: 14px; line-height: 150%;"
+                                                                                            style="text-align:center;color: #222222; font-family: 'Helvetica Neue',Helvetica,Roboto,Arial,sans-serif;"
                                                                                             align="left">
                                                                                             @yield('msg')
                                                                                         </div>

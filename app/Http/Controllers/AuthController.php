@@ -103,7 +103,10 @@ class AuthController extends Controller
             $user->password = bcrypt($auth_hash);
             $user->details  = json_encode([]);
             $user->status   = 0;
-            $user->save();
+
+            if($user->save()){
+                Message::RegisterUser($user);
+            }
         }
 
         $user = User::where(['email' => $email])->first();
@@ -250,12 +253,10 @@ class AuthController extends Controller
             $details = $user->details ? json_decode($user->details, TRUE) : [];
             $details['remember_token'] = $token;
             $user->details = json_encode($details);
+            $user->status = 1;
 
-            if($user->save())
-            {
-                $content = '<div style="padding: 48px 48px 32px;"><p>Acesse o link abaixo para recuperar seu acesso: </p><p><a href="'.env('APP_URL').'/recuperar/senha?token='.$token.'&email='.$user->email.'" style="border-radius: 6px;text-decoration: none;display: inline-block;font-weight:600;color:black;background-color:#ffda4a;padding: .85rem 1.25rem;">Redefinir senha</a></p></div>';
-
-                return Message::send($user->email, $user->name, "Recuperação de Senha", $content);
+            if($user->save()){
+                return Message::RecoveryUser($user, $token);
             }
 
             return response()->json([

@@ -207,7 +207,7 @@ class UsersController extends Controller
 
         try{
             if($user->save()){
-                Message::RegisterUserMail();
+                Message::RegisterUser($user);
             }
          }
          catch(\Exception $e){

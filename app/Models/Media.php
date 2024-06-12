@@ -161,4 +161,29 @@ class Media extends BaseModel
             return $this->file_name.': error - '.$e->getMessage();
         }
     }
+
+    public static function GetImage($image, $size = 'lg')
+    {
+        if (empty($image)) {
+            return "";
+        }
+
+        if (!empty($image->medias)) {
+            $image = $image->medias;
+        }
+
+        if (is_array($image)) {
+            $img = !empty($image[0]) ? $image[0] : false;
+        } else {
+            $img = $image;
+        }
+
+        if (!!$img && !empty($img->base_url) && !empty($img->details->sizes)) {
+            $url = $img->base_url . (!empty($size) ? $img->details->sizes->$size : $img->details->sizes->lg);
+
+            return trim($url) != trim($img->base_url) ? $url : "";
+        }
+
+        return "";
+    }
 }

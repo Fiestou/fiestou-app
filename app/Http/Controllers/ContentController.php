@@ -120,6 +120,27 @@ class ContentController extends Controller
         ]);
     }
 
+    public function Register(Request $request){
+
+        $content = Content::where(["slug" => "account", "type" => "page"])
+                          ->first();
+
+        if(isset($content->id)){
+
+            return response()->json([
+                'response'  => true,
+                'data'      => array_merge(
+                                    Content::getDefault(),
+                                    ["Account" => $content->setCustomContent()]
+                                )
+            ]);
+        }
+
+        return response()->json([
+            'response'  => false
+        ]);
+    }
+
     public function Partners(Request $request){
 
         $content = Content::where(["slug" => "parceiros", "type" => "page"])

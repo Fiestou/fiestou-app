@@ -193,7 +193,7 @@ class OrdersController extends Controller
         DB::beginTransaction();
 
         if($order->save()){
-            Message::RegisterOrderMail();
+            Message::RegisterOrder($order);
 
             $suborders = [];
 
