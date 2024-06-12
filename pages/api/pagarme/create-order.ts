@@ -13,7 +13,7 @@ export default async function handler(
   const headers = {
     accept: "application/json",
     "content-type": "application/json",
-    authorization: `Basic c2tfdGVzdF81M2E3ZDVmYzhlMjc0N2ZlOTM0YjlkNTlkZTI0YzlmOTo=`,
+    authorization: "Basic c2tfYWI5NWM4ZTY5MWNlNGIyM2I4OGI5MGExOTc0NDg3MDQ6",
   };
 
   try {
