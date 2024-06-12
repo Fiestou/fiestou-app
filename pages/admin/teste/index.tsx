@@ -1,15 +1,7 @@
 import TestEmail from "@/src/components/pages/admin/teste/TestEmail";
 import TestSms from "@/src/components/pages/admin/teste/TestSms";
-import {
-  ChangeDeliveryStatusMail,
-  CompleteOrderMail,
-  ContentType,
-  RegisterOrderMail,
-  RegisterUserMail,
-} from "@/src/mail";
 import Api from "@/src/services/api";
 import Template from "@/src/template";
-import { useState } from "react";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();

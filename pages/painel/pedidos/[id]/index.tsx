@@ -13,11 +13,8 @@ import {
 import { Button, Label, Select } from "@/src/components/ui/form";
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { ChangeDeliveryStatusMail } from "@/src/mail";
-import { deliveryTypes } from "@/src/models/delivery";
+import { deliveryToName, deliveryTypes } from "@/src/models/delivery";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { deliveryToName } from "@/pages/checkout/index_";
-import { ChangeDeliveryStatusSMS } from "@/src/sms";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -121,19 +118,6 @@ export default function Pedido({
 
     if (!!request.response) {
       setData(handle);
-
-      if (["pending", "collect", "sent"].includes(deliveryStatus)) {
-        await ChangeDeliveryStatusSMS(handle, {
-          subject: mailContent["delivery_subject"],
-          message: mailContent["delivery_body"],
-        });
-      }
-
-      await ChangeDeliveryStatusMail(handle, {
-        subject: mailContent["delivery_subject"],
-        image: mailContent["delivery_image"],
-        html: mailContent["delivery_body"],
-      });
     }
 
     setForm({ ...form, loading: false });
@@ -274,6 +258,27 @@ export default function Pedido({
                     <div>{suborder.user?.cpf}</div> */}
                   </div>
                 </div>
+                {!!order.metadata && (
+                  <>
+                    <div className="my-6 border-dashed border-t"></div>
+                    <div>
+                      <div className="font-bold font-title text-zinc-900 text-xl mb-4">
+                        Pagamento
+                      </div>
+                      <div>
+                        <div>
+                          {!!order.metadata?.payment_method &&
+                          order.metadata?.payment_method == "pix"
+                            ? "PIX"
+                            : "Cartão de crédito"}
+                        </div>
+                        {!!order.metadata?.installments && (
+                          <div>{order.metadata?.installments}x</div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="my-6 border-dashed border-t"></div>
                 <div>
                   <div className="font-bold font-title text-zinc-900 text-xl mb-4">
@@ -297,12 +302,22 @@ export default function Pedido({
                   onSubmit={(e: any) => notifyDelivery(e)}
                   className="mt-6 pt-6 border-t flex gap-2"
                 >
+                  {dropdownDelivery && (
+                    <div
+                      onClick={(e: any) => {
+                        setDropdownDelivery(false);
+                      }}
+                      className="fixed w-full h-full top-0 left-0 opacity-0"
+                    ></div>
+                  )}
                   <div className="form-group m-0 w-full">
                     <Label style="float">Status de processo</Label>
                     <div className="relative">
                       <button
-                        onClick={() => setDropdownDelivery(!dropdownDelivery)}
                         type="button"
+                        onClick={() => {
+                          setDropdownDelivery(true);
+                        }}
                         className="w-full"
                       >
                         {deliveryTypes
@@ -323,15 +338,15 @@ export default function Pedido({
                           ))}
                       </button>
                       {dropdownDelivery && (
-                        <div className="w-full absolute bottom-0 left-0">
-                          <div className="absolute -mt-1 bg-white rounded border top-0 left-0 w-full grid p-2">
+                        <div className="w-full relative">
+                          <div className="bg-white -mt-[1px] rounded border top-0 left-0 w-full grid p-2">
                             {deliveryTypes.map((item: any, key: any) => (
                               <div
                                 key={key}
                                 className="p-1 text-sm cursor-pointer text-zinc-500 hover:text-zinc-900 ease flex gap-1 items-center"
                                 onClick={(e: any) => {
                                   setDeliveryStatus(item.value);
-                                  e.target.blur();
+                                  setDropdownDelivery(false);
                                 }}
                               >
                                 <div
@@ -355,13 +370,15 @@ export default function Pedido({
                     /> */}
                   </div>
                   <div className="text-zinc-900 text-right">
-                    <Button
-                      loading={form.loading}
-                      style="btn-light"
-                      className="font-semibold p-4 text-sm h-full"
-                    >
-                      <Icon icon="fa-paper-plane" type="far" />
-                    </Button>
+                    {!dropdownDelivery && (
+                      <Button
+                        loading={form.loading}
+                        style="btn-light"
+                        className="font-semibold p-4 text-sm h-full"
+                      >
+                        <Icon icon="fa-paper-plane" type="far" />
+                      </Button>
+                    )}
                   </div>
                 </form>
               </div>

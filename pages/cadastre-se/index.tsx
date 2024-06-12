@@ -7,7 +7,6 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { encode as base64_encode, decode as base64_decode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
-import { RegisterUserMail } from "@/src/mail";
 import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
 
 export async function getServerSideProps(ctx: any) {
@@ -174,16 +173,7 @@ export default function CadastreSe({
     });
 
     if (data.response) {
-      await RegisterUserMail(data.user, {
-        subject: mail["register_subject"],
-        image: mail["register_image"],
-        html: mail["register_body"],
-      });
-
-      router.push({
-        pathname: "/acesso",
-        query: { modal: "register" },
-      });
+      window.location.href = "/acesso?modal=register";
     } else {
       setForm({ ...form, sended: data.response });
     }

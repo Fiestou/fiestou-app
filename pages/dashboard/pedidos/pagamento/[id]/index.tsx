@@ -132,7 +132,7 @@ export default function Pagamento({
   const [products, setProducts] = useState([] as Array<any>);
   const [resume, setResume] = useState({} as any);
 
-  const [expire, setExpire] = useState("" as string);
+  const [expire, setExpire] = useState("start" as string);
   const [pix, setPix] = useState({
     expires_in: 300,
   } as PixType);
@@ -259,8 +259,6 @@ export default function Pagamento({
 
     setOrder(handle);
     setProducts(products);
-
-    console.log(request?.data);
   };
 
   useEffect(() => {

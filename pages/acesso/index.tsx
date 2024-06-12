@@ -8,11 +8,8 @@ import { encode as base64_encode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import Modal from "@/src/components/utils/Modal";
 import { UserType } from "@/src/models/user";
-import { RegisterUserMail } from "@/src/mail";
 import NextAuth from "@/src/components/pages/acesso/NextAuth";
 import { getSession } from "next-auth/react";
-import Message from "@/src/components/ui/form/MessageUI";
-import { RegisterUserSMS } from "@/src/sms";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -155,16 +152,6 @@ export default function Acesso({
     }
   };
 
-  const resendConfirm = async () => {
-    await RegisterUserMail(user, {
-      subject: page["register_subject"],
-      image: page["register_image"],
-      html: page["register_body"],
-    });
-
-    router.reload();
-  };
-
   return (
     <Template
       scripts={Scripts}
@@ -273,13 +260,12 @@ export default function Acesso({
             ) : (
               <>
                 Não recebeu o link? Verifique sua caixa de span, lixeira ou
-                <button
-                  type="button"
-                  onClick={() => resendConfirm()}
+                <Link
+                  href="/recuperar"
                   className="text-cyan-500 underline px-2"
                 >
-                  clique aqui
-                </button>
+                  recupere sua senha
+                </Link>
                 para receber o link novamente
               </>
             )}

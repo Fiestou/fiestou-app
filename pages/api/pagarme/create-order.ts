@@ -23,6 +23,8 @@ export default async function handler(
       { headers }
     );
 
+    console.log(response);
+
     res.status(200).json({ response: true, data: response.data });
   } catch (error: any) {
     console.error(error.response.data);

@@ -9,6 +9,7 @@ import { RateType } from "@/src/models/product";
 import {
   dateBRFormat,
   findDates,
+  getExtenseData,
   getImage,
   getShorDate,
   moneyFormat,
@@ -17,14 +18,8 @@ import Img from "@/src/components/utils/ImgBase";
 import { Button, Label, TextArea } from "@/src/components/ui/form";
 import { useEffect, useRef, useState } from "react";
 import Modal from "@/src/components/utils/Modal";
-import {
-  CompleteOrderMail,
-  PartnerNewOrderMail,
-  RegisterOrderMail,
-} from "@/src/mail";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { deliveryTypes } from "@/src/models/delivery";
-import { CompleteOrderSMS, PartnerNewOrderSMS } from "@/src/sms";
 import Pagarme from "@/src/services/pagarme";
 
 export async function getServerSideProps(ctx: any) {
@@ -216,52 +211,6 @@ export default function Pedido({
     }
 
     const handle: OrderType = request?.data ?? {};
-
-    if (
-      !!handle?.metadata?.id &&
-      handle?.metadata?.status != "complete" &&
-      handle?.metadata?.status != "expired"
-    ) {
-      const payment = new Payment();
-      const checkoutSession: any = await payment.getSession(
-        handle?.metadata?.id
-      );
-
-      const updateOrderMetadata = await api.bridge({
-        url: "orders/register-meta",
-        data: {
-          id: handle.id,
-          metadata: checkoutSession?.data,
-        },
-      });
-
-      if (checkoutSession?.data?.status == "complete") {
-        handle.status = 1;
-        handle.deliveryStatus = "processing";
-
-        await CompleteOrderSMS(handle, {
-          subject: mailContent["order_complete_subject"],
-          message: mailContent["order_complete_body"],
-        });
-
-        await PartnerNewOrderSMS(handle, handle?.notificate ?? [], {
-          subject: mailContent["partner_order_subject"],
-          message: mailContent["partner_order_body"],
-        });
-
-        await CompleteOrderMail(handle, {
-          subject: mailContent["order_complete_subject"],
-          image: mailContent["order_complete_image"],
-          html: mailContent["order_complete_body"],
-        });
-
-        await PartnerNewOrderMail(handle, handle?.notificate ?? [], {
-          subject: mailContent["partner_order_subject"],
-          image: mailContent["order_complete_image"],
-          html: mailContent["partner_order_body"],
-        });
-      }
-    }
 
     let dates: any = [];
     let products: any = [];
@@ -489,6 +438,29 @@ export default function Pedido({
                           </div>
                         </div>
                       </div>
+
+                      {!!order.metadata && (
+                        <>
+                          <div>
+                            <hr className="my-0" />
+                          </div>
+
+                          <div className="grid gap-2">
+                            <div className="text-zinc-900 font-bold">
+                              Pagamento
+                              {/* {getExtenseData(order.metadata.paid_at)} */}
+                            </div>
+                            <div className="text-sm">
+                              {!!order.metadata?.payment_method &&
+                              order.metadata?.payment_method == "pix"
+                                ? "PIX"
+                                : "Cartão de crédito"}
+                              {!!order.metadata?.installments &&
+                                `: ${order.metadata?.installments}x`}
+                            </div>
+                          </div>
+                        </>
+                      )}
 
                       <div>
                         <hr className="my-0" />
