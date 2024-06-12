@@ -13,7 +13,9 @@ export default async function handler(
   const headers = {
     accept: "application/json",
     "content-type": "application/json",
-    authorization: "Basic c2tfYWI5NWM4ZTY5MWNlNGIyM2I4OGI5MGExOTc0NDg3MDQ6",
+    authorization: `Basic ${Buffer.from(
+      `${process.env.PAGARME_SECRET_KEY}:`
+    ).toString("base64")}`,
   };
 
   try {
@@ -22,8 +24,6 @@ export default async function handler(
       payment,
       { headers }
     );
-
-    console.log(response);
 
     res.status(200).json({ response: true, data: response.data });
   } catch (error: any) {
