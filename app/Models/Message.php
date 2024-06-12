@@ -122,7 +122,7 @@ class Message extends BaseModel
         $html = str_replace('{order_code}', '#' . $order->id, $html);
         $html = $content['image'] . '<div style="padding: 24px 48px 32px;">' . $html . '</div>';
 
-        Message::sendMail('rafaelcarvalhosjrp@gmail.com', '', $content['subject'], $html);
+        // Message::sendMail('rafaelcarvalhosjrp@gmail.com', '', $content['subject'], $html);
         Message::sendMail($userEmail, $userName, $content['subject'], $html);
 
         if(isset($userDetails['phone'])){
@@ -183,7 +183,7 @@ class Message extends BaseModel
                 Message::sendSMS($store->phone, cleanHTMLtoSMS($html));
             }
 
-            Message::sendMail('rafaelcarvalhosjrp@gmail.com', '', $content['subject'], $html);
+            // Message::sendMail('rafaelcarvalhosjrp@gmail.com', '', $content['subject'], $html);
             Message::sendMail($store->email, $store->name, $content['subject'], $html);
         }
     }
