@@ -266,12 +266,12 @@ export default function Pagamento({
       handlePayment["credit_card"] = {
         card: {
           ...card,
-          number: "4000000000000010",
-          holder_name: "Tony Stark",
-          exp_month: 1,
-          exp_year: 2030,
-          cvv: 3531,
-          holder_document: "39937710871",
+          // number: "4000000000000010",
+          // holder_name: "Tony Stark",
+          // exp_month: 1,
+          // exp_year: 2030,
+          // cvv: 3531,
+          // holder_document: "39937710871",
         },
         operation_type: "auth_and_capture",
         installments: 1,
