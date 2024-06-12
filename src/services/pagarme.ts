@@ -22,33 +22,38 @@ class Pagarme {
   }
 
   async createOrder(order: OrderType, payment: PaymentType) {
-    const data: any = {
-      customer: {
-        address: {
-          country: "BR",
-          state: order.deliveryAddress?.state,
-          city: order.deliveryAddress?.city,
-          zip_code: order.deliveryAddress?.zipCode,
-          line_1: order.deliveryAddress?.street,
-          line_2: order.deliveryAddress?.number,
-        },
-        phones: {
-          mobile_phone: {
-            country_code: "55",
-            area_code: phoneAreaCode(order.user?.phone),
-            number: phoneJustNumber(order.user?.phone),
-          },
-        },
-        name: order.user?.name,
-        type: "individual",
-        email: order.user?.email,
-        code: order.user?.id,
-        gender: order.user?.gender,
-        birthdate: order.user?.date,
-        metadata: {
-          orderID: order.id,
-        },
+    const customer: any = {
+      address: {
+        country: "BR",
+        state: order.deliveryAddress?.state,
+        city: order.deliveryAddress?.city,
+        zip_code: order.deliveryAddress?.zipCode,
+        line_1: order.deliveryAddress?.street,
+        line_2: order.deliveryAddress?.number,
       },
+      name: order.user?.name,
+      type: "individual",
+      email: order.user?.email,
+      code: order.user?.id,
+      gender: order.user?.gender,
+      birthdate: order.user?.date,
+      metadata: {
+        orderID: order.id,
+      },
+    };
+
+    if (!!order.user?.phone) {
+      customer["phones"] = {
+        mobile_phone: {
+          country_code: "55",
+          area_code: phoneAreaCode(order.user?.phone),
+          number: phoneJustNumber(order.user?.phone),
+        },
+      };
+    }
+
+    const data: any = {
+      customer: customer,
       shipping: {
         address: {
           country: "BR",
