@@ -41,32 +41,10 @@ export async function getServerSideProps(ctx: any) {
     };
   }
 
-  request = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page as mailContent",
-          filter: [
-            {
-              key: "slug",
-              value: "email",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
-
-  const mailContent = request?.data?.query?.mailContent ?? [];
-
   return {
     props: {
       suborder: suborder,
       order: suborder?.order ?? {},
-      mailContent: mailContent[0] ?? {},
     },
   };
 }
@@ -79,11 +57,9 @@ const FormInitialType = {
 export default function Pedido({
   suborder,
   order,
-  mailContent,
 }: {
   suborder: OrderType;
   order: OrderType;
-  mailContent: any;
 }) {
   const api = new Api();
   const router = useRouter();

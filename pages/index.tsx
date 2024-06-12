@@ -1,10 +1,10 @@
 import Newsletter from "@/src/components/common/Newsletter";
-import { Button, Input, Label } from "@/src/components/ui/form";
+import { Button, Input } from "@/src/components/ui/form";
 import Img from "@/src/components/utils/ImgBase";
 import { getImage } from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { ProductType } from "@/src/models/product";
-import Api, { defaultQuery } from "@/src/services/api";
+import Api from "@/src/services/api";
 import Template from "@/src/template";
 import Link from "next/link";
 
@@ -17,8 +17,6 @@ import "swiper/css/pagination";
 import Product from "@/src/components/common/Product";
 import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
-import { useEffect } from "react";
-import axios from "axios";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();

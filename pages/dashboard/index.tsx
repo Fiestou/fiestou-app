@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
@@ -7,7 +6,6 @@ import { useContext, useEffect, useState } from "react";
 import { getFirstName, replaceWord } from "@/src/helper";
 import { UserType } from "@/src/models/user";
 import Api from "@/src/services/api";
-import { signOut } from "next-auth/react";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export async function getStaticProps(ctx: any) {

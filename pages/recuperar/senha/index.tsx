@@ -8,42 +8,21 @@ import { useRouter } from "next/router";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.call(
+
+  let request: any = await api.content(
     {
-      url: "request/graph",
-      data: [
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as Scripts",
-          filter: [
-            {
-              key: "slug",
-              value: "scripts",
-              compare: "=",
-            },
-          ],
-        },
-      ],
+      url: "default",
     },
     ctx
   );
 
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.data?.query?.Scripts ?? [];
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
     revalidate: 60 * 60 * 60,
   };

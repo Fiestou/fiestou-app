@@ -33,7 +33,6 @@ export async function getServerSideProps(ctx: any) {
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
-  const mailContent = request?.data?.query?.mailContent ?? {};
 
   return {
     props: {
@@ -41,7 +40,6 @@ export async function getServerSideProps(ctx: any) {
       HeaderFooter: HeaderFooter,
       DataSeo: DataSeo,
       Scripts: Scripts,
-      mailContent: mailContent,
     },
   };
 }
@@ -53,13 +51,11 @@ const formInitial = {
 
 export default function Pedido({
   orderId,
-  mailContent,
   HeaderFooter,
   DataSeo,
   Scripts,
 }: {
   orderId: number;
-  mailContent: any;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;

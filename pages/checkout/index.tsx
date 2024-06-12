@@ -10,20 +10,17 @@ import {
   isCEPInRegion,
   moneyFormat,
 } from "@/src/helper";
-import { Button, Input, Label, Select } from "@/src/components/ui/form";
+import { Button, Input } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
 import { ProductOrderType, ProductType } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
-import { ItemOrderType, OrderType } from "@/src/models/order";
-import shortUUID from "short-uuid";
+import { OrderType } from "@/src/models/order";
 import Partner from "@/src/components/common/Partner";
-import { loadStripe } from "@stripe/stripe-js";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
-import Img from "@/src/components/utils/ImgBase";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper";
@@ -31,8 +28,6 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
-import RegionConfirm from "@/src/default/alerts/RegionConfirm";
-import Pagarme from "@/src/services/pagarme";
 import { deliveryToName } from "@/src/models/delivery";
 
 const FormInitialType = {
@@ -72,27 +67,6 @@ export async function getServerSideProps(ctx: any) {
     }
   });
 
-  request = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page as mailContent",
-          filter: [
-            {
-              key: "slug",
-              value: "email",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
-
-  const mailContent = request?.data?.query?.mailContent ?? [];
-
   return {
     props: {
       cart: cart,
@@ -103,7 +77,6 @@ export async function getServerSideProps(ctx: any) {
       CheckoutPageContent: CheckoutPageContent,
       DataSeo: DataSeo ?? {},
       Scripts: Scripts ?? {},
-      mailContent: mailContent[0] ?? {},
     },
   };
 }
@@ -115,7 +88,6 @@ export default function Checkout({
   products,
   Roles,
   CheckoutPageContent,
-  mailContent,
   DataSeo,
   Scripts,
 }: {
@@ -125,7 +97,6 @@ export default function Checkout({
   products: Array<ProductType>;
   Roles: any;
   CheckoutPageContent: any;
-  mailContent: any;
   DataSeo: any;
   Scripts: any;
 }) {

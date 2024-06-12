@@ -31,36 +31,12 @@ export async function getServerSideProps({
   const parse = req.cookies["fiestou.cart"] ?? "";
   const cart = !!parse ? JSON.parse(parse) : [];
 
-  let request: any = {};
-
-  request = await api.call({
-    url: "request/graph",
-    data: [
-      {
-        model: "page as DataSeo",
-        filter: [
-          {
-            key: "slug",
-            value: "seo",
-            compare: "=",
-          },
-        ],
-      },
-      {
-        model: "page as Scripts",
-        filter: [
-          {
-            key: "slug",
-            value: "scripts",
-            compare: "=",
-          },
-        ],
-      },
-    ],
+  let request: any = await api.content({
+    url: "default",
   });
 
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.data?.query?.Scripts ?? [];
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   request = await api.get({
     url: "request/products",
@@ -72,9 +48,7 @@ export async function getServerSideProps({
   const products = request?.data ?? [];
 
   cart.map((item: any, key: any) => {
-    let handle = products.find(
-      (prod: any, index: any) => prod.id == item.product
-    );
+    let handle = products.find((prod: any) => prod.id == item.product);
 
     if (!!handle) {
       cart[key]["product"] = handle;
@@ -85,8 +59,8 @@ export async function getServerSideProps({
     props: {
       cart: cart,
       products: products,
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
   };
 }

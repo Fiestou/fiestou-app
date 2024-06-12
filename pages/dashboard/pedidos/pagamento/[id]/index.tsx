@@ -1,7 +1,5 @@
 import Template from "@/src/template";
-import Cookies from "js-cookie";
 import Api from "@/src/services/api";
-import Payment from "@/src/services/payment";
 import { useEffect, useState } from "react";
 import {
   CopyClipboard,
@@ -9,35 +7,17 @@ import {
   findDates,
   getImage,
   getShorDate,
-  getZipCode,
-  isCEPInRegion,
   justNumber,
   moneyFormat,
 } from "@/src/helper";
-import { Button, Input, Label, Select } from "@/src/components/ui/form";
-import { useRouter } from "next/router";
-import { UserType } from "@/src/models/user";
-import { AddressType } from "@/src/models/address";
-import { ProductOrderType, ProductType } from "@/src/models/product";
-import { StoreType } from "@/src/models/store";
-import { ItemOrderType, OrderType } from "@/src/models/order";
-import shortUUID from "short-uuid";
-import Partner from "@/src/components/common/Partner";
-import { loadStripe } from "@stripe/stripe-js";
+import { Button } from "@/src/components/ui/form";
+import { OrderType } from "@/src/models/order";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
 import Img from "@/src/components/utils/ImgBase";
 
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
-import { CartType } from "@/src/models/cart";
-import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 import Pagarme from "@/src/services/pagarme";
-import axios from "axios";
 import { deliveryToName } from "@/src/models/delivery";
 
 export interface CardType {
@@ -93,7 +73,6 @@ export async function getServerSideProps(ctx: any) {
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
-  const mailContent = request?.data?.query?.mailContent ?? {};
 
   return {
     props: {
@@ -101,7 +80,6 @@ export async function getServerSideProps(ctx: any) {
       HeaderFooter: HeaderFooter,
       DataSeo: DataSeo,
       Scripts: Scripts,
-      mailContent: mailContent,
     },
   };
 }

@@ -38,9 +38,7 @@ export const getStaticPaths = async (req: NextApiRequest) => {
 export async function getStaticProps(ctx: any) {
   const api = new Api();
   const { slug } = ctx.params;
-  let request: any = await api.get({
-    url: "content/default",
-  });
+  let request: any = await api.content({ url: `default` });
 
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
