@@ -63,7 +63,7 @@ class Pagarme {
           line_1: order.deliveryAddress?.street,
           line_2: order.deliveryAddress?.number,
         },
-        amount: 24 * 100,
+        amount: 0,
         description: "delivery",
         recipient_name: order.user?.name,
         recipient_phone: order.user?.phone,
