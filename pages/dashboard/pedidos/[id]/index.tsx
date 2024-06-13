@@ -446,13 +446,28 @@ export default function Pedido({
                               Pagamento
                               {/* {getExtenseData(order.metadata.paid_at)} */}
                             </div>
-                            <div className="text-sm">
+                            <div className="text-sm flex items-center gap-2">
                               {!!order.metadata?.payment_method &&
-                              order.metadata?.payment_method == "pix"
-                                ? "PIX"
-                                : "Cartão de crédito"}
-                              {!!order.metadata?.installments &&
-                                `: ${order.metadata?.installments}x`}
+                              order.metadata?.payment_method == "pix" ? (
+                                <>
+                                  <Img
+                                    src="/images/pagarme/pix-icon.png"
+                                    className="w-[1.75rem]"
+                                  />
+                                  <div className="w-full">PIX</div>
+                                </>
+                              ) : (
+                                <>
+                                  <Img
+                                    src="/images/pagarme/card-icon.png"
+                                    className="w-[1.75rem]"
+                                  />
+                                  <div className="w-full">
+                                    Cartão de crédito :{" "}
+                                    {order.metadata?.installments ?? "1"}x
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
                         </>
