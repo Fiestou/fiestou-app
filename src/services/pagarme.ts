@@ -37,6 +37,7 @@ class Pagarme {
       name: order.user?.name,
       type: "individual",
       email: order.user?.email,
+      document: order.user?.cpf ?? order.user?.document,
       code: order.user?.id,
       gender: order.user?.gender,
       birthdate: order.user?.date,

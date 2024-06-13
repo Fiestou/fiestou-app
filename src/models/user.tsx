@@ -23,6 +23,7 @@ export interface UserType {
   rg?: string;
   issuer?: string;
   cpf?: string;
+  document?: string;
   profile?: any;
   favorites?: Array<number>;
   bankAccounts?: Array<BankAccountType>;
