@@ -144,12 +144,15 @@ class SubordersController extends Controller
             $order->deliveryStatus  = $request->get("deliveryStatus");
             $order->status          = $request->get("status") ?? 1;
 
-            Message::ChangeDeliveryStatus($order);
+            if($suborder->deliveryStatus == "complete"){}
 
             DB::beginTransaction();
 
-            if(!$suborder->save() || !$order->save()){
-
+            if($suborder->save() && $order->save()){
+                Suborder::CleanSchedule($order);
+                Message::ChangeDeliveryStatus($order);
+            }
+            else{
                 DB::rollback();
 
                 return response()->json([
@@ -161,7 +164,7 @@ class SubordersController extends Controller
 
             return response()->json([
                 'response'  => true,
-                'data' => $suborder
+                'data'      => $suborder
             ]);
         }
 

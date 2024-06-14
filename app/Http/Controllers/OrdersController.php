@@ -151,8 +151,8 @@ class OrdersController extends Controller
     public function Register(Request $request){
 
         $request->validate([
-            "deliveryAddress" => "required",
-            "listItems"  => "required"
+            "deliveryAddress"   => "required",
+            "listItems"         => "required"
         ]);
 
         $listItems = $request->get("listItems");
@@ -187,6 +187,11 @@ class OrdersController extends Controller
             }
 
             $product->unavailable = json_encode($unavailable);
+
+            if($product->quantityType != "ondemand"){
+                $product->quantity = !!intval($product->quantity) ? intval($product->quantity) - (!!intval($item['quantity']) ? $item['quantity'] : 1) : 0;
+            }
+
             $product->save();
         }
 
