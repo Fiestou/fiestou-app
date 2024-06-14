@@ -157,8 +157,8 @@ export function phoneJustNumber(str?: string) {
   return number;
 }
 
-export function justNumber(str: string | undefined | number) {
-  if (!str) return 0;
+export function justNumber(str: any) {
+  if (!str) return;
 
   return str.toString().replace(/\D/g, "");
 }
