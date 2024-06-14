@@ -158,7 +158,9 @@ export function phoneJustNumber(str?: string) {
 }
 
 export function justNumber(str: string | undefined | number) {
-  return typeof str == "string" ? str?.replace(/\D/g, "") : "";
+  if (!str) return 0;
+
+  return str.toString().replace(/\D/g, "");
 }
 
 export function getFirstName(str: string) {

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import { Button } from "@/src/components/ui/form";
+import { Button, Input } from "@/src/components/ui/form";
 import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
 import { ProductType, getPrice } from "@/src/models/product";
@@ -123,24 +123,18 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
               />
             </Link>
             <div className="grid md:flex gap-4 items-center w-full">
-              <div className="w-full">
+              <div className="w-fit pr-10">
                 <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
                   Produtos
                 </div>
               </div>
-              <div className="flex items-center gap-6 w-full md:w-fit">
-                <div className="w-full grid">
-                  <Button
-                    className="whitespace-nowrap"
-                    href="/painel/produtos/novo"
-                  >
-                    Novo produto
-                  </Button>
-                </div>
+              <div className="w-full flex gap-4">
+                <Input placeholder="Pesquisar..." />
                 <div>
-                  <button
+                  <Button
                     type="button"
-                    className="rounded-xl whitespace-nowrap border py-4 text-zinc-900 font-semibold px-8"
+                    style="btn-outline-light"
+                    className="whitespace-nowrap border text-zinc-900 font-semibold px-8"
                   >
                     Filtrar{" "}
                     <Icon
@@ -148,7 +142,17 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                       type="far"
                       className="text-xs ml-1"
                     />
-                  </button>
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 w-full md:w-fit">
+                <div className="w-full grid">
+                  <Button
+                    className="whitespace-nowrap"
+                    href="/painel/produtos/novo"
+                  >
+                    Novo produto
+                  </Button>
                 </div>
               </div>
             </div>
