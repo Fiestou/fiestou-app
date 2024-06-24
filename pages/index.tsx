@@ -1,10 +1,10 @@
 import Newsletter from "@/src/components/common/Newsletter";
-import { Button, Input, Label } from "@/src/components/ui/form";
+import { Button, Input } from "@/src/components/ui/form";
 import Img from "@/src/components/utils/ImgBase";
 import { getImage } from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { ProductType } from "@/src/models/product";
-import Api, { defaultQuery } from "@/src/services/api";
+import Api from "@/src/services/api";
 import Template from "@/src/template";
 import Link from "next/link";
 
@@ -17,8 +17,6 @@ import "swiper/css/pagination";
 import Product from "@/src/components/common/Product";
 import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
-import { useEffect } from "react";
-import axios from "axios";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -122,6 +120,7 @@ export default function Home({
                 href={Home?.main_redirect?.url ?? "#"}
                 className="md:text-lg px-4 py-2 md:py-4 md:px-8"
               >
+                <Icon icon="fa-user-plus" type="far" />
                 {Home?.main_redirect?.label ?? ""}
               </Button>
             </div>
@@ -177,7 +176,9 @@ export default function Home({
             </div> */}
           </div>
           <div className="text-center mt-10">
-            <Button href="/produtos">Ver todos os produtos</Button>
+            <Button href="/produtos">
+              <Icon icon="fa-shopping-bag" type="far" /> Ver todos os produtos
+            </Button>
           </div>
         </div>
       </section>
@@ -262,15 +263,15 @@ export default function Home({
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-xl mx-auto text-center pb-14">
-              <span>{Home?.Categories_title}</span>
+              <span>{Home?.categories_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-                dangerouslySetInnerHTML={{ __html: Home?.Categories_text }}
+                dangerouslySetInnerHTML={{ __html: Home?.categories_text }}
               ></h2>
               <div
                 className="pt-4"
                 dangerouslySetInnerHTML={{
-                  __html: Home?.Categories_description,
+                  __html: Home?.categories_description,
                 }}
               ></div>
             </div>
@@ -318,7 +319,10 @@ export default function Home({
               </Swiper>
             </div>
             <div className="text-center mt-10">
-              <Button href="/produtos">Ver todos os produtos</Button>
+              <Button href="/produtos">
+                <Icon icon="fa-shopping-bag" type="far" />
+                Ver todos
+              </Button>
             </div>
           </div>
         </div>
@@ -369,6 +373,7 @@ export default function Home({
                 ></div>
                 <div className="md:pt-4">
                   <Button href="/parceiros/seja-parceiro">
+                    <Icon icon="fa-store" type="far" />
                     Eu quero ser parceiro
                   </Button>
                 </div>
@@ -522,9 +527,9 @@ export default function Home({
       <section className="pb-14 xl:py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{Home?.Blog_subtitle}</span>
+            <span>{Home?.blog_subtitle}</span>
             <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
-              {Home?.Blog_title}
+              {Home?.blog_title}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-10 md:gap-6">
@@ -536,7 +541,9 @@ export default function Home({
               ))}
           </div>
           <div className="text-center mt-10">
-            <Button href="/Blog">Mais postagens</Button>
+            <Button href="/blog">
+              <Icon icon="fa-newspaper" type="far" /> Mais postagens
+            </Button>
           </div>
         </div>
       </section>

@@ -96,9 +96,7 @@ export default function SidebarCart(attr: SidebarCartType) {
                     className="text-zinc-500 text-base"
                   />
                 </button>
-                <h4 className="text-xl text-left text-zinc-900">
-                  Resumo do pedido
-                </h4>
+                <h4 className="text-xl text-left text-zinc-900">Resumo</h4>
                 <div className="px-3"></div>
               </div>
               <div className="h-full p-4 flex flex-col overflow-y-auto gap-2">

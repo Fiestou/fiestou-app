@@ -83,12 +83,10 @@ export default function MeusDados({
   user,
   page,
   HeaderFooter,
-  DataSeo,
 }: {
   user: UserType;
   page: any;
   HeaderFooter: any;
-  DataSeo: any;
 }) {
   const router = useRouter();
 

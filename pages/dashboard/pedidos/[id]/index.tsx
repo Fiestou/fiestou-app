@@ -9,6 +9,7 @@ import { RateType } from "@/src/models/product";
 import {
   dateBRFormat,
   findDates,
+  getExtenseData,
   getImage,
   getShorDate,
   moneyFormat,
@@ -17,68 +18,28 @@ import Img from "@/src/components/utils/ImgBase";
 import { Button, Label, TextArea } from "@/src/components/ui/form";
 import { useEffect, useRef, useState } from "react";
 import Modal from "@/src/components/utils/Modal";
-import {
-  CompleteOrderMail,
-  PartnerNewOrderMail,
-  RegisterOrderMail,
-} from "@/src/mail";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { deliveryTypes } from "@/src/models/delivery";
-import { CompleteOrderSMS, PartnerNewOrderSMS } from "@/src/sms";
+import Pagarme from "@/src/services/pagarme";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
   const params = ctx.params;
 
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as mailContent",
-          filter: [
-            {
-              key: "slug",
-              value: "email",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
+  let request: any = await api.content({
+    url: "order",
+  });
 
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const mailContent = request?.data?.query?.mailContent ?? [];
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {
       orderId: params.id,
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      mailContent: mailContent[0] ?? {},
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
   };
 }
@@ -90,14 +51,14 @@ const formInitial = {
 
 export default function Pedido({
   orderId,
-  mailContent,
   HeaderFooter,
   DataSeo,
+  Scripts,
 }: {
   orderId: number;
-  mailContent: any;
   HeaderFooter: any;
   DataSeo: any;
+  Scripts: any;
 }) {
   const api = new Api();
 
@@ -106,6 +67,7 @@ export default function Pedido({
     setForm({ ...form, ...value });
   };
 
+  const [cancel, setCancel] = useState(false as boolean);
   const [order, setOrder] = useState({} as OrderType);
   const [products, setProducts] = useState([] as Array<any>);
 
@@ -142,6 +104,12 @@ export default function Pedido({
     handleForm({ loading: false });
   };
 
+  const submitCancel = async () => {
+    const pagarme = new Pagarme();
+
+    const request = await pagarme.cancelOrder(order);
+  };
+
   const [resume, setResume] = useState({} as any);
 
   const renderDelivery = () => {
@@ -153,7 +121,13 @@ export default function Pedido({
       <div key={order.id} className="relative flex pb-8">
         <div className="absolute top-0 left-0 border-l-2 border-dashed h-full ml-3"></div>
         <div className="w-fit relative">
-          <div className="p-3 bg-yellow-300 rounded-full"></div>
+          <div className="p-3 relative bg-green-400 rounded-full">
+            <Icon
+              icon="fa-check"
+              className="text-white absolute text-xs mt-[1px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+              type="far"
+            />
+          </div>
         </div>
         <div className="w-full pl-3">
           <div className="font-bold text-zinc-900">
@@ -186,12 +160,11 @@ export default function Pedido({
             <div className={`bg-white relative rounded-full`}>
               <div
                 className={`${
-                  checkedLevel == validDeliveryTypes.length - 1 &&
-                  checkedLevel == key
+                  key < checkedLevel
                     ? "bg-green-400"
-                    : checkedLevel <= key
-                    ? "bg-zinc-400 animate-pulse"
-                    : "bg-yellow-300"
+                    : checkedLevel == key
+                    ? "bg-yellow-300"
+                    : "bg-zinc-400"
                 } p-3 rounded-full relative`}
               >
                 {(checkedLevel > key ||
@@ -235,54 +208,6 @@ export default function Pedido({
 
     const handle: OrderType = request?.data ?? {};
 
-    // console.log(handle);
-
-    if (
-      !!handle?.metadata?.id &&
-      handle?.metadata?.status != "complete" &&
-      handle?.metadata?.status != "expired"
-    ) {
-      const payment = new Payment();
-      const checkoutSession: any = await payment.getSession(
-        handle?.metadata?.id
-      );
-
-      const updateOrderMetadata = await api.bridge({
-        url: "orders/register-meta",
-        data: {
-          id: handle.id,
-          metadata: checkoutSession?.data,
-        },
-      });
-
-      if (checkoutSession?.data?.status == "complete") {
-        handle.status = 1;
-        handle.deliveryStatus = "processing";
-
-        await CompleteOrderSMS(handle, {
-          subject: mailContent["order_complete_subject"],
-          message: mailContent["order_complete_body"],
-        });
-
-        await PartnerNewOrderSMS(handle, handle?.notificate ?? [], {
-          subject: mailContent["partner_order_subject"],
-          message: mailContent["partner_order_body"],
-        });
-
-        await CompleteOrderMail(handle, {
-          subject: mailContent["order_complete_subject"],
-          image: mailContent["order_complete_image"],
-          html: mailContent["order_complete_body"],
-        });
-
-        await PartnerNewOrderMail(handle, handle?.notificate ?? [], {
-          subject: mailContent["partner_order_subject"],
-          image: mailContent["order_complete_image"],
-          html: mailContent["partner_order_body"],
-        });
-      }
-    }
-
     let dates: any = [];
     let products: any = [];
 
@@ -310,6 +235,10 @@ export default function Pedido({
 
   return (
     <Template
+      scripts={Scripts}
+      metaPage={{
+        title: `Pedido | ${DataSeo?.site_text}`,
+      }}
       header={{
         template: "default",
         position: "solid",
@@ -333,6 +262,7 @@ export default function Pedido({
               </div>
             </div>
           </section>
+
           <section className="">
             <div className="container-medium pb-12">
               <div className="grid md:flex align-top gap-10 md:gap-20">
@@ -356,7 +286,8 @@ export default function Pedido({
                         <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
                           pago
                         </div>
-                      ) : order?.metadata?.status == "expired" ? (
+                      ) : order.status == -2 ||
+                        order?.metadata?.status == "expired" ? (
                         <div className="bg-red-100 text-red-700 rounded text-sm inline-block px-2 py-1">
                           cancelado
                         </div>
@@ -433,32 +364,43 @@ export default function Pedido({
                       ))}
                   </div>
                 </div>
+
                 <div className="w-full md:max-w-[28rem]">
-                  <div className="rounded-2xl bg-zinc-100 p-8">
-                    {order.status == 0 && order?.metadata?.status == "open" && (
+                  <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
+                    {order.status == 0 && (
                       <div>
                         <Button
                           style="btn-success"
                           className="w-full"
-                          href={order?.metadata?.url}
+                          href={`/dashboard/pedidos/pagamento/${order.id}`}
                         >
                           Efetuar pagamento
                         </Button>
                         <div className="border-t -mx-8 my-8"></div>
                       </div>
                     )}
-                    <div className="font-bold text-zinc-900 text-xl mb-6">
-                      Resumo do pedido
+
+                    {order.status == -1 && (
+                      <div>
+                        <div className="bg-zinc-50 text-center p-2 text-zinc-800 rounded">
+                          Seu pagamento está sendo processado...
+                        </div>
+                        <div className="border-t -mx-8 my-8"></div>
+                      </div>
+                    )}
+
+                    <div className="font-title font-bold text-zinc-900 text-xl mb-6">
+                      Resumo
                     </div>
                     <div className="grid gap-6">
-                      <div className="grid gap-2">
-                        <div className="font-title text-zinc-900">
+                      <div className="grid text-sm">
+                        <div className="text-zinc-900">
                           Pedido nº <b>{order.id}</b>
                         </div>
-                        <div className="text-sm">
+                        <div className="">
                           Realizado em {getShorDate(order.created_at)}
                         </div>
-                        <div className="text-sm">
+                        <div className="">
                           Agendado para: {dateBRFormat(resume.startDate)}{" "}
                           {resume.endDate != resume.startDate
                             ? `- ${dateBRFormat(resume.endDate)}`
@@ -493,24 +435,43 @@ export default function Pedido({
                         </div>
                       </div>
 
-                      {/* 
-                      <div>
-                        <hr className="my-0" />
-                      </div>
+                      {!!order.metadata && (
+                        <>
+                          <div>
+                            <hr className="my-0" />
+                          </div>
 
-                      <div className="grid gap-2">
-                        <div className="text-zinc-900 font-bold">
-                          Forma de pagamento
-                        </div>
-                        <div className="text-sm">
-                          Pagamento com cartão de crédito
-                          <br />
-                          MasterCard****2367
-                          <br />
-                          Validade: 09/2024
-                        </div>
-                      </div>
-                      */}
+                          <div className="grid gap-2">
+                            <div className="text-zinc-900 font-bold">
+                              Pagamento
+                              {/* {getExtenseData(order.metadata.paid_at)} */}
+                            </div>
+                            <div className="text-sm flex items-center gap-2">
+                              {!!order.metadata?.payment_method &&
+                              order.metadata?.payment_method == "pix" ? (
+                                <>
+                                  <Img
+                                    src="/images/pagarme/pix-icon.png"
+                                    className="w-[1.75rem]"
+                                  />
+                                  <div className="w-full">PIX</div>
+                                </>
+                              ) : (
+                                <>
+                                  <Img
+                                    src="/images/pagarme/card-icon.png"
+                                    className="w-[1.75rem]"
+                                  />
+                                  <div className="w-full">
+                                    Cartão de crédito :{" "}
+                                    {order.metadata?.installments ?? "1"}x
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
 
                       <div>
                         <hr className="my-0" />
@@ -542,7 +503,7 @@ export default function Pedido({
 
                       <div className="flex items-center gap-2">
                         <div className="w-full font-title text-zinc-900 font-bold">
-                          Valor total
+                          TOTAL
                         </div>
                         <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
                           R$ {moneyFormat(order.total)}
@@ -550,10 +511,50 @@ export default function Pedido({
                       </div>
                     </div>
                   </div>
+
+                  {order.status != -2 && false && (
+                    <button
+                      type="button"
+                      onClick={() => setCancel(true)}
+                      className="text-center mx-auto block mt-4 hover:underline text-zinc-950 ease"
+                    >
+                      cancelar pedido
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           </section>
+
+          <Modal
+            title="Cancelar pedido"
+            status={cancel}
+            close={() => setCancel(false)}
+          >
+            <div className="grid gap-6">
+              <div className="text-center">
+                Ao cancelar seu pedido, uma taxa de serviço poderá ser cobrada e
+                seus itens voltarão para o estoque. Deseja mesmo continuar?
+              </div>
+              <div className="grid gap-2 justify-center">
+                <Button
+                  type="button"
+                  style="btn-danger"
+                  className="text-sm"
+                  onClick={() => submitCancel()}
+                >
+                  Continuar e cancelar pedido
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setCancel(false)}
+                  className="text-center text-sm mx-auto block mt-4 hover:underline text-zinc-950 ease"
+                >
+                  Voltar
+                </button>
+              </div>
+            </div>
+          </Modal>
 
           <Modal
             title="Avaliação de produto"

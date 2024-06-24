@@ -487,7 +487,9 @@ export default function Form({
 
                               <Input
                                 onChange={(e: any) =>
-                                  handleData({ availability: e.target.value })
+                                  handleData({
+                                    availability: justNumber(e.target.value),
+                                  })
                                 }
                                 value={data?.availability ?? 1}
                                 min={1}
@@ -529,10 +531,12 @@ export default function Form({
                               <div className="w-full">
                                 <Input
                                   onChange={(e: any) =>
-                                    handleData({ quantity: e.target.value })
+                                    handleData({
+                                      quantity: justNumber(e.target.value),
+                                    })
                                   }
-                                  value={data?.quantity ?? "1"}
-                                  min="0"
+                                  value={justNumber(data?.quantity)}
+                                  min={0}
                                   className="text-center"
                                   type="number"
                                   name="quantidade"

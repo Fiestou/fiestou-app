@@ -4,42 +4,16 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
+
+  let request: any = await api.content({
+    url: "default",
+  });
 
   const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
 
   return {
     props: {
       HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
     },
     revalidate: 60 * 60 * 60,
   };
@@ -47,11 +21,9 @@ export async function getStaticProps(ctx: any) {
 
 export default function page404({
   HeaderFooter,
-  DataSeo,
 }: {
   content: any;
   HeaderFooter: any;
-  DataSeo: any;
 }) {
   return (
     <Template

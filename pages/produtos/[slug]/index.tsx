@@ -778,6 +778,7 @@ export default function Produto({
                     </div>
                   </div>
                 </div>
+
                 <div className="grid gap-6">
                   {/* {JSON.stringify(activeVariations)} */}
                   {!!product?.attributes &&
@@ -891,15 +892,22 @@ export default function Produto({
                   <div className="md:flex justify-between items-end gap-2">
                     <div className="w-full">
                       <h4 className="font-title text-zinc-900 font-bold py-4 text-sm md:text-lg">
-                        Para quando você precisa?
+                        {!!productUpdated?.title && !productUpdated?.quantity
+                          ? "Produto sem estoque no momento"
+                          : "Para quando você precisa?"}
                       </h4>
                       <div className="calendar relative">
                         <Calendar
                           required
                           unavailable={unavailable ?? []}
-                          onChange={(emit: any) => handleDetails(emit)}
+                          onChange={(emit: any) =>
+                            !!productUpdated?.quantity
+                              ? handleDetails(emit)
+                              : {}
+                          }
                         />
-                        {!productUpdated?.title && (
+                        {(!productUpdated?.title ||
+                          !productUpdated?.quantity) && (
                           <div className="absolute z-10 bg-white opacity-60 w-full h-full top-0 left-0"></div>
                         )}
                       </div>

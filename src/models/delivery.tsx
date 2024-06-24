@@ -1,14 +1,13 @@
 export const deliveryTypes = [
   {
-    name: "Aguardando pagamento",
+    name: "Pagamento",
     icon: "⌛",
     value: "pending",
     background: "bg-zinc-300",
-    description:
-      "Seu pagamento ainda não for confirmado pelo getway de pagamento.",
+    description: "Etapa de confirmação de pagamento.",
   },
   {
-    name: "Processando",
+    name: "Em separação",
     icon: "👍",
     value: "processing",
     background: "bg-blue-400",
@@ -72,3 +71,9 @@ export const deliveryTypes = [
     description: `Esperamos que tenha gostado da experiência FIESTOU. Obrigado!`,
   },
 ];
+
+export const deliveryToName: any = {
+  reception: "Entregar na portaria",
+  door: "Deixar na porta",
+  for_me: "Estarei para receber",
+};

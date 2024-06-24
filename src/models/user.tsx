@@ -9,11 +9,11 @@ export interface BankAccountType {
 }
 
 export interface UserType {
-  id: string | number;
+  id?: string | number;
   hash?: string;
   name: string;
   email: string;
-  date: string;
+  date?: string;
   type?: string;
   person?: string;
   status?: number;
@@ -23,6 +23,7 @@ export interface UserType {
   rg?: string;
   issuer?: string;
   cpf?: string;
+  document?: string;
   profile?: any;
   favorites?: Array<number>;
   bankAccounts?: Array<BankAccountType>;

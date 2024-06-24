@@ -129,8 +129,38 @@ export function phoneNumber(str: string) {
   return str.replace(/\D/g, "");
 }
 
-export function justNumber(str: string | undefined | number) {
-  return typeof str == "string" ? str?.replace(/\D/g, "") : "";
+export function phoneAreaCode(str?: string) {
+  if (!str) return "";
+
+  let cleanNumber = str.replace(/\D/g, "");
+
+  if (cleanNumber.startsWith("55")) {
+    cleanNumber = cleanNumber.substring(2);
+  }
+
+  const areaCode = cleanNumber.substring(0, 2);
+
+  return areaCode;
+}
+
+export function phoneJustNumber(str?: string) {
+  if (!str) return "";
+
+  let cleanNumber = str.replace(/\D/g, "");
+
+  if (cleanNumber.startsWith("55")) {
+    cleanNumber = cleanNumber.substring(2);
+  }
+
+  const number = cleanNumber.substring(2);
+
+  return number;
+}
+
+export function justNumber(str: any) {
+  if (!str) return;
+
+  return str.toString().replace(/\D/g, "");
 }
 
 export function getFirstName(str: string) {
@@ -299,6 +329,17 @@ export function getDate(date?: any, days = 0) {
   return `${year}-${month < 10 ? "0" + month : month}-${
     day < 10 ? "0" + day : day
   }`;
+}
+
+export function CopyClipboard(element: any) {
+  var copyText: any = document.getElementById(element);
+
+  if (!!copyText) {
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+
+    navigator.clipboard.writeText(copyText.value);
+  }
 }
 
 export async function getZipCode(zipCode: string) {

@@ -52,50 +52,16 @@ export async function getStaticProps(ctx: any) {
   const api = new Api();
   const { page } = ctx.params;
 
-  let request: any = {};
-
-  request = await api.call(
+  let request: any = await api.content(
     {
-      url: "request/graph",
-      data: [
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as Scripts",
-          filter: [
-            {
-              key: "slug",
-              value: "scripts",
-              compare: "=",
-            },
-          ],
-        },
-      ],
+      url: "default",
     },
     ctx
   );
 
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.data?.query?.Scripts ?? [];
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   request = await api.get({ url: "content/products" }, ctx);
 
@@ -128,9 +94,9 @@ export async function getStaticProps(ctx: any) {
       products: request?.data ?? [],
       paginate: pages,
       content: content,
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
     revalidate: 60 * 60 * 60,
   };
@@ -183,7 +149,7 @@ export default function Produtos({
       <RegionConfirm />
 
       <section className="bg-cyan-500  pt-24 md:pt-32 relative">
-        <div className="container-medium relative pb-14 md:pb-20 text-white">
+        <div className="container-medium relative pb-14 md:pb-16 text-white">
           <div className="flex items-end">
             <div className="w-full">
               <div className="pb-4">
@@ -210,7 +176,7 @@ export default function Produtos({
         </div>
       </section>
 
-      <div className="relative mt-[-3rem] md:mt-[-4.5rem]">
+      <div className="relative mt-[-1.85rem]">
         <Filter />
       </div>
 

@@ -7,69 +7,24 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { encode as base64_encode, decode as base64_decode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
-import { RegisterUserMail } from "@/src/mail";
 import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.call({
-    url: "request/graph",
-    data: [
-      {
-        model: "page as account",
-        filter: [
-          {
-            key: "slug",
-            value: "account",
-            compare: "=",
-          },
-        ],
-      },
-      {
-        model: "page as mail",
-        filter: [
-          {
-            key: "slug",
-            value: "email",
-            compare: "=",
-          },
-        ],
-      },
-      {
-        model: "page as DataSeo",
-        filter: [
-          {
-            key: "slug",
-            value: "seo",
-            compare: "=",
-          },
-        ],
-      },
-      {
-        model: "page as Scripts",
-        filter: [
-          {
-            key: "slug",
-            value: "scripts",
-            compare: "=",
-          },
-        ],
-      },
-    ],
+  let request: any = await api.content({
+    url: "register",
   });
 
-  const account = request?.data?.query?.account ?? [];
-  const mail = request?.data?.query?.mail ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const Scripts = request?.data?.query?.Scripts ?? [];
+  const Register = request?.data?.Register ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {
-      account: account[0] ?? {},
-      mail: mail[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      Scripts: Scripts[0] ?? {},
+      Register: Register,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
   };
 }
@@ -85,13 +40,11 @@ const FormInitialType = {
 };
 
 export default function CadastreSe({
-  account,
-  mail,
+  Register,
   DataSeo,
   Scripts,
 }: {
-  account: any;
-  mail: any;
+  Register: any;
   DataSeo: any;
   Scripts: any;
 }) {
@@ -174,16 +127,7 @@ export default function CadastreSe({
     });
 
     if (data.response) {
-      await RegisterUserMail(data.user, {
-        subject: mail["register_subject"],
-        image: mail["register_image"],
-        html: mail["register_body"],
-      });
-
-      router.push({
-        pathname: "/acesso",
-        query: { modal: "register" },
-      });
+      window.location.href = "/acesso?modal=register";
     } else {
       setForm({ ...form, sended: data.response });
     }
@@ -321,10 +265,10 @@ export default function CadastreSe({
                   </div>
                 </div>
 
-                {!!account?.terms_text && (
+                {!!Register?.terms_text && (
                   <div
                     className="mt-4 text-xs leading-tight"
-                    dangerouslySetInnerHTML={{ __html: account?.terms_text }}
+                    dangerouslySetInnerHTML={{ __html: Register?.terms_text }}
                   ></div>
                 )}
 

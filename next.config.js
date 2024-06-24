@@ -54,7 +54,10 @@ const nextConfig = {
     GOOGLE_ID: process.env.GOOGLE_ID,
     GOOGLE_SECRET: process.env.GOOGLE_SECRET,
     TOKEN: process.env.TOKEN,
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    PAGARME_API: process.env.PAGARME_API,
+    PAGARME_ID: process.env.PAGARME_ID,
+    PAGARME_PUBLIC_KEY: process.env.PAGARME_PUBLIC_KEY,
+    PAGARME_SECRET_KEY: process.env.PAGARME_SECRET_KEY,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     MAIL_MAILER: process.env.MAIL_MAILER,
