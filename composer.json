@@ -8,7 +8,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^7.3|^8.0",
+        "php": "^8.2",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "intervention/image": "^2.7",
@@ -44,6 +44,9 @@
         }
     },
     "scripts": {
+        "docker-up": "docker-compose up -d",
+        "docker-down": "docker-compose down",
+        "start": "php -S 127.0.0.1:8000 -t public",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
@@ -64,6 +67,9 @@
         }
     },
     "config": {
+        "platform": {
+            "php": "8.2.20"
+        },
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true

@@ -1,0 +1,43 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: fiestou_app
+        container_name: fiestou_app
+        restart: unless-stopped
+        working_dir: /var/www
+        volumes:
+            - ./src:/var/www
+            - ./src/vendor:/var/www/vendor
+            - ./src/node_modules:/var/www/node_modules
+        ports:
+            - "8000:8000"
+        environment:
+            - APP_ENV=local
+            - APP_DEBUG=true
+            - APP_KEY=base64:1U3JhzlQTO4C5FlM0Q6XO0eQKk5hfQyKk34Ldfhfxc0=
+        networks:
+            - laravel
+
+    mysql:
+        image: mysql:5.7
+        container_name: laravel-mysql
+        restart: unless-stopped
+        ports:
+            - "3306:3306"
+        environment:
+            - MYSQL_DATABASE=fiestou_prod
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_PASSWORD=
+            - MYSQL_USER=root
+        volumes:
+            - mysql-data:/var/lib/mysql
+        networks:
+            - laravel
+
+networks:
+    laravel:
+
+volumes:
+    mysql-data:

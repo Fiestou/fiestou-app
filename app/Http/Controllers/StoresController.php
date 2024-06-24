@@ -226,8 +226,8 @@ class StoresController extends Controller
                             ->where('store', $store->id)
                             ->with(["store"]);
 
-        if($request->has('busca') && $request->get('busca')){
-            $busca = $request->get('busca');
+        if($request->has('search') && $request->get('search')){
+            $busca = $request->get('search');
             $products = $products->where(function ($query) use ($busca) {
                 $busca = is_array($busca) ? $busca : [$busca];
                 foreach($busca as $term){
@@ -239,22 +239,33 @@ class StoresController extends Controller
             });
         }
 
-        $count = $products;
-        $metadata['count'] = $count->count();
-
         if($request->has('limit') && $request->get('limit')){
             $products = $products->limit($request->get('limit'));
         }
 
-        if($request->has('offset') && $request->get('offset')){
-            $products = $products->offset($request->get('offset'));
+        if($request->has('order') && $request->get('order')){
+            $products = $products->orderBy($request->get('order'));
+        }
+        else{
+            $products = $products->orderBy('created_at', $request->has('order') && $request->get('order') == "asc" ? "asc" : "desc");
         }
 
-        $products = $products->orderBy('created_at', $request->has('ordem') && $request->get('ordem') == "asc" ? "asc" : "desc");
+        $limit  = $request->get("limit", 25);
+        $page   = $request->get("page", 0);
+
+        $products = $products->paginate($limit, ['*'], 'page', $page);
+
+        $items = $products->items();
+        $total = $products->total();
+
+        $metadata = [
+            'pages' => ceil($total / $limit),
+            "total" => $products->total()
+        ];
 
         return response()->json([
             'response'  => true,
-            'data'      => Product::normalize($products->get(), false),
+            'data'      => Product::normalize($items, false),
             'metadata'  => $metadata
         ]);
     }
