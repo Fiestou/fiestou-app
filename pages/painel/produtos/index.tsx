@@ -62,15 +62,47 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
   const [placeholder, setPlaceholder] = useState(true as boolean);
 
+  const [search, setSearch] = useState("" as string);
+
+  const [filter, setFilter] = useState({
+    page: 1,
+    search: "",
+    limit: 20,
+    order: "",
+    pages: 0,
+    total: 0,
+  } as {
+    page: number;
+    limit: number;
+    search: string;
+    order: string;
+    pages: number;
+    total: number;
+  });
+
+  const handleFilter = (value: any) => {
+    setFilter({ ...filter, ...value });
+  };
+
   const [products, setProducts] = useState([] as Array<any>);
   const getProducts = async () => {
     let request: any = await api.bridge({
       method: "get",
       url: `stores/products`,
+      data: filter,
     });
 
     setPlaceholder(false);
     setProducts(request?.data ?? []);
+
+    handleFilter({
+      total: request.metadata.total,
+      pages: request.metadata.pages ?? 0,
+    });
+
+    if (!!window) {
+      window.scrollTo({ top: 0, left: 0 });
+    }
   };
 
   const RemoveProduct = async (item: any) => {
@@ -88,6 +120,10 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
     setPlaceholder(false);
   };
+
+  useEffect(() => {
+    getProducts();
+  }, [filter.search, filter.page, filter.limit]);
 
   useEffect(() => {
     if (!!window) {
@@ -128,8 +164,18 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                   Produtos
                 </div>
               </div>
-              <div className="w-full flex gap-4">
-                <Input placeholder="Pesquisar..." />
+              <form
+                onSubmit={(e: any) => {
+                  e.preventDefault();
+                  handleFilter({ search: search, page: 1 });
+                }}
+                className="w-full flex gap-4"
+                method="POST"
+              >
+                <Input
+                  onChange={(e: any) => setSearch(e.target.value)}
+                  placeholder="Pesquisar..."
+                />
                 <div>
                   <Button
                     type="button"
@@ -144,7 +190,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                     />
                   </Button>
                 </div>
-              </div>
+              </form>
               <div className="flex items-center gap-4 w-full md:w-fit">
                 <div className="w-full grid">
                   <Button
@@ -267,7 +313,29 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                   </div>
                 ))}
           </div>
-          <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div>
+          {!!filter.pages && filter.pages > 1 && (
+            <div className="relative w-full pt-4">
+              <div className="flex gap-1 justify-center md:gap-2">
+                {Array.from({
+                  length: filter.pages,
+                }).map((_, key) => (
+                  <Button
+                    style="btn-white"
+                    type="button"
+                    onClick={() => handleFilter({ page: key + 1 })}
+                    key={key}
+                    className={`${
+                      filter.page == key + 1 && "bg-yellow-400"
+                    } p-4 text-sm rounded-full`}
+                  >
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                      {key + 1}
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </Template>

@@ -108,7 +108,11 @@ export default function Pedidos({ orders }: { orders: Array<any> }) {
                     <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
                       cliente:
                     </span>
-                    <span className="font-bold">{suborder.user.name}</span>
+
+                    <span className="font-bold">
+                      {suborder.order.user.name}
+                    </span>
+                    <div className="text-sm">{suborder.order.user.email}</div>
                   </div>
                   <div className="w-full lg:w-[32rem]">
                     <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">

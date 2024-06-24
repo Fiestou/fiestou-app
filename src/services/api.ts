@@ -43,6 +43,12 @@ class Api {
         }
       }
 
+      if (method === "get" && !!data && Object.keys(data).length > 0) {
+        const queryString = new URLSearchParams(data).toString();
+        url = `${url}?${queryString}`;
+        data = {};
+      }
+
       api[method == "get" ? "get" : "post"](url, data ?? {}, opts ?? {})
         .then(({ data }: any) => {
           resolve(data);

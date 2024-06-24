@@ -265,10 +265,14 @@ export default function Pedido({
                   </div>
                   <div>
                     {order?.deliveryAddress?.street},{" "}
-                    {order?.deliveryAddress?.number} -{" "}
+                    {order?.deliveryAddress?.number},{" "}
                     {order?.deliveryAddress?.neighborhood}
                   </div>
-                  <div>CEP: {order?.deliveryAddress?.zipCode}</div>
+                  <div>
+                    CEP: {order?.deliveryAddress?.zipCode}
+                    <br />
+                    {order?.deliveryAddress?.complement}
+                  </div>
                   <div>
                     {order?.deliveryAddress?.city} |{" "}
                     {order?.deliveryAddress?.state}
