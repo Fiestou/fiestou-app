@@ -166,20 +166,23 @@ export default function Conta({
   const handleZipCode = async (zipCode: string, key: any) => {
     const location = await getZipCode(zipCode);
 
-    if (!!location) {
-      let address = locations.filter(
-        (item: AddressType, find: any) => key == find
-      )[0];
+    let address = locations.filter(
+      (item: AddressType, find: any) => key == find
+    )[0];
 
-      address["zipCode"] = zipCode;
+    address["zipCode"] = zipCode;
+    address["country"] = "Brasil";
+
+    if (!location?.erro) {
       address["street"] = location.logradouro;
       address["neighborhood"] = location.bairro;
       address["city"] = location.localidade;
       address["state"] = location.uf;
-      address["country"] = "Brasil";
-
-      handleAddress(address, key);
     }
+
+    console.log(address);
+
+    handleAddress(address, key);
   };
 
   const renderAction = (
@@ -304,17 +307,22 @@ export default function Conta({
                                 handleZipCode(e.target.value, key)
                               }
                               required
-                              defaultValue={locate?.zipCode}
+                              value={locate?.zipCode ?? ""}
                               placeholder="CEP"
                             />
                             <div className="flex gap-2">
                               <div className="w-full">
                                 <Input
                                   name="rua"
-                                  readonly
                                   required
-                                  defaultValue={locate?.street}
+                                  value={locate?.street ?? ""}
                                   placeholder="Rua"
+                                  onChange={(e: any) =>
+                                    handleAddress(
+                                      { street: e.target.value },
+                                      key
+                                    )
+                                  }
                                 />
                               </div>
                               <div className="w-[10rem]">
@@ -327,7 +335,7 @@ export default function Conta({
                                     )
                                   }
                                   required
-                                  defaultValue={locate?.number}
+                                  value={locate?.number ?? ""}
                                   placeholder="Número"
                                 />
                               </div>
@@ -336,10 +344,15 @@ export default function Conta({
                               <div className="w-full">
                                 <Input
                                   name="bairro"
-                                  readonly
                                   required
-                                  defaultValue={locate?.neighborhood}
+                                  value={locate?.neighborhood ?? ""}
                                   placeholder="Bairro"
+                                  onChange={(e: any) =>
+                                    handleAddress(
+                                      { neighborhood: e.target.value },
+                                      key
+                                    )
+                                  }
                                 />
                               </div>
                             </div>
@@ -347,19 +360,26 @@ export default function Conta({
                               <div className="w-full">
                                 <Input
                                   name="cidade"
-                                  readonly
                                   required
-                                  defaultValue={locate?.city}
+                                  value={locate?.city ?? ""}
                                   placeholder="Cidade"
+                                  onChange={(e: any) =>
+                                    handleAddress({ city: e.target.value }, key)
+                                  }
                                 />
                               </div>
                               <div className="w-[10rem]">
                                 <Input
                                   name="estado"
-                                  readonly
                                   required
-                                  defaultValue={locate?.state}
+                                  value={locate?.state ?? ""}
                                   placeholder="UF"
+                                  onChange={(e: any) =>
+                                    handleAddress(
+                                      { state: e.target.value },
+                                      key
+                                    )
+                                  }
                                 />
                               </div>
                             </div>
@@ -374,7 +394,7 @@ export default function Conta({
                                   )
                                 }
                                 required
-                                defaultValue={locate?.complement}
+                                value={locate?.complement ?? ""}
                                 placeholder="Complemento"
                               />
                             </div>
@@ -383,7 +403,7 @@ export default function Conta({
                                 <input
                                   name="prioridade"
                                   type="checkbox"
-                                  defaultChecked={locate.main}
+                                  defaultChecked={!!locate.main}
                                   onChange={(e: any) =>
                                     handleAddress({ main: !locate.main }, key)
                                   }
