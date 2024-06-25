@@ -8,6 +8,7 @@ import {
   findDates,
   getZipCode,
   isCEPInRegion,
+  justNumber,
   moneyFormat,
 } from "@/src/helper";
 import { Button, Input } from "@/src/components/ui/form";
@@ -138,6 +139,9 @@ export default function Checkout({
   const [customLocation, setCustomLocation] = useState(false as boolean);
   const [locations, setLocations] = useState([] as Array<AddressType>);
   const [address, setAddress] = useState({} as AddressType);
+  const handleAddress = (value: any) => {
+    setAddress({ ...address, ...value });
+  };
 
   useEffect(() => {
     setLocations(user?.address ?? []);
@@ -152,19 +156,20 @@ export default function Checkout({
   const handleZipCode = async (zipCode: string) => {
     const location = await getZipCode(zipCode);
 
-    if (!!location) {
-      let handleAddress = {} as AddressType;
+    let handle = {} as AddressType;
 
-      handleAddress["zipCode"] = zipCode;
-      handleAddress["street"] = location.logradouro;
-      handleAddress["neighborhood"] = location.bairro;
-      handleAddress["city"] = location.localidade;
-      handleAddress["state"] = location.uf;
-      handleAddress["country"] = "Brasil";
-      handleAddress["main"] = true;
+    handle["zipCode"] = justNumber(zipCode);
+    handle["country"] = "Brasil";
 
-      setAddress({ ...address, ...handleAddress });
+    if (!location?.erro) {
+      handle["street"] = location.logradouro;
+      handle["neighborhood"] = location.bairro;
+      handle["city"] = location.localidade;
+      handle["state"] = location.uf;
+      handle["main"] = true;
     }
+
+    handleAddress(handle);
   };
 
   const submitOrder = async (e: any) => {
@@ -317,13 +322,20 @@ export default function Checkout({
                           </div>
                         )}
 
-                      {!address?.complement && (
-                        <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
+                      {(!address?.complement ||
+                        !address?.street ||
+                        !address?.number ||
+                        !address?.city ||
+                        !address?.state) && (
+                        <div className="flex items-start bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
                           <Icon
                             icon="fa-exclamation-triangle"
-                            className="mr-2"
+                            className="mr-3 mt-1"
                           />
-                          <div>Seu endereço não possui complemento</div>
+                          <div>
+                            Preencha seu endereço corretamente. Não se esqueça
+                            do informar o complemento.
+                          </div>
                         </div>
                       )}
 
@@ -414,18 +426,19 @@ export default function Checkout({
                               <div className="w-full">
                                 <Input
                                   name="rua"
-                                  readonly
                                   required
                                   defaultValue={address?.street}
                                   placeholder="Rua"
+                                  onChange={(e: any) =>
+                                    handleAddress({ street: e.target.value })
+                                  }
                                 />
                               </div>
                               <div className="w-[10rem]">
                                 <Input
                                   name="numero"
                                   onChange={(e: any) =>
-                                    setAddress({
-                                      ...address,
+                                    handleAddress({
                                       number: e.target.value,
                                     })
                                   }
@@ -439,10 +452,14 @@ export default function Checkout({
                               <div className="w-full">
                                 <Input
                                   name="bairro"
-                                  readonly
                                   required
                                   defaultValue={address?.neighborhood}
                                   placeholder="Bairro"
+                                  onChange={(e: any) =>
+                                    handleAddress({
+                                      neighborhood: e.target.value,
+                                    })
+                                  }
                                 />
                               </div>
                             </div>
@@ -450,19 +467,27 @@ export default function Checkout({
                               <div className="w-full">
                                 <Input
                                   name="cidade"
-                                  readonly
                                   required
                                   defaultValue={address?.city}
                                   placeholder="Cidade"
+                                  onChange={(e: any) =>
+                                    handleAddress({
+                                      city: e.target.value,
+                                    })
+                                  }
                                 />
                               </div>
                               <div className="w-[10rem]">
                                 <Input
                                   name="estado"
-                                  readonly
                                   required
                                   defaultValue={address?.state}
                                   placeholder="UF"
+                                  onChange={(e: any) =>
+                                    handleAddress({
+                                      state: e.target.value,
+                                    })
+                                  }
                                 />
                               </div>
                             </div>
@@ -470,8 +495,7 @@ export default function Checkout({
                               <Input
                                 name="complemento"
                                 onChange={(e: any) =>
-                                  setAddress({
-                                    ...address,
+                                  handleAddress({
                                     complement: e.target.value,
                                   })
                                 }
@@ -662,7 +686,7 @@ export default function Checkout({
                           R$ {moneyFormat(resume.total)}
                         </div>
                       </div>
-                      {!!CheckoutPageContent?.terms_list && (
+                      {!!CheckoutPageContent?.terms_list?.length && (
                         <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
                           {CheckoutPageContent?.terms_list.map(
                             (term: any, key: any) => (
