@@ -80,7 +80,7 @@ const nextConfig = {
     scrollRestoration: false,
   },
   images: {
-    formats: ["image/webp"],
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",

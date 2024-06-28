@@ -23,6 +23,8 @@ export async function getStaticProps(ctx: any) {
 
   let request: any = await api.content({ url: `home` });
 
+  console.log(request);
+
   const Categories = request?.data?.Categories ?? [];
   const Home = request?.data?.Home ?? {};
   const Products = request?.data?.Products ?? [];

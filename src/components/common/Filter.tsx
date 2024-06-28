@@ -11,7 +11,7 @@ import React from "react";
 import Check from "../ui/form/CheckUI";
 import Colors from "../ui/form/ColorsUI";
 
-interface QueryType {
+export interface FilterQueryType {
   categories: Array<string>;
   colors: Array<string>;
   range: number;
@@ -27,7 +27,7 @@ export default function Filter(params: any) {
     colors: [],
     range: 1000,
     order: "desc",
-  } as QueryType);
+  } as FilterQueryType);
   const handleQueryValues = (value: any) => {
     setQuery({ ...query, ...value });
   };

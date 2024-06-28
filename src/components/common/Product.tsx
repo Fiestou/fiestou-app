@@ -19,7 +19,7 @@ export default function Product({ product }: { product: ProductType | any }) {
           <div className="aspect-[4.3/3] bg-zinc-100 relative overflow-hidden">
             {!!getImage(imageCover) && (
               <Img
-                src={getImage(imageCover)}
+                src={getImage(imageCover, "sm")}
                 size="md"
                 className="absolute scale-[1.01] group-hover:scale-[1.05] ease object-cover h-full inset-0 w-full"
               />
@@ -39,11 +39,21 @@ export default function Product({ product }: { product: ProductType | any }) {
             </div>
             <div className="w-full pt-3 flex gap-2 md:gap-2 items-center">
               <div className="w-fit">
-                <div className="inline-block bg-zinc-100 whitespace-nowrap text-zinc-900 rounded text-xs px-2 py-1">
-                  {product.comercialType == "selling"
-                    ? "Para venda"
-                    : "Para alugar"}
-                </div>
+                {product.comercialType == "selling" ? (
+                  <div className="flex items-center gap-1 bg-blue-100 whitespace-nowrap text-blue-900 rounded text-xs px-2 py-1">
+                    <Icon
+                      icon="fa-shopping-bag"
+                      className="text-xs"
+                      type="far"
+                    />
+                    <span>Para venda</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 bg-lime-100 whitespace-nowrap text-lime-900 rounded text-xs px-2 py-1">
+                    <Icon icon="fa-clock" className="text-xs" type="far" />
+                    <span>Para alugar</span>
+                  </div>
+                )}
               </div>
               {!!product.rate && (
                 <div className="relative h-[.5rem]">
