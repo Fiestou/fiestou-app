@@ -13,6 +13,8 @@ use App\Models\User;
 use App\Models\Media;
 use App\Models\Customer;
 use App\Models\Withdraw;
+use App\Models\Category;
+use App\Models\CategoryRel;
 use Illuminate\Support\Str;
 
 class StoresController extends Controller
@@ -243,11 +245,34 @@ class StoresController extends Controller
             $products = $products->limit($request->get('limit'));
         }
 
-        if($request->has('order') && $request->get('order')){
-            $products = $products->orderBy($request->get('order'));
+        if($request->has('colors') && $request->get('colors')){
+            $colors = (is_array($request->get('colors'))) ? $request->get('colors') : [$request->get('colors')];
+            $products = $products->where(function ($query) use ($colors) {
+                foreach ($colors as $key => $color) {
+                    $query->orWhere('color', "like", '%'.$color.'%');
+                }
+            });
+        }
+
+        if($request->has('range') && $request->get('range')){
+            $products = $products->where('price', '<=', $request->get('range'));
+        }
+
+        if($request->has('categories') && $request->input('categories')){
+            $categories = (is_array($request->input('categories'))) ? $request->input('categories') : [$request->input('categories')];
+            $categories = Category::whereIn('slug', $categories)->pluck('id')->toArray();
+
+            $whereIn    = CategoryRel::whereIn('category', $categories)->pluck('product')->toArray();
+            $products   = $products->whereIn('id', $whereIn);
+        }
+
+        if($request->has('order') && !!$request->get('order')){
+            $products = $products->orderBy('created_at', $request->get('order') == "asc" ? "asc" : "desc");
         }
         else{
-            $products = $products->orderBy('created_at', $request->has('order') && $request->get('order') == "asc" ? "asc" : "desc");
+            $products = $products->orderBy('title', 'asc')
+                                ->orderBy('description', 'asc')
+                                ->orderBy('tags', 'asc');
         }
 
         $limit  = $request->get("limit", 25);
