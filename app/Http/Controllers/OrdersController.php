@@ -188,7 +188,7 @@ class OrdersController extends Controller
 
             $product->unavailable = json_encode($unavailable);
 
-            if($product->quantityType != "ondemand"){
+            if($product->quantityType != "ondemand" && $product->comercialType == "renting"){
                 $product->quantity = !!intval($product->quantity) ? intval($product->quantity) - (!!intval($item['quantity']) ? $item['quantity'] : 1) : 0;
             }
 
