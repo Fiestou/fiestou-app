@@ -43,7 +43,7 @@ export interface ProductType {
   fragility?: string;
   vehicle?: string;
   freeTax?: string;
-  comercialType?: string;
+  comercialType?: string | "selling" | "renting";
   schedulingPeriod?: string;
   schedulingTax?: number;
   schedulingDiscount?: number;
