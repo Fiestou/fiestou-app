@@ -46,7 +46,9 @@ export default function Template({
         !(
           hostname.includes("vercel") ||
           hostname.includes("localhost-") ||
-          hostname.includes("admin")
+          hostname.includes("admin") ||
+          hostname.includes("checkout") ||
+          hostname.includes("carrinho")
         ) && !!scripts?.id
       );
     }

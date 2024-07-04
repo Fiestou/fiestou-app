@@ -577,7 +577,7 @@ export default function Pagamento({
                         </div>
                         <div className="px-3 pt-6">
                           <div className="px-4 py-3 bg-zinc-100 rounded">
-                            <div className="text-sm line-clamp-3">
+                            <div className="text-sm line-clamp-3 break-all">
                               {pix.code}
                             </div>
                           </div>

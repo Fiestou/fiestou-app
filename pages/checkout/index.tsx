@@ -138,7 +138,9 @@ export default function Checkout({
 
   const [customLocation, setCustomLocation] = useState(false as boolean);
   const [locations, setLocations] = useState([] as Array<AddressType>);
-  const [address, setAddress] = useState({} as AddressType);
+  const [address, setAddress] = useState({
+    country: "Brasil",
+  } as AddressType);
   const handleAddress = (value: any) => {
     setAddress({ ...address, ...value });
   };
@@ -707,6 +709,7 @@ export default function Checkout({
                       <div className="grid fixed z-10 md:relative bg-white md:bg-transparent bottom-0 left-0 w-full p-1 md:p-0">
                         {!!address?.street &&
                         !!address?.complement &&
+                        !!address?.number &&
                         !!schedule &&
                         !!address?.zipCode &&
                         !!isCEPInRegion(address?.zipCode) ? (
