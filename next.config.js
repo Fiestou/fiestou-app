@@ -80,11 +80,10 @@ const nextConfig = {
     scrollRestoration: false,
   },
   images: {
-    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "d3hwvozn85ys0n.cloudfront.net",
+        hostname: "api.fiestou.com.br",
         port: "",
         pathname: "/**",
       },

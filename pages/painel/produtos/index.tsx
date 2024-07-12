@@ -82,7 +82,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
     order: string;
     pages: number;
     total: number;
-    query: FilterQueryType;
+    query: any;
   });
 
   const handleFilter = (value: any) => {
