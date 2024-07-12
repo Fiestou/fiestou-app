@@ -88,6 +88,7 @@ class Media extends BaseModel
                 $media->title = $imageTitle;
                 $media->slug = $imageName;
                 $media->base_url = env('APP_URL') . "/storage";
+
                 $media->description = '';
                 $media->file_name = $imageTitle . $extension;
                 $media->file_size = $file_size;
