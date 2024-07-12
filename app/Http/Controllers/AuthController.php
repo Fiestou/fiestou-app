@@ -201,7 +201,7 @@ class AuthController extends Controller
             $user->save();
         }
 
-        return redirect()->away(env('APP_URL').'/acesso');
+        return redirect()->away(env('CLIENT_URL').'/acesso');
     }
 
     public function CheckIn(Request $request)

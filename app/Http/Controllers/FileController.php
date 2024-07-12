@@ -205,7 +205,7 @@ class FileController extends Controller
                     $media->user_id         = $user->id;
                     $media->title           = $original_filename;
                     $media->slug            = $filename;
-                    $media->base_url        = 'https://d1wd21ey9b0wqd.cloudfront.net/';
+                    $media->base_url        = env('APP_URL')."/storage";
                     $media->description     = '';
                     $media->file_name       = $filename;
                     $media->file_size       = $filesize;
@@ -274,14 +274,14 @@ class FileController extends Controller
         $quality        = 100;
         $max_width      = 1900;
 
-        $s3 = Storage::disk('s3');
+        $storage = Storage::disk('public'); // Mudança para o storage local
 
         $medias = [];
         $log    = [];
 
         foreach($files as $file) {
             if (in_array($file->getClientOriginalExtension(), ['jpeg', 'png', 'jpg', 'gif', 'webp'])) {
-                $uploads_path  = env('UPLOADS_S3') . '/';
+                $uploads_path  = 'uploads/';
                 $uploads_path .= !!$dir ? Str::slug($dir, '-') . '/' : NULL;
                 $uploads_path .= $index . '/';
                 $uploads_path .= date('d-m-Y') . '/';
@@ -298,13 +298,13 @@ class FileController extends Controller
                                         $img->aspectRatio();
                                     })->stream('webp', $quality) : $image->stream('webp', $quality);
 
-                if($s3->put($uploads_path . $imageName.'.webp', $resized_image)){
+                if($storage->put($uploads_path . $imageName . '.webp', $resized_image)){
 
-                    $sizes = ['default' => $uploads_path . $imageName.'.webp'];
+                    $sizes = ['default' => $uploads_path . $imageName . '.webp'];
 
                     foreach($image_sizes as $image_size){
 
-                        $size_with_filename = $image_size['name'] . '-' . $imageName.'.webp';
+                        $size_with_filename = $image_size['name'] . '-' . $imageName . '.webp';
 
                         $make       = Image::make($file->getRealPath());
                         $max_width  = $image_size['width'];
@@ -312,10 +312,10 @@ class FileController extends Controller
                                             $img->aspectRatio();
                                         })->stream('webp', $quality) : $make->stream('webp', $quality);
 
-                        $path = $s3->put($uploads_path . $size_with_filename, $resized);
-                        $path = $s3->get($uploads_path . $size_with_filename);
+                        $path = $storage->put($uploads_path . $size_with_filename, $resized);
+                        $path = $storage->url($uploads_path . $size_with_filename);
 
-                        $sizes[$image_size['name']] = $uploads_path . $size_with_filename;
+                        $sizes[$image_size['name']] = $path;
                     }
 
                     $media                  = new Media();
@@ -323,29 +323,27 @@ class FileController extends Controller
                     $media->user_id         = $user->id;
                     $media->title           = $imageTitle;
                     $media->slug            = $imageName;
-                    $media->base_url        = 'https://d3hwvozn85ys0n.cloudfront.net/';
+                    $media->base_url        = env('APP_URL')."storage";
                     $media->description     = '';
-                    $media->file_name       = $imageTitle.'.webp';
+                    $media->file_name       = $imageTitle . '.webp';
                     $media->file_size       = $file_size;
                     $media->path            = $uploads_path;
-                    $media->permanent_url   = $uploads_path . $imageName.'.webp';
+                    $media->permanent_url   = $uploads_path . $imageName . '.webp';
                     $media->extension       = '.webp';
                     $media->details         = json_encode(['sizes' => $sizes]);
                     $media->permissions     = json_encode([]);
                     $media->type            = 'image';
 
                     if(!$media->save()){
-
                         foreach($image_sizes as $image_size){
-                            $s3->delete($uploads_path . $image_size['name'] . '-' . $imageName.'.webp');
+                            $storage->delete($uploads_path . $image_size['name'] . '-' . $imageName . '.webp');
                         }
 
                         $feedback = [
                             'status' => false,
-                            'media' => 'Erro ao enviar o arquivo: '.$imageTitle
+                            'media' => 'Erro ao enviar o arquivo: ' . $imageTitle
                         ];
-                    }
-                    else{
+                    } else {
                         $feedback = [
                             'status' => true,
                             'media' => $media
@@ -364,9 +362,9 @@ class FileController extends Controller
         }
 
         return response()->json([
-            'response'  => true,
+            'response' => true,
             'log'      => $log,
-            'medias'    => $medias
+            'medias'   => $medias
         ]);
     }
 
@@ -387,14 +385,14 @@ class FileController extends Controller
         $quality        = 100;
         $max_width      = 1900;
 
-        $s3 = Storage::disk('s3');
+        $storage = Storage::disk('public');
 
         $medias = [];
         $log    = [];
 
         foreach($files as $file) {
-            $uploads_path  = env('UPLOADS_S3') . '/';
-            $uploads_path .= !!$dir ? Str::slug($dir, '-') . '/' : NULL;
+            $uploads_path  = '/';
+            $uploads_path .= !!$dir ? Str::slug($dir, '-') . '/' : '';
             $uploads_path .= $index . '/';
             $uploads_path .= date('d-m-Y') . '/';
 
@@ -405,7 +403,7 @@ class FileController extends Controller
             $split      = explode(',', substr( $file['base64'] , 5 ) , 2);
             $split      = explode(';', $split[0],2);
             $split      = explode('/', $split[0],2);
-            $extension  = (isset($split[1])) ? $split[1] : '.webp';
+            $extension  = (isset($split[1])) ? $split[1] : 'webp';
 
             if(count($split) == 2){
                 $extension = '.'.$extension;
@@ -420,7 +418,7 @@ class FileController extends Controller
                                     $img->aspectRatio();
                                 })->stream('webp', $quality) : $image->stream('webp', $quality);
 
-            if($s3->put($uploads_path . $imageName.'.webp', $resized_image)){
+            if($storage->put($uploads_path . $imageName.'.webp', $resized_image)){
 
                 $sizes = ['default' => $uploads_path . $imageName.'.webp'];
 
@@ -435,8 +433,7 @@ class FileController extends Controller
                                         $img->aspectRatio();
                                     })->stream('webp', $quality) : $make->stream('webp', $quality);
 
-                    $path = $s3->put($uploads_path . $size_with_filename, $resized);
-                    $path = $s3->get($uploads_path . $size_with_filename);
+                    $storage->put($uploads_path . $size_with_filename, $resized);
 
                     $sizes[$image_size['name']] = $uploads_path . $size_with_filename;
                 }
@@ -446,7 +443,7 @@ class FileController extends Controller
                 $media->user_id         = $user->id;
                 $media->title           = $imageTitle;
                 $media->slug            = $imageName;
-                $media->base_url        = 'https://d3hwvozn85ys0n.cloudfront.net/';
+                $media->base_url        = env('APP_URL')."/storage";
                 $media->description     = '';
                 $media->file_name       = $imageTitle.'.webp';
                 $media->file_size       = $file_size;
@@ -458,9 +455,8 @@ class FileController extends Controller
                 $media->type            = ($extension == '.pdf') ? 'file' : 'image';
 
                 if(!$media->save()){
-
                     foreach($image_sizes as $image_size){
-                        $s3->delete($uploads_path . $image_size['name'] . '-' . $imageName.'.webp');
+                        $storage->delete($uploads_path . $image_size['name'] . '-' . $imageName.'.webp');
                     }
 
                     $feedback = [

@@ -76,7 +76,7 @@ class Product extends BaseModel
                     $gallery = Media::whereIn('id', json_decode($product->gallery, TRUE))->get();
 
                     foreach ($gallery as $key => $item) {
-                        $item->details = json_decode($item->details);
+                        $item->details = isset($item->details) ? json_decode($item->details) : [];
                     }
 
                     $product->gallery = $gallery;
@@ -84,15 +84,26 @@ class Product extends BaseModel
 
                 if(isset($product->store) && isset($product->store->cover) && !!$product->store->cover){
                     $cover = Media::where('id', $product->store->cover)->first();
-                    $cover->details = json_decode($cover->details);
+
+                    if($cover){
+                        $cover->details = isset($cover->details) && !!$cover->details ? json_decode($cover->details, TRUE) : [];
+                    }
+                    else{
+                        $cover = [];
+                    }
 
                     $product->store->cover = $cover;
                 }
 
                 if(isset($product->store) && isset($product->store->profile) && !!$product->store->profile){
-
                     $profile = Media::where('id', $product->store->profile)->first();
-                    $profile->details = json_decode($profile->details);
+
+                    if($profile){
+                        $profile->details = isset($profile->details) && !!$profile->details ? json_decode($profile->details) : [];
+                    }
+                    else{
+                        $profile = [];
+                    }
 
                     $product->store->profile = $profile;
                 }

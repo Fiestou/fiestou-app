@@ -38,7 +38,7 @@ class Message extends BaseModel
     }
 
     public static function RecoveryUser($user, $token){
-        $content = '<div style="padding: 48px 48px 32px;"><p>Acesse o link abaixo para recuperar seu acesso: </p><p><a href="'.env('APP_URL').'/recuperar/senha?token='.$token.'&email='.$user->email.'" style="border-radius: 6px;text-decoration: none;display: inline-block;font-weight:600;color:black;background-color:#ffda4a;padding: .85rem 1.25rem;">Redefinir senha</a></p></div>';
+        $content = '<div style="padding: 48px 48px 32px;"><p>Acesse o link abaixo para recuperar seu acesso: </p><p><a href="'.env('CLIENT_URL').'/recuperar/senha?token='.$token.'&email='.$user->email.'" style="border-radius: 6px;text-decoration: none;display: inline-block;font-weight:600;color:black;background-color:#ffda4a;padding: .85rem 1.25rem;">Redefinir senha</a></p></div>';
 
         // return Message::sendMail('rafaelcarvalhosjrp@gmail.com', '', "Recuperação de Senha", $content);
         return Message::sendMail($user->email, $user->name, "Recuperação de Senha", $content);
@@ -101,7 +101,7 @@ class Message extends BaseModel
         $html = str_replace('{items_order}', $table, $html);
         $html = str_replace('{order_code}', '#' . $order->id, $html);
 
-        $html .= "<br/><p style='text-align: center;'>Acompanhe o status do pedido</p><p style='text-align: center;'><a href='" . env('APP_URL') . "/dashboard/pedidos/{$order->id}' style='text-decoration: none;display: inline-block;font-weight:600;color:black;background-color:#ffda4a;border-radius: 6px;padding: .85rem 1.25rem;'>Acompanhar </a></p>";
+        $html .= "<br/><p style='text-align: center;'>Acompanhe o status do pedido</p><p style='text-align: center;'><a href='" . env('CLIENT_URL') . "/dashboard/pedidos/{$order->id}' style='text-decoration: none;display: inline-block;font-weight:600;color:black;background-color:#ffda4a;border-radius: 6px;padding: .85rem 1.25rem;'>Acompanhar </a></p>";
 
         $html = $content['image'] . '<div style="padding: 24px 48px 32px;">' . $html . '</div>';
 

@@ -48,14 +48,11 @@ class Media extends BaseModel
         $quality        = 100;
         $max_width      = 1900;
 
-        $s3 = Storage::disk('s3');
-
-        $medias = [];
-        $log    = [];
+        $storage = Storage::disk('public'); // Usar o disco público para armazenar localmente
 
         foreach($files as $file) {
 
-            $uploads_path  = env('UPLOADS_S3') . $path;
+            $uploads_path  = $path ? $path . '/' : '';
 
             $image      = Image::make($file->getRealPath());
             $imageTitle = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -69,13 +66,13 @@ class Media extends BaseModel
                                     $img->aspectRatio();
                                 })->stream('webp', $quality) : $image->stream('webp', $quality);
 
-            if($s3->put($uploads_path . $imageName.'.webp', $resized_image)){
+            if($storage->put($uploads_path . $imageName . $extension, $resized_image)){
 
-                $sizes = ['default' => $uploads_path . $imageName.'.webp'];
+                $sizes = ['default' => $uploads_path . $imageName . $extension];
 
                 foreach($image_sizes as $image_size){
 
-                    $size_with_filename = $image_size['name'] . '-' . $imageName.'.webp';
+                    $size_with_filename = $image_size['name'] . '-' . $imageName . $extension;
 
                     $make       = Image::make($file->getRealPath());
                     $max_width  = $image_size['width'];
@@ -83,8 +80,7 @@ class Media extends BaseModel
                                         $img->aspectRatio();
                                     })->stream('webp', $quality) : $make->stream('webp', $quality);
 
-                    $path = $s3->put($uploads_path . $size_with_filename, $resized);
-                    $path = $s3->get($uploads_path . $size_with_filename);
+                    $storage->put($uploads_path . $size_with_filename, $resized);
 
                     $sizes[$image_size['name']] = $uploads_path . $size_with_filename;
                 }
@@ -94,13 +90,13 @@ class Media extends BaseModel
                 $media->user_id         = $user->id;
                 $media->title           = $imageTitle;
                 $media->slug            = $imageName;
-                $media->base_url        = 'https://d3hwvozn85ys0n.cloudfront.net/';
+                $media->base_url        = env('APP_URL')."/storage";
                 $media->description     = '';
-                $media->file_name       = $imageTitle.'.webp';
+                $media->file_name       = $imageTitle . $extension;
                 $media->file_size       = $file_size;
                 $media->path            = $uploads_path;
-                $media->permanent_url   = $uploads_path . $imageName.'.webp';
-                $media->extension       = '.webp';
+                $media->permanent_url   = $uploads_path . $imageName . $extension;
+                $media->extension       = $extension;
                 $media->details         = json_encode(['sizes' => $sizes]);
                 $media->permissions     = json_encode([]);
                 $media->type            = 'image';
@@ -110,7 +106,7 @@ class Media extends BaseModel
                 }
                 else{
                     foreach($image_sizes as $image_size){
-                        $s3->delete($uploads_path . $image_size['name'] . '-' . $imageName.'.webp');
+                        $storage->delete($uploads_path . $image_size['name'] . '-' . $imageName . $extension);
                     }
                 }
             }

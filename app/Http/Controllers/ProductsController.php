@@ -389,7 +389,7 @@ class ProductsController extends Controller
 
         $files  = $request->file('medias');
 
-        $medias = Media::MakeUpload($files, "/products/".$store->id."/".date('d-m-Y')."/", $store->id);
+        $medias = Media::MakeUpload($files, "/products/".$store->id."/".date('d-m-Y'), $store->id);
 
         if($request->has('product') && !!$request->get('product')){
             $product = Product::where('id', $request->get('product'))
