@@ -203,13 +203,13 @@ export default function Home({
                 />
               </Button>
             </div>
-            <div className="order-3 md:order-2 w-full relative overflow-hidden">
+            <div className="order-3 md:order-2 w-full relative overflow-hidden rounded-[.5rem]">
               <Swiper
                 spaceBetween={16}
                 modules={[Navigation]}
                 navigation={{
-                  prevEl: ".swiper-prev", // define o botão anterior
-                  nextEl: ".swiper-next", // define o botão próximo
+                  prevEl: ".swiper-prev",
+                  nextEl: ".swiper-next",
                 }}
                 breakpoints={{
                   0: {
@@ -434,8 +434,8 @@ export default function Home({
                         spaceBetween={16}
                         modules={[Pagination, Navigation]}
                         navigation={{
-                          nextEl: ".swiper-quotes-next", // define o botão próximo
-                          prevEl: ".swiper-quotes-prev", // define o botão anterior
+                          nextEl: ".swiper-quotes-next",
+                          prevEl: ".swiper-quotes-prev",
                         }}
                         breakpoints={{
                           0: {

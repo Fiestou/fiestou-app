@@ -1,12 +1,11 @@
 import Img from "@/src/components/utils/ImgBase";
-import { getUser } from "@/src/contexts/AuthContext";
 import { getImage, getSocial } from "@/src/helper";
 import FIcon from "@/src/icons/fontAwesome/FIcon";
 import BIcon from "@/src/icons/bootstrapIcons/BIcon";
-import { UserType } from "@/src/models/user";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button } from "@/src/components/ui/form";
 
 export interface FooterType {
   template?: string | "default";
@@ -28,13 +27,47 @@ export function Footer(props: FooterType) {
     ...props,
   });
 
+  const [whatsapp, setWhatsapp] = useState(false as boolean);
+
+  const getWhatsapp = () => {
+    const url = window.location.href;
+
+    return url.includes("admin") ||
+      url.includes("carrinho") ||
+      url.includes("checkout") ? (
+      <></>
+    ) : (
+      <div
+        id="whatsapp-button"
+        className={`fixed z-20 m-2 md:m-4 bottom-0 right-0`}
+      >
+        <Button
+          target="_blank"
+          href="https://api.whatsapp.com/send?phone=558399812030&text=Olá, preciso tirar uma dúvida"
+          style="btn-success"
+          className="py-2 px-4 md:px-5"
+        >
+          <FIcon icon="fa-whatsapp" type="fab" className="font-light text-xl" />
+          <span className="hidden md:inline-block">Chame no whats</span>
+        </Button>
+      </div>
+    );
+  };
+
+  useEffect(() => {
+    if (!!window) {
+      setWhatsapp(true);
+    }
+  }, []);
+
   if (params.template == "clean") {
-    return <div className="pt-10 md:py-10"></div>;
+    return <div className="pt-10 md:py-10">{whatsapp && getWhatsapp()}</div>;
   }
 
   if (params.template == "default") {
     return (
       <div>
+        {whatsapp && getWhatsapp()}
         <div className="container-medium py-14">
           <div className="grid md:flex items-start text-center md:text-left gap-4 md:gap-8">
             <div className="w-full md:max-w-[24rem]">

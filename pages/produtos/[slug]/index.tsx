@@ -587,7 +587,7 @@ export default function Produto({
           <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
         </div>
       </section>
-      <section className="md:pb-20">
+      <section className="">
         <div className="container-medium">
           <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-8 items-start">
             <div className="w-full md:w-1/2 md:pb-4">
@@ -1120,7 +1120,7 @@ export default function Produto({
       </section>
 
       {!!product?.combinations && (
-        <section className="py-20 md:pt-6">
+        <section className="pt-16">
           <div className="container-medium">
             <div className="flex items-center gap-2">
               <div>
@@ -1130,7 +1130,7 @@ export default function Produto({
                 Combina com
               </h4>
             </div>
-            <div className="mt-6 md:mt-8 -mx-4 md:mx-0">
+            <div className="mt-6 md:mt-8">
               <div className="relative overflow-hidden rounded-xl">
                 {renderSlideProducts(product?.combinations ?? [])}
               </div>
@@ -1140,7 +1140,7 @@ export default function Produto({
       )}
 
       {!!match.length && (
-        <section className="py-20 md:pt-6">
+        <section className="pt-16">
           <div className="container-medium">
             <div className="flex items-center gap-2">
               <div>
@@ -1150,7 +1150,7 @@ export default function Produto({
                 Veja também
               </h4>
             </div>
-            <div className="mt-6 md:mt-8 -mx-4 md:mx-0">
+            <div className="mt-6 md:mt-8">
               <div className="relative overflow-hidden rounded-xl">
                 {renderSlideProducts(match)}
               </div>
@@ -1159,12 +1159,26 @@ export default function Produto({
         </section>
       )}
 
+      <div className="pt-16"></div>
+
       <SidebarCart
         status={cartModal}
         close={() => setCartModal(false as boolean)}
       />
 
       <Newsletter />
+
+      {layout.isMobile && (
+        <div
+          dangerouslySetInnerHTML={{
+            __html: `<style>
+        #whatsapp-button {
+          margin-bottom: 4.5rem !important;
+        }
+      </style>`,
+          }}
+        ></div>
+      )}
     </Template>
   );
 }

@@ -48,8 +48,8 @@ export default function Default({
     <>
       <header
         className={`${
-          params.position == "fixed" ? "fixed top-0 left-0 z-[99]" : "relative"
-        } w-full ${params.background}`}
+          params.position == "fixed" ? "fixed top-0 left-0" : "relative"
+        } w-full z-[99] ${params.background}`}
       >
         <div
           className={`${
@@ -149,6 +149,17 @@ export default function Default({
           </div>
         )}
       </header>
+
+      {menuModal && (
+        <div
+          dangerouslySetInnerHTML={{
+            __html: `<style>
+          body, html{
+          overflow:hidden}
+        </style>`,
+          }}
+        ></div>
+      )}
 
       <div
         className={`${

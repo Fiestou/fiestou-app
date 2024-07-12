@@ -280,7 +280,7 @@ export default function Checkout({
       >
         <section className="py-6 md:py-10">
           <form onSubmit={(e: any) => submitOrder(e)}>
-            <div className="container-medium pb-12">
+            <div className="container-medium pb-14">
               <div className="grid md:flex gap-4 md:gap-10 items-start">
                 <div className="grid gap-6 w-full">
                   <div className="pb-4 md:pb-6 border-b">
@@ -716,14 +716,14 @@ export default function Checkout({
                           <Button
                             loading={form.loading}
                             style="btn-success"
-                            className="py-4 md:py-6 px-3"
+                            className="py-6 mb-4 md:mb-0"
                           >
                             Confirmar e efetuar pagamento
                           </Button>
                         ) : (
                           <button
                             type="button"
-                            className="btn bg-green-500 text-white border border-transparent opacity-40 py-4 md:py-6 px-3 text cursor-not-allowed"
+                            className="btn bg-green-500 text-white border border-transparent opacity-40 py-6 mb-4 md:mb-0 text cursor-not-allowed"
                           >
                             Confirmar e efetuar pagamento
                           </button>

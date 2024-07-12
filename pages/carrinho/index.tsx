@@ -136,7 +136,7 @@ export default function Carrinho({
       {!!listCart.length ? (
         <>
           <section className="py-6 md:py-10">
-            <div className="container-medium">
+            <div className="container-medium pb-14">
               <div className="grid md:flex gap-4 md:gap-10 items-start">
                 <div className="grid gap-6 w-full">
                   <div className="pb-4 md:pb-6 border-b">
