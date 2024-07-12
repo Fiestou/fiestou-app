@@ -50,7 +50,7 @@ class Message extends BaseModel
 
         $content = Message::GetContentMessage("register");
 
-        $validationLink = env('API_URL') . "/api/user-active?token={$user->hash}";
+        $validationLink = env('APP_URL') . "/api/user-active?token={$user->hash}";
 
         $html = $content['html'] . "<p><a href='{$validationLink}' style='border-radius: 6px;text-decoration: none;display: inline-block;font-weight:600;color:black;background-color:#ffda4a;padding: .85rem 1.25rem;'>Validar email</a></p>";
         $html = str_replace('{user_name}', $user->name, $html);
