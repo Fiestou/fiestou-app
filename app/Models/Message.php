@@ -26,7 +26,7 @@ class Message extends BaseModel
         $content["image"]    = $handle->{$type."_image"};
         $content["html"]     = $handle->{$type."_body"};
 
-        $content["image"] = (isset($content['image']['medias'])) ? Media::GetImage($content['image']['medias'][0]) : "";
+        $content["image"] = (isset($content['image']['medias'])) && isset($content['image']['medias'][0]) ? Media::GetImage($content['image']['medias'][0]) : "";
 
         $image = !empty($content["image"])
         ? '<img src="' . $content["image"] . '" style="width:100%;height:auto;" />'
