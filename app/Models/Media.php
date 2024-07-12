@@ -39,73 +39,69 @@ class Media extends BaseModel
         return $mediaList;
     }
 
-    public static function MakeUpload($files, $path = NULL, $app = NULL){
-
+    public static function MakeUpload($files, $path = NULL, $app = NULL)
+    {
         $medias = [];
 
-        $user           = auth()->user();
-        $image_sizes    = config('image.image_sizes');
-        $quality        = 100;
-        $max_width      = 1900;
+        $user = auth()->user();
+        $image_sizes = config('image.image_sizes');
+        $max_width = 1900;
 
         $storage = Storage::disk('public'); // Usar o disco público para armazenar localmente
 
-        foreach($files as $file) {
+        foreach ($files as $file) {
+            $uploads_path = $path ? $path . '/' : '';
 
-            $uploads_path  = $path ? $path . '/' : '';
-
-            $image      = Image::make($file->getRealPath());
+            $image = Image::make($file->getRealPath());
             $imageTitle = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $imageName  = rand(0, 3000).'-'.Str::slug($imageTitle, '-');
-            $extension  = '.webp';
+            $imageName = rand(0, 3000) . '-' . Str::slug($imageTitle, '-');
+            $extension = '.' . $file->getClientOriginalExtension(); // Mantém a extensão original
 
-            $file_size  = $file->getSize() / 1024 / 1024; // Convert bytes to MB
-            $width      = $image->width();
-            $height     = $image->height();
-            $resized_image  = ($width > $max_width) ? $image->resize($max_width, null, function ($img) {
-                                    $img->aspectRatio();
-                                })->stream('webp', $quality) : $image->stream('webp', $quality);
+            $file_size = $file->getSize() / 1024 / 1024; // Convert bytes to MB
+            $width = $image->width();
+            $height = $image->height();
+            $resized_image = ($width > $max_width) ? $image->resize($max_width, null, function ($img) {
+                $img->aspectRatio();
+            })->stream() : $image->stream();
 
-            if($storage->put($uploads_path . $imageName . $extension, $resized_image)){
+            if ($storage->put($uploads_path . $imageName . $extension, $resized_image)) {
 
                 $sizes = ['default' => $uploads_path . $imageName . $extension];
 
-                foreach($image_sizes as $image_size){
-
+                foreach ($image_sizes as $image_size) {
                     $size_with_filename = $image_size['name'] . '-' . $imageName . $extension;
 
-                    $make       = Image::make($file->getRealPath());
-                    $max_width  = $image_size['width'];
-                    $resized    = ($width > $max_width) ? $make->resize($max_width, null, function ($img) {
-                                        $img->aspectRatio();
-                                    })->stream('webp', $quality) : $make->stream('webp', $quality);
+                    $make = Image::make($file->getRealPath());
+                    $max_width = $image_size['width'];
+                    $resized = ($width > $max_width) ? $make->resize($max_width, null, function ($img) {
+                        $img->aspectRatio();
+                    })->stream() : $make->stream();
 
                     $storage->put($uploads_path . $size_with_filename, $resized);
 
                     $sizes[$image_size['name']] = $uploads_path . $size_with_filename;
                 }
 
-                $media                  = new Media();
-                $media->application_id  = $app;
-                $media->user_id         = $user->id;
-                $media->title           = $imageTitle;
-                $media->slug            = $imageName;
-                $media->base_url        = env('APP_URL')."/storage";
-                $media->description     = '';
-                $media->file_name       = $imageTitle . $extension;
-                $media->file_size       = $file_size;
-                $media->path            = $uploads_path;
-                $media->permanent_url   = $uploads_path . $imageName . $extension;
-                $media->extension       = $extension;
-                $media->details         = json_encode(['sizes' => $sizes]);
-                $media->permissions     = json_encode([]);
-                $media->type            = 'image';
+                $media = new Media();
+                $media->application_id = $app;
+                $media->user_id = $user->id;
+                $media->title = $imageTitle;
+                $media->slug = $imageName;
+                $media->base_url = env('APP_URL') . "/storage";
+                $media->description = '';
+                $media->file_name = $imageTitle . $extension;
+                $media->file_size = $file_size;
+                $media->path = $uploads_path;
+                $media->permanent_url = $uploads_path . $imageName . $extension;
+                $media->extension = $extension;
+                $media->details = json_encode(['sizes' => $sizes]);
+                $media->permissions = json_encode([]);
+                $media->type = 'image';
 
-                if($media->save()){
+                if ($media->save()) {
                     $medias[] = $media;
-                }
-                else{
-                    foreach($image_sizes as $image_size){
+                } else {
+                    foreach ($image_sizes as $image_size) {
                         $storage->delete($uploads_path . $image_size['name'] . '-' . $imageName . $extension);
                     }
                 }
@@ -114,6 +110,7 @@ class Media extends BaseModel
 
         return $medias;
     }
+
 
     public function RemoveMedia()
     {

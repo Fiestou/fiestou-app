@@ -15,8 +15,7 @@ return [
     |
     */
 
-    'driver' => 'gd',
-    // 'driver' => 'imagick',
+    'driver' => 'imagick',
     'image_sizes' => [
         ['width' => 150, 'name' => 'thumb', 'default' => true],
         ['width' => 400, 'name' => 'sm', 'default' => false],
