@@ -49,6 +49,8 @@ class Api {
         data = {};
       }
 
+      // console.log(url);
+
       api[method == "get" ? "get" : "post"](url, data ?? {}, opts ?? {})
         .then(({ data }: any) => {
           resolve(data);
@@ -87,6 +89,7 @@ class Api {
 
   async bridge({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.API_REST}${url}`;
+
     return this.request({ method, url, data, opts }, ctx);
   }
 

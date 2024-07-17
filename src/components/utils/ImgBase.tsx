@@ -33,7 +33,7 @@ export default function Img(props: ImageType) {
       alt={props?.alt ?? "Imagem"}
       width={size(props?.size)}
       height={size(props?.size)}
-      onError={(e: any) => e.target.remove()}
+      // onError={(e: any) => e.target.remove()}
       className={props?.className ?? ""}
     />
   );

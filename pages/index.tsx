@@ -23,8 +23,6 @@ export async function getStaticProps(ctx: any) {
 
   let request: any = await api.content({ url: `home` });
 
-  console.log(request);
-
   const Categories = request?.data?.Categories ?? [];
   const Home = request?.data?.Home ?? {};
   const Products = request?.data?.Products ?? [];
@@ -64,6 +62,8 @@ export default function Home({
   DataSeo: any;
   Scripts: any;
 }) {
+  console.log(Home?.partner_list);
+
   return (
     <Template
       scripts={Scripts}
@@ -340,15 +340,16 @@ export default function Home({
                 dangerouslySetInnerHTML={{ __html: Home?.partner_text }}
               ></h2>
             </div>
-            <div className="flex justify-center gap-2 md:gap-12">
-              {!!Home?.partner_list &&
-                Home?.partner_list.map((item: any, key: any) => (
+            {!!Home?.partner_list?.length && (
+              <div className="flex justify-center gap-2 md:gap-12">
+                {Home?.partner_list.map((item: any, key: any) => (
                   <Link
                     key={key}
                     href={item?.partner_item_link}
                     title={item?.partner_item_title}
+                    className="block w-full max-w-[10rem] border rounded-xl border-zinc-300 bg-white"
                   >
-                    <div className="aspect-square max-w-[10rem] border rounded-xl border-zinc-300 bg-white">
+                    <div className="aspect-square">
                       {!!getImage(item?.partner_item_image) && (
                         <Img
                           src={getImage(item?.partner_item_image)}
@@ -358,7 +359,8 @@ export default function Home({
                     </div>
                   </Link>
                 ))}
-            </div>
+              </div>
+            )}
             <div className="bg-white mt-6 lg:mt-20 rounded-xl grid lg:flex items-center relative overflow-hidden">
               <div className="w-full grid gap-6 p-6 md:p-16">
                 <h4

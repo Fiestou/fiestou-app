@@ -171,7 +171,7 @@ export default function Variable({
                   </div>
                   <div className="form-group">
                     <Label>Título</Label>
-                    <Input
+                    <input
                       value={
                         !!attribute?.title
                           ? attribute?.title
@@ -183,6 +183,7 @@ export default function Variable({
                       name="titulo_atrbt"
                       placeholder="Ex: Tamanho, Cor, Material"
                       required
+                      className="form-control"
                     />
                   </div>
                   <div className="flex gap-6">
@@ -217,7 +218,7 @@ export default function Variable({
                     {attribute?.selectType == "checkbox" && (
                       <div className="w-1/4 form-group">
                         <Label style="light">Limite de seleção</Label>
-                        <Input
+                        <input
                           type="number"
                           value={attribute.limit ?? ""}
                           onChange={(e: any) =>
@@ -227,7 +228,7 @@ export default function Variable({
                             )
                           }
                           name="limite_atrbt"
-                          className="text-sm p-3"
+                          className="text-sm p-3 form-control"
                         />
                       </div>
                     )}

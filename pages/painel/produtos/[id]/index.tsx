@@ -13,7 +13,16 @@ import {
   Select,
   TextArea,
 } from "@/src/components/ui/form";
-import { getImage, handleTags, justNumber, slugfy } from "@/src/helper";
+import {
+  decimalNumber,
+  getImage,
+  handleTags,
+  justNumber,
+  justValidateNumber,
+  moneyFormat,
+  realMoneyNumber,
+  slugfy,
+} from "@/src/helper";
 import FileInput from "@/src/components/ui/form/FileInputUI";
 import HelpCard from "@/src/components/common/HelpCard";
 import Cookies from "js-cookie";
@@ -273,17 +282,18 @@ export default function Form({
                       <div className="grid gap-2">
                         <div className="form-group">
                           <Label>Título</Label>
-                          <Input
+                          <input
                             type="text"
                             name="titulo"
                             onChange={(e: any) =>
                               handleData({ title: e.target.value })
                             }
-                            value={data.title}
+                            value={data?.title ?? ""}
                             required
                             placeholder="Digite o nome completo"
+                            className="form-control"
                           />
-                          <Input
+                          <input
                             type="text"
                             name="slug"
                             onChange={(e: any) =>
@@ -292,21 +302,22 @@ export default function Form({
                             value={slugfy(data.slug ?? data.title)}
                             required
                             placeholder="Configure a slug para o link"
-                            className="mt-2 text-sm p-2 bg-zinc-100 border-0"
+                            className="mt-2 text-sm p-2 rounded-md bg-zinc-100 border-0"
                           />
                         </div>
 
                         <div className="form-group">
                           <Label>Subtítulo</Label>
-                          <Input
+                          <input
                             type="text"
                             name="subtitulo"
                             onChange={(e: any) =>
                               handleData({ subtitle: e.target.value })
                             }
-                            value={data.subtitle}
+                            value={data?.subtitle ?? ""}
                             required
                             placeholder="Digite o subtítulo"
+                            className="form-control"
                           />
                         </div>
 
@@ -340,13 +351,16 @@ export default function Form({
                         <div className="grid gap-2 grid-cols-2">
                           <div className="form-group">
                             <Label>Preço de venda/aluguel</Label>
-                            <Input
+                            <input
                               onChange={(e: any) =>
-                                handleData({ price: parseInt(e.target.value) })
+                                handleData({
+                                  price: realMoneyNumber(e.target.value),
+                                })
                               }
-                              {...(!!data?.price ? { value: data?.price } : {})}
+                              value={!!data?.price ? data?.price : ""}
                               required
                               type="text"
+                              className="form-control"
                               name="preco_venda"
                               placeholder="0.00"
                             />
@@ -354,16 +368,15 @@ export default function Form({
 
                           <div className="form-group">
                             <Label>Preço promocional</Label>
-                            <Input
+                            <input
                               onChange={(e: any) =>
                                 handleData({
-                                  priceSale: parseInt(e.target.value),
+                                  priceSale: realMoneyNumber(e.target.value),
                                 })
                               }
-                              {...(!!data?.priceSale
-                                ? { value: data?.priceSale }
-                                : {})}
+                              value={!!data?.priceSale ? data?.priceSale : ""}
                               type="text"
+                              className="form-control"
                               name="preco_promo"
                               placeholder="0.00"
                             />
@@ -419,7 +432,7 @@ export default function Form({
                               Desconto
                               <small className="font-medium pl-2">(em %)</small>
                             </Label>
-                            <Input
+                            <input
                               name="desconto_aluguel"
                               onChange={(e: any) =>
                                 handleData({
@@ -428,10 +441,11 @@ export default function Form({
                                   ),
                                 })
                               }
-                              value={justNumber(data.schedulingDiscount)}
+                              value={data?.schedulingDiscount ?? ""}
                               type="text"
                               placeholder="Ex: 10%"
                               required
+                              className="form-control"
                             />
                           </div>
                         </>
@@ -454,22 +468,23 @@ export default function Form({
                       <h4 className="text-2xl text-zinc-900 mb-2">Estoque</h4>
                       <div className="grid gap-2">
                         <div className="flex gap-2">
-                          <div className="w-full grid gap-2 sm:grid-cols-3">
+                          <div className="w-full grid gap-2 sm:grid-cols-2">
                             <div className="form-group">
                               <Label>SKU</Label>
-                              <Input
+                              <input
                                 onChange={(e: any) =>
                                   handleData({ sku: e.target.value })
                                 }
-                                value={data?.sku}
+                                value={data?.sku ?? ""}
                                 type="text"
                                 name="sku"
                                 placeholder="#0000"
+                                className="form-control"
                               />
                             </div>
-                            <div className="form-group">
+                            {/* <div className="form-group">
                               <Label>Código do produto</Label>
-                              <Input
+                              <input
                                 onChange={(e: any) =>
                                   handleData({ code: e.target.value })
                                 }
@@ -477,15 +492,16 @@ export default function Form({
                                 type="text"
                                 name="codigo"
                                 placeholder="1234"
+                                className="form-control"
                               />
-                            </div>
+                            </div> */}
                             <div className="form-group">
                               <div className="flex items-center">
                                 <Label>Disponibilidade</Label>
                                 <span className="pl-2 text-xs">(em dias)</span>
                               </div>
 
-                              <Input
+                              <input
                                 onChange={(e: any) =>
                                   handleData({
                                     availability: justNumber(e.target.value),
@@ -496,6 +512,7 @@ export default function Form({
                                 type="number"
                                 name="disponibilidade"
                                 placeholder="Em dias"
+                                className="form-control"
                               />
                             </div>
                           </div>
@@ -529,7 +546,7 @@ export default function Form({
                             {(!data?.quantityType ||
                               data?.quantityType == "manage") && (
                               <div className="w-full">
-                                <Input
+                                <input
                                   onChange={(e: any) =>
                                     handleData({
                                       quantity: justNumber(e.target.value),
@@ -537,7 +554,7 @@ export default function Form({
                                   }
                                   value={justNumber(data?.quantity)}
                                   min={0}
-                                  className="text-center"
+                                  className="form-control text-center"
                                   type="number"
                                   name="quantidade"
                                   placeholder="Digite a quantidade"
@@ -557,52 +574,64 @@ export default function Form({
                       <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
                         <div className="form-group">
                           <Label>Peso</Label>
-                          <Input
+                          <input
                             onChange={(e: any) =>
-                              handleData({ weight: parseFloat(e.target.value) })
+                              handleData({
+                                weight: decimalNumber(e.target.value),
+                              })
                             }
-                            value={data?.weight}
+                            value={data?.weight ?? ""}
                             type="text"
                             name="peso"
                             placeholder="0.00 (kg)"
+                            className="form-control"
                           />
                         </div>
                         <div className="form-group">
                           <Label>Comprimento</Label>
-                          <Input
+                          <input
                             onChange={(e: any) =>
-                              handleData({ length: parseFloat(e.target.value) })
+                              handleData({
+                                length: decimalNumber(e.target.value),
+                              })
                             }
-                            value={data?.length}
+                            value={data?.length ?? ""}
                             type="text"
                             name="comprimento"
                             placeholder="0.00 (m)"
+                            className="form-control"
                           />
                         </div>
 
                         <div className="form-group">
                           <Label>Largura</Label>
-                          <Input
+                          <input
                             onChange={(e: any) =>
-                              handleData({ width: parseFloat(e.target.value) })
+                              handleData({
+                                width: decimalNumber(e.target.value),
+                              })
                             }
-                            value={data?.width}
+                            value={data?.width ?? ""}
                             type="text"
                             name="largura"
                             placeholder="0.00 (m)"
+                            className="form-control"
                           />
                         </div>
 
                         <div className="form-group">
                           <Label>Altura</Label>
-                          <Input
+                          <input
                             onChange={(e: any) =>
-                              handleData({ height: parseFloat(e.target.value) })
+                              handleData({
+                                height: decimalNumber(e.target.value),
+                              })
                             }
-                            value={data?.height}
+                            value={data?.height ?? ""}
                             type="text"
                             name="altura"
                             placeholder="0.00 (m)"
+                            className="form-control"
                           />
                         </div>
                       </div>
@@ -635,13 +664,13 @@ export default function Form({
                           </div>
                           <div className="relative">
                             <div className="w-full">
-                              <Input
+                              <input
                                 onChange={(e: any) => setTags(e.target.value)}
                                 type="text"
                                 name="tags"
-                                defaultValue={tags}
-                                className="pr-28"
+                                value={tags ?? ""}
                                 placeholder="Exemplo: Fazenda, Desenho animado, Galinha"
+                                className="form-control pr-28"
                               />
                             </div>
                             <div className="absolute right-0 top-1/2 -translate-y-1/2">
@@ -795,16 +824,17 @@ export default function Form({
 
                         <div className="form-group">
                           <Label>Taxa de entrega</Label>
-                          <Input
-                            value={data.freeTax}
+                          <input
+                            value={data?.freeTax ?? ""}
                             type="text"
                             name="taxa_entrega"
                             onChange={(e: any) =>
                               handleData({
-                                freeTax: e.target.value,
+                                freeTax: realMoneyNumber(e.target.value),
                               })
                             }
                             placeholder="R$ 00.00"
+                            className="form-control"
                           />
                         </div>
 

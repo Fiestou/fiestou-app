@@ -3,7 +3,7 @@ import { AttributeType } from "@/src/models/product";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useState } from "react";
-import { shortId } from "@/src/helper";
+import { realMoneyNumber, shortId } from "@/src/helper";
 
 export default function Variations({
   attribute,
@@ -65,8 +65,8 @@ export default function Variations({
                 <div className="flex gap-2 py-2">
                   <div className="w-full">
                     <div className="form-group mt-0">
-                      <Input
-                        className="text-sm p-3"
+                      <input
+                        className="text-sm p-3 form-control"
                         onChange={(e: any) =>
                           updateVariation(
                             { title: e.target.value },
@@ -87,11 +87,11 @@ export default function Variations({
                   {attribute?.priceType == "on" && (
                     <div className="w-fit">
                       <div className="form-group mt-0">
-                        <Input
-                          className="text-sm p-3"
+                        <input
+                          className="text-sm p-3 form-control"
                           onChange={(e: any) =>
                             updateVariation(
-                              { price: e.target.value },
+                              { price: realMoneyNumber(e.target.value) },
                               variation.id
                             )
                           }

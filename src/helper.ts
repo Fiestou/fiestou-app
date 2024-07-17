@@ -169,6 +169,46 @@ export function getFirstName(str: string) {
   return str.split(" ")[0];
 }
 
+export function justValidateNumber(input: any) {
+  if (!input) return "";
+
+  // Regex que mantém apenas números (0-9), pontos (.) e vírgulas (,)
+  return input.toString().replace(/[^0-9.,]/g, "");
+}
+
+export function realMoneyNumber(input: any) {
+  if (!input) return "";
+
+  input = input.replace(/\D/g, "");
+
+  const options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  const formattedValue = new Intl.NumberFormat("pt-BR", options).format(
+    input / 100
+  );
+
+  return formattedValue;
+}
+
+export function decimalNumber(input: any) {
+  if (!input) {
+    return "";
+  }
+
+  // Remove todos os caracteres que não sejam dígitos, pontos ou vírgulas
+  input = input.replace(/[^0-9.,]/g, "");
+
+  // Substitui vírgulas por pontos para unificar o separador decimal
+  input = input.replace(/,/g, ".");
+
+  // Se houver mais de um ponto, remove os extras
+  const parts = input.split(".");
+  if (parts.length > 2) {
+    input = parts[0] + "." + parts.slice(1).join("");
+  }
+
+  return input;
+}
+
 export function shortId(): string {
   const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

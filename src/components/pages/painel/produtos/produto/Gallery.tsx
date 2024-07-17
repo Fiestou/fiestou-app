@@ -73,6 +73,8 @@ export default function Gallery({
       url: `products/gallery/${product}`,
     });
 
+    console.log(request.data);
+
     setHandleGallery(request.data);
   };
 
@@ -119,7 +121,7 @@ export default function Gallery({
                 } w-full group`}
               >
                 <div className="relative rounded-md bg-zinc-100 overflow-hidden aspect-square">
-                  <Img
+                  <img
                     src={
                       !!item.base_url ? getImage(item, "thumb") : item.base64
                     }
