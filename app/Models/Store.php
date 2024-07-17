@@ -42,13 +42,13 @@ class Store extends BaseModel
             foreach ($stores as $key => $store) {
                 if($store->profile){
                     $profile = Media::where('id', $store->profile)->first();
-                    $profile->details = json_decode($profile->details);
+                    $profile->details = isset($profile->details) && !!$profile->details ? json_decode($profile->details) : [];
                     $store->profile = $profile;
                 }
 
                 if($store->cover){
                     $cover = Media::where('id', $store->cover)->first();
-                    $cover->details = json_decode($cover->details);
+                    $cover->details = isset($cover->details) && !!$cover->details ? json_decode($cover->details) : [];
                     $store->cover = $cover;
                 }
 

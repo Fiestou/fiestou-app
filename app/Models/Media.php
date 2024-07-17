@@ -33,7 +33,7 @@ class Media extends BaseModel
         $mediaList = Media::whereIn("id", $medias)->get();
 
         foreach ($mediaList as $key => $media) {
-            $media->details = json_decode($media->details);
+            $media->details = isset($media->details) && !!$media->details ? json_decode($media->details) : [];
         }
 
         return $mediaList;

@@ -90,7 +90,7 @@ class Category extends BaseModel
                 $category->image     = !!$category->image    ? Media::where('id', $category->image)->first() : [];
 
                 if(!!$category->image){
-                    $category->image->details = !!$category->image->details ? json_decode($category->image->details) : [];
+                    $category->image->details = isset($category->image->details) && !!$category->image->details ? json_decode($category->image->details) : [];
 
                     $category->image = ["medias" => [$category->image]];
                 }

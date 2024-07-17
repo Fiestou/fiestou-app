@@ -76,7 +76,7 @@ class Product extends BaseModel
                     $gallery = Media::whereIn('id', json_decode($product->gallery, TRUE))->get();
 
                     foreach ($gallery as $key => $item) {
-                        $item->details = isset($item->details) ? json_decode($item->details) : [];
+                        $item->details = isset($item->details) && !!$item->details ? json_decode($item->details) : [];
                     }
 
                     $product->gallery = $gallery;
