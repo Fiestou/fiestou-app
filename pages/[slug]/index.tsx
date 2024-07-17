@@ -38,6 +38,7 @@ export const getStaticPaths = async (req: NextApiRequest) => {
 export async function getStaticProps(ctx: any) {
   const api = new Api();
   const { slug } = ctx.params;
+
   let request: any = await api.content({ url: `default` });
 
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
@@ -107,8 +108,8 @@ export default function Store({
 
     const api = new Api();
 
-    let limit = 15;
-    let offset = number * 15;
+    let limit = 16;
+    let offset = number * 16;
 
     let request: any = await api.get({
       url: "request/products",
@@ -278,7 +279,7 @@ export default function Store({
 
       <section className="py-4 md:pb-20">
         <div className="container-medium">
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 py-6">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
             {!!listProducts?.length &&
               listProducts.map((item, key) => (
                 <Product key={key} product={item}></Product>

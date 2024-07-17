@@ -18,9 +18,9 @@ import { useEffect, useState } from "react";
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.get(
+  let request: any = await api.content(
     {
-      url: "content/default",
+      url: "default",
     },
     ctx
   );
