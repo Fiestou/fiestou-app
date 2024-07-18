@@ -26,7 +26,7 @@ export default function Img(props: ImageType) {
     }[size]);
 
   return (
-    <Image
+    <img
       src={props.src}
       {...(!!props?.id ? { id: props?.id } : {})}
       {...(!!props?.title ? { title: props?.title } : {})}
