@@ -179,7 +179,7 @@ export function justValidateNumber(input: any) {
 export function realMoneyNumber(input: any) {
   if (!input) return "";
 
-  input = input.replace(/\D/g, "");
+  input = input.toString().replace(/\D/g, "");
 
   const options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
   const formattedValue = new Intl.NumberFormat("pt-BR", options).format(

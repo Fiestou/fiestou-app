@@ -357,7 +357,11 @@ export default function Form({
                                   price: realMoneyNumber(e.target.value),
                                 })
                               }
-                              value={!!data?.price ? data?.price : ""}
+                              value={
+                                !!data?.price
+                                  ? realMoneyNumber(data?.price)
+                                  : ""
+                              }
                               required
                               type="text"
                               className="form-control"
@@ -374,7 +378,11 @@ export default function Form({
                                   priceSale: realMoneyNumber(e.target.value),
                                 })
                               }
-                              value={!!data?.priceSale ? data?.priceSale : ""}
+                              value={
+                                !!data?.priceSale
+                                  ? realMoneyNumber(data?.priceSale)
+                                  : ""
+                              }
                               type="text"
                               className="form-control"
                               name="preco_promo"
@@ -825,7 +833,11 @@ export default function Form({
                         <div className="form-group">
                           <Label>Taxa de entrega</Label>
                           <input
-                            value={data?.freeTax ?? ""}
+                            value={
+                              !!data?.freeTax
+                                ? realMoneyNumber(data?.freeTax)
+                                : ""
+                            }
                             type="text"
                             name="taxa_entrega"
                             onChange={(e: any) =>
