@@ -36,6 +36,12 @@ if(!function_exists('moneyFormat')){
     }
 }
 
+if(!function_exists('floatFormat')){
+    function floatFormat($amount) {
+        return floatval(str_replace(',', '.', $amount));
+    }
+}
+
 if (!function_exists('cleanHTMLtoSMS')) {
     function cleanHTMLtoSMS($text) {
 

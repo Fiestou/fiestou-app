@@ -228,6 +228,18 @@ class ProductsController extends Controller
             $product->combinations = json_encode(array_values($combinations));
         }
 
+        if($request->has('freeTax')){
+            $product->freeTax = floatFormat($request->get('freeTax'));
+        }
+
+        if($request->has('price')){
+            $product->price = floatFormat($request->get('price'));
+        }
+
+        if($request->has('priceSale')){
+            $product->priceSale = floatFormat($request->get('priceSale'));
+        }
+
         $product->status    = 1;
         $product->store     = $store->id;
         $product->category  = json_encode([]);
