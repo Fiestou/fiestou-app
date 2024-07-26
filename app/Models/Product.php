@@ -72,9 +72,9 @@ class Product extends BaseModel
 
             foreach ($products as $key => $product) {
 
-                $product->freeTax   = number_format($product->freeTax, 2, '.', '');
-                $product->price     = number_format($product->price, 2, '.', '');
-                $product->priceSale = number_format($product->priceSale, 2, '.', '');
+                $product->freeTax   = number_format(strval($product->freeTax), 2, '.', '');
+                $product->price     = number_format(strval($product->price), 2, '.', '');
+                $product->priceSale = number_format(strval($product->priceSale), 2, '.', '');
 
                 if(isset($product->gallery) && !!$product->gallery){
                     $gallery = Media::whereIn('id', json_decode($product->gallery, TRUE))->get();
