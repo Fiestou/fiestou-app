@@ -17,6 +17,7 @@ import "swiper/css/pagination";
 import Product from "@/src/components/common/Product";
 import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
+import Filter from "@/src/components/common/Filter";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -62,8 +63,6 @@ export default function Home({
   DataSeo: any;
   Scripts: any;
 }) {
-  console.log(Home?.partner_list);
-
   return (
     <Template
       scripts={Scripts}
@@ -85,64 +84,110 @@ export default function Home({
         content: HeaderFooter,
       }}
     >
-      <section
-        className="bg-cyan-500 pt-16 md:pt-24 relative"
-        style={{ backgroundColor: "#2dc3ff" }}
-      >
-        {getImage(Home?.main_cover, "default") && (
-          <>
-            {!!Home?.main_cover && (
-              <Img
-                size="7xl"
-                src={getImage(Home?.main_cover, "default")}
-                className="hidden md:block absolute w-full bottom-0 left-0"
-              />
-            )}
-            {!!Home?.main_cover_mobile && (
-              <Img
-                size="7xl"
-                src={getImage(Home?.main_cover_mobile, "default")}
-                className="md:hidden absolute w-full bottom-0 left-0"
-              />
-            )}
-          </>
-        )}
-        <div className="container-medium relative py-4 md:py-14 text-white">
-          <div className="grid text-center md:text-left">
-            <h1
-              className="font-title text-underline font-bold text-4xl lg:text-6xl mb-2 md:mb-4"
-              dangerouslySetInnerHTML={{ __html: Home?.main_text }}
-            ></h1>
-            <div
-              className="text-lg text-underline md:text-3xl md:max-w-xl"
-              dangerouslySetInnerHTML={{ __html: Home?.main_description }}
-            ></div>
-            <div className="pt-4 md:pt-6">
-              <Button
-                href={Home?.main_redirect?.url ?? "#"}
-                className="md:text-lg px-4 py-2 md:py-4 md:px-8"
+      <section className="group relative">
+        <Swiper
+          spaceBetween={0}
+          modules={[Pagination, Navigation]}
+          navigation={{
+            nextEl: ".swiper-main-next",
+            prevEl: ".swiper-main-prev",
+          }}
+          breakpoints={{
+            0: {
+              slidesPerView: 1,
+            },
+          }}
+        >
+          {(Home?.main_slide ?? []).map((slide: any, key: any) => (
+            <SwiperSlide key={key}>
+              <div
+                className="bg-cyan-500 pt-16 md:pt-24 relative"
+                style={{ backgroundColor: "#2dc3ff" }}
               >
-                <Icon icon="fa-user-plus" type="far" />
-                {Home?.main_redirect?.label ?? ""}
+                {getImage(slide?.main_slide_cover, "default") && (
+                  <>
+                    {!!slide?.main_slide_cover && (
+                      <Img
+                        size="7xl"
+                        src={getImage(slide?.main_slide_cover, "default")}
+                        className="hidden md:block absolute w-full bottom-0 left-0"
+                      />
+                    )}
+                    {!!slide?.main_slide_cover_mobile && (
+                      <Img
+                        size="7xl"
+                        src={getImage(
+                          slide?.main_slide_cover_mobile,
+                          "default"
+                        )}
+                        className="md:hidden absolute w-full bottom-0 left-0"
+                      />
+                    )}
+                  </>
+                )}
+                <div className="min-h-[70vh] md:min-h-[80vh]">
+                  <div className="container-medium relative py-4 md:py-14 text-white">
+                    <div className="grid text-center md:text-left">
+                      <h1
+                        className="font-title text-underline font-bold text-4xl lg:text-6xl mb-2 md:mb-4"
+                        dangerouslySetInnerHTML={{
+                          __html: slide?.main_slide_text,
+                        }}
+                      ></h1>
+                      <div
+                        className="text-lg text-underline md:text-3xl md:max-w-xl"
+                        dangerouslySetInnerHTML={{
+                          __html: slide?.main_slide_description,
+                        }}
+                      ></div>
+                      {!!slide?.main_slide_redirect?.url && (
+                        <div className="pt-4 md:pt-6">
+                          <Button
+                            href={slide?.main_slide_redirect?.url ?? "#"}
+                            className="md:text-lg px-4 py-2 md:py-4 md:px-8"
+                          >
+                            {/* <Icon icon="fa-user-plus" type="far" /> */}
+                            {slide?.main_slide_redirect?.label ?? ""}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="md:py-32"></div>
+                  </div>
+                </div>
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+        {(Home?.main_slide ?? []).length > 1 && (
+          <div className="opacity-0 group-hover:opacity-100 hidden sm:flex ease absolute px-4 top-1/2 left-0 w-full -translate-y-1/2 items-center h-0 justify-between z-10">
+            <div>
+              <Button className="swiper-main-prev p-6 rounded-full">
+                <Icon
+                  icon="fa-chevron-left"
+                  type="far"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -ml-[2px]"
+                />
+              </Button>
+            </div>
+            <div>
+              <Button className="swiper-main-next p-6 rounded-full">
+                <Icon
+                  icon="fa-chevron-right"
+                  type="far"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ml-[1px]"
+                />
               </Button>
             </div>
           </div>
-          <div className="md:py-32"></div>
-          <form action="/produtos/listagem" method="GET">
-            <div className="max-w-4xl mx-auto flex gap-2 mt-48 md:mt-24">
-              <Input
-                name="busca"
-                placeholder="O que você precisa?"
-                className="border-0 pl-5"
-                placeholderStyle="placeholder-zinc-900"
-              />
-              <Button className="px-4 text-xl">
-                <Icon icon="fa-search" className="m-1" type="far" />
-              </Button>
-            </div>
-          </form>
-        </div>
+        )}
       </section>
+
+      <div className="relative pb-16 -mt-7">
+        <div className="absolute w-full">
+          <Filter />
+        </div>
+      </div>
 
       <section className="py-14">
         <div className="container-medium">

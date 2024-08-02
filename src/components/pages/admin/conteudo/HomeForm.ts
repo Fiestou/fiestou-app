@@ -3,40 +3,48 @@ export const HomeForm = [
     title: "Vitrine",
     fields: [
       {
-        label: "Chamada principal",
-        name: "main_text",
-        type: "input",
-      },
-      {
-        label: "Descrição",
-        name: "main_description",
-        type: "editor",
-        options: {
-          formate: "line",
-        },
-      },
-      {
-        label: "Imagem de fundo (desktop)",
-        name: "main_cover",
-        type: "media",
-        column: "md:col-span-4",
-        options: {
-          dir: "site",
-        },
-      },
-      {
-        label: "Imagem de fundo (mobile)",
-        name: "main_cover_mobile",
-        type: "media",
-        column: "md:col-span-2",
-        options: {
-          dir: "site",
-        },
-      },
-      {
-        label: "Redirecionamento principal",
-        name: "main_redirect",
-        type: "redirect",
+        label: "Slide",
+        mainField: "main_slide_text",
+        singular: "Slide",
+        plural: "Slides",
+        name: "main_slide",
+        type: "list",
+        fields: [
+          {
+            label: "Chamada principal",
+            name: "main_slide_text",
+            type: "input",
+          },
+          {
+            label: "Descrição",
+            name: "main_slide_description",
+            type: "editor",
+            options: {
+              formate: "line",
+            },
+          },
+          {
+            label: "Redirecionamento principal",
+            name: "main_slide_redirect",
+            type: "redirect",
+          },
+          {
+            label: "Imagem de fundo (desktop)",
+            name: "main_slide_cover",
+            type: "media",
+            options: {
+              dir: "site",
+            },
+          },
+          {
+            label: "Imagem de fundo (mobile)",
+            name: "main_slide_cover_mobile",
+            type: "media",
+            options: {
+              dir: "site",
+            },
+          },
+        ],
       },
     ],
   },

@@ -80,8 +80,6 @@ class Api {
   }
 
   async call({ method, url, data, opts }: ApiRequestType, ctx?: any) {
-    console.log(data);
-
     url = `${process.env.BASE_URL}/api/${url}`;
     data = { graphs: data };
     return this.request({ method, url, data, opts }, ctx);

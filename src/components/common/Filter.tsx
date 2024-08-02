@@ -211,18 +211,19 @@ export default function Filter(params: any) {
                   onClick={() => openModal()}
                   className="font-normal py-2 px-3 md:pl-8 md:pr-7 h-full"
                 >
-                  {!!count && (
-                    <div className="relative -mr-1 rounded-full bg-yellow-300 p-[.55rem] text-[.55rem] font-bold">
-                      <div className="text-zinc-900 absolute h-[.65rem] top-50 left-50 -translate-x-1/2 -translate-y-1/2">
+                  <span className="hidden md:block">Filtros </span>
+                  {!!count ? (
+                    <div className="relative bg-zinc-950 -mr-1 rounded-full bg-yellow-300 p-[.55rem] text-[.55rem] font-bold">
+                      <div className="text-white absolute h-[.65rem] top-50 left-50 -translate-x-1/2 -translate-y-1/2">
                         {count}
                       </div>
                     </div>
+                  ) : (
+                    <Icon
+                      icon="fa-sliders-h"
+                      className="text-zinc-900 text-xl md:text-base"
+                    />
                   )}
-                  <span className="hidden md:block">Filtros </span>
-                  <Icon
-                    icon="fa-sliders-h"
-                    className="text-zinc-900 text-xl md:text-base"
-                  />
                 </Button>
               </div>
               <input
