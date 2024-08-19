@@ -382,10 +382,12 @@ export default function Home({
               </Swiper>
             </div>
             <div className="text-center mt-10">
-              <Button href="/produtos">
-                <Icon icon="fa-shopping-bag" type="far" />
-                Ver todos
-              </Button>
+              <a href="/produtos">
+                <Button type="button">
+                  <Icon icon="fa-shopping-bag" type="far" />
+                  Ver todos
+                </Button>
+              </a>
             </div>
           </div>
         </div>
