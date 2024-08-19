@@ -8,7 +8,7 @@ import { useRouter } from "next/router";
 import { DayType, StoreType } from "@/src/models/store";
 import Img from "@/src/components/utils/ImgBase";
 import FileInput from "@/src/components/ui/form/FileInputUI";
-import { getZipCode, justNumber } from "@/src/helper";
+import { getImage, getZipCode, justNumber } from "@/src/helper";
 import HelpCard from "@/src/components/common/HelpCard";
 import { RelationType } from "@/src/models/relation";
 import Link from "next/link";
@@ -105,9 +105,10 @@ export default function Loja({
 
   const [oldStore, setOldStore] = useState({} as StoreType);
   const [store, setStore] = useState({} as StoreType);
-  const handlestore = async (value: Object) => {
+  const handleStore = async (value: Object) => {
     setStore({ ...store, ...value });
   };
+
   const getStore = async () => {
     let request: any = await api.bridge({
       url: "stores/form",
@@ -115,16 +116,22 @@ export default function Loja({
 
     const handle = request.data ?? {};
 
+    console.log(handle);
+
     setOldStore(handle);
+
     setStore(handle);
+
     setWeek((handle?.openClose ?? []) as Array<DayType>);
+
     setHandleCover({
       remove: 0,
-      preview: handle?.cover?.preview ?? "",
+      preview: !!handle?.cover ? getImage(handle?.cover, "xl") : "",
     });
+
     setHandleProfile({
       remove: 0,
-      preview: handle?.profile?.preview ?? "",
+      preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
     });
   };
 
@@ -135,7 +142,7 @@ export default function Loja({
       remove: store?.cover?.id ?? handleCover.remove,
     });
 
-    handlestore({ cover: {} });
+    handleStore({ cover: {} });
   };
 
   const handleCoverPreview = async (e: any) => {
@@ -203,7 +210,7 @@ export default function Loja({
       }
     }
 
-    handlestore({ cover: coverValue });
+    handleStore({ cover: coverValue });
 
     const handle = {
       ...store,
@@ -236,7 +243,7 @@ export default function Loja({
       remove: store?.profile?.id ?? handleProfile.remove,
     });
 
-    handlestore({ profile: {} });
+    handleStore({ profile: {} });
   };
 
   const handleProfilePreview = async (e: any) => {
@@ -261,7 +268,7 @@ export default function Loja({
 
     handleForm({ loading: true });
 
-    let profileValue = store?.profile;
+    let profileValue: any = store?.profile;
 
     if (!!handleProfile.remove) {
       const request = await api
@@ -304,7 +311,7 @@ export default function Loja({
       }
     }
 
-    handlestore({ profile: profileValue });
+    handleStore({ profile: profileValue });
 
     const handle = {
       ...store,
@@ -361,7 +368,7 @@ export default function Loja({
 
     if (request.response) {
       setOldStore(store);
-      handlestore(store);
+      handleStore(store);
     }
 
     handleForm({ edit: "", loading: false });
@@ -481,7 +488,7 @@ export default function Loja({
                       name="cover"
                       id="cover"
                       onChange={async (e: any) => {
-                        handlestore({
+                        handleStore({
                           cover: {
                             files: await handleCoverPreview(e),
                           },
@@ -529,7 +536,7 @@ export default function Loja({
                           name="profile"
                           id="profile"
                           onChange={async (e: any) => {
-                            handlestore({
+                            handleStore({
                               profile: {
                                 files: await handleProfilePreview(e),
                               },
@@ -590,7 +597,7 @@ export default function Loja({
                     {form.edit == "title" ? (
                       <Input
                         onChange={(e: any) =>
-                          handlestore({ title: e.target.value })
+                          handleStore({ title: e.target.value })
                         }
                         value={store?.title}
                         placeholder="Digite o nome aqui"
@@ -618,7 +625,7 @@ export default function Loja({
                     {form.edit == "description" ? (
                       <TextArea
                         onChange={(e: any) =>
-                          handlestore({ description: e.target.value })
+                          handleStore({ description: e.target.value })
                         }
                         value={store?.description}
                         placeholder="Digite sua descrição aqui"
@@ -649,7 +656,7 @@ export default function Loja({
                         <Input
                           name="cnpj"
                           onChange={(e: any) =>
-                            handlestore({
+                            handleStore({
                               document: justNumber(e.target.value),
                             })
                           }
@@ -660,7 +667,7 @@ export default function Loja({
                         <Input
                           name="nome"
                           onChange={(e: any) =>
-                            handlestore({ companyName: e.target.value })
+                            handleStore({ companyName: e.target.value })
                           }
                           required
                           value={store?.companyName}
@@ -814,7 +821,7 @@ export default function Loja({
                             <Input
                               name="numero"
                               onChange={(e: any) =>
-                                handlestore({ number: e.target.value })
+                                handleStore({ number: e.target.value })
                               }
                               required
                               value={store?.number}
@@ -836,7 +843,7 @@ export default function Loja({
                             <Input
                               name="complemento"
                               onChange={(e: any) =>
-                                handlestore({ complement: e.target.value })
+                                handleStore({ complement: e.target.value })
                               }
                               value={store?.complement}
                               placeholder="Complemento"
@@ -899,7 +906,7 @@ export default function Loja({
                     {form.edit == "segment" ? (
                       <Select
                         onChange={(e: any) =>
-                          handlestore({ segment: e.target.value })
+                          handleStore({ segment: e.target.value })
                         }
                         value={store?.segment}
                         placeholder="Selecione seu segmento"

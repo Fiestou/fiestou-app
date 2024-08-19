@@ -205,68 +205,11 @@ export default function UserEdit({ user }: { user: UserType }) {
 
   return (
     <>
-      <form
-        onSubmit={(e: any) => handleSubmitFile(e)}
-        method="POST"
-        acceptCharset="UTF-8"
-        encType="multipart/form-data"
-        className="grid gap-4 mb-0 border-y py-6"
-      >
-        <div className="flex items-center gap-6">
-          <div className="w-[3.5rem] md:w-[5rem]">
-            {form.edit === "profile" ? (
-              <FileInput
-                name="profile"
-                id="profile"
-                onChange={async (e: any) => {
-                  handleContent({
-                    profile: {
-                      files: await handleProfilePreview(e),
-                    },
-                  });
-                }}
-                rounded
-                placeholder="Abrir"
-                aspect="aspect-square"
-                loading={form.loading}
-                remove={(e: any) => handleProfileRemove(e)}
-                preview={handleProfile.preview}
-              />
-            ) : (
-              <>
-                {!!handleProfile.preview ? (
-                  <div className="aspect-square border-zinc-900 border-2 relative rounded-full overflow-hidden">
-                    <Img
-                      src={handleProfile.preview}
-                      className={`${
-                        form.loading ? "blur-lg" : ""
-                      } absolute object-cover h-full inset-0 w-full`}
-                    />
-                  </div>
-                ) : (
-                  <div className="aspect-square border-zinc-900 text-zinc-900 border-2 relative rounded-full overflow-hidden">
-                    <Icon
-                      icon="fa-user"
-                      className="text-2xl md:text-4xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                    />
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-          <div className="w-fit">
-            {renderAction("profile", {
-              save: "Enviar",
-              edit: "Alterar foto de perfil",
-            })}
-          </div>
-        </div>
-      </form>
       {/*  */}
       <form
         onSubmit={(e: any) => handleSubmit(e)}
         method="POST"
-        className="grid gap-4 border-b pb-8 mb-0"
+        className="grid gap-4 border-y py-8 my-0"
       >
         <div className="flex items-center">
           <div className="w-full">
