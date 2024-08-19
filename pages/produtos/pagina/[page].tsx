@@ -25,9 +25,6 @@ export const getStaticPaths = async (ctx: any) => {
     {
       method: "get",
       url: "request/products",
-      data: {
-        metadata: { count: "total" },
-      },
     },
     ctx
   );
@@ -57,6 +54,7 @@ export async function getStaticProps(ctx: any) {
 
   let request: any = await api.content(
     {
+      method: "get",
       url: "default",
     },
     ctx

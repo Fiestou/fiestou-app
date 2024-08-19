@@ -22,7 +22,9 @@ import Filter from "@/src/components/common/Filter";
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.content({ url: `home` });
+  let request: any = await api.content({
+    url: `home`,
+  });
 
   const Categories = request?.data?.Categories ?? [];
   const Home = request?.data?.Home ?? {};
@@ -382,12 +384,10 @@ export default function Home({
               </Swiper>
             </div>
             <div className="text-center mt-10">
-              <a href="/produtos">
-                <Button type="button">
-                  <Icon icon="fa-shopping-bag" type="far" />
-                  Ver todos
-                </Button>
-              </a>
+              <Button href="/produtos">
+                <Icon icon="fa-shopping-bag" type="far" />
+                Ver todos
+              </Button>
             </div>
           </div>
         </div>

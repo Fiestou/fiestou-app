@@ -49,7 +49,7 @@ const nextConfig = {
         destination: "/categoria/:slug/pagina/1",
       },
       {
-        source: "/produtos/",
+        source: "/produtos",
         destination: "/produtos/pagina/1",
       },
       {
