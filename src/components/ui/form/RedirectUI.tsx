@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface RedirectType {
   name?: string;
@@ -15,27 +15,20 @@ interface RedirectType {
 
 export default function Redirect(attr: RedirectType) {
   const [redirect, setRedirect] = useState(
-    attr.value ??
-      ({} as {
-        url?: string;
-        label?: string;
-        target?: boolean;
-      })
+    (attr.value ?? {}) as {
+      url?: string;
+      label?: string;
+      target?: boolean;
+    }
   );
+
   const handleRedirect = (value: Object) => {
-    setRedirect({ ...redirect, ...value });
-    !!attr?.onChange ? attr?.onChange(redirect) : {};
+    !!attr?.onChange ? attr?.onChange({ ...attr.value, ...value }) : {};
   };
 
-  const [isChecked, setIsChecked] = useState(redirect?.target ?? false);
-  const handleCheckboxChange = () => {
-    const checked = !isChecked;
-
-    setIsChecked(checked);
-    setRedirect({ ...redirect, ...{ target: checked } });
-    !!attr?.onChange ? attr?.onChange(redirect) : {};
-    console.log(redirect, checked);
-  };
+  useEffect(() => {
+    setRedirect(attr.value);
+  }, [attr]);
 
   return (
     <>
@@ -48,7 +41,7 @@ export default function Redirect(attr: RedirectType) {
             className="form-control border-0 text-sm p-[.9rem] w-full"
             placeholder="Link. Ex: https://exemple.com.br"
             onChange={(e) => handleRedirect({ url: e.target.value })}
-            value={redirect?.url}
+            defaultValue={redirect?.url}
           />
           <div className="border-l"></div>
           <input
@@ -58,18 +51,20 @@ export default function Redirect(attr: RedirectType) {
             className="form-control border-0 text-center text-sm p-[.9rem] max-w-[14rem]"
             placeholder="Texto. Ex: Acessar agora!"
             onChange={(e) => handleRedirect({ label: e.target.value })}
-            value={redirect?.label}
+            defaultValue={redirect?.label}
           />
         </div>
       </div>
       <label className="text-[.8rem]">
-        <div className="flex items-center w-full gap-1 py-1">
+        <div
+          onClick={() => handleRedirect({ target: !redirect.target })}
+          className="flex items-center w-full gap-1 py-1"
+        >
           <input
             name={`${attr?.name}_target`}
             id={`${attr?.id ?? attr?.name}_target`}
             type="checkbox"
-            checked={isChecked}
-            onChange={handleCheckboxChange}
+            defaultChecked={redirect.target}
             className="scale-[.9]"
           />
           <span className="">Abrir em nova aba?</span>

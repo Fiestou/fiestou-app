@@ -42,6 +42,22 @@ const nextConfig = {
       ],
     },
   ],
+  async rewrites() {
+    return [
+      {
+        source: "/categoria/:slug",
+        destination: "/categoria/:slug/pagina/1",
+      },
+      {
+        source: "/produtos",
+        destination: "/produtos/pagina/1",
+      },
+      {
+        source: "/sitemap.xml",
+        destination: "/api/sitemap",
+      },
+    ];
+  },
   generateEtags: false,
   reactStrictMode: true,
   eslint: {
@@ -66,14 +82,6 @@ const nextConfig = {
     MAIL_ENCRYPTION: process.env.MAIL_ENCRYPTION,
     MAIL_USERNAME: process.env.MAIL_USERNAME,
     MAIL_PASSWORD: process.env.MAIL_PASSWORD,
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/sitemap.xml",
-        destination: "/api/sitemap",
-      },
-    ];
   },
   trailingSlash: true,
   experimental: {

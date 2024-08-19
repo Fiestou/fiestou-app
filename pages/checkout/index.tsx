@@ -54,8 +54,9 @@ export async function getServerSideProps(ctx: any) {
 
   const DataSeo: any = request?.data?.DataSeo ?? {};
   const Scripts: any = request?.data?.Scripts ?? {};
-  const Roles = request?.data?.query?.Roles ?? {};
-  const CheckoutPageContent = request?.data?.query?.content ?? {};
+  const Roles = request?.data?.Roles ?? {};
+
+  const CheckoutPageContent = request?.data?.content ?? {};
 
   const user: UserType = request?.data?.user ?? {};
   const products: Array<ProductType> = request?.data?.products ?? [];
@@ -688,6 +689,7 @@ export default function Checkout({
                           R$ {moneyFormat(resume.total)}
                         </div>
                       </div>
+
                       {!!CheckoutPageContent?.terms_list?.length && (
                         <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
                           {CheckoutPageContent?.terms_list.map(
@@ -706,6 +708,7 @@ export default function Checkout({
                           )}
                         </div>
                       )}
+
                       <div className="grid fixed z-10 md:relative bg-white md:bg-transparent bottom-0 left-0 w-full p-1 md:p-0">
                         {!!address?.street &&
                         !!address?.complement &&

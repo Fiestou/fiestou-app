@@ -17,7 +17,8 @@ import { useRouter } from "next/router";
 
 export const getStaticPaths = async (req: NextApiRequest) => {
   const api = new Api();
-  let request: any = await api.get({
+  let request: any = await api.request({
+    method: "get",
     url: "request/stores",
   });
 
@@ -45,7 +46,8 @@ export async function getStaticProps(ctx: any) {
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
 
-  let store: any = await api.get({
+  let store: any = await api.request({
+    method: "get",
     url: "request/store",
     data: {
       slug: slug,
@@ -59,11 +61,12 @@ export async function getStaticProps(ctx: any) {
   } else {
     store = store.data;
 
-    let products: any = await api.get({
+    let products: any = await api.request({
+      method: "get",
       url: "request/products",
       data: {
         store: store,
-        limit: 15,
+        limit: 16,
       },
     });
 
@@ -111,7 +114,8 @@ export default function Store({
     let limit = 16;
     let offset = number * 16;
 
-    let request: any = await api.get({
+    let request: any = await api.request({
+      method: "get",
       url: "request/products",
       data: {
         store: store?.slug,

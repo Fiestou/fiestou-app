@@ -103,7 +103,8 @@ export default function Favoritos({
       JSON.parse(Cookies.get("fiestou.likes") ?? JSON.stringify([]))
     );
 
-    let request: any = await api.get({
+    let request: any = await api.request({
+      method: "get",
       url: "request/products",
       data: {
         whereIn: likes,

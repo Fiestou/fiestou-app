@@ -17,10 +17,13 @@ import { useRouter } from "next/router";
 import Paginate from "@/src/components/utils/Paginate";
 import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 
+let limit = 15;
+
 export const getStaticPaths = async (ctx: any) => {
   const api = new Api();
-  const request: any = await api.get(
+  const request: any = await api.request(
     {
+      method: "get",
       url: "request/products",
       data: {
         metadata: { count: "total" },
@@ -31,7 +34,7 @@ export const getStaticPaths = async (ctx: any) => {
 
   let metadata: any = request?.metadata ?? {};
 
-  const pages: any = new Array(Math.ceil((metadata?.count ?? 15) / 15))
+  const pages: any = new Array(Math.ceil((metadata?.count ?? limit) / limit))
     .fill(true)
     .filter((item, key) => !!key)
     .map((item, key) => {
@@ -50,7 +53,7 @@ export const getStaticPaths = async (ctx: any) => {
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  const { page } = ctx.params;
+  const params: any = ctx.params;
 
   let request: any = await api.content(
     {
@@ -63,15 +66,15 @@ export async function getStaticProps(ctx: any) {
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
 
-  request = await api.get({ url: "content/products" }, ctx);
+  request = await api.request({ url: "content/products" }, ctx);
 
   const content = request?.data?.content ?? {};
 
-  let limit = 15;
-  let offset = page * 15;
+  let offset = (params?.page ?? 0) * limit;
 
-  request = await api.get(
+  request = await api.request(
     {
+      method: "get",
       url: "request/products",
       data: {
         limit: limit,
@@ -84,15 +87,15 @@ export async function getStaticProps(ctx: any) {
 
   let metadata: any = request?.metadata ?? {};
 
-  const pages: any = new Array(Math.ceil((metadata?.count ?? 15) / 15)).fill(
-    true
-  );
+  const pages: any = new Array(
+    Math.ceil((metadata?.count ?? limit) / limit)
+  ).fill(true);
 
   return {
     props: {
-      page: page,
-      products: request?.data ?? [],
+      page: params?.page ?? 1,
       paginate: pages,
+      products: request?.data ?? [],
       content: content,
       HeaderFooter: HeaderFooter,
       DataSeo: DataSeo,

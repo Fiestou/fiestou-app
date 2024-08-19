@@ -14,8 +14,8 @@ export default function Paginate({
   let handle: any = {
     prev: 0,
     next: 0,
-    pagesPrev: false,
-    pagesNext: false,
+    pagesPrev: 0,
+    pagesNext: 0,
   };
 
   if (paginate.length > 10) {
@@ -25,9 +25,9 @@ export default function Paginate({
       pagesPrev: current - 2,
       pagesNext: current + 2,
     };
+  } else {
+    handle["pagesNext"] = 10;
   }
-
-  // console.log(handle, current, paginate.length - 1, "<");
 
   return (
     <div className="flex gap-1 justify-center">
@@ -45,6 +45,7 @@ export default function Paginate({
           <div className="pt-1">...</div>
         </>
       )}
+
       {paginate
         .filter((item: any, key: any) => !!key)
         .map(
@@ -65,7 +66,8 @@ export default function Paginate({
               </Button>
             )
         )}
-      {handle.next <= paginate.length - 1 && (
+
+      {!!handle.next && handle.next <= paginate.length - 1 && (
         <>
           <div className="pt-1">...</div>
           <Button

@@ -54,8 +54,9 @@ import QtdInput from "@/src/components/ui/form/QtdUI";
 
 export const getStaticPaths = async (ctx: any) => {
   const api = new Api();
-  const request: any = await api.get(
+  const request: any = await api.request(
     {
+      method: "get",
       url: "request/products",
     },
     ctx
@@ -79,8 +80,9 @@ export async function getStaticProps(ctx: any) {
   const api = new Api();
   const { slug } = ctx.params;
 
-  let request: any = await api.get(
+  let request: any = await api.request(
     {
+      method: "get",
       url: "request/product",
       data: {
         slug: slug,
@@ -98,7 +100,7 @@ export async function getStaticProps(ctx: any) {
     const comments = product?.comments ?? [];
     const store = product?.store ?? {};
 
-    request = await api.get(
+    request = await api.request(
       {
         url: "content/product",
       },
@@ -391,7 +393,8 @@ export default function Produto({
   const [match, setMatch] = useState([] as Array<any>);
   const renderMatch = async () => {
     const api = new Api();
-    let request: any = await api.get({
+    let request: any = await api.request({
+      method: "get",
       url: "request/products",
       data: {
         store: store?.id ?? 0,
@@ -436,7 +439,8 @@ export default function Produto({
 
   const [productUpdated, setProductUpdated] = useState({} as ProductType);
   const getProductUpdated = async () => {
-    let request: any = await api.get({
+    let request: any = await api.request({
+      method: "get",
       url: "request/product",
       data: {
         slug: product?.slug,
@@ -488,7 +492,7 @@ export default function Produto({
                       productUpdated?.color?.indexOf(color.value) !== -1 && (
                         <Link
                           key={key}
-                          href={`/produtos/listagem/?color=${color.value}`}
+                          href={`/produtos/listagem/?cores=${color.value}`}
                         >
                           <div>{ColorfulRender(color)}</div>
                         </Link>
@@ -521,7 +525,7 @@ export default function Produto({
                             .map((child: RelationType) => (
                               <Link
                                 key={child.id}
-                                href={`/categoria/${child.slug}`}
+                                href={`/produtos/listagem/?categoria=${child.slug}`}
                                 className="bg-zinc-100 hover:bg-zinc-200 py-1 px-2 rounded ease"
                               >
                                 {child.title}

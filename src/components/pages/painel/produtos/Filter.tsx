@@ -91,7 +91,8 @@ export default function Filter(attrs: FilterPainelType) {
   };
 
   const getFilter: any = async () => {
-    const request: any = await api.get({
+    const request: any = await api.request({
+      method: "get",
       url: "request/categories",
     });
 

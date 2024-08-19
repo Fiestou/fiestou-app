@@ -146,7 +146,8 @@ export default function Filter(params: any) {
   };
 
   const getFilter: any = async () => {
-    const request: any = await api.get({
+    const request: any = await api.request({
+      method: "get",
       url: "request/categories",
     });
 

@@ -38,7 +38,8 @@ export async function getServerSideProps({
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
 
-  request = await api.get({
+  request = await api.request({
+    method: "get",
     url: "request/products",
     data: {
       whereIn: cart.map((item: any) => item.product),
@@ -74,24 +75,13 @@ export default function Carrinho({
   DataSeo: any;
   Scripts: any;
 }) {
-  const [listCart, setListCart] = useState(cart);
+  const [listCart, setListCart] = useState([] as Array<any>);
 
-  const [dates, setDates] = useState(
-    listCart.map((item: any) => item.details.dateStart)
-  );
+  const [dates, setDates] = useState([] as Array<any>);
 
-  const [subtotal, setSubtotal] = useState(
-    listCart.reduce((acumulador: number, item: any) => {
-      return acumulador + parseFloat(item.total);
-    }, 0) as number
-  );
+  const [subtotal, setSubtotal] = useState(0 as number);
 
-  const [resume, setResume] = useState({
-    subtotal: subtotal,
-    total: subtotal,
-    startDate: findDates(dates).minDate,
-    endDate: findDates(dates).maxDate,
-  } as any);
+  const [resume, setResume] = useState({} as any);
 
   const removeItemCart = (key: number) => {
     let listHandle = listCart.filter(
@@ -117,6 +107,25 @@ export default function Carrinho({
 
     RemoveToCart(key);
   };
+
+  useEffect(() => {
+    setListCart(cart);
+
+    const handleDate = cart.map((item: any) => item.details.dateStart);
+    const handleSubtotal = cart.reduce((acumulador: number, item: any) => {
+      return acumulador + parseFloat(item.total);
+    }, 0);
+
+    setDates(handleDate);
+    setSubtotal(handleSubtotal);
+
+    setResume({
+      subtotal: handleSubtotal,
+      total: handleSubtotal,
+      startDate: findDates(handleDate).minDate,
+      endDate: findDates(handleDate).maxDate,
+    });
+  }, [cart]);
 
   return (
     <Template

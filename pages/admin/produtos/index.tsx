@@ -30,7 +30,7 @@ export async function getServerSideProps(
     req
   );
 
-  const hasStore = !!store?.data?.query?.store ?? false;
+  const hasStore = !!store?.data?.query?.store;
 
   let products: any = [];
 
@@ -62,7 +62,8 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
   const [products, setProducts] = useState([] as Array<any>);
   const getProducts = async () => {
-    let request: any = await api.get({
+    let request: any = await api.request({
+      method: "get",
       url: "request/products",
     });
 

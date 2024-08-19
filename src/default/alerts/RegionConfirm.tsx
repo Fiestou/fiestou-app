@@ -17,7 +17,7 @@ export default function RegionConfirm() {
   const verifyCEP = async (e?: any) => {
     e?.preventDefault();
 
-    // let request: any = await api.get({
+    // let request: any = await api.request({
     //   url: "content/default",
     // });
 

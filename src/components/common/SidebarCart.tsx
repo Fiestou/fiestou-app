@@ -36,7 +36,8 @@ export default function SidebarCart(attr: SidebarCartType) {
     const parse = Cookies.get("fiestou.cart") ?? "";
     const cart = !!parse ? JSON.parse(parse) : [];
 
-    let request: any = await api.get({
+    let request: any = await api.request({
+      method: "get",
       url: "request/products",
       data: {
         whereIn: cart.map((item: any) => item.product),
@@ -128,7 +129,7 @@ export default function SidebarCart(attr: SidebarCartType) {
                               : ""}
                           </div>
                           <div className="text-sm text-zinc-400">
-                            {item.product.store.companyName}
+                            {item.product.store?.companyName ?? ""}
                           </div>
                         </div>
                         <div>

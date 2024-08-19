@@ -31,7 +31,7 @@ interface ApiRequestType {
 class Api {
   constructor() {}
 
-  async request({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async connect({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     return await new Promise((resolve, reject) => {
       if (!!ctx?.req) {
         const authtoken = !!ctx?.req.cookies
@@ -44,12 +44,25 @@ class Api {
       }
 
       if (method === "get" && !!data && Object.keys(data).length > 0) {
-        const queryString = new URLSearchParams(data).toString();
+        const queryString = Object.keys(data)
+          .map((key) => {
+            const value = data[key];
+            if (Array.isArray(value)) {
+              return value
+                .map(
+                  (item) =>
+                    `${encodeURIComponent(key)}[]=${encodeURIComponent(item)}`
+                )
+                .join("&");
+            }
+
+            return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+          })
+          .join("&");
+
         url = `${url}?${queryString}`;
         data = {};
       }
-
-      // console.log(url);
 
       api[method == "get" ? "get" : "post"](url, data ?? {}, opts ?? {})
         .then(({ data }: any) => {
@@ -66,35 +79,35 @@ class Api {
 
   async trigger({ url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.APP_URL}${url}`;
-    return this.request({ url, data, opts }, ctx);
+    return this.connect({ url, data, opts }, ctx);
   }
 
-  async get({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async request({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.BASE_URL}/api/${url}`;
-    return await this.request({ method, url, data, opts }, ctx);
+    return await this.connect({ method, url, data, opts }, ctx);
   }
 
   async content({ url }: any, ctx?: any) {
     url = `${process.env.BASE_URL}/api/content/${url}`;
-    return await this.request({ method: "get", url }, ctx);
+    return await this.connect({ method: "get", url }, ctx);
   }
 
   async call({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.BASE_URL}/api/${url}`;
     data = { graphs: data };
-    return this.request({ method, url, data, opts }, ctx);
+    return this.connect({ method, url, data, opts }, ctx);
   }
 
   async bridge({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.API_REST}${url}`;
 
-    return this.request({ method, url, data, opts }, ctx);
+    return this.connect({ method, url, data, opts }, ctx);
   }
 
   async graph({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.API_REST}${url}`;
     data = { graphs: data };
-    return this.request({ method, url, data, opts }, ctx);
+    return this.connect({ method, url, data, opts }, ctx);
   }
 
   async media(data: {
@@ -120,7 +133,7 @@ class Api {
 
   async auth({ method, url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.API_REST}${url}`;
-    return this.request({ method, url, data, opts }, ctx);
+    return this.connect({ method, url, data, opts }, ctx);
   }
 }
 

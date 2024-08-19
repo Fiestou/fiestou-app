@@ -129,7 +129,8 @@ export default function Form({
   const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
   const SearchProducts = async (search: string) => {
     if (search.length >= 3) {
-      let request: any = await api.get({
+      let request: any = await api.request({
+        method: "get",
         url: "request/products",
         data: {
           store: Cookies.get("fiestou.store"),

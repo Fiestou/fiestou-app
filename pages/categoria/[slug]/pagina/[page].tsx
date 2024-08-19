@@ -2,6 +2,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/Filter";
 import Product from "@/src/components/common/Product";
 import Img from "@/src/components/utils/ImgBase";
+import Paginate from "@/src/components/utils/Paginate";
 import { cleanText, getImage } from "@/src/helper";
 import { ProductType } from "@/src/models/product";
 import { RelationType } from "@/src/models/relation";
@@ -10,19 +11,28 @@ import Api from "@/src/services/api";
 import Template from "@/src/template";
 import { useRouter } from "next/router";
 
+let limit = 15;
+
 export const getStaticPaths = async (ctx: any) => {
   const api = new Api();
-  let request: any = await api.get({
+
+  let request: any = await api.request({
+    method: "get",
     url: "request/categories-paths",
+    data: {
+      limit: limit,
+    },
   });
 
   let categories = request?.data ?? [];
 
-  const paths = categories
-    .filter((category: any) => !!category?.slug)
-    .map((category: any) => {
-      return { params: { slug: category?.slug } };
+  const paths: any = [];
+
+  Object.keys(categories).map((slug: any) => {
+    Array.from({ length: categories[slug] }).map((_: any, key: any) => {
+      paths.push({ params: { slug: slug, page: (key + 1).toString() } });
     });
+  });
 
   return {
     paths: paths,
@@ -46,26 +56,39 @@ export async function getStaticProps(ctx: any) {
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
 
-  request = await api.get(
+  let offset = !!params?.page ? (params?.page - 1) * limit : 0;
+
+  request = await api.request(
     {
+      method: "get",
       url: "request/category",
       data: {
-        slug: params.slug,
-        limit: 15,
+        slug: params?.slug,
+        limit: limit,
+        offset: offset,
+        metadata: { count: "total" },
       },
     },
     ctx
   );
 
-  const category = request?.data?.category ?? {};
+  let metadata: any = request?.metadata ?? {};
+
+  const pages: any = new Array(
+    Math.ceil((metadata?.count ?? limit) / limit)
+  ).fill(true);
+
+  const category = request?.data?.category ?? [];
   const products = request?.data?.products ?? [];
 
-  request = await api.get({ url: "content/products" }, ctx);
+  request = await api.request({ url: "content/products" }, ctx);
 
   const content = request?.data?.content ?? {};
 
   return {
     props: {
+      page: params?.page ?? 1,
+      paginate: pages,
       params: params,
       category: category,
       products: products,
@@ -79,6 +102,8 @@ export async function getStaticProps(ctx: any) {
 }
 
 export default function Categoria({
+  page,
+  paginate,
   category,
   products,
   content,
@@ -87,6 +112,8 @@ export default function Categoria({
   DataSeo,
   Scripts,
 }: {
+  page: any;
+  paginate: Array<any>;
   category: any;
   products: Array<ProductType>;
   content: any;
@@ -166,6 +193,16 @@ export default function Categoria({
                 <Product product={item} />
               </div>
             ))}
+        </div>
+
+        <div className="pt-4 pb-14">
+          {!!paginate.length && (
+            <Paginate
+              paginate={paginate}
+              current={parseInt(page)}
+              route={`categoria/${category?.slug}`}
+            />
+          )}
         </div>
       </section>
     </Template>

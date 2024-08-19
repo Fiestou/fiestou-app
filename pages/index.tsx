@@ -63,6 +63,29 @@ export default function Home({
   DataSeo: any;
   Scripts: any;
 }) {
+  const renderImageSlider = (slide: any) => {
+    return getImage(slide?.main_slide_cover, "default") ? (
+      <>
+        {!!slide?.main_slide_cover && (
+          <Img
+            size="7xl"
+            src={getImage(slide?.main_slide_cover, "default")}
+            className="hidden md:block absolute w-full bottom-0 left-0"
+          />
+        )}
+        {!!slide?.main_slide_cover_mobile && (
+          <Img
+            size="7xl"
+            src={getImage(slide?.main_slide_cover_mobile, "default")}
+            className="md:hidden absolute w-full bottom-0 left-0"
+          />
+        )}
+      </>
+    ) : (
+      <></>
+    );
+  };
+
   return (
     <Template
       scripts={Scripts}
@@ -104,55 +127,48 @@ export default function Home({
                 className="bg-cyan-500 pt-16 md:pt-24 relative"
                 style={{ backgroundColor: "#2dc3ff" }}
               >
-                {getImage(slide?.main_slide_cover, "default") && (
-                  <>
-                    {!!slide?.main_slide_cover && (
-                      <Img
-                        size="7xl"
-                        src={getImage(slide?.main_slide_cover, "default")}
-                        className="hidden md:block absolute w-full bottom-0 left-0"
-                      />
-                    )}
-                    {!!slide?.main_slide_cover_mobile && (
-                      <Img
-                        size="7xl"
-                        src={getImage(
-                          slide?.main_slide_cover_mobile,
-                          "default"
-                        )}
-                        className="md:hidden absolute w-full bottom-0 left-0"
-                      />
-                    )}
-                  </>
+                {!!slide?.main_slide_redirect?.url ? (
+                  <Link href={slide?.main_slide_redirect?.url}>
+                    {renderImageSlider(slide)}
+                  </Link>
+                ) : (
+                  <>{renderImageSlider(slide)}</>
                 )}
+
                 <div className="min-h-[70vh] md:min-h-[80vh]">
                   <div className="container-medium relative py-4 md:py-14 text-white">
                     <div className="grid text-center md:text-left">
-                      <h1
-                        className="font-title text-underline font-bold text-4xl lg:text-6xl mb-2 md:mb-4"
-                        dangerouslySetInnerHTML={{
-                          __html: slide?.main_slide_text,
-                        }}
-                      ></h1>
-                      <div
-                        className="text-lg text-underline md:text-3xl md:max-w-xl"
-                        dangerouslySetInnerHTML={{
-                          __html: slide?.main_slide_description,
-                        }}
-                      ></div>
-                      {!!slide?.main_slide_redirect?.url && (
-                        <div className="pt-4 md:pt-6">
-                          <Button
-                            href={slide?.main_slide_redirect?.url ?? "#"}
-                            className="md:text-lg px-4 py-2 md:py-4 md:px-8"
-                          >
-                            {/* <Icon icon="fa-user-plus" type="far" /> */}
-                            {slide?.main_slide_redirect?.label ?? ""}
-                          </Button>
-                        </div>
+                      {!!slide?.main_slide_text && (
+                        <h1
+                          className="font-title text-underline font-bold text-4xl lg:text-6xl mb-2 md:mb-4"
+                          dangerouslySetInnerHTML={{
+                            __html: slide?.main_slide_text,
+                          }}
+                        ></h1>
                       )}
+
+                      {!!slide?.main_slide_description && (
+                        <div
+                          className="text-lg text-underline md:text-3xl md:max-w-xl"
+                          dangerouslySetInnerHTML={{
+                            __html: slide?.main_slide_description,
+                          }}
+                        ></div>
+                      )}
+
+                      {!!slide?.main_slide_redirect?.url &&
+                        !!slide?.main_slide_redirect?.label && (
+                          <div className="pt-4 md:pt-6">
+                            <Button
+                              href={slide?.main_slide_redirect?.url ?? "#"}
+                              className="md:text-lg px-4 py-2 md:py-4 md:px-8"
+                            >
+                              {/* <Icon icon="fa-user-plus" type="far" /> */}
+                              {slide?.main_slide_redirect?.label}
+                            </Button>
+                          </div>
+                        )}
                     </div>
-                    <div className="md:py-32"></div>
                   </div>
                 </div>
               </div>

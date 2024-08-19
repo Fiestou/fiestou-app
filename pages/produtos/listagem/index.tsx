@@ -15,6 +15,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
+let limit = 15;
+
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
@@ -68,10 +70,10 @@ export default function Listagem({
 
     const api = new Api();
 
-    let limit = 15;
-    let offset = page * 15;
+    let offset = page * limit;
 
-    let request: any = await api.get({
+    let request: any = await api.request({
+      method: "get",
       url: "request/products",
       data: {
         ...handleParams,

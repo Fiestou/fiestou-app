@@ -20,7 +20,8 @@ export async function getServerSideProps(
 ) {
   const api = new Api();
   const query = req.query;
-  let request: any = await api.get({
+  let request: any = await api.request({
+    method: "get",
     url: "request/product",
     data: {
       id: query?.id ?? 0,
