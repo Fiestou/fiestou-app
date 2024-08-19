@@ -66,11 +66,17 @@ export async function getStaticProps(ctx: any) {
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
 
-  request = await api.request({ url: "content/products" }, ctx);
+  request = await api.request(
+    {
+      method: "get",
+      url: "content/products",
+    },
+    ctx
+  );
 
   const content = request?.data?.content ?? {};
 
-  let offset = (params?.page ?? 0) * limit;
+  let offset = !!params?.page ? (params?.page - 1) * limit : 0;
 
   request = await api.request(
     {
@@ -79,11 +85,12 @@ export async function getStaticProps(ctx: any) {
       data: {
         limit: limit,
         offset: offset,
-        metadata: { count: "total" },
       },
     },
     ctx
   );
+
+  console.log(request, "< request");
 
   let metadata: any = request?.metadata ?? {};
 
@@ -194,7 +201,7 @@ export default function Produtos({
         </div>
 
         <div className="pt-4 pb-14">
-          {!!paginate.length && (
+          {!!paginate?.length && (
             <Paginate
               paginate={paginate}
               current={parseInt(page)}

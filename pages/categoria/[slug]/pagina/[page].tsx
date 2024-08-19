@@ -81,7 +81,13 @@ export async function getStaticProps(ctx: any) {
   const category = request?.data?.category ?? [];
   const products = request?.data?.products ?? [];
 
-  request = await api.request({ url: "content/products" }, ctx);
+  request = await api.request(
+    {
+      method: "get",
+      url: "content/products",
+    },
+    ctx
+  );
 
   const content = request?.data?.content ?? {};
 
@@ -196,7 +202,7 @@ export default function Categoria({
         </div>
 
         <div className="pt-4 pb-14">
-          {!!paginate.length && (
+          {!!paginate?.length && (
             <Paginate
               paginate={paginate}
               current={parseInt(page)}

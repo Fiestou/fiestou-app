@@ -18,7 +18,7 @@ export default function Paginate({
     pagesNext: 0,
   };
 
-  if (paginate.length > 10) {
+  if (paginate?.length > 10) {
     handle = {
       prev: current - 3,
       next: current + 3,
@@ -67,7 +67,7 @@ export default function Paginate({
             )
         )}
 
-      {!!handle.next && handle.next <= paginate.length - 1 && (
+      {!!handle.next && handle.next <= paginate?.length - 1 && (
         <>
           <div className="pt-1">...</div>
           <Button

@@ -1,6 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import axios from "axios";
 import Cookies from "js-cookie";
+import { serializeParam } from "../helper";
 
 const token = Cookies.get("fiestou.authtoken");
 
@@ -45,19 +46,7 @@ class Api {
 
       if (method === "get" && !!data && Object.keys(data).length > 0) {
         const queryString = Object.keys(data)
-          .map((key) => {
-            const value = data[key];
-            if (Array.isArray(value)) {
-              return value
-                .map(
-                  (item) =>
-                    `${encodeURIComponent(key)}[]=${encodeURIComponent(item)}`
-                )
-                .join("&");
-            }
-
-            return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
-          })
+          .map((key) => serializeParam(key, data[key]))
           .join("&");
 
         url = `${url}?${queryString}`;

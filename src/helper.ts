@@ -48,6 +48,23 @@ export function moneyFormat(number?: number | string, separator?: string) {
   return number;
 }
 
+export function serializeParam(key: string, value: any): string {
+  if (Array.isArray(value)) {
+    // Serializa arrays no formato key[]=value1&key[]=value2...
+    return value
+      .map((item) => `${encodeURIComponent(key)}[]=${encodeURIComponent(item)}`)
+      .join("&");
+  } else if (typeof value === "object" && value !== null) {
+    // Serializa objetos recursivamente no formato key[subkey]=value...
+    return Object.keys(value)
+      .map((subKey) => serializeParam(`${key}[${subKey}]`, value[subKey]))
+      .join("&");
+  } else {
+    // Serializa valores simples
+    return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+  }
+}
+
 export function dateFormat(date?: any) {
   const handle = date ?? new Date();
 
