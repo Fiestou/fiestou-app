@@ -181,7 +181,6 @@ Route::group([ 'prefix' => 'content' ], function(){
 // REST / GRAPH
 Route::group([ 'prefix' => 'request' ], function(){
     Route::post('/graph', [RequestController::class, 'Graph']);
-
     Route::get('/products', [ProductsController::class, 'List']);
     Route::get('/product', [ProductsController::class, 'Get']);
     Route::get('/stores', [StoresController::class, 'List']);
