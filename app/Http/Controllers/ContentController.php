@@ -403,6 +403,31 @@ class ContentController extends Controller
         ]);
     }
 
+    public function Default(Request $request){
+        return Content::getDefault(true);
+    }
+
+    // ADMIN
+    public function GetListContent(Request $request){
+        $pages = Content::where(["type" => "page"])
+                        ->get();
+
+        if($pages){
+            foreach ($pages as $key => $post) {
+                $pages[$key] = $post->setCustomContent();
+            }
+
+            return response()->json([
+                'response'  => true,
+                'data'      => $pages
+            ]);
+        }
+
+        return response()->json([
+            'response'  => false
+        ]);
+    }
+
     public function Graph(Request $request){
 
         $request->validate([
@@ -472,9 +497,5 @@ class ContentController extends Controller
             'response'  => true,
             'list'      => $list
         ]);
-    }
-
-    public function Default(Request $request){
-        return Content::getDefault(true);
     }
 }

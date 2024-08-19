@@ -58,10 +58,20 @@ class StoresController extends Controller
 
         if(isset($store->id)){
 
-            $store->cover = json_decode($store->cover);
-            $store->profile = json_decode($store->profile);
-            $store->openClose = json_decode($store->openClose);
-            // $store->meta = json_decode($store->meta);
+            $cover = !!$store->cover ? Media::where(['id' => $store->cover])->first() : [];
+            if(isset($cover->id)){
+                $cover->details = json_decode($cover->details);
+                $store->cover   = $cover;
+            }
+
+            $profile = !!$store->profile ? Media::where(['id' => $store->profile])->first() : [];
+            if(isset($profile->id)){
+                $profile->details = json_decode($profile->details);
+                $store->profile   = $profile;
+            }
+
+            $store->openClose   = json_decode($store->openClose);
+            $store->metadata    = json_decode($store->metadata);
 
             return response()->json([
                 'response'  => true,
@@ -188,13 +198,25 @@ class StoresController extends Controller
             $store = Store::where('id', $store->id)
                           ->first();
 
+            $cover      = $store->cover;
+            $profile    = $store->profile;
+
+            if($request->has('cover') && !!$request->get('cover')){
+                $cover = $request->get('cover');
+                $cover = $cover['id'];
+            }
+
+            if($request->has('profile') && !!$request->get('profile')){
+                $profile = $request->get('profile');
+                $profile = $profile['id'];
+            }
+
             $store->RequestToThis($request);
 
-            $store->cover = json_encode($request->get('cover'));
-            $store->cover = json_encode($request->get('cover'));
-            $store->profile = json_encode($request->get('profile'));
-            $store->openClose = json_encode($request->get('openClose'));
-            $store->meta = json_encode($request->get('meta'));
+            $store->cover       = $cover;
+            $store->profile     = $profile;
+            $store->openClose   = json_encode($request->get('openClose'));
+            $store->metadata    = json_encode($request->get('metadata'));
 
             DB::beginTransaction();
 
@@ -204,9 +226,12 @@ class StoresController extends Controller
 
             DB::commit();
 
+            $store->cover   = !!$store->$cover      ? Media::TakeImage($store->cover)   : NULL;
+            $store->profile = !!$store->$profile    ? Media::TakeImage($store->profile) : NULL;
+
             return response()->json([
                 'response'  => true,
-                'request'   => $request->all(),
+                'request'   => [$cover, $profile],
                 'data'      => $store
             ]);
         }

@@ -128,10 +128,10 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         });
 
         Route::group([ 'prefix' => 'content' ], function(){
+            Route::get('/get-list-content', [ContentController::class, 'GetListContent']);
             Route::post('/register-content', [ContentController::class, 'RegisterContent']);
             Route::post('/get-content', [ContentController::class, 'GetContent']);
-            Route::post('/graph', [ContentController::class, 'Graph']);
-            Route::post('/get-list-content', [ContentController::class, 'GetListContent']);
+            // Route::post('/graph', [ContentController::class, 'Graph']);
             Route::post('/remove-content', [ContentController::class, 'RemoveContent']);
             Route::post('/reorder-content', [ContentController::class, 'ReorderContent']);
         });
@@ -181,12 +181,13 @@ Route::group([ 'prefix' => 'content' ], function(){
 // REST / GRAPH
 Route::group([ 'prefix' => 'request' ], function(){
     Route::post('/graph', [RequestController::class, 'Graph']);
-    Route::post('/products', [ProductsController::class, 'List']);
-    Route::post('/product', [ProductsController::class, 'Get']);
-    Route::post('/stores', [StoresController::class, 'List']);
-    Route::post('/store', [StoresController::class, 'Get']);
-    Route::post('/categories', [CategoriesController::class, 'List']);
-    Route::post('/categories-paths', [CategoriesController::class, 'Paths']);
-    Route::post('/category', [CategoriesController::class, 'Get']);
+
+    Route::get('/products', [ProductsController::class, 'List']);
+    Route::get('/product', [ProductsController::class, 'Get']);
+    Route::get('/stores', [StoresController::class, 'List']);
+    Route::get('/store', [StoresController::class, 'Get']);
+    Route::get('/categories', [CategoriesController::class, 'List']);
+    Route::get('/categories-paths', [CategoriesController::class, 'Paths']);
+    Route::get('/category', [CategoriesController::class, 'Get']);
 });
 

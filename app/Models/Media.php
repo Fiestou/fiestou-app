@@ -28,7 +28,13 @@ class Media extends BaseModel
         'type'
     ];
 
-    public static function normalizeMedia($medias = []){
+    public static function normalizeMedia($medias = [], $single = false){
+        if(!$medias) return NULL;
+
+        if(!is_array($medias)){
+            $medias = [$medias];
+            $single = true;
+        }
 
         $mediaList = Media::whereIn("id", $medias)->get();
 
@@ -36,7 +42,7 @@ class Media extends BaseModel
             $media->details = isset($media->details) && !!$media->details ? json_decode($media->details) : [];
         }
 
-        return $mediaList;
+        return $single ? (isset($mediaList[0]) ? $mediaList[0] : NULL) : $mediaList;
     }
 
     public static function MakeUpload($files, $path = NULL, $app = NULL)
@@ -154,6 +160,15 @@ class Media extends BaseModel
         catch(Exception $e){
             return $this->file_name.': error - '.$e->getMessage();
         }
+    }
+
+    public static function TakeImage($imageID){
+        if(!$imageID) return NULL;
+
+        $media = Media::where(['id' => $imageID])->first();
+        $media->details = json_decode($media->details);
+
+        return $media;
     }
 
     public static function GetImage($image, $size = 'lg')

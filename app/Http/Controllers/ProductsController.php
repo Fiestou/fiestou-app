@@ -72,7 +72,7 @@ class ProductsController extends Controller
             $colors = (is_array($request->get('cores'))) ? $request->get('cores') : [$request->get('cores')];
             $products = $products->where(function ($query) use ($colors) {
                 foreach ($colors as $key => $color) {
-                    $query->orWhere('color', "like", '%'.$color.'%');
+                    $query->where('color', "like", '%'.$color.'%');
                 }
             });
         }

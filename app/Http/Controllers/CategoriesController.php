@@ -41,9 +41,24 @@ class CategoriesController extends Controller
         $categories = Category::select(['slug']);
         $categories = Category::normalize($categories->get());
 
+        $handle = [];
+
+        foreach ($categories as $key => $item) {
+
+            $categoriesRel  = Category::whereIn('slug', [$item->slug])->pluck('id')->toArray();
+            $whereIn        = CategoryRel::whereIn('category', $categoriesRel)->pluck('product')->toArray();
+
+            $productsCount = Product::select(['id'])
+                                ->where(['status' => 1])
+                                ->whereIn('id', $whereIn)
+                                ->count();
+
+            $handle[$item->slug] = ceil($productsCount / $request->get('limit', 15));
+        }
+
         return response()->json([
             'response'  => true,
-            'data'      => $categories
+            'data'      => $handle
         ]);
     }
 
@@ -74,7 +89,7 @@ class CategoriesController extends Controller
                            ->whereIn('id', $whereIn);
 
         $count = $products;
-        $metadata['count'] = $products->count();
+        $metadata['count'] = $count->count();
 
         if($request->has('limit') && $request->get('limit')){
             $products = $products->limit($request->get('limit'));

@@ -23,7 +23,7 @@ class Store extends BaseModel
         "openClose",
         "segment",
         "hasDelivery",
-        "meta",
+        "metadata",
         "zipCode",
         "street",
         "number",

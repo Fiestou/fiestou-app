@@ -38,7 +38,7 @@ class CheckoutController extends Controller
                             ->get();
 
         $content = Content::where(["slug" => "checkout", "type" => "page"])
-                        ->first();
+                          ->first();
 
         return response()->json([
             'response'  => true,
