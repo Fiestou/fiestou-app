@@ -54,24 +54,16 @@ export async function getStaticProps(ctx: any) {
 
   let request: any = await api.content(
     {
-      method: "get",
-      url: "default",
+      url: "products",
     },
     ctx
   );
+
+  console.log(request);
 
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
-
-  request = await api.request(
-    {
-      method: "get",
-      url: "content/products",
-    },
-    ctx
-  );
-
   const content = request?.data?.content ?? {};
 
   let offset = !!params?.page ? (params?.page - 1) * limit : 0;
@@ -88,7 +80,7 @@ export async function getStaticProps(ctx: any) {
     ctx
   );
 
-  console.log(request, "< request");
+  // console.log(request, "< request");
 
   let metadata: any = request?.metadata ?? {};
 

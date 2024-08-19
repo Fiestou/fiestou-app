@@ -45,12 +45,12 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/categoria/:slug",
-        destination: "/categoria/:slug/pagina/1",
-      },
-      {
         source: "/produtos",
         destination: "/produtos/pagina/1",
+      },
+      {
+        source: "/categoria/:slug",
+        destination: "/categoria/:slug/pagina/1",
       },
       {
         source: "/sitemap.xml",

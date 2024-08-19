@@ -100,9 +100,8 @@ export async function getStaticProps(ctx: any) {
     const comments = product?.comments ?? [];
     const store = product?.store ?? {};
 
-    request = await api.request(
+    request = await api.content(
       {
-        method: "get",
         url: "content/product",
       },
       ctx
