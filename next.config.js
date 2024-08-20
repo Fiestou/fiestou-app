@@ -45,10 +45,6 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/produtos",
-        destination: "/produtos/pagina/1",
-      },
-      {
         source: "/categoria/:slug",
         destination: "/categoria/:slug/pagina/1",
       },

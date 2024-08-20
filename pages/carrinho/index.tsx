@@ -109,6 +109,7 @@ export default function Carrinho({
   };
 
   useEffect(() => {
+    console.log(cart);
     setListCart(cart);
 
     const handleDate = cart.map((item: any) => item.details.dateStart);
