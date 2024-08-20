@@ -124,7 +124,7 @@ export default function Button(attr: ButtonType) {
         !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : {}
       }
     >
-      {renderChildren()}
+      <a>{renderChildren()}</a>
     </Link>
   );
 }
