@@ -59,8 +59,6 @@ export async function getStaticProps(ctx: any) {
     ctx
   );
 
-  console.log(request);
-
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};

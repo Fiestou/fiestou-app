@@ -67,7 +67,7 @@ export async function getStaticProps(ctx: any) {
       method: "get",
       url: "request/products",
       data: {
-        store: store,
+        store: slug,
         limit: 16,
       },
     });
