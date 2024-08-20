@@ -29,8 +29,6 @@ export const getStaticPaths = async (ctx: any) => {
   const paths: any = [];
 
   Object.keys(categories).map((slug: any) => {
-    paths.push({ params: { slug: slug, page: "" } });
-
     Array.from({ length: categories[slug] }).map((_: any, key: any) => {
       paths.push({ params: { slug: slug, page: (key + 1).toString() } });
     });
