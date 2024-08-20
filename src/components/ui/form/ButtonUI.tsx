@@ -118,13 +118,12 @@ export default function Button(attr: ButtonType) {
       {...attrs}
       {...attr?.othersAttrs}
       href={!!attr?.href && !attr?.disable ? attr?.href : "#"}
-      passHref
       target={!!attr?.target && !attr?.disable ? attr?.target : "_self"}
       onClick={(e) =>
         !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : {}
       }
     >
-      <a>{renderChildren()}</a>
+      {renderChildren()}
     </Link>
   );
 }
