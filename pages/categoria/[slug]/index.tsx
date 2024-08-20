@@ -1,14 +1,13 @@
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 
-export async function getStaticProps(ctx: any) {
-  const { slug } = ctx.params;
+export async function getServerSideProps(ctx: any) {
+  const { slug } = ctx.query;
 
   return {
     props: {
       slug: slug,
     },
-    revalidate: 60 * 60 * 60,
   };
 }
 
