@@ -79,7 +79,9 @@ class ProductsController extends Controller
 
         if ($request->has('busca') && $request->get('busca')) {
             $termo = $request->get('busca');
-            $busca = is_array($termo) ? $termo : explode(" ", handleSearchTerms($termo));
+            $termo = is_array($termo) ? implode(" ", $termo) : $termo;
+
+            $busca = explode(" ", handleSearchTerms($termo));
 
             $products = $products->where(function ($query) use ($busca, $termo) {
                 $query->orWhere('tags', 'like', '%' . $termo . '%');
