@@ -21,6 +21,7 @@ use App\Http\Controllers\StoresController;
 use App\Http\Controllers\CommentsController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\AdminController;
 
 
 /*
@@ -119,14 +120,24 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/me', [AuthController::class, 'Me']);
 
         Route::group([ 'prefix' => 'users' ], function(){
+            Route::get('/get', [UsersController::class, 'GetUser']);
+            Route::get('/list', [UsersController::class, 'ListUser']);
             Route::post('/update', [UsersController::class, 'Update']);
-            Route::post('/get', [UsersController::class, 'GetUser']);
-            Route::post('/list', [UsersController::class, 'ListUser']);
             Route::post('/validate', [AuthController::class, 'ValidateUser']);
             Route::post('/set-relationship', [UsersController::class, 'SetRelationship']);
             Route::post('/get-relationship', [UsersController::class, 'GetRelationship']);
         });
 
+        // ADMIN
+        Route::group([ 'prefix' => 'admin' ], function(){
+            Route::get('/content/get', [AdminController::class, 'GetContent']);
+            Route::get('/content/list', [AdminController::class, 'ListContent']);
+            Route::post('/content/register', [AdminController::class, 'RegisterContent']);
+            // Route::post('/content/remove', [AdminController::class, 'RemoveContent']);
+            // Route::post('/content/reorder', [AdminController::class, 'ReorderContent']);
+        });
+
+        // OLD
         Route::group([ 'prefix' => 'content' ], function(){
             Route::get('/get-list-content', [ContentController::class, 'GetListContent']);
             Route::post('/register-content', [ContentController::class, 'RegisterContent']);
@@ -135,6 +146,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
             Route::post('/remove-content', [ContentController::class, 'RemoveContent']);
             Route::post('/reorder-content', [ContentController::class, 'ReorderContent']);
         });
+        // ----
 
         Route::group([ 'prefix' => 'files' ], function(){
             Route::post('/list-medias', [FileController::class, 'ListMedias']);
@@ -169,6 +181,7 @@ Route::group([ 'prefix' => 'content' ], function(){
     Route::get('/about', [ContentController::class, 'About']);
     Route::get('/faq', [ContentController::class, 'Faq']);
     Route::get('/become-partner', [ContentController::class, 'BecomePartner']);
+    Route::get('/dashboard', [ContentController::class, 'Dashboard']);
     Route::get('/partners', [ContentController::class, 'Partners']);
     Route::get('/blog', [ContentController::class, 'Blog']);
     Route::get('/post/{slug?}', [ContentController::class, 'Post']);
@@ -189,5 +202,7 @@ Route::group([ 'prefix' => 'request' ], function(){
     Route::get('/categories', [CategoriesController::class, 'List']);
     Route::get('/categories-paths', [CategoriesController::class, 'Paths']);
     Route::get('/category', [CategoriesController::class, 'Get']);
+
+    Route::get('/blog', [ProductsController::class, 'List']);
 });
 

@@ -42,6 +42,27 @@ if(!function_exists('floatFormat')){
     }
 }
 
+if(!function_exists('handleSearchTerms')){
+    function handleSearchTerms($texto) {
+        $termosDeLigacao = [
+            '-', 'a','o','as','os','um','uma','uns','umas','de','do','da',
+            'dos','das','em','no','na','nos','nas','por','com','sem',
+            'e','mas','ou','nem','porque','quando','que','se','então',
+            'para','até','contra','perante','sob','sobre','trás'
+        ];
+
+        $texto = preg_replace('/[^\p{L}\s]/u', '', $texto);
+
+        $palavras = array_filter(explode(' ', $texto));
+
+        $palavrasFiltradas = array_filter($palavras, function($palavra) use ($termosDeLigacao) {
+            return !in_array(strtolower($palavra), $termosDeLigacao);
+        });
+
+        return implode(' ', $palavrasFiltradas);
+    }
+}
+
 if (!function_exists('cleanHTMLtoSMS')) {
     function cleanHTMLtoSMS($text) {
 

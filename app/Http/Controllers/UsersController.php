@@ -19,15 +19,19 @@ class UsersController extends Controller
 
         if(!$request->has('ref')){
             $user = auth()->user();
-            $user = User::where([ 'id' => $user->id ])
-                        ->first();
+            $user = User::where([ 'id' => $user->id ]);
         }
         else{
             $user = User::where([ 'id' => $request->get('ref') ])
                         ->orWhere([ 'email' => $request->get('ref') ])
-                        ->orWhere([ 'hash' => $request->get('ref') ])
-                        ->first();
+                        ->orWhere([ 'hash' => $request->get('ref') ]);
         }
+
+        if($request->has('person')){
+            $user = $user->where('person', $request->get('person'));
+        }
+
+        $user = $user->first();
 
         $user->DetailsUp();
 
@@ -41,10 +45,8 @@ class UsersController extends Controller
 
         $users = new User;
 
-        if($request->has('filter')){
-            foreach($request->filter as $flt){
-                $users = $users->where($flt['key'], $flt['compare'], $flt['value']);
-            }
+        if($request->has('person')){
+            $users = $users->where('person', $request->get('person'));
         }
 
         $users = $users->get();

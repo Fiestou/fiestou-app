@@ -77,17 +77,34 @@ class ProductsController extends Controller
             });
         }
 
-        if($request->has('busca') && $request->get('busca')){
-            $busca = $request->get('busca');
-            $products = $products->where(function ($query) use ($busca) {
-                $busca = is_array($busca) ? $busca : [$busca];
-                foreach($busca as $term){
-                    $query->orWhere('tags', "like", '%'.$term.'%');
-                    $query->orWhere('title', "like", '%'.$term.'%');
-                    $query->orWhere('subtitle', "like", '%'.$term.'%');
-                    $query->orWhere('description', "like", '%'.$term.'%');
+        if ($request->has('busca') && $request->get('busca')) {
+            $termo = $request->get('busca');
+            $busca = explode(" ", handleSearchTerms($termo));
+
+            $products = $products->where(function ($query) use ($busca, $termo) {
+                $query->orWhere('tags', 'like', '%' . $termo . '%');
+
+                foreach ($busca as $term) {
+                    $query->orWhere('tags', 'like', '%' . $term . '%')
+                          ->orWhere('title', 'like', '%' . $term . '%')
+                          ->orWhere('subtitle', 'like', '%' . $term . '%')
+                          ->orWhere('description', 'like', '%' . $term . '%');
                 }
             });
+
+            $products = $products->orderByRaw(
+                "CASE
+                    WHEN title LIKE ? THEN 2
+                    WHEN subtitle LIKE ? THEN 3
+                    WHEN description LIKE ? THEN 4
+                    ELSE 5
+                END, title ASC",
+                [
+                    '%' . $termo . '%',
+                    '%' . $termo . '%',
+                    '%' . $termo . '%'
+                ]
+            );
         }
 
         if($request->has('range') && $request->get('range')){

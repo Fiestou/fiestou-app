@@ -16,20 +16,6 @@ use Illuminate\Support\Str;
 
 class ContentController extends Controller
 {
-    public $user;
-
-    public function __construct(){
-        $this->user = auth()->user();
-
-        if(isset($this->user->id)){
-            return response()->json([
-                'response'  => false,
-                'message'   => 'usuário não validado'
-            ], 500);
-            exit();
-        }
-    }
-
     public function Home(Request $request){
 
         $content = Content::where(["slug" => "home", "type" => "page"])
@@ -149,7 +135,7 @@ class ContentController extends Controller
         if(isset($content->id)){
 
             $stores = Store::where(["status" => 1])
-                            ->get();
+                           ->get();
 
             return response()->json([
                 'response'  => true,
@@ -394,6 +380,48 @@ class ContentController extends Controller
                 'data'      => array_merge(
                                     Content::getDefault(),
                                     ["mailContent" => $content->setCustomContent()]
+                                )
+            ]);
+        }
+
+        return response()->json([
+            'response'  => false
+        ]);
+    }
+
+    public function Dashboard(Request $request){
+
+        $content = Content::where(["slug" => "client-menu", "type" => "page"])
+                          ->first();
+
+        if(isset($content->id)){
+
+            return response()->json([
+                'response'  => true,
+                'data'      => array_merge(
+                                    Content::getDefault(),
+                                    ["Dashboard" => $content->setCustomContent()]
+                                )
+            ]);
+        }
+
+        return response()->json([
+            'response'  => false
+        ]);
+    }
+
+    public function Email(Request $request){
+
+        $content = Content::where(["slug" => "email", "type" => "page"])
+                          ->first();
+
+        if(isset($content->id)){
+
+            return response()->json([
+                'response'  => true,
+                'data'      => array_merge(
+                                    Content::getDefault(),
+                                    ["Email" => $content->setCustomContent()]
                                 )
             ]);
         }
