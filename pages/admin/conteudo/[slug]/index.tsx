@@ -2,12 +2,13 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { Button, Label, Select } from "@/src/components/ui/form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
 import HandleField from "@/src/components/ui/form/HandleField";
 import { HandleGetFields } from "@/src/components/pages/admin/conteudo/ContentForm";
 import axios from "axios";
+import { shortId } from "@/src/helper";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -24,25 +25,9 @@ export async function getServerSideProps(ctx: any) {
     };
   }
 
-  let request: any = await api.call({
-    url: "request/graph",
-    data: [
-      {
-        model: "page",
-        filter: [
-          {
-            key: "slug",
-            value: slug,
-            compare: "=",
-          },
-        ],
-      },
-    ],
-  });
-
   return {
     props: {
-      page: request?.data?.query?.page[0] ?? {},
+      slug: slug,
       formFields: formFields,
     },
   };
@@ -54,23 +39,26 @@ const formInitial = {
 };
 
 export default function Form({
-  page,
+  slug,
   formFields,
 }: {
-  page: any;
+  slug: any;
   formFields: any;
 }) {
   const api = new Api();
   const router = useRouter();
+
+  const [placeholder, setPlaceholder] = useState(true as boolean);
 
   const [form, setForm] = useState(formInitial);
   const setFormValue = (value: any) => {
     setForm((form) => ({ ...form, ...value }));
   };
 
-  const [content, setContent] = useState(
-    { ...page, publicUrl: formFields?.publicUrl ?? "" } ?? ({} as any)
-  );
+  const [page, setPage] = useState({} as any);
+
+  const [content, setContent] = useState({} as any);
+
   const handleContent = (name: any, value: any) => {
     let handle: any = content;
 
@@ -80,7 +68,12 @@ export default function Form({
   };
 
   const handleCache = async () => {
-    if (!!page.publicUrl) await axios.get(`/api/cache?route=${page.publicUrl}`);
+    try {
+      if (!!page.publicUrl)
+        await axios.get(`/api/cache?route=${page.publicUrl}`);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleSubmit = async (e: any) => {
@@ -92,19 +85,16 @@ export default function Form({
       ...content,
     };
 
-    const request: any = await api.graph({
-      url: "content/graph",
-      data: [
-        {
-          method: "register",
-          model: "page",
-          id: content.id ?? null,
-          title: formFields?.title ?? null,
-          slug: formFields?.slug ?? null,
-          status: content?.status,
-          content: handle,
-        },
-      ],
+    const request: any = await api.bridge({
+      url: "admin/content/register",
+      data: {
+        type: "page",
+        id: content.id ?? null,
+        title: formFields?.title ?? `page-${shortId()}`,
+        slug: formFields?.slug ?? null,
+        status: content?.status,
+        content: handle,
+      },
     });
 
     await handleCache();
@@ -112,7 +102,7 @@ export default function Form({
     setContent(handle);
 
     if (request.response) {
-      setFormValue({ loading: false, sended: request.response });
+      router.push({ pathname: "/admin/conteudo" });
     } else {
       setFormValue({ loading: false, sended: request.response });
     }
@@ -153,6 +143,31 @@ export default function Form({
       ))
     );
   };
+
+  const getPost = async () => {
+    setPlaceholder(true);
+
+    if (slug != "form") {
+      let request: any = await api.bridge({
+        method: "get",
+        url: "admin/content/get",
+        data: {
+          type: "page",
+          slug: slug,
+        },
+      });
+
+      if (request.response) {
+        setContent({ ...request.data, publicUrl: formFields?.publicUrl ?? "" });
+      }
+    }
+
+    setPlaceholder(false);
+  };
+
+  useEffect(() => {
+    getPost();
+  }, []);
 
   return (
     !router.isFallback && (

@@ -9,6 +9,8 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Editor from "@/src/components/ui/form/EditorUI";
 import FileManager from "@/src/components/ui/form/FileManager";
+import { shortId } from "@/src/helper";
+import axios from "axios";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -53,6 +55,14 @@ export default function Form({ slug }: { slug: string }) {
     setContent({ ...content, ...value });
   };
 
+  const handleCache = async () => {
+    try {
+      await axios.get(`/api/cache?route=/blog/${content.slug}`);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
@@ -62,28 +72,26 @@ export default function Form({ slug }: { slug: string }) {
       ...content,
     };
 
-    const request: any = await api.graph({
-      url: "content/graph",
-      data: [
-        {
-          method: "register",
-          model: "communicate",
-          id: content.id ?? null,
-          title: content?.title ?? null,
-          slug: content?.title ?? null,
-          status: !!content?.status ? 1 : 0,
-          content: {
-            image: handle.image,
-            blocks: handle.blocks,
-          },
+    const request: any = await api.bridge({
+      url: "admin/content/register",
+      data: {
+        type: "communicate",
+        id: content.id ?? null,
+        title: content?.title ?? `content-${shortId()}`,
+        slug: content?.title ?? null,
+        status: content?.status,
+        content: {
+          image: handle.image,
+          blocks: handle.blocks,
         },
-      ],
+      },
     });
+
+    await handleCache();
 
     setContent(handle);
 
     if (request.response) {
-      // setFormValue({ loading: false, sended: request.response });
       router.push({ pathname: "/admin/comunicados" });
     } else {
       setFormValue({ loading: false, sended: request.response });
@@ -91,28 +99,19 @@ export default function Form({ slug }: { slug: string }) {
   };
 
   const getPost = async () => {
+    setPlaceholder(true);
+
     if (slug != "form") {
-      let request: any = await api.call({
-        url: "request/graph",
-        data: [
-          {
-            model: "communicate",
-            filter: [
-              {
-                key: "slug",
-                value: slug,
-                compare: "=",
-              },
-            ],
-          },
-        ],
+      let request: any = await api.bridge({
+        method: "get",
+        url: "admin/content/get",
+        data: {
+          type: "communicate",
+          slug: slug,
+        },
       });
 
-      if (request.response) {
-        const post = request.data.query.communicate[0] ?? {};
-
-        setContent(post);
-      }
+      setContent(request.data);
     }
 
     setPlaceholder(false);

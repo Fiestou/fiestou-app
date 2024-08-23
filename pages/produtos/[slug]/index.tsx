@@ -20,7 +20,7 @@ import {
   moneyFormat,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { AddToCart, GetCart } from "@/src/components/pages/carrinho";
 import Badge from "@/src/components/utils/Badge";
@@ -147,6 +147,8 @@ export default function Produto({
   const api = new Api();
 
   const { isFallback } = useRouter();
+
+  const [swiperInstance, setSwiperInstance] = useState(null as any);
 
   const imageCover =
     !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
@@ -561,6 +563,26 @@ export default function Produto({
     </>
   );
 
+  const getImageAttr = (imageID: any) => {
+    let imageGallery = {};
+
+    (product?.gallery ?? [])
+      .filter((img: any) => img.id == imageID)
+      .map((img: any) => {
+        imageGallery = img;
+      });
+
+    return imageGallery ?? "";
+  };
+
+  const navegateImageCarousel = (imageID: any) => {
+    const imageIndex = product?.gallery?.findIndex((img) => img.id === imageID);
+
+    if (imageIndex !== -1 && swiperInstance) {
+      swiperInstance.slideTo(imageIndex);
+    }
+  };
+
   if (isFallback) {
     return <></>;
   }
@@ -598,8 +620,8 @@ export default function Produto({
               {!!product?.gallery && (
                 <div className="relative -mx-4 md:mx-0 md:mb-10">
                   <Swiper
+                    onSwiper={(swiper) => setSwiperInstance(swiper)}
                     spaceBetween={16}
-                    loop={true}
                     modules={[Pagination, Navigation]}
                     navigation={{
                       prevEl: ".swiper-gallery-prev", // define o botão anterior
@@ -793,7 +815,7 @@ export default function Produto({
                         </div>
                         <div className="border-b">
                           {attribute?.variations &&
-                            attribute?.variations.map((item, key) => (
+                            attribute?.variations.map((item: any, key) => (
                               <label
                                 key={key}
                                 className="flex border-t py-2 gap-4 items-center"
@@ -820,6 +842,7 @@ export default function Produto({
                                     </div>
                                   </div>
                                 )}
+
                                 {attribute.selectType == "checkbox" && (
                                   <div className="w-fit">
                                     <div
@@ -842,12 +865,47 @@ export default function Produto({
                                     </div>
                                   </div>
                                 )}
-                                <div className="w-full py-1">{item.title}</div>
+
+                                {!!getImageAttr(item?.image) && (
+                                  <div
+                                    onClick={() =>
+                                      navegateImageCarousel(item?.image)
+                                    }
+                                    className="aspect-[4/3] cursor-pointer bg-zinc-100 w-[4.5rem] relative"
+                                  >
+                                    <Img
+                                      src={getImage(
+                                        getImageAttr(item?.image),
+                                        "thumb"
+                                      )}
+                                      className="rounded absolute w-full h-full inset-0 object-contain"
+                                    />
+                                  </div>
+                                )}
+
+                                <div
+                                  className="w-full py-1"
+                                  onClick={() => {
+                                    updateOrder(
+                                      {
+                                        id: item.id,
+                                        title: item.title ?? "",
+                                        price: item.price,
+                                        quantity: 1,
+                                      },
+                                      attribute
+                                    );
+                                  }}
+                                >
+                                  {item.title}
+                                </div>
+
                                 <div className="w-fit py-1 whitespace-nowrap">
-                                  {!!item.price
+                                  {!!item?.price
                                     ? `R$ ${moneyFormat(item.price)}`
                                     : ""}
                                 </div>
+
                                 {attribute.selectType == "quantity" && (
                                   <div className="w-fit">
                                     <QtdInput

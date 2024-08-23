@@ -8,53 +8,51 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/form";
 import { print_r } from "@/src/helper";
+import { useEffect, useState } from "react";
+import UserEditAdmin from "@/src/components/shared/UserEditAdmin";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
   const { id } = ctx.query;
-  const request: any = await api.bridge(
-    {
-      url: "users/list",
-      data: {
-        filter: [
-          {
-            key: "id",
-            value: id,
-            compare: "=",
-          },
-        ],
-      },
-    },
-    ctx
-  );
-
-  if (!request?.data) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/admin/usuarios",
-      },
-    };
-  }
-
-  let user = request?.data ?? [];
-  user = request?.data[0] ?? {};
 
   return {
     props: {
-      user: user,
+      id: id,
     },
   };
 }
 
-export default function MeusDados({ user }: { user: UserType }) {
+export default function Partner({ id }: any) {
   const router = useRouter();
+
+  const api = new Api();
+
+  const [partner, setPartner] = useState({} as UserType);
 
   const submitUser = (e: any) => {
     e.preventDefault();
 
-    // console.log(user);
+    // console.log(partner);
   };
+
+  const getPartner = async () => {
+    const request: any = await api.bridge({
+      method: "get",
+      url: "users/get",
+      data: {
+        ref: id,
+        person: "partner",
+      },
+    });
+
+    if (request.response) {
+      setPartner(request.data);
+    }
+  };
+
+  useEffect(() => {
+    getPartner();
+  }, []);
 
   return (
     !router.isFallback && (
@@ -74,39 +72,19 @@ export default function MeusDados({ user }: { user: UserType }) {
               </div>
             </div>
             <div className="flex items-center mt-10">
-              <Link passHref href="/dashboard">
+              <Link passHref href="/admin/parceiros/">
                 <Icon
                   icon="fa-long-arrow-left"
                   className="mr-6 text-2xl text-zinc-900"
                 />
               </Link>
               <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                Dados de usuário
+                Parceiro
               </div>
             </div>
           </div>
         </section>
-        <section className="">
-          <div className="container-medium pb-12">
-            <div className="grid md:flex gap-10 md:gap-24">
-              <div className="w-full">
-                {Object.entries(user).map((item: any, key: any) => (
-                  <div key={key} className="flex gap-2 border-b py-2">
-                    <div className="font-semibold">{item[0]}:</div>{" "}
-                    <pre className="whitespace-pre-wrap">
-                      {print_r(item[1])}
-                    </pre>
-                  </div>
-                ))}
-              </div>
-              <div className="w-full max-w-[24rem]">
-                <form className="grid" onSubmit={(e: any) => submitUser(e)}>
-                  <Button>Salvar</Button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </section>
+        {!!partner && <UserEditAdmin user={partner} />}
       </Template>
     )
   );

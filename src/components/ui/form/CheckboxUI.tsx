@@ -7,16 +7,14 @@ export default function Checkbox({
 }) {
   return (
     <label
-      className={`block border ${
+      className={`block border border-zinc-300 ${
         type == "radio" ? "rounded-full" : "rounded"
-      } ease p-1 group/item cursor-pointer`}
+      } ease p-1 group/item cursor-pointer hover:border-yellow-400`}
     >
       <div
         className={`${
           type == "radio" ? "rounded-full" : "rounded-[2px]"
-        } ease p-[6px] ${
-          checked && "bg-yellow-400"
-        } group-hover/item:bg-zinc-200`}
+        } ease p-[6px] ${checked && "bg-yellow-400"}`}
       ></div>
     </label>
   );

@@ -8,6 +8,7 @@ export interface AttributeType {
   selectType: string;
   limit?: number;
   priceType: string;
+  image?: string | number;
   variations: Array<any>;
 }
 

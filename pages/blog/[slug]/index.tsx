@@ -119,12 +119,13 @@ export default function Post({
       <section className="my-10 pb-20">
         <div className="container-medium">
           <div className="mx-auto max-w-[40rem] grid gap-4">
-            {Post?.blocks.map((item: any, key: any) => (
-              <div
-                key={key}
-                dangerouslySetInnerHTML={{ __html: item.content }}
-              ></div>
-            ))}
+            {!!Post?.blocks?.length &&
+              Post?.blocks.map((item: any, key: any) => (
+                <div
+                  key={key}
+                  dangerouslySetInnerHTML={{ __html: item.content }}
+                ></div>
+              ))}
           </div>
         </div>
       </section>

@@ -1,4 +1,4 @@
-export const UserMenuForm = [
+export const DashboardForm = [
   {
     title: "Mensagem ao usuário",
     fields: [

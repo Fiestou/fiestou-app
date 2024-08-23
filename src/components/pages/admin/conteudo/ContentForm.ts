@@ -18,9 +18,9 @@ import { SeoForm } from "@/src/components/pages/admin/conteudo/SeoForm";
 import { ScriptsForm } from "@/src/components/pages/admin/conteudo/ScriptsForm";
 import { EmailForm } from "@/src/components/pages/admin/conteudo/EmailForm";
 import { WithdrawForm } from "@/src/components/pages/admin/conteudo/WithdrawForm";
-import { UserMenuForm } from "./UserMenuForm";
 import { BlogForm } from "./BlogForm";
 import { CheckoutForm } from "./CheckoutForm";
+import { DashboardForm } from "./DashboardForm";
 
 export interface FormType {
   title: string;
@@ -185,10 +185,10 @@ const painel: Array<FormType> = [
 
 const dashboard: Array<FormType> = [
   {
-    title: "Menu de usuário",
+    title: "Dashboard",
     slug: "client-menu",
     publicUrl: "",
-    form: UserMenuForm,
+    form: DashboardForm,
     origin: "dashboard",
   },
   {

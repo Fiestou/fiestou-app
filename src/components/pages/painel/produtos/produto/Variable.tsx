@@ -5,6 +5,7 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useState } from "react";
 import Variations from "./Variations";
 import { shortId } from "@/src/helper";
+import SelectDropdown from "@/src/components/ui/form/SelectDropdown";
 
 export default function Variable({
   product,
@@ -189,30 +190,29 @@ export default function Variable({
                   <div className="flex gap-6">
                     <div className="w-full form-group">
                       <Label style="light">Tipo de seleção</Label>
-                      <Select
+                      <SelectDropdown
                         name="tipo_selecao"
-                        onChange={(e: any) =>
-                          updateAttribute(
-                            { selectType: e.target.value },
-                            attribute.id
-                          )
+                        onChange={(value: any) =>
+                          updateAttribute({ selectType: value }, attribute.id)
                         }
                         value={attribute.selectType ?? "radio"}
                         options={[
                           {
+                            icon: "fa-dot-circle",
                             value: "radio",
                             name: "Seleção única",
                           },
                           {
+                            icon: "fa-check-square",
                             value: "checkbox",
                             name: "Seleção múltipla",
                           },
                           {
+                            icon: "fa-sort-numeric-up-alt",
                             value: "quantity",
                             name: "Por quandidade",
                           },
                         ]}
-                        className="text-sm p-3"
                       />
                     </div>
                     {attribute?.selectType == "checkbox" && (
@@ -234,31 +234,30 @@ export default function Variable({
                     )}
                     <div className="w-full form-group">
                       <Label style="light">Preços</Label>
-                      <Select
+                      <SelectDropdown
                         name="tipo_preco"
-                        onChange={(e: any) =>
-                          updateAttribute(
-                            { priceType: e.target.value },
-                            attribute.id
-                          )
+                        onChange={(value: any) =>
+                          updateAttribute({ priceType: value }, attribute.id)
                         }
-                        value={attribute.priceType}
+                        value={attribute.priceType ?? ""}
                         options={[
                           {
+                            icon: "fa-usd-circle",
                             value: "on",
-                            name: "Somar valor",
+                            name: "Incluir valores",
                           },
                           {
+                            icon: "fa-check",
                             value: "off",
-                            name: "Não somar valor",
+                            name: "Apenas seleção",
                           },
                         ]}
-                        className="text-sm p-3"
                       />
                     </div>
                   </div>
                   <div className="pt-6">
                     <Variations
+                      product={product}
                       attribute={attribute}
                       emitVariations={(param: any) =>
                         updateAttribute({ variations: param }, attribute.id)

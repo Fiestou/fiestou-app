@@ -4,34 +4,33 @@ import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
 import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getExtenseData } from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
-export async function getServerSideProps(ctx: NextApiRequest) {
+export default function Comunicados() {
   const api = new Api();
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "communicate as posts",
-        },
-      ],
-    },
-    ctx
-  );
 
-  return {
-    props: {
-      posts: request?.data?.query?.posts ?? [],
-    },
+  const [posts, setPosts] = useState([] as Array<any>);
+
+  const getPosts = async () => {
+    let request: any = await api.bridge({
+      method: "get",
+      url: "admin/content/list",
+      data: {
+        type: "communicate",
+      },
+    });
+
+    if (request.response) {
+      setPosts(request.data);
+    }
   };
-}
 
-export default function Comunicados({ posts }: { posts: Array<any> }) {
-  const [origin, setOrigin] = useState("todos");
+  useEffect(() => {
+    getPosts();
+  }, []);
 
   return (
     <Template
@@ -77,7 +76,7 @@ export default function Comunicados({ posts }: { posts: Array<any> }) {
               <div className="w-[32rem]">Status</div>
               <div className="w-[32rem]">Ações</div>
             </div>
-            {!!posts &&
+            {!!posts?.length &&
               posts.map((item: any, key: any) => (
                 <div
                   key={key}

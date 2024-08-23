@@ -44,7 +44,11 @@ export default function Select(attr: SelectType) {
           onChange={(e) => (!!attr?.onChange ? attr?.onChange(e) : {})}
           {...(!!attr?.required ? { required: true } : {})}
         >
-          {!!attr?.placeholder ?? <option value="">{attr?.placeholder}</option>}
+          {!!attr?.placeholder ? (
+            <option value="">{attr?.placeholder}</option>
+          ) : (
+            <></>
+          )}
 
           {!!attr.options.length &&
             attr.options.map((item, key) => (

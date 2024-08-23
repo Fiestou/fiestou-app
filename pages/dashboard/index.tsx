@@ -10,54 +10,18 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as UserMenuForm",
-          filter: [
-            {
-              key: "slug",
-              value: "client-menu",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
 
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
-  const UserMenuForm = request?.data?.query?.UserMenuForm ?? [];
+  let request: any = await api.content({ url: `dashboard` });
+
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const Dashboard = request?.data?.Dashboard ?? {};
 
   return {
     props: {
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
-      UserMenuForm: UserMenuForm[0] ?? {},
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
+      Dashboard: Dashboard,
     },
   };
 }
@@ -103,7 +67,7 @@ export const menuDashboard = [
   // },
 ];
 
-export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
+export default function Dashboard({ HeaderFooter, Dashboard }: any) {
   const { UserLogout } = useContext(AuthContext);
 
   const [user, setUser] = useState({} as UserType);
@@ -115,7 +79,7 @@ export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
   }, []);
 
   const getDescription = (field: string) => {
-    return UserMenuForm[field];
+    return Dashboard[field];
   };
 
   return (
@@ -136,14 +100,15 @@ export default function Dashboard({ HeaderFooter, UserMenuForm }: any) {
                 />
               </div>
               <div className="font-title font-bold text-4xl md:text-5xl text-zinc-900">
-                {replaceWord(
-                  UserMenuForm?.board_text ?? "",
-                  "{first_name}",
-                  getFirstName(user.name)
-                )}
+                {!!user?.name &&
+                  replaceWord(
+                    Dashboard?.board_text ?? "",
+                    "{first_name}",
+                    getFirstName(user.name)
+                  )}
               </div>
-              {!!UserMenuForm?.board_desc && (
-                <div className="pt-4">{UserMenuForm?.board_desc ?? ""}</div>
+              {!!Dashboard?.board_desc && (
+                <div className="pt-4">{Dashboard?.board_desc ?? ""}</div>
               )}
             </div>
           </div>

@@ -1,17 +1,26 @@
 import { v4 as uid } from "uuid";
-import { AttributeType } from "@/src/models/product";
+import { AttributeType, ProductType } from "@/src/models/product";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useState } from "react";
-import { realMoneyNumber, shortId } from "@/src/helper";
+import { getImage, realMoneyNumber, shortId } from "@/src/helper";
+import React from "react";
 
 export default function Variations({
+  product,
   attribute,
   emitVariations,
 }: {
+  product: ProductType;
   attribute: AttributeType;
   emitVariations: Function;
 }) {
+  const [active, setActive] = useState("" as any);
+
+  const handleSelected = (value: string) => {
+    setActive(false);
+  };
+
   const [collapseStatus, setCollapseStatus] = useState("");
   const [collapseTrash, setCollapseTrash] = useState("");
 
@@ -44,6 +53,7 @@ export default function Variations({
           }
         : variation
     );
+    console.log(update, "value");
     emitVariations(update);
   };
 
@@ -59,7 +69,7 @@ export default function Variations({
 
       <div className="">
         {variations.map((variation, key) => (
-          <div key={key} className="border-t">
+          <div key={key} className="group border-t focus-within:z-100">
             <div className="flex items-center">
               <div className="w-full">
                 <div className="flex gap-2 py-2">
@@ -103,6 +113,75 @@ export default function Variations({
                       </div>
                     </div>
                   )}
+                  <div className="w-fit relative group-focus-within:z-10">
+                    {!!variation?.image && !!product?.gallery?.length ? (
+                      product?.gallery
+                        .filter((item: any) => item.id == variation.image)
+                        .map((image: any, index) => (
+                          <div
+                            key={index}
+                            className="w-[4rem] h-[46px] cursor-pointer relative bg-gray-100 rounded-md"
+                          >
+                            <img
+                              onClick={() => setActive(variation.id)}
+                              src={getImage(image, "thumb")}
+                              className="rounded-md absolute object-contain w-full h-full inset-0"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateVariation({ image: "" }, variation.id);
+                                setActive("");
+                              }}
+                              className={`bg-white -m-1 cursor-pointer shadow text-xs absolute right-0 top-0 px-1 rounded`}
+                            >
+                              <Icon icon="fa-times" type="far" />
+                            </button>
+                          </div>
+                        ))
+                    ) : (
+                      <div
+                        onClick={() => setActive(variation.id)}
+                        className="w-[4rem] h-[46px] cursor-pointer relative bg-gray-100 rounded-md"
+                      >
+                        <Icon
+                          icon="fa-image"
+                          className={`cursor-pointer text-lg absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2`}
+                          type="far"
+                        />
+                      </div>
+                    )}
+
+                    {!!active && variation.id == active && (
+                      <>
+                        <div
+                          onClick={() => setActive("")}
+                          className="fixed inset-0 z-[5]"
+                        ></div>
+                        <div className="absolute z-10 grid bg-white text-sm rounded-md shadow-md w-full p-1">
+                          {!!product?.gallery?.length &&
+                            product?.gallery.map((image: any, key) => (
+                              <div
+                                key={key}
+                                onClick={() => {
+                                  updateVariation(
+                                    { image: image.id },
+                                    variation.id
+                                  );
+                                  setActive("");
+                                }}
+                                className={`p-1 flex items-center gap-1 cursor-pointer rounded ease hover:bg-gray-100`}
+                              >
+                                <img
+                                  src={getImage(image, "thumb")}
+                                  className="rounded"
+                                />
+                              </div>
+                            ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                   <div
                     className={`${
                       collapseTrash == variation.id ? "hidden" : ""
@@ -118,7 +197,7 @@ export default function Variations({
                     </Button>
                   </div>
                   {collapseTrash == variation.id && (
-                    <div className="w-fit flex gap-2">
+                    <div className="w-fit flex items-center gap-2">
                       <Button
                         type="button"
                         style="btn-white"
@@ -129,8 +208,8 @@ export default function Variations({
                       </Button>
                       <Button
                         type="button"
-                        style="btn-white"
-                        className="text-sm py-1 px-2 text-red-700"
+                        style="btn-danger"
+                        className="text-sm py-1 px-2"
                         onClick={() => removeVariation(variation.id)}
                       >
                         remover

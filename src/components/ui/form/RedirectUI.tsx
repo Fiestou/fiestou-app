@@ -64,7 +64,7 @@ export default function Redirect(attr: RedirectType) {
             name={`${attr?.name}_target`}
             id={`${attr?.id ?? attr?.name}_target`}
             type="checkbox"
-            defaultChecked={redirect.target}
+            defaultChecked={redirect?.target}
             className="scale-[.9]"
           />
           <span className="">Abrir em nova aba?</span>

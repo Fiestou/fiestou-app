@@ -5,45 +5,44 @@ import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
 import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getExtenseData } from "@/src/helper";
 import { HandleForm } from "@/src/components/pages/admin/conteudo/ContentForm";
 
-export async function getServerSideProps(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default function Conteudo() {
   const api = new Api();
-  let request: any = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page as pages",
-        },
-      ],
-    },
-    req
-  );
 
-  return {
-    props: {
-      pages: request?.data?.query?.pages ?? [],
-    },
-  };
-}
-
-export default function Conteudo({ pages }: { pages: Array<any> }) {
   const [origin, setOrigin] = useState("todos");
 
-  const listPages: any = [];
+  const [pages, setPages] = useState([] as Array<any>);
 
-  HandleForm.map((item: any) => {
-    listPages.push({
-      ...item,
-      meta: pages.find((itm: any) => (itm.slug = item.slug)),
+  const getPosts = async () => {
+    let request: any = await api.bridge({
+      method: "get",
+      url: "admin/content/list",
+      data: {
+        type: "page",
+      },
     });
-  });
+
+    if (request.response) {
+      const handlePages = request.data;
+      const listPages: any = [];
+
+      HandleForm.map((item: any) => {
+        listPages.push({
+          ...item,
+          meta: handlePages.find((itm: any) => (itm.slug = item.slug)),
+        });
+      });
+
+      setPages(listPages);
+    }
+  };
+
+  useEffect(() => {
+    getPosts();
+  }, []);
 
   return (
     <Template
@@ -104,8 +103,8 @@ export default function Conteudo({ pages }: { pages: Array<any> }) {
               <div className="w-[14rem]">Status</div>
               <div className="w-[32rem]">Ações</div>
             </div>
-            {!!listPages &&
-              listPages
+            {!!pages?.length &&
+              pages
                 .filter((itm: any) => itm.origin == origin || origin == "todos")
                 .map((item: any, key: any) => (
                   <div

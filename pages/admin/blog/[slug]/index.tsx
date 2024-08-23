@@ -10,6 +10,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Editor from "@/src/components/ui/form/EditorUI";
 import FileManager from "@/src/components/ui/form/FileManager";
 import axios from "axios";
+import { shortId } from "@/src/helper";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -55,7 +56,11 @@ export default function Form({ slug }: { slug: string }) {
   };
 
   const handleCache = async () => {
-    await axios.get(`/api/cache?route=/blog/${content.slug}`);
+    try {
+      await axios.get(`/api/cache?route=/blog/${content.slug}`);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleSubmit = async (e: any) => {
@@ -67,22 +72,19 @@ export default function Form({ slug }: { slug: string }) {
       ...content,
     };
 
-    const request: any = await api.graph({
-      url: "content/graph",
-      data: [
-        {
-          method: "register",
-          model: "blog",
-          id: content.id ?? null,
-          title: content?.title ?? null,
-          slug: content?.title ?? null,
-          status: !!content?.status ? 1 : 0,
-          content: {
-            image: handle.image,
-            blocks: handle.blocks,
-          },
+    const request: any = await api.bridge({
+      url: "admin/content/register",
+      data: {
+        type: "blog",
+        id: content.id ?? null,
+        title: content?.title ?? `content-${shortId()}`,
+        slug: content?.title ?? null,
+        status: content?.status,
+        content: {
+          image: handle.image,
+          blocks: handle.blocks,
         },
-      ],
+      },
     });
 
     await handleCache();
@@ -90,7 +92,6 @@ export default function Form({ slug }: { slug: string }) {
     setContent(handle);
 
     if (request.response) {
-      // setFormValue({ loading: false, sended: request.response });
       router.push({ pathname: "/admin/blog" });
     } else {
       setFormValue({ loading: false, sended: request.response });
@@ -98,28 +99,19 @@ export default function Form({ slug }: { slug: string }) {
   };
 
   const getPost = async () => {
+    setPlaceholder(true);
+
     if (slug != "form") {
-      let request: any = await api.call({
-        url: "request/graph",
-        data: [
-          {
-            model: "blog",
-            filter: [
-              {
-                key: "slug",
-                value: slug,
-                compare: "=",
-              },
-            ],
-          },
-        ],
+      let request: any = await api.bridge({
+        method: "get",
+        url: "admin/content/get",
+        data: {
+          type: "blog",
+          slug: slug,
+        },
       });
 
-      if (request.response) {
-        const post = request.data.query.blog[0] ?? {};
-
-        setContent(post);
-      }
+      setContent(request.data);
     }
 
     setPlaceholder(false);
@@ -230,13 +222,15 @@ export default function Form({ slug }: { slug: string }) {
                       <Label style="float">
                         Visualização {content?.status}
                       </Label>
-                      <Select
+                      <select
                         name="status"
                         value={content?.status}
                         onChange={(e: any) =>
                           handleContent({ status: e.target.value })
                         }
-                        options={[
+                        className="form-control"
+                      >
+                        {[
                           {
                             name: "Público",
                             value: 1,
@@ -245,8 +239,12 @@ export default function Form({ slug }: { slug: string }) {
                             name: "Privado",
                             value: 0,
                           },
-                        ]}
-                      />
+                        ].map((option: any, key: any) => (
+                          <option value={option.value} key={key}>
+                            {option.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <div className="">

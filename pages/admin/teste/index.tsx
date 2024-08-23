@@ -2,36 +2,32 @@ import TestEmail from "@/src/components/pages/admin/teste/TestEmail";
 import TestSms from "@/src/components/pages/admin/teste/TestSms";
 import Api from "@/src/services/api";
 import Template from "@/src/template";
+import { useEffect, useState } from "react";
 
-export async function getServerSideProps(ctx: any) {
+export default function Teste() {
   const api = new Api();
 
-  let request: any = await api.call({
-    url: "request/graph",
-    data: [
-      {
-        model: "page",
-        filter: [
-          {
-            key: "slug",
-            value: "email",
-            compare: "=",
-          },
-        ],
+  const [page, setPage] = useState([] as Array<any>);
+
+  const getPage = async () => {
+    let request: any = await api.bridge({
+      method: "get",
+      url: "admin/content/get",
+      data: {
+        type: "page",
+        slug: "email",
       },
-    ],
-  });
+    });
 
-  // console.log(request, "<<");
-
-  return {
-    props: {
-      page: request?.data?.query?.page[0] ?? {},
-    },
+    if (request.response) {
+      setPage(request.data);
+    }
   };
-}
 
-export default function Teste({ page }: { page: any }) {
+  useEffect(() => {
+    getPage();
+  }, []);
+
   return (
     <Template
       header={{
