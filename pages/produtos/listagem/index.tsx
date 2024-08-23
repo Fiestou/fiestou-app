@@ -59,7 +59,7 @@ export default function Listagem({
   const [products, setProducts] = useState([] as Array<ProductType>);
 
   const getProducts = async () => {
-    const handleParams = router.query;
+    const handleParams: any = router.query;
 
     if (!!handleParams["categoria[]"]) {
       handleParams["categorias"] = handleParams["categoria[]"];

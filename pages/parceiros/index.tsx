@@ -16,8 +16,6 @@ export async function getStaticProps(ctx: any) {
 
   let request: any = await api.content({ url: `partners` });
 
-  console.log(request);
-
   const Stores = request?.data?.Stores ?? [];
   const Partners = request?.data?.Partners ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};

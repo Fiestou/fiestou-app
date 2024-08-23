@@ -866,7 +866,7 @@ export default function Produto({
                                   </div>
                                 )}
 
-                                {!!getImageAttr(item?.image) && (
+                                {!!item?.image && getImageAttr(item?.image) && (
                                   <div
                                     onClick={() =>
                                       navegateImageCarousel(item?.image)
@@ -884,7 +884,7 @@ export default function Produto({
                                 )}
 
                                 <div
-                                  className="w-full py-1"
+                                  className="w-full py-1 cursor-pointer"
                                   onClick={() => {
                                     updateOrder(
                                       {
