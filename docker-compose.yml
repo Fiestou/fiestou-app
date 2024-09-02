@@ -21,16 +21,15 @@ services:
             - laravel
 
     mysql:
-        image: mysql:5.7
+        image: mysql:8.0
         container_name: laravel-mysql
         restart: unless-stopped
         ports:
             - "3306:3306"
         environment:
-            - MYSQL_DATABASE=fiestou_prod
+            - MYSQL_DATABASE=fiesto18_database
             - MYSQL_ROOT_PASSWORD=root
             - MYSQL_PASSWORD=
-            - MYSQL_USER=root
         volumes:
             - mysql-data:/var/lib/mysql
         networks:
