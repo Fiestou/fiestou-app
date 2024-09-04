@@ -217,3 +217,21 @@ u {
   font-weight: bold;
   text-decoration: underline;
 }
+
+.content-editor {
+  a {
+    @apply text-cyan-500 hover:text-cyan-600 underline;
+  }
+
+  h1 {
+    @apply text-xl md:text-3xl;
+  }
+
+  h2 {
+    @apply text-lg md:text-xl;
+  }
+
+  h3 {
+    @apply text-base md:text-lg;
+  }
+}

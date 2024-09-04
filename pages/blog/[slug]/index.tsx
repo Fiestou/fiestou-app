@@ -101,14 +101,14 @@ export default function Post({
         </div>
       </section>
 
-      {!!getImage(Post?.image) && (
+      {!!getImage(Post?.image, "xl") && (
         <section className="relative px-4">
           <div className="absolute left-0 w-full h-1/2 bg-cyan-500 "></div>
           <div className="w-full mx-auto max-w-[56rem] relative rounded-xl overflow-hidden">
             <div className="aspect-[4/2] bg-zinc-100">
               <Img
                 size="7xl"
-                src={getImage(Post?.image)}
+                src={getImage(Post?.image, "xl")}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -118,7 +118,7 @@ export default function Post({
 
       <section className="my-10 pb-20">
         <div className="container-medium">
-          <div className="mx-auto max-w-[40rem] grid gap-4">
+          <div className="content-editor mx-auto max-w-[40rem] grid gap-4">
             {!!Post?.blocks?.length &&
               Post?.blocks.map((item: any, key: any) => (
                 <div
