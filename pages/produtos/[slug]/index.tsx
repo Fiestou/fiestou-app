@@ -409,7 +409,32 @@ export default function Produto({
     setMatch(request?.data ?? []);
   };
 
-  const renderSlideProducts = (handleMatch: Array<any>) => {
+  const renderSlideArrows = (keyRef: string | number) => {
+    return (
+      <div className="flex h-0 px-1 justify-between absolute md:relative gap-4 top-1/2 md:-top-4 left-0 w-full md:w-fit -translate-y-1/2 z-10">
+        <div>
+          <Button className={`swiper-${keyRef}-prev p-5 md:p-6 rounded-full`}>
+            <Icon
+              icon="fa-chevron-left"
+              type="far"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -ml-[2px]"
+            />
+          </Button>
+        </div>
+        <div>
+          <Button className={`swiper-${keyRef}-next p-5 md:p-6 rounded-full`}>
+            <Icon
+              icon="fa-chevron-right"
+              type="far"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ml-[1px]"
+            />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSlideProducts = (handleMatch: Array<any>, type: string) => {
     return (
       <Swiper
         spaceBetween={16}
@@ -427,7 +452,12 @@ export default function Produto({
             centeredSlides: false,
           },
         }}
+        modules={[Pagination, Navigation]}
         className="swiper-equal"
+        navigation={{
+          nextEl: `.swiper-${type}-next`,
+          prevEl: `.swiper-${type}-prev`,
+        }}
       >
         {!!handleMatch.length &&
           handleMatch.map((item: any, key: any) => (
@@ -1183,18 +1213,24 @@ export default function Produto({
 
       {!!product?.combinations && (
         <section className="pt-16">
-          <div className="container-medium">
-            <div className="flex items-center gap-2">
-              <div>
-                <FDobleIcon icon="fa-puzzle-piece" size="sm" />
+          <div className="container-medium relative">
+            <div className="grid md:flex items-center justify-between gap-2">
+              <div className="flex w-full items-center gap-2">
+                <div>
+                  <FDobleIcon icon="fa-puzzle-piece" size="sm" />
+                </div>
+                <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
+                  Combina com
+                </h4>
               </div>
-              <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
-                Combina com
-              </h4>
+              <div>{renderSlideArrows("combinations")}</div>
             </div>
             <div className="mt-6 md:mt-8">
               <div className="relative overflow-hidden rounded-xl">
-                {renderSlideProducts(product?.combinations ?? [])}
+                {renderSlideProducts(
+                  product?.combinations ?? [],
+                  "combinations"
+                )}
               </div>
             </div>
           </div>
@@ -1203,18 +1239,21 @@ export default function Produto({
 
       {!!match.length && (
         <section className="pt-16">
-          <div className="container-medium">
-            <div className="flex items-center gap-2">
-              <div>
-                <FDobleIcon icon="fa-eye" size="sm" />
+          <div className="container-medium relative">
+            <div className="grid md:flex items-center justify-between gap-2">
+              <div className="flex w-full items-center gap-2">
+                <div>
+                  <FDobleIcon icon="fa-puzzle-piece" size="sm" />
+                </div>
+                <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
+                  Veja também
+                </h4>
               </div>
-              <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
-                Veja também
-              </h4>
+              <div>{renderSlideArrows("match")}</div>
             </div>
             <div className="mt-6 md:mt-8">
               <div className="relative overflow-hidden rounded-xl">
-                {renderSlideProducts(match)}
+                {renderSlideProducts(match, "match")}
               </div>
             </div>
           </div>

@@ -122,6 +122,7 @@ export default function MeusDados({
             </div>
           </div>
         </section>
+
         <section className="">
           <div className="container-medium pb-12">
             <div className="grid md:flex gap-10 md:gap-24">
