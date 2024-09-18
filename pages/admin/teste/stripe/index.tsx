@@ -29,6 +29,7 @@ export default function Stripe() {
         },
       ],
       deliveryTo: "",
+      deliveryPrice: 0,
     });
 
     console.log(checkoutSession);
