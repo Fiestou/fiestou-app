@@ -418,7 +418,6 @@ class FileController extends Controller
                 foreach ($image_sizes as $image_size) {
                     $size_with_filename = $image_size['name'] . '-' . $imageName . $extension;
 
-
                     $make = Image::make(file_get_contents($file['base64']));
                     $max_width = $image_size['width'];
                     $resized = ($width > $max_width) ? $make->resize($max_width, null, function ($img) {

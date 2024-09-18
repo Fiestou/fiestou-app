@@ -167,6 +167,7 @@ class OrdersController extends Controller
         $order->deliveryAddress     = json_encode($request->get("deliveryAddress"));
         $order->deliveryStatus      = $request->get("deliveryStatus");
         $order->deliveryTo          = $request->get("deliveryTo") ?? "";
+        $order->deliveryPrice       = $request->get("deliveryPrice") ?? 0;
         $order->listItems           = json_encode($listItems);
         $order->status              = 0;
 

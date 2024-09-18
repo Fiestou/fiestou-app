@@ -91,7 +91,7 @@ class Message extends BaseModel
         $table .= "</table>";
 
         // Adicionar informações de entrega
-        $table .= "<br/><p style='font-weight: normal;text-align:left;'><b>ENTREGA</b><br/> " . Order::DeliveryToName($order->deliveryTo) . ", {$order->deliverySchedule} <br/>{$addressString}</p>";
+        $table .= "<br/><p style='font-weight: normal;text-align:left;'><b>ENTREGA - ".(!!$order->deliveryPrice ? $order->deliveryPrice : "Grátis")." </b><br/> " . Order::DeliveryToName($order->deliveryTo) . ", {$order->deliverySchedule} <br/>{$addressString}</p>";
 
         $user       = User::where(["id" => $order->user])->first();
         $userName   = $user->name ?? '';
@@ -237,7 +237,7 @@ class Message extends BaseModel
         } catch (\Exception $e) {
             return response()->json([
                 'response'  => false,
-                'message'   => "Erro ao enviar o e-mail: " . $response->body(),
+                'message'   => "Erro ao enviar o e-mail",
                 'errors'    => $e->getMessage()
             ], 500);
         }

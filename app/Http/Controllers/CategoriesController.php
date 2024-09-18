@@ -80,7 +80,7 @@ class CategoriesController extends Controller
         $category = $category->first();
         $category = Category::normalize([$category])[0];
 
-        $whereIn    = CategoryRel::whereIn('category', [$category->id])
+        $whereIn = CategoryRel::whereIn('category', [$category->id])
                                 ->pluck('product')
                                 ->toArray();
 
