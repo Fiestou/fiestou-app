@@ -494,12 +494,14 @@ export default function Pedido({
                               R$ {moneyFormat(order.total)}
                             </div>
                           </div>
-                          {/* <div className="flex gap-2">
-                          <div className="w-full">
-                            Frete - Entregador parceiro
+                          <div className="flex gap-2">
+                            <div className="w-full">Frete</div>
+                            <div className="whitespace-nowrap">
+                              {!!order.deliveryPrice
+                                ? `R$ ${moneyFormat(order.deliveryPrice)}`
+                                : "Grátis"}
+                            </div>
                           </div>
-                          <div className="whitespace-nowrap">R$ {moneyFormat(order.total)}</div>
-                        </div> */}
                         </div>
                       </div>
 
@@ -518,7 +520,7 @@ export default function Pedido({
                     </div>
                   </div>
 
-                  {order.status != -2 && false && (
+                  {order.status != -2 && (
                     <button
                       type="button"
                       onClick={() => setCancel(true)}
