@@ -407,6 +407,12 @@ export default function Pedido({
                             : ""}{" "}
                           |{order.deliverySchedule}
                         </div>
+                        <div className="">
+                          Valor de entrega:{" "}
+                          {!!order?.deliveryPrice
+                            ? `R$ ${moneyFormat(order.deliveryPrice)}`
+                            : "Gratuita"}
+                        </div>
                       </div>
 
                       <div>

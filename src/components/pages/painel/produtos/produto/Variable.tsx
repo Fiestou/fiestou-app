@@ -173,10 +173,14 @@ export default function Variable({
                   <div className="form-group">
                     <Label>Título</Label>
                     <input
-                      value={
-                        !!attribute?.title
-                          ? attribute?.title
-                          : `Grupo ${key + 1}`
+                      value={attribute?.title ?? ""}
+                      onBlur={(e: any) =>
+                        !e.target.value
+                          ? updateAttribute(
+                              { title: `Grupo ${key + 1}` },
+                              attribute.id
+                            )
+                          : {}
                       }
                       onChange={(e: any) =>
                         updateAttribute({ title: e.target.value }, attribute.id)

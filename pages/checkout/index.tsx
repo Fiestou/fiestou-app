@@ -119,6 +119,36 @@ export default function Checkout({
   const [schedule, setSchedule] = useState("" as string);
   const [deliveryTo, setDeliveryTo] = useState("reception" as string);
 
+  const [customLocation, setCustomLocation] = useState(false as boolean);
+  const [locations, setLocations] = useState([] as Array<AddressType>);
+  const [address, setAddress] = useState({
+    country: "Brasil",
+  } as AddressType);
+  const handleAddress = (value: any) => {
+    setAddress({ ...address, ...value });
+  };
+
+  const [deliveryPrice, setDeliveryPrice] = useState(0 as number);
+  const getCalculeDistancePrice = async () => {
+    const data = await api.internal({
+      method: "get",
+      url: "/maps",
+      data: {
+        cep: address?.zipCode,
+      },
+    });
+
+    const { distance } = data;
+
+    setDeliveryPrice((distance / 1000) * 2.5);
+  };
+
+  useEffect(() => {
+    if (!!address?.zipCode) {
+      getCalculeDistancePrice();
+    }
+  }, [address]);
+
   const [listCart, setListCart] = useState([] as Array<CartType>);
   const [resume, setResume] = useState({} as any);
   useEffect(() => {
@@ -129,22 +159,13 @@ export default function Checkout({
 
     setResume({
       subtotal: subtotal,
-      total: subtotal,
+      total: subtotal + deliveryPrice,
       startDate: findDates(dates).minDate,
       endDate: findDates(dates).maxDate,
     });
 
     setListCart(cart);
-  }, [cart]);
-
-  const [customLocation, setCustomLocation] = useState(false as boolean);
-  const [locations, setLocations] = useState([] as Array<AddressType>);
-  const [address, setAddress] = useState({
-    country: "Brasil",
-  } as AddressType);
-  const handleAddress = (value: any) => {
-    setAddress({ ...address, ...value });
-  };
+  }, [cart, deliveryPrice]);
 
   useEffect(() => {
     setLocations(user?.address ?? []);
@@ -180,7 +201,7 @@ export default function Checkout({
 
     setForm({ ...form, loading: true });
 
-    let total = 0;
+    let total = deliveryPrice;
     let listItems: Array<ProductOrderType> = [];
 
     cart.map((item: any, key: any) => {
@@ -238,6 +259,7 @@ export default function Checkout({
       deliverySchedule: schedule,
       deliveryAddress: address,
       deliveryTo: deliveryTo,
+      deliveryPrice: deliveryPrice,
       deliveryStatus: "pending",
       status: -1,
     };
@@ -669,12 +691,15 @@ export default function Checkout({
                             icon="fa-truck"
                             className="text-sm mr-1 opacity-75"
                           />
-                          Frete
+                          Frete {!!address?.zipCode && `(${address?.zipCode})`}
                         </div>
                         <div className="grid text-right">
-                          <s className="text-xs">R$ 24,00</s>
+                          {/* <s className="text-xs">R$ 24,00</s> */}
                           <div className="whitespace-nowrap font-semibold text-sm">
-                            Gratuito
+                            {/* Gratuito */}
+                            {!!address?.zipCode
+                              ? `R$ ${moneyFormat(deliveryPrice)}`
+                              : "Informe um endereço"}
                           </div>
                         </div>
                       </div>

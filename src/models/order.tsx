@@ -45,6 +45,7 @@ export interface OrderType {
   deliveryStatus: string;
   deliverySchedule: string;
   deliveryTo: string;
+  deliveryPrice: number;
   total: number;
   platformCommission: number | string;
   notificate?: Array<any>;
