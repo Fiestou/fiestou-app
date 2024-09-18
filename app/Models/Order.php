@@ -17,6 +17,7 @@ class Order extends BaseModel
         "deliveryStatus",
         "deliverySchedule",
         "deliveryAddress",
+        "deliveryPrice",
         "total",
         "platformCommission",
         "listItems",
