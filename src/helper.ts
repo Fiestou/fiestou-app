@@ -248,6 +248,10 @@ export function getImage(image: any, size?: string) {
 
   const img = !!image?.base_url ? image : image[0] ?? {};
 
+  if (img?.extension === ".gif") {
+    return !!img?.base_url ? img.base_url + img.permanent_url : "";
+  }
+
   if (!!img?.base_url && !!img?.details?.sizes) {
     const url =
       img.base_url +
@@ -258,6 +262,7 @@ export function getImage(image: any, size?: string) {
 
   return "";
 }
+
 
 export function isMobileDevice() {
   const userAgent = window.navigator.userAgent;
