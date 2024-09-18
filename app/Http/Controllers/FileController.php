@@ -392,76 +392,110 @@ class FileController extends Controller
             $uploads_path .= $index . '/';
             $uploads_path .= date('d-m-Y') . '/';
 
-            $image = Image::make(file_get_contents($file['base64']));
-            $imageTitle = $file['fileName'];
-            $imageName = rand(0, 3000) . '-' . Str::slug($file['fileName'], '-');
-
-            $split = explode(',', substr($file['base64'], 5), 2);
+            $base64_string = $file['base64'];
+            $split = explode(',', substr($base64_string, 5), 2);
             $split = explode(';', $split[0], 2);
             $split = explode('/', $split[0], 2);
             $extension = (isset($split[1])) ? $split[1] : 'webp';
 
-            if (count($split) == 2) {
-                $extension = '.' . $extension;
-            }
+            $isGif = $extension === 'gif';
+            $extension = '.' . $extension;
 
-            $file_size = (((int) (strlen(rtrim($file['base64'], '=')) * 3 / 4)) / 1024) / 1024;
-            $width = $image->width();
-            $height = $image->height();
-            $resized_image = ($width > $max_width) ? $image->resize($max_width, null, function ($img) {
-                $img->aspectRatio();
-            })->stream() : $image->stream();
+            $imageTitle = $file['fileName'];
+            $imageName = rand(0, 3000) . '-' . Str::slug($imageTitle, '-');
 
-            if ($storage->put($uploads_path . $imageName . $extension, $resized_image)) {
-                $sizes = ['default' => $uploads_path . $imageName . $extension];
+            // Save GIFs without processing them with Intervention Image
+            if ($isGif) {
+                $fileData = base64_decode(explode(',', $base64_string)[1]);
+                $file_path = $uploads_path . $imageName . $extension;
 
-                foreach ($image_sizes as $image_size) {
-                    $size_with_filename = $image_size['name'] . '-' . $imageName . $extension;
+                if ($storage->put($file_path, $fileData)) {
+                    $sizes = ['default' => $file_path];
 
-                    $make = Image::make(file_get_contents($file['base64']));
-                    $max_width = $image_size['width'];
-                    $resized = ($width > $max_width) ? $make->resize($max_width, null, function ($img) {
-                        $img->aspectRatio();
-                    })->stream() : $make->stream();
+                    $media = new Media();
+                    $media->application_id = $app;
+                    $media->user_id = $user->id;
+                    $media->title = $imageTitle;
+                    $media->slug = $imageName;
+                    $media->base_url = env('APP_URL') . "/storage";
+                    $media->description = '';
+                    $media->file_name = $imageTitle . $extension;
+                    $media->file_size = (strlen($fileData) / 1024) / 1024; // size in MB
+                    $media->path = $uploads_path;
+                    $media->permanent_url = $file_path;
+                    $media->extension = $extension;
+                    $media->details = json_encode(['sizes' => $sizes]);
+                    $media->permissions = json_encode([]);
+                    $media->type = 'gif';
 
-                    $storage->put($uploads_path . $size_with_filename, $resized);
+                    $media->save();
 
-                    $sizes[$image_size['name']] = $uploads_path . $size_with_filename;
-                }
-
-                $media = new Media();
-                $media->application_id = $app;
-                $media->user_id = $user->id;
-                $media->title = $imageTitle;
-                $media->slug = $imageName;
-                $media->base_url = env('APP_URL') . "/storage";
-                $media->description = '';
-                $media->file_name = $imageTitle . $extension;
-                $media->file_size = $file_size;
-                $media->path = $uploads_path;
-                $media->permanent_url = $uploads_path . $imageName . $extension;
-                $media->extension = $extension;
-                $media->details = json_encode(['sizes' => $sizes]);
-                $media->permissions = json_encode([]);
-                $media->type = ($extension == '.pdf') ? 'file' : 'image';
-
-                if (!$media->save()) {
-                    foreach ($image_sizes as $image_size) {
-                        $storage->delete($uploads_path . $image_size['name'] . '-' . $imageName . $extension);
-                    }
-
-                    $feedback = [
-                        'status' => false,
-                        'media' => 'Erro ao enviar o arquivo: ' . $imageTitle
-                    ];
-                } else {
-                    $feedback = [
+                    array_push($medias, [
                         'status' => true,
                         'media' => $media
-                    ];
+                    ]);
                 }
+            } else {
+                // Process other image types (non-GIFs)
+                $image = Image::make(file_get_contents($file['base64']));
+                $file_size = (((int) (strlen(rtrim($file['base64'], '=')) * 3 / 4)) / 1024) / 1024;
+                $width = $image->width();
+                $height = $image->height();
+                $resized_image = ($width > $max_width) ? $image->resize($max_width, null, function ($img) {
+                    $img->aspectRatio();
+                })->stream() : $image->stream();
 
-                array_push($medias, $feedback);
+                if ($storage->put($uploads_path . $imageName . $extension, $resized_image)) {
+                    $sizes = ['default' => $uploads_path . $imageName . $extension];
+
+                    foreach ($image_sizes as $image_size) {
+                        $size_with_filename = $image_size['name'] . '-' . $imageName . $extension;
+
+                        $make = Image::make(file_get_contents($file['base64']));
+                        $max_width = $image_size['width'];
+                        $resized = ($width > $max_width) ? $make->resize($max_width, null, function ($img) {
+                            $img->aspectRatio();
+                        })->stream() : $make->stream();
+
+                        $storage->put($uploads_path . $size_with_filename, $resized);
+
+                        $sizes[$image_size['name']] = $uploads_path . $size_with_filename;
+                    }
+
+                    $media = new Media();
+                    $media->application_id = $app;
+                    $media->user_id = $user->id;
+                    $media->title = $imageTitle;
+                    $media->slug = $imageName;
+                    $media->base_url = env('APP_URL') . "/storage";
+                    $media->description = '';
+                    $media->file_name = $imageTitle . $extension;
+                    $media->file_size = $file_size;
+                    $media->path = $uploads_path;
+                    $media->permanent_url = $uploads_path . $imageName . $extension;
+                    $media->extension = $extension;
+                    $media->details = json_encode(['sizes' => $sizes]);
+                    $media->permissions = json_encode([]);
+                    $media->type = 'image';
+
+                    if (!$media->save()) {
+                        foreach ($image_sizes as $image_size) {
+                            $storage->delete($uploads_path . $image_size['name'] . '-' . $imageName . $extension);
+                        }
+
+                        $feedback = [
+                            'status' => false,
+                            'media' => 'Erro ao enviar o arquivo: ' . $imageTitle
+                        ];
+                    } else {
+                        $feedback = [
+                            'status' => true,
+                            'media' => $media
+                        ];
+                    }
+
+                    array_push($medias, $feedback);
+                }
             }
         }
 
@@ -471,6 +505,5 @@ class FileController extends Controller
             'medias' => $medias
         ]);
     }
-
 
 }
