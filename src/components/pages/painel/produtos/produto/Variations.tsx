@@ -83,10 +83,14 @@ export default function Variations({
                             variation.id
                           )
                         }
-                        value={
-                          !!variation?.title
-                            ? variation?.title
-                            : `Variação ${key + 1}`
+                        value={variation?.title ?? ""}
+                        onBlur={(e: any) =>
+                          !e.target.value
+                            ? updateVariation(
+                                { title: `Variação ${key + 1}` },
+                                variation.id
+                              )
+                            : {}
                         }
                         type="text"
                         name="titulo"

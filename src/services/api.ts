@@ -66,6 +66,35 @@ class Api {
     });
   }
 
+  async internal({
+    url,
+    method,
+    data,
+    opts,
+  }: {
+    url: string;
+    data: any;
+    method?: string;
+    opts?: any;
+  }) {
+    if (method === "get" && !!data && Object.keys(data).length > 0) {
+      const queryString = new URLSearchParams(data).toString();
+      url = `${url}?${queryString}`;
+      data = {};
+    }
+
+    return await axios[method == "get" ? "get" : "post"](
+      `/api${url}`,
+      data,
+      opts ?? {}
+    )
+      .then(({ data }: any) => data)
+      .catch((error) => {
+        console.log(error);
+        return null;
+      });
+  }
+
   async trigger({ url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.APP_URL}${url}`;
     return this.connect({ url, data, opts }, ctx);

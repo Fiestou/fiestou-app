@@ -258,7 +258,11 @@ export default function Pedido({
                 <div className="my-6 border-dashed border-t"></div>
                 <div>
                   <div className="font-bold font-title text-zinc-900 text-xl mb-4">
-                    Entrega
+                    Entrega (
+                    {!!order?.deliveryPrice
+                      ? `R$ ${moneyFormat(order.deliveryPrice)}`
+                      : "Gratuita"}
+                    )
                   </div>
                   <div>
                     {deliveryToName[order.deliveryTo]}, {order.deliverySchedule}

@@ -135,80 +135,85 @@ export default function SejaParceiro({
             )}
           </>
         )}
-        <div className="container-medium relative pt-16 md:py-16 text-white">
-          <div className="grid gap-10 md:flex">
-            <div className="w-full">
-              <h1
-                className="font-title font-bold text-4xl md:text-6xl mb-4"
-                dangerouslySetInnerHTML={{ __html: Partner?.main_text }}
-              ></h1>
-              <div
-                className="text-xl md:text-3xl font-semibold"
-                dangerouslySetInnerHTML={{ __html: Partner?.main_description }}
-              ></div>
-            </div>
-            <div className="w-full md:max-w-[26rem] mb-6 md:mb-10">
-              <form
-                onSubmit={(e) => {
-                  handleSubmit(e);
-                }}
-                name="seja-parceiro"
-                id="seja-parceiro"
-                method="POST"
-              >
-                <div className="bg-white text-zinc-900 rounded-2xl p-8 grid gap-4">
-                  <div>
-                    <h2
-                      className="font-bold font-title text-3xl text-center pb-4"
-                      dangerouslySetInnerHTML={{
-                        __html: Partner?.form_title,
-                      }}
-                    ></h2>
-                    <div className="form-group">
-                      <Label style="light">Nome</Label>
-                      <Input
-                        onChange={(e: any) => {
-                          setName(e.target.value);
-                        }}
-                        name="nome"
-                        placeholder="Digite o nome completo"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <Label style="light">E-mail</Label>
-                      <Input
-                        onChange={(e: any) => {
-                          setEmail(e.target.value);
-                        }}
-                        name="email"
-                        placeholder="email@email.com.br"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <Label style="light">Celular (com DDD)</Label>
-                      <Input
-                        onChange={(e: any) => {
-                          setPhone(e.target.value);
-                        }}
-                        name="phone"
-                        placeholder="(00) 00000-0000"
-                      />
-                    </div>
-                    <div
-                      className="form-group text-zinc-500 py-1 text-sm leading-tight"
-                      dangerouslySetInnerHTML={{
-                        __html: Partner?.form_term,
-                      }}
-                    ></div>
 
-                    <div className="form-group">
-                      <Button loading={form.loading}>
-                        {Partner?.form_button}
-                      </Button>
+        <div className="min-h-[70vh] md:min-h-[80vh]">
+          <div className="container-medium relative py-4 md:py-14 text-white">
+            <div className="grid gap-4 md:flex">
+              <div className="w-full">
+                <h1
+                  className="font-title text-underline font-bold text-4xl lg:text-6xl mb-2 md:mb-4"
+                  dangerouslySetInnerHTML={{ __html: Partner?.main_text }}
+                ></h1>
+                <div
+                  className="text-lg text-underline md:text-3xl md:max-w-xl"
+                  dangerouslySetInnerHTML={{
+                    __html: Partner?.main_description,
+                  }}
+                ></div>
+              </div>
+              <div className="w-full md:max-w-[26rem] mb-32 md:mb-10">
+                <form
+                  onSubmit={(e) => {
+                    handleSubmit(e);
+                  }}
+                  name="seja-parceiro"
+                  id="seja-parceiro"
+                  method="POST"
+                >
+                  <div className="bg-white text-zinc-900 rounded-2xl p-4 md:p-8 grid gap-4">
+                    <div>
+                      <h2
+                        className="font-bold font-title text-2xl md:text-3xl text-center md:pb-4"
+                        dangerouslySetInnerHTML={{
+                          __html: Partner?.form_title,
+                        }}
+                      ></h2>
+                      <div className="form-group">
+                        <Label style="light">Nome</Label>
+                        <Input
+                          onChange={(e: any) => {
+                            setName(e.target.value);
+                          }}
+                          name="nome"
+                          placeholder="Digite o nome completo"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <Label style="light">E-mail</Label>
+                        <Input
+                          onChange={(e: any) => {
+                            setEmail(e.target.value);
+                          }}
+                          name="email"
+                          placeholder="email@email.com.br"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <Label style="light">Celular (com DDD)</Label>
+                        <Input
+                          onChange={(e: any) => {
+                            setPhone(e.target.value);
+                          }}
+                          name="phone"
+                          placeholder="(00) 00000-0000"
+                        />
+                      </div>
+                      <div
+                        className="form-group text-zinc-500 py-1 text-sm leading-tight"
+                        dangerouslySetInnerHTML={{
+                          __html: Partner?.form_term,
+                        }}
+                      ></div>
+
+                      <div className="form-group">
+                        <Button loading={form.loading}>
+                          {Partner?.form_button}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           </div>
         </div>
