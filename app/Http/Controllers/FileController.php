@@ -371,47 +371,47 @@ class FileController extends Controller
             'index' => 'required',
             'medias' => 'required',
         ]);
-    
+
         $dir = $request->has('dir') ? $request->get('dir') : false;
         $index = $request->index;
         $app = $request->has('app') ? $request->get('app') : NULL;
         $files = $request->get('medias');
-    
+
         $user = auth()->user();
         $image_sizes = config('image.image_sizes');
         $max_width = 1900;
-    
+
         $storage = Storage::disk('public');
-    
+
         $medias = [];
         $log = [];
-    
+
         foreach ($files as $file) {
             $uploads_path = '/';
             $uploads_path .= !!$dir ? Str::slug($dir, '-') . '/' : '';
             $uploads_path .= $index . '/';
             $uploads_path .= date('d-m-Y') . '/';
-    
+
             $base64_string = $file['base64'];
             $split = explode(',', substr($base64_string, 5), 2);
             $split = explode(';', $split[0], 2);
             $split = explode('/', $split[0], 2);
             $extension = (isset($split[1])) ? $split[1] : 'webp';
-    
+
             $isGif = $extension === 'gif';
             $extension = '.' . $extension;
-    
+
             $imageTitle = $file['fileName'];
             $imageName = rand(0, 3000) . '-' . Str::slug($imageTitle, '-');
-    
+
             // Save GIFs without processing them with Intervention Image
             if ($isGif) {
                 $fileData = base64_decode(explode(',', $base64_string)[1]);
                 $file_path = $uploads_path . $imageName . $extension;
-                
+
                 if ($storage->put($file_path, $fileData)) {
                     $sizes = ['default' => $file_path];
-    
+
                     $media = new Media();
                     $media->application_id = $app;
                     $media->user_id = $user->id;
@@ -427,9 +427,9 @@ class FileController extends Controller
                     $media->details = json_encode(['sizes' => $sizes]);
                     $media->permissions = json_encode([]);
                     $media->type = 'gif';
-    
+
                     $media->save();
-    
+
                     array_push($medias, [
                         'status' => true,
                         'media' => $media
@@ -444,24 +444,24 @@ class FileController extends Controller
                 $resized_image = ($width > $max_width) ? $image->resize($max_width, null, function ($img) {
                     $img->aspectRatio();
                 })->stream() : $image->stream();
-    
+
                 if ($storage->put($uploads_path . $imageName . $extension, $resized_image)) {
                     $sizes = ['default' => $uploads_path . $imageName . $extension];
-    
+
                     foreach ($image_sizes as $image_size) {
                         $size_with_filename = $image_size['name'] . '-' . $imageName . $extension;
-    
+
                         $make = Image::make(file_get_contents($file['base64']));
                         $max_width = $image_size['width'];
                         $resized = ($width > $max_width) ? $make->resize($max_width, null, function ($img) {
                             $img->aspectRatio();
                         })->stream() : $make->stream();
-    
+
                         $storage->put($uploads_path . $size_with_filename, $resized);
-    
+
                         $sizes[$image_size['name']] = $uploads_path . $size_with_filename;
                     }
-    
+
                     $media = new Media();
                     $media->application_id = $app;
                     $media->user_id = $user->id;
@@ -477,12 +477,12 @@ class FileController extends Controller
                     $media->details = json_encode(['sizes' => $sizes]);
                     $media->permissions = json_encode([]);
                     $media->type = 'image';
-    
+
                     if (!$media->save()) {
                         foreach ($image_sizes as $image_size) {
                             $storage->delete($uploads_path . $image_size['name'] . '-' . $imageName . $extension);
                         }
-    
+
                         $feedback = [
                             'status' => false,
                             'media' => 'Erro ao enviar o arquivo: ' . $imageTitle
@@ -493,17 +493,17 @@ class FileController extends Controller
                             'media' => $media
                         ];
                     }
-    
+
                     array_push($medias, $feedback);
                 }
             }
         }
-    
+
         return response()->json([
             'response' => true,
             'log' => $log,
             'medias' => $medias
         ]);
-    }    
+    }
 
 }

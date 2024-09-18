@@ -80,18 +80,19 @@ class ProductsController extends Controller
         if ($request->has('busca') && $request->get('busca')) {
             $termo = $request->get('busca');
             $termo = is_array($termo) ? implode(" ", $termo) : $termo;
-        
+
             $busca = explode(" ", handleSearchTerms($termo));
-        
+
             $products = $products->where(function ($query) use ($busca) {
                 foreach ($busca as $term) {
                     $query->where(function ($q) use ($term) {
                         $q->orWhere('title', 'like', '%' . $term . '%')
-                          ->orWhere('subtitle', 'like', '%' . $term . '%');
+                            ->orWhere('subtitle', 'like', '%' . $term . '%')
+                            ->orWhere('tags', 'like', '%' . $term . '%');
                     });
                 }
             });
-        }            
+        }
 
         if($request->has('range') && $request->get('range')){
             $products = $products->where('price', '<=', $request->get('range'));
