@@ -106,6 +106,8 @@ export default function Pagamento({
     setForm({ ...form, ...value });
   };
 
+  const [installments, setInstallments] = useState(1 as number);
+
   const [user, setUser] = useState({} as UserType);
   const [order, setOrder] = useState({} as OrderType);
 
@@ -276,15 +278,15 @@ export default function Pagamento({
       handlePayment["credit_card"] = {
         card: {
           ...card,
-          // number: "4000000000000010",
-          // holder_name: "Tony Stark",
-          // exp_month: 1,
-          // exp_year: 2030,
-          // cvv: 3531,
-          // holder_document: "39937710871",
+          number: "4000000000000010",
+          holder_name: "Tony Stark",
+          exp_month: 1,
+          exp_year: 2030,
+          cvv: 3531,
+          holder_document: "39937710871",
         },
         operation_type: "auth_and_capture",
-        installments: 1,
+        installments: installments,
         statement_descriptor: "FIESTOU",
       };
     }
@@ -441,6 +443,17 @@ export default function Pagamento({
                               ? `- ${dateBRFormat(resume.endDate)}`
                               : ""}{" "}
                             |{order.deliverySchedule}
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 py-2 px-3 bg-zinc-100 rounded-md">
+                          <div className="text-zinc-900 font-bold w-full max-w-[10rem]">
+                            Valor de entrega
+                          </div>
+                          <div className="">
+                            {!!order?.deliveryPrice
+                              ? `R$ ${moneyFormat(order.deliveryPrice)}`
+                              : "Gratuita"}
                           </div>
                         </div>
 
@@ -657,56 +670,58 @@ export default function Pagamento({
                                 * Os dados de pagamento não ficam salvos em
                                 nossa base de dados
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="form-group">
-                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    Titular
-                                  </label>
-                                  <input
-                                    type="text"
-                                    onChange={(e: any) =>
-                                      handleCard({
-                                        holder_name: e.target.value,
-                                      })
-                                    }
-                                    required
-                                    className="form-control"
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    CPF/CNPJ
-                                  </label>
-                                  <input
-                                    type="number"
-                                    onChange={(e: any) =>
-                                      handleCard({
-                                        holder_document: justNumber(
-                                          e.target.value
-                                        ).toString(),
-                                      })
-                                    }
-                                    required
-                                    className="form-control"
-                                  />
-                                </div>
-                              </div>
                               <div className="form-group">
                                 <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                  Número do Cartão
+                                  Titular
                                 </label>
                                 <input
-                                  type="number"
+                                  type="text"
                                   onChange={(e: any) =>
                                     handleCard({
-                                      number: justNumber(
-                                        e.target.value
-                                      ).toString(),
+                                      holder_name: e.target.value,
                                     })
                                   }
                                   required
-                                  className="form-control appearance-none"
+                                  className="form-control"
                                 />
+                              </div>
+                              <div className="form-group">
+                                <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
+                                  CPF/CNPJ
+                                </label>
+                                <input
+                                  type="tel"
+                                  onChange={(e: any) =>
+                                    handleCard({
+                                      holder_document: (
+                                        justNumber(e.target.value) ?? ""
+                                      ).toString(),
+                                    })
+                                  }
+                                  value={card?.holder_document ?? ""}
+                                  required
+                                  className="form-control"
+                                />
+                              </div>
+                              <div className="flex gap-4">
+                                <div className="form-group w-full">
+                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
+                                    Número do Cartão
+                                  </label>
+                                  <input
+                                    type="tel"
+                                    onChange={(e: any) =>
+                                      handleCard({
+                                        number: (
+                                          justNumber(e.target.value) ?? ""
+                                        ).toString(),
+                                      })
+                                    }
+                                    value={card?.number ?? ""}
+                                    required
+                                    className="form-control appearance-none"
+                                  />
+                                </div>
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="form-group">
@@ -777,14 +792,15 @@ export default function Pagamento({
                                     CVV/CVC
                                   </label>
                                   <input
-                                    type="number"
+                                    type="tel"
                                     onChange={(e: any) =>
                                       handleCard({
-                                        cvv: justNumber(
-                                          e.target.value
+                                        cvv: (
+                                          justNumber(e.target.value) ?? ""
                                         ).toString(),
                                       })
                                     }
+                                    value={card?.cvv ?? ""}
                                     required
                                     className="form-control appearance-none"
                                   />
@@ -830,19 +846,19 @@ export default function Pagamento({
                                     CPF/CNPJ
                                   </label>
                                   <input
-                                    type="text"
+                                    type="tel"
                                     onChange={(e: any) =>
                                       handleCustomer({
-                                        cpf: justNumber(
-                                          e.target.value
+                                        cpf: (
+                                          justNumber(e.target.value) ?? ""
                                         ).toString(),
-                                        document: justNumber(
-                                          e.target.value
+                                        document: (
+                                          justNumber(e.target.value) ?? ""
                                         ).toString(),
                                       })
                                     }
                                     placeholder="Digite seu CPF ou CNPJ..."
-                                    value={order.user?.document}
+                                    value={order.user?.document ?? ""}
                                     required
                                     className="form-control placeholder:italic"
                                   />

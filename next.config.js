@@ -65,6 +65,7 @@ const nextConfig = {
     BASE_URL: process.env.BASE_URL,
     GOOGLE_ID: process.env.GOOGLE_ID,
     GOOGLE_SECRET: process.env.GOOGLE_SECRET,
+    GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
     TOKEN: process.env.TOKEN,
     PAGARME_API: process.env.PAGARME_API,
     PAGARME_ID: process.env.PAGARME_ID,
