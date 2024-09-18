@@ -80,34 +80,18 @@ class ProductsController extends Controller
         if ($request->has('busca') && $request->get('busca')) {
             $termo = $request->get('busca');
             $termo = is_array($termo) ? implode(" ", $termo) : $termo;
-
+        
             $busca = explode(" ", handleSearchTerms($termo));
-
-            $products = $products->where(function ($query) use ($busca, $termo) {
-                $query->orWhere('tags', 'like', '%' . $termo . '%');
-
+        
+            $products = $products->where(function ($query) use ($busca) {
                 foreach ($busca as $term) {
-                    $query->orWhere('tags', 'like', '%' . $term . '%')
-                          ->orWhere('title', 'like', '%' . $term . '%')
-                          ->orWhere('subtitle', 'like', '%' . $term . '%')
-                          ->orWhere('description', 'like', '%' . $term . '%');
+                    $query->where(function ($q) use ($term) {
+                        $q->orWhere('title', 'like', '%' . $term . '%')
+                          ->orWhere('subtitle', 'like', '%' . $term . '%');
+                    });
                 }
             });
-
-            $products = $products->orderByRaw(
-                "CASE
-                    WHEN title LIKE ? THEN 2
-                    WHEN subtitle LIKE ? THEN 3
-                    WHEN description LIKE ? THEN 4
-                    ELSE 5
-                END, title ASC",
-                [
-                    '%' . $termo . '%',
-                    '%' . $termo . '%',
-                    '%' . $termo . '%'
-                ]
-            );
-        }
+        }            
 
         if($request->has('range') && $request->get('range')){
             $products = $products->where('price', '<=', $request->get('range'));
