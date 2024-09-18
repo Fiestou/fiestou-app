@@ -110,11 +110,11 @@ class Api {
     let url = "";
 
     if (data?.method == "upload") {
-      url = `${process.env.BASE_URL}/api/app/files/upload-base64`;
+      url = `app/files/upload-base64`;
     }
 
     if (data?.method == "remove") {
-      url = `${process.env.BASE_URL}/api/app/files/remove-medias`;
+      url = `app/files/remove-medias`;
     }
 
     return this.request({ url, data });
