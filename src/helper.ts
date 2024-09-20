@@ -87,6 +87,20 @@ export function dateBRFormat(date: any) {
   }
 }
 
+export function convertToCents(value: any) {
+  if (typeof value === "string") {
+    value = value.replace(",", ".");
+  }
+
+  value = parseFloat(value);
+
+  if (isNaN(value)) {
+    return 0;
+  }
+
+  return Math.round(value * 100);
+}
+
 export const findDates = (dateArray: any) => {
   if (dateArray.length === 0) {
     return { minDate: null, maxDate: null };
@@ -263,7 +277,6 @@ export function getImage(image: any, size?: string) {
   return "";
 }
 
-
 export function isMobileDevice() {
   const userAgent = window.navigator.userAgent;
   const mobileKeywords = ["Mobi", "Android", "iPhone", "iPad", "Windows Phone"];
@@ -393,6 +406,18 @@ export function getDate(date?: any, days = 0) {
   }`;
 }
 
+export const getCurrentDate = (daysAhead = 0) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+
+  return date.toISOString();
+};
+
+export const generateDocumentNumber = () => {
+  const randomNumber = Math.floor(Math.random() * 1000000000); // Gera um número aleatório de até 9 dígitos
+  return randomNumber.toString();
+};
+
 export function CopyClipboard(element: any) {
   var copyText: any = document.getElementById(element);
 
@@ -417,6 +442,8 @@ export async function getZipCode(zipCode: string) {
 }
 
 export function isCEPInRegion(cep: string): boolean {
+  if (!cep) return false;
+
   const cepRanges: { region: string; start: string; end: string }[] = [
     { region: "João Pessoa", start: "58000001", end: "58999999" },
   ];

@@ -144,10 +144,10 @@ export default function Checkout({
   };
 
   useEffect(() => {
-    if (!!address?.zipCode) {
+    if (!!address?.zipCode && justNumber(address?.zipCode).length >= 8) {
       getCalculeDistancePrice();
     }
-  }, [address]);
+  }, [address?.zipCode]);
 
   const [listCart, setListCart] = useState([] as Array<CartType>);
   const [resume, setResume] = useState({} as any);
@@ -159,7 +159,7 @@ export default function Checkout({
 
     setResume({
       subtotal: subtotal,
-      total: subtotal + deliveryPrice,
+      total: subtotal + (!isCEPInRegion(address?.zipCode) ? 0 : deliveryPrice),
       startDate: findDates(dates).minDate,
       endDate: findDates(dates).maxDate,
     });
@@ -697,7 +697,9 @@ export default function Checkout({
                           {/* <s className="text-xs">R$ 24,00</s> */}
                           <div className="whitespace-nowrap font-semibold text-sm">
                             {/* Gratuito */}
-                            {!!address?.zipCode
+                            {!isCEPInRegion(address?.zipCode)
+                              ? "Entrega indisponível"
+                              : !!address?.zipCode
                               ? `R$ ${moneyFormat(deliveryPrice)}`
                               : "Informe um endereço"}
                           </div>
