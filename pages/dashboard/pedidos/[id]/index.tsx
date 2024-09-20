@@ -383,8 +383,22 @@ export default function Pedido({
                     {order.status == -1 && (
                       <div>
                         <div className="bg-zinc-50 text-center p-2 text-zinc-800 rounded">
-                          Seu pagamento está sendo processado...
+                          Aguardando confirmação de pagamento...
                         </div>
+
+                        {!!order.metadata?.transaction_type &&
+                          order.metadata?.transaction_type == "boleto" && (
+                            <div className="grid pt-4 -mb-2">
+                              <a
+                                rel="noreferrer"
+                                href={order.metadata?.pdf}
+                                target="_blank"
+                                className="font-semibold text-center rounded-md hover:underline text-cyan-600 hover:text-cyan-800 ease"
+                              >
+                                Visualizar boleto
+                              </a>
+                            </div>
+                          )}
                         <div className="border-t -mx-8 my-8"></div>
                       </div>
                     )}
@@ -462,6 +476,15 @@ export default function Pedido({
                                   />
                                   <div className="w-full">PIX</div>
                                 </>
+                              ) : !!order.metadata?.transaction_type &&
+                                order.metadata?.transaction_type == "boleto" ? (
+                                <>
+                                  <Img
+                                    src="/images/pagarme/document-icon.png"
+                                    className="w-[1.75rem]"
+                                  />
+                                  <div className="w-full">Boleto bancário</div>
+                                </>
                               ) : (
                                 <>
                                   <Img
@@ -520,7 +543,7 @@ export default function Pedido({
                     </div>
                   </div>
 
-                  {order.status != -2 && (
+                  {order.status != -2 && false && (
                     <button
                       type="button"
                       onClick={() => setCancel(true)}
