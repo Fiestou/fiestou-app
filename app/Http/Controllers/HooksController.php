@@ -29,6 +29,10 @@ class HooksController extends Controller
         if($request->get("type") == "order.created" && $data["status"] == "pending"){
             $order->status          = 0;
             $order->deliveryStatus  = 'pending';
+
+            $metadata           = $data["charges"][0];
+            $order->metadata    = json_encode($metadata["last_transaction"]);
+
             Suborder::where('order', $order->id)->update(['status' => 0, 'deliveryStatus' => 'pending']);
         }
 
@@ -82,19 +86,16 @@ class HooksController extends Controller
                 Message::PartnerNewOrder($order);
             }
 
-            if($request->get("type") == "order.canceled"){
-                $order->status          = -2;
-                $order->deliveryStatus  = 'canceled';
-                Suborder::where('order', $order->id)->update(['status' => -2, 'deliveryStatus' => 'canceled']);
-            }
-
-            if($request->get("type") == "order.canceled" || ($request->get("type") == "order.closed" && $data["status"] != "paid")){
+            if($request->get("type") == "order.canceled"
+            || $request->get("type") == "charge.payment_failed"
+            || ($request->get("type") == "order.closed" && $data["status"] != "paid")){
                 $order->status          = -2;
                 $order->deliveryStatus  = 'canceled';
                 Suborder::where('order', $order->id)->update(['status' => -2, 'deliveryStatus' => 'canceled']);
             }
 
             unset($order->notificate);
+
             $order->save();
         }
 
