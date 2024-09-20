@@ -5,6 +5,8 @@ import {
   CopyClipboard,
   dateBRFormat,
   findDates,
+  generateDocumentNumber,
+  getCurrentDate,
   getImage,
   getShorDate,
   justNumber,
@@ -39,7 +41,7 @@ export interface CardType {
 }
 
 export interface PaymentType {
-  payment_method: "credit_card" | "pix";
+  payment_method: "credit_card" | "pix" | "boleto";
   credit_card: {
     card: CardType;
     operation_type: string;
@@ -127,6 +129,8 @@ export default function Pagamento({
     setPix({ ...pix, ...value });
   };
 
+  const [boleto, setBoleto] = useState({} as any);
+
   const ConfirmManager = async () => {
     let request: any = await api.bridge({
       url: "orders/get",
@@ -209,6 +213,10 @@ export default function Pagamento({
     return () => clearInterval(interval);
   };
 
+  const BoletoManager = (charge: any) => {
+    setBoleto(charge);
+  };
+
   const [card, setCard] = useState({} as CardType);
   const handleCard = (value: any) => {
     setCard({ ...card, ...value });
@@ -265,15 +273,18 @@ export default function Pagamento({
   const submitPayment = async (e: any) => {
     e.preventDefault();
 
-    handleForm({
+    let formFeedback: any = {
       loading: true,
       feedback: "",
-    });
+    };
+
+    handleForm(formFeedback);
 
     const handlePayment: any = payment;
 
     if (handlePayment.payment_method == "credit_card") {
       delete handlePayment["pix"];
+      delete handlePayment["boleto"];
 
       handlePayment["credit_card"] = {
         card: {
@@ -293,13 +304,28 @@ export default function Pagamento({
 
     if (handlePayment.payment_method == "pix") {
       delete handlePayment["credit_card"];
+      delete handlePayment["boleto"];
 
       handlePayment["pix"] = { expires_in: pix.expires_in };
+    }
+
+    if (handlePayment.payment_method == "boleto") {
+      delete handlePayment["credit_card"];
+      delete handlePayment["pix"];
+
+      handlePayment["boleto"] = {
+        instructions: "Pagar até o vencimento",
+        due_at: getCurrentDate(1),
+        document_number: generateDocumentNumber(),
+        type: "DM",
+      };
     }
 
     const pagarme = new Pagarme();
 
     const request = await pagarme.createOrder(order, handlePayment);
+
+    formFeedback["loading"] = false;
 
     if (!!request.response) {
       const handle: any = request.data;
@@ -307,12 +333,14 @@ export default function Pagamento({
       if (payment.payment_method == "credit_card") {
         if (handle?.status == "paid") {
           CardManager();
+
+          formFeedback["sended"] = true;
         } else {
-          handleForm({
-            loading: false,
+          formFeedback = {
+            ...formFeedback,
             sended: false,
             feedback: "Os dados fornecidos não são válidos. Tente novamente.",
-          });
+          };
         }
       }
 
@@ -328,23 +356,45 @@ export default function Pagamento({
             qrcode: handleCharge.qr_code_url,
             time: handleCharge.expires_at,
           });
+
+          formFeedback["sended"] = true;
         } else {
-          handleForm({
-            loading: false,
+          formFeedback = {
+            ...formFeedback,
             sended: false,
             feedback:
               "Algo deu errado ao processar seu pagamento. Tente novamente.",
-          });
+          };
+        }
+      }
+
+      if (payment.payment_method == "boleto") {
+        if (handle?.status == "paid" || handle?.status == "pending") {
+          const handleCharge: any = !!handle?.charges?.length
+            ? handle?.charges[0].last_transaction
+            : {};
+
+          BoletoManager(handleCharge);
+
+          formFeedback["sended"] = true;
+        } else {
+          formFeedback = {
+            ...formFeedback,
+            sended: false,
+            feedback: "Os dados fornecidos não são válidos. Tente novamente.",
+          };
         }
       }
     } else {
-      handleForm({
-        loading: false,
+      formFeedback = {
+        ...formFeedback,
         sended: false,
         feedback:
           "Algo deu errado ao processar seu pagamento. Tente novamente.",
-      });
+      };
     }
+
+    handleForm(formFeedback);
   };
 
   const headLine = () => {
@@ -446,17 +496,6 @@ export default function Pagamento({
                           </div>
                         </div>
 
-                        <div className="flex gap-2 py-2 px-3 bg-zinc-100 rounded-md">
-                          <div className="text-zinc-900 font-bold w-full max-w-[10rem]">
-                            Valor de entrega
-                          </div>
-                          <div className="">
-                            {!!order?.deliveryPrice
-                              ? `R$ ${moneyFormat(order.deliveryPrice)}`
-                              : "Gratuita"}
-                          </div>
-                        </div>
-
                         <div className="flex gap-2 py-2 px-3 rounded-md">
                           <div className="text-zinc-900 font-bold w-full max-w-[10rem]">
                             Endereço de entrega
@@ -542,7 +581,19 @@ export default function Pagamento({
                           {products.length == 1 ? "item" : "itens"})
                         </div>
                         <div className="whitespace-nowrap">
-                          R$ {moneyFormat(order.total)}
+                          R${" "}
+                          {moneyFormat(
+                            order.total - (order?.deliveryPrice ?? 0)
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <div className="w-full">Entrega</div>
+                        <div className="whitespace-nowrap">
+                          {!!order?.deliveryPrice
+                            ? `R$ ${moneyFormat(order.deliveryPrice)}`
+                            : "Gratuita"}
                         </div>
                       </div>
 
@@ -573,7 +624,29 @@ export default function Pagamento({
                       </div>
                     )}
 
-                    {pix.status ? (
+                    {!!boleto?.status ? (
+                      <div className="bg-white rounded-xl p-4 text-center">
+                        <div className="mb-4">
+                          <div className="text-sm">Vencimento para:</div>
+                          <div className="text-xl text-zinc-900 font-bold">
+                            {dateBRFormat(boleto?.due_at)}
+                          </div>
+                        </div>
+                        <div className="w-full max-w-[16rem] mx-auto grid gap-2">
+                          <div>Disponível para download</div>
+                          <div>
+                            <a
+                              rel="noreferrer"
+                              href={boleto?.pdf}
+                              target="_blank"
+                              className="font-semibold inline-block mx-auto py-2 px-4 border rounded-md hover:underline border-cyan-600 text-cyan-600 hover:border-cyan-800 hover:text-cyan-800 ease"
+                            >
+                              Baixar boleto
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ) : !!pix?.status ? (
                       <div className="bg-white rounded-xl p-4">
                         <div className="text-center mb-4">
                           <div className="text-sm">Expira em:</div>
@@ -703,24 +776,46 @@ export default function Pagamento({
                                   className="form-control"
                                 />
                               </div>
-                              <div className="flex gap-4">
-                                <div className="form-group w-full">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="flex gap-4">
+                                  <div className="form-group w-full">
+                                    <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
+                                      Número do Cartão
+                                    </label>
+                                    <input
+                                      type="tel"
+                                      onChange={(e: any) =>
+                                        handleCard({
+                                          number: (
+                                            justNumber(e.target.value) ?? ""
+                                          ).toString(),
+                                        })
+                                      }
+                                      value={card?.number ?? ""}
+                                      required
+                                      className="form-control appearance-none"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="form-group">
                                   <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    Número do Cartão
+                                    Parcelas
                                   </label>
-                                  <input
-                                    type="tel"
-                                    onChange={(e: any) =>
-                                      handleCard({
-                                        number: (
-                                          justNumber(e.target.value) ?? ""
-                                        ).toString(),
-                                      })
-                                    }
-                                    value={card?.number ?? ""}
+                                  <select
                                     required
                                     className="form-control appearance-none"
-                                  />
+                                    onChange={(e: any) =>
+                                      setInstallments(
+                                        justNumber(e.target.value)
+                                      )
+                                    }
+                                  >
+                                    <option value={1}>1x</option>
+                                    <option value={2}>2x</option>
+                                    <option value={3}>3x</option>
+                                    <option value={4}>4x</option>
+                                    <option value={5}>5x</option>
+                                  </select>
                                 </div>
                               </div>
                               <div className="grid grid-cols-2 gap-4">
@@ -813,6 +908,44 @@ export default function Pagamento({
                         <div className="border-t">
                           <div
                             onClick={(e: any) =>
+                              handlePayment({ payment_method: "boleto" })
+                            }
+                            className={`p-3 md:p-4 cursor-pointer flex gap-2 items-center`}
+                          >
+                            <div
+                              className={`border ${
+                                payment.payment_method == "boleto"
+                                  ? "border-zinc-400"
+                                  : "border-zinc-300"
+                              } w-[1rem] rounded-full h-[1rem] relative`}
+                            >
+                              {payment.payment_method == "boleto" && (
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
+                              )}
+                            </div>
+
+                            <div className="leading-tight text-zinc-900 font-semibold flex items-center gap-1">
+                              <Img
+                                src="/images/pagarme/document-icon.png"
+                                className="w-[1.75rem]"
+                              />
+                              <div className="w-full">BOLETO</div>
+                            </div>
+                          </div>
+
+                          {payment.payment_method == "boleto" && (
+                            <div className="px-3 md:px-4 pb-3 md:pb-4 grid gap-4">
+                              <div className="bg-zinc-100 py-2 px-3 text-sm rounded-md">
+                                * Ao confirmar, será gerado um boleto para
+                                pagamento.
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="border-t">
+                          <div
+                            onClick={(e: any) =>
                               handlePayment({ payment_method: "pix" })
                             }
                             className={`p-3 md:p-4 cursor-pointer flex gap-2 items-center`}
@@ -866,9 +999,8 @@ export default function Pagamento({
                               )}
 
                               <div className="bg-zinc-100 py-2 px-3 text-sm rounded-md">
-                                <b className="text-zinc-900">Atenção:</b> Ao
-                                confirmar, será gerado um código para pagamento
-                                via pix. Utilize o QRcode ou o código{" "}
+                                * Ao confirmar, será gerado um código para
+                                pagamento via pix. Utilize o QRcode ou o código{" "}
                                 {`"copiar e colar"`} para efetuar o pagamento no
                                 aplicativo do seu banco.
                               </div>
@@ -878,11 +1010,11 @@ export default function Pagamento({
                       </div>
                     )}
 
-                    {form.loading && !pix.status && (
+                    {form.loading && (
                       <div className="absolute inset-0 w-full h-full bg-white opacity-50 cursor-wait"></div>
                     )}
 
-                    {!pix.status && (
+                    {!pix.status && !boleto?.status && (
                       <div className="grid mt-4">
                         <Button
                           loading={form.loading}
