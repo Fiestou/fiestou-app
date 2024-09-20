@@ -1,6 +1,6 @@
 import axios from "axios";
 import Cookies from "js-cookie";
-import { phoneAreaCode, phoneJustNumber } from "../helper";
+import { convertToCents, phoneAreaCode, phoneJustNumber } from "../helper";
 import { OrderType } from "@/src/models/order";
 import { ProductOrderType } from "../models/product";
 import { PaymentType } from "@/pages/dashboard/pedidos/pagamento/[id]";
@@ -67,14 +67,14 @@ class Pagarme {
           line_1: order.deliveryAddress?.street,
           line_2: order.deliveryAddress?.number,
         },
-        amount: 0,
+        amount: convertToCents(order?.deliveryPrice ?? 0),
         description: "delivery",
         recipient_name: order.user?.name,
         recipient_phone: order.user?.phone,
       },
       items: order.listItems.map((item: ProductOrderType) => {
         return {
-          amount: item.total * 100,
+          amount: convertToCents(item.total),
           description: item.product.title,
           quantity: item.quantity,
           code: item.product.id,
