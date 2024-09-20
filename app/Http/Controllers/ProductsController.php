@@ -88,7 +88,8 @@ class ProductsController extends Controller
                     $query->where(function ($q) use ($term) {
                         $q->orWhere('title', 'like', '%' . $term . '%')
                             ->orWhere('subtitle', 'like', '%' . $term . '%')
-                            ->orWhere('tags', 'like', '%' . $term . '%');
+                            ->orWhere('tags', 'like', '%' . $term . '%')
+                            ->orWhere('color', 'like', '%' . $term . '%');
                     });
                 }
             });
