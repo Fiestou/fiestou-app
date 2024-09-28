@@ -8,6 +8,7 @@ node_modules/
 vendor/
 dist/
 storage/
+public/storage/
 .env
 
 # Compiled Java class files
