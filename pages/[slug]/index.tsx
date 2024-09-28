@@ -16,23 +16,23 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 
 export const getStaticPaths = async (req: NextApiRequest) => {
-  const api = new Api();
-  let request: any = await api.request({
-    method: "get",
-    url: "request/stores",
-  });
+  // const api = new Api();
+  // let request: any = await api.request({
+  //   method: "get",
+  //   url: "request/stores",
+  // });
 
-  const stores = request?.data ?? [];
+  // const stores = request?.data ?? [];
 
-  const paths = stores
-    .filter((post: any) => !!post.slug)
-    .map((post: any) => {
-      return { params: { slug: post.slug } };
-    });
+  // const paths = stores
+  //   .filter((post: any) => !!post.slug)
+  //   .map((post: any) => {
+  //     return { params: { slug: post.slug } };
+  //   });
 
   return {
-    paths: paths,
-    fallback: true,
+    paths: [],
+    fallback: "blocking",
   };
 };
 

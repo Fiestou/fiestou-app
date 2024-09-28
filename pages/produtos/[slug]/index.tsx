@@ -53,26 +53,26 @@ import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
 
 export const getStaticPaths = async (ctx: any) => {
-  const api = new Api();
-  const request: any = await api.request(
-    {
-      method: "get",
-      url: "request/products",
-    },
-    ctx
-  );
+  // const api = new Api();
+  // const request: any = await api.request(
+  //   {
+  //     method: "get",
+  //     url: "request/products",
+  //   },
+  //   ctx
+  // );
 
-  const products = request?.data ?? [];
+  // const products = request?.data ?? [];
 
-  const paths = products
-    .filter((product: any) => !!product?.slug)
-    .map((product: any) => {
-      return { params: { slug: product?.slug } };
-    });
+  // const paths = products
+  //   .filter((product: any) => !!product?.slug)
+  //   .map((product: any) => {
+  //     return { params: { slug: product?.slug } };
+  //   });
 
   return {
-    paths: paths ?? [],
-    fallback: true,
+    paths: [],
+    fallback: "blocking",
   };
 };
 
