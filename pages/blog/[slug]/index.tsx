@@ -11,19 +11,19 @@ import PostItem from "@/src/components/common/PostItem";
 import Newsletter from "@/src/components/common/Newsletter";
 
 export const getStaticPaths = async (ctx: any) => {
-  const api = new Api();
+  // const api = new Api();
 
-  let request: any = await api.content({ url: `post` });
+  // let request: any = await api.content({ url: `post` });
 
-  const paths = request.data
-    .filter((slug: any) => !!slug)
-    .map((slug: any) => {
-      return { params: { slug: slug } };
-    });
+  // const paths = request.data
+  //   .filter((slug: any) => !!slug)
+  //   .map((slug: any) => {
+  //     return { params: { slug: slug } };
+  //   });
 
   return {
-    paths: paths,
-    fallback: true,
+    paths: [],
+    fallback: "blocking",
   };
 };
 

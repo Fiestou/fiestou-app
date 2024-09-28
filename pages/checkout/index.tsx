@@ -269,10 +269,9 @@ export default function Checkout({
       data: order,
     });
 
-    if (!!registerOrder.response) {
+    if (!!registerOrder.response && !!registerOrder?.data?.id) {
       Cookies.remove("fiestou.cart");
-
-      window.location.href = `/dashboard/pedidos/pagamento/${registerOrder.data.id}`;
+      window.location.href = `/dashboard/pedidos/pagamento/${registerOrder?.data?.id}`;
     }
 
     setForm({ ...form, loading: false });
