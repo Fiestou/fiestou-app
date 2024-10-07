@@ -7,38 +7,30 @@ import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
 import { moneyFormat } from "@/src/helper";
 import { UserType } from "@/src/models/user";
+import { useEffect, useState } from "react";
 
-export async function getServerSideProps(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const api = new Api();
-  let request: any = {};
+export default function Usuarios() {
+  const [users, setUsers] = useState([] as Array<UserType>);
 
-  request = await api.bridge(
-    {
+  const getUsers = async () => {
+    const api = new Api();
+    const request: any = await api.bridge({
+      method: "get",
       url: "users/list",
       data: {
-        filter: [
-          {
-            key: "person",
-            value: "client",
-            compare: "=",
-          },
-        ],
+        person: "client",
       },
-    },
-    req
-  );
+    });
 
-  return {
-    props: {
-      users: request.data ?? [],
-    },
+    if (request.response) {
+      setUsers(request.data);
+    }
   };
-}
 
-export default function Usuarios({ users }: { users: Array<UserType> }) {
+  useEffect(() => {
+    getUsers();
+  }, []);
+
   return (
     <Template
       header={{

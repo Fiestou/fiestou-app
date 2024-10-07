@@ -170,12 +170,17 @@ export default function Store({
       <section className="pb-10 pt-[4.25rem]">
         <div className="container-medium">
           <div className="py-4 md:py-6">
-            <Breadcrumbs links={[{ url: "/parceiros", name: "Parceiros" }]} />
+            <Breadcrumbs
+              links={[
+                { url: "/parceiros", name: "Parceiros" },
+                { url: `/${store?.slug}`, name: store?.title },
+              ]}
+            />
           </div>
           <div className="aspect-[6/2.5] rounded-lg md:rounded-2xl relative overflow-hidden -mb-10 md:mb-6 bg-zinc-100">
-            {!!getImage(store?.cover, "default") && (
+            {!!getImage(store?.cover, "lg") && (
               <Img
-                src={getImage(store?.cover, "default")}
+                src={getImage(store?.cover, "lg")}
                 size="7xl"
                 className="absolute object-cover h-full inset-0 w-full"
               />

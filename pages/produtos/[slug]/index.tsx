@@ -763,48 +763,35 @@ export default function Produto({
                           className="cursor-pointer break-words w-full whitespace-pre-wrap font-semibold text-zinc-900"
                         >
                           {product?.subtitle}
-                          <div className="inline-block w-0">
-                            <Icon
-                              icon={
-                                resume ? "fa-chevron-up" : "fa-chevron-down"
-                              }
-                              type="far"
-                              className="text-xs pl-1"
-                            />
-                          </div>
+                          {resume && (
+                            <div className="inline-block w-0">
+                              <Icon
+                                icon="fa-chevron-up"
+                                type="far"
+                                className="text-xs pl-1"
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
 
                       {!!product?.description && (
                         <div>
-                          {!!product?.subtitle ? (
+                          <div
+                            className="break-words whitespace-pre-wrap inline-block"
+                            dangerouslySetInnerHTML={{
+                              __html: resume
+                                ? product?.description
+                                : getSummary(product?.description, 100),
+                            }}
+                          ></div>
+                          {!resume && (
                             <div
-                              className={`relative overflow-hidden ${
-                                resume ? "h-auto" : "h-0"
-                              } break-words whitespace-pre-wrap`}
-                              dangerouslySetInnerHTML={{
-                                __html: product?.description,
-                              }}
-                            ></div>
-                          ) : (
-                            <>
-                              <div
-                                className="break-words whitespace-pre-wrap inline-block"
-                                dangerouslySetInnerHTML={{
-                                  __html: resume
-                                    ? product?.description
-                                    : getSummary(product?.description, 100),
-                                }}
-                              ></div>
-                              {!resume && (
-                                <div
-                                  onClick={() => setResume(true)}
-                                  className="pt-2 text-cyan-500 underline cursor-pointer"
-                                >
-                                  ler mais
-                                </div>
-                              )}
-                            </>
+                              onClick={() => setResume(true)}
+                              className="pt-2 text-cyan-500 underline cursor-pointer"
+                            >
+                              ler mais
+                            </div>
                           )}
                         </div>
                       )}

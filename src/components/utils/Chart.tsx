@@ -12,6 +12,7 @@ import {
 import { Line } from "react-chartjs-2";
 import { faker } from "@faker-js/faker";
 import { getExtenseData, getShortMonth, moneyFormat } from "@/src/helper";
+import Api from "@/src/services/api";
 
 ChartJS.register(
   CategoryScale,
@@ -34,6 +35,12 @@ export const options = {
       text: "Chart.js Line Chart",
     },
   },
+  scales: {
+    y: {
+      beginAtZero: true,
+      min: 0,
+    },
+  },
 };
 
 const months: any = [
@@ -52,20 +59,82 @@ const months: any = [
 ];
 
 export function Chart(params: any) {
+  const api = new Api();
+
   const [handleChart, setHandleChart] = useState({
     labels: [],
     values: [],
   } as any);
 
+  const [chartResume, setChartResume] = useState([] as Array<any>);
+  const getChartResume = async () => {
+    const period = params?.period ?? "month";
+
+    let datesRange = {
+      start: "",
+      end: "",
+    };
+
+    const today = new Date();
+
+    if (period === "month") {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1); // Primeiro dia do mês
+      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Último dia do mês
+
+      datesRange = {
+        start: start.toISOString().split("T")[0], // Converte para o formato "YYYY-MM-DD"
+        end: end.toISOString().split("T")[0],
+      };
+    }
+
+    if (period === "year") {
+      const start = new Date(today.getFullYear(), 0, 1); // Primeiro dia do ano
+      const end = new Date(today.getFullYear(), 11, 31); // Último dia do ano
+
+      datesRange = {
+        start: start.toISOString().split("T")[0],
+        end: end.toISOString().split("T")[0],
+      };
+    }
+
+    if (period === "semester") {
+      const month = today.getMonth();
+      if (month < 6) {
+        const start = new Date(today.getFullYear(), 0, 1); // Primeiro dia do primeiro semestre
+        const end = new Date(today.getFullYear(), 5, 30); // Último dia do primeiro semestre
+
+        datesRange = {
+          start: start.toISOString().split("T")[0],
+          end: end.toISOString().split("T")[0],
+        };
+      } else {
+        const start = new Date(today.getFullYear(), 6, 1); // Primeiro dia do segundo semestre
+        const end = new Date(today.getFullYear(), 11, 31); // Último dia do segundo semestre
+
+        datesRange = {
+          start: start.toISOString().split("T")[0],
+          end: end.toISOString().split("T")[0],
+        };
+      }
+    }
+
+    let request: any = await api.bridge({
+      url: "suborders/list",
+      data: datesRange,
+    });
+
+    setChartResume(request.data);
+  };
+
   const periodYear = () => {
     let handleLabel: any = months;
 
-    params.data?.map((item: any, key: any) => {
+    chartResume?.map((item: any, key: any) => {
       let month = parseInt(getExtenseData(item.created_at, "m").toString());
       let m = getShortMonth(month);
 
       handleLabel.map((mo: any) => {
-        mo.value += mo.month == m ? parseInt(item.totalOrder) : 0;
+        mo.value += mo.month == m ? parseInt(item.total) : 0;
       });
     });
 
@@ -83,14 +152,14 @@ export function Chart(params: any) {
       current.includes(k)
     );
 
-    params.data
+    chartResume
       .filter((item: any, index: any) => current.includes(index))
       .map((item: any, key: any) => {
         let month = parseInt(getExtenseData(item.created_at, "m").toString());
         let m = getShortMonth(month);
 
         handleLabel.map((mo: any) => {
-          mo.value += mo.month == m ? parseInt(item.totalOrder) : 0;
+          mo.value += mo.month == m ? parseInt(item.total) : 0;
         });
       });
 
@@ -105,7 +174,9 @@ export function Chart(params: any) {
     const currentMonth = new Date().getMonth();
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
     const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+
     let handleLabel: any = [];
+
     for (
       let i = firstDayOfMonth.getDate();
       i <= lastDayOfMonth.getDate();
@@ -117,14 +188,14 @@ export function Chart(params: any) {
       });
     }
 
-    params.data?.map((item: any, key: any) => {
+    chartResume?.map((item: any, key: any) => {
       let month = parseInt(getExtenseData(item.created_at, "m").toString());
 
       if (month == new Date().getMonth() + 1) {
         const d = new Date(item.created_at).getDate();
 
         handleLabel.map((label: any) => {
-          label.value += label.day == d ? parseInt(item.totalOrder) : 0;
+          label.value += label.day == d ? parseInt(item.total) : 0;
         });
       }
     });
@@ -139,6 +210,10 @@ export function Chart(params: any) {
     if (params.period == "month") periodMonth();
     if (params.period == "semester") periodSemester();
     if (params.period == "year") periodYear();
+  }, [chartResume]);
+
+  useEffect(() => {
+    getChartResume();
   }, [params]);
 
   const options = {
@@ -185,6 +260,8 @@ export function Chart(params: any) {
         },
       },
       y: {
+        beginAtZero: true,
+        min: 0,
         grid: {
           color: "rgba(0, 0, 0, 0.1)",
           borderWidth: 1,
