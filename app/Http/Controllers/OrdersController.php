@@ -171,31 +171,6 @@ class OrdersController extends Controller
         $order->listItems           = json_encode($listItems);
         $order->status              = 0;
 
-        // foreach ($listItems as $key => $item) {
-        //     $product = Product::where('id', $item['product']['id'])
-        //                       ->first();
-
-        //     $unavailable = !!$product->unavailable ? json_decode($product->unavailable, TRUE) : [];
-        //     $unavailable = array_merge($unavailable, $item['product']['unavailable']);
-
-        //     foreach($unavailable as $day => $date){
-        //         $dataToCheck = Carbon::createFromFormat('Y-m-d', $date);
-        //         $dataCurrent = Carbon::now();
-
-        //         if ($dataCurrent->gt($dataToCheck)) {
-        //             unset($unavailable[$day]);
-        //         }
-        //     }
-
-        //     $product->unavailable = json_encode($unavailable);
-
-        //     if($product->quantityType != "ondemand" && $product->comercialType == "renting"){
-        //         $product->quantity = !!intval($product->quantity) ? intval($product->quantity) - (!!intval($item['quantity']) ? $item['quantity'] : 1) : 0;
-        //     }
-
-        //     $product->save();
-        // }
-
         DB::beginTransaction();
 
         if($order->save()){

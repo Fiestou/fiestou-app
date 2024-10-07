@@ -85,6 +85,18 @@ class SubordersController extends Controller
                 $suborders = $suborders->where(["user" => $request->get("customer")]);
             }
 
+            if($request->has("limit")){
+                $suborders = $suborders->limit($request->get("limit"));
+            }
+
+            if ($request->has("start")) {
+                $suborders = $suborders->whereDate('created_at', '>=', $request->get("start"));
+            }
+
+            if ($request->has("end")) {
+                $suborders = $suborders->whereDate('created_at', '<=', $request->get("end"));
+            }
+
             $suborders = $suborders->get();
 
             foreach ($suborders as $key => $suborder) {
