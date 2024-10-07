@@ -128,11 +128,13 @@ export default function Parceiro({ content }: { content: any }) {
   const getOrders = async () => {
     let request: any = await api.bridge({
       url: "suborders/list",
-      data: { limit: 20 },
+      data: { limit: 10 },
     });
 
     setOrders(request.data);
   };
+
+  const [period, setPeriod] = useState("month" as string);
 
   const [user, setUser] = useState({} as UserType);
 
@@ -143,8 +145,6 @@ export default function Parceiro({ content }: { content: any }) {
       setUser(getUser);
     }
   }, []);
-
-  const [period, setPeriod] = useState("month" as string);
 
   return (
     <Template
@@ -275,10 +275,10 @@ export default function Parceiro({ content }: { content: any }) {
                   </div>
                 </div>
               </div>
-
               <div className="pb-8 pt-12 md:pb-12">
                 <hr />
               </div>
+
               <div>
                 <div className="flex gap-4 mb-4 items-center">
                   <div className="w-full font-title font-bold text-2xl lgxt-zinc-900 whitespace-nowrap text-zinc-900">
@@ -297,7 +297,7 @@ export default function Parceiro({ content }: { content: any }) {
                   </div>
                 </div>
                 <div className="bg-zinc-50 rounded-md py-6 px-2 flex justify-center">
-                  <Chart data={orders} period={period} />
+                  <Chart period={period} />
                 </div>
               </div>
               <div className="py-16">

@@ -270,13 +270,15 @@ export default function Loja({
 
     let profileValue: any = store?.profile;
 
+    console.log(profileValue);
+
     if (!!handleProfile.remove) {
       const request = await api
         .media({
           dir: "store",
           app: store.id,
           index: store.id,
-          method: "upload",
+          method: "remove",
           medias: [handleProfile.remove],
         })
         .then((res: any) => res);

@@ -8,48 +8,37 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { Button, Select } from "@/src/components/ui/form";
 import { print_r } from "@/src/helper";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import UserEditAdmin from "@/src/components/shared/UserEditAdmin";
 
-export async function getServerSideProps(ctx: any) {
-  const api = new Api();
-  const { id } = ctx.query;
-  const request: any = await api.bridge(
-    {
-      url: "users/list",
+export default function Usuario() {
+  const router = useRouter();
+  const query: any = router.query;
+
+  const [user, setUser] = useState({} as UserType);
+
+  const getUser = async () => {
+    const api = new Api();
+    const request: any = await api.bridge({
+      method: "get",
+      url: "users/get",
       data: {
-        filter: [
-          {
-            key: "id",
-            value: id,
-            compare: "=",
-          },
-        ],
+        ref: query.id,
+        person: "client",
       },
-    },
-    ctx
-  );
+    });
 
-  if (!request?.data) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/admin/usuarios",
-      },
-    };
-  }
-
-  let user = request?.data ?? [];
-  user = request?.data[0] ?? {};
-
-  return {
-    props: {
-      user: user,
-    },
+    if (request.response) {
+      setUser(request.data);
+    }
   };
-}
 
-export default function MeusDados({ user }: { user: UserType }) {
+  useEffect(() => {
+    if (!!query?.id) {
+      getUser();
+    }
+  }, [query]);
+
   return (
     <Template
       header={{
