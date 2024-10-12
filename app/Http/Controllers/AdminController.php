@@ -89,35 +89,34 @@ class AdminController extends Controller
             'type'  => 'required',
             'title' => 'required',
         ]);
-
-        $content = new Content;
-
-        if($request->has('id')){
-            $content = Content::where([
-                                    "type"  => $request->get('type'),
-                                    "id"    => $request->get('id')
-                                ])
-                                ->first();
+    
+        $content = $request->has('id') ? Content::where([
+                    "type"  => $request->get('type'),
+                    "id"    => $request->get('id')
+                ])->first() : new Content;
+    
+        if (!$content) {
+            $content = new Content;
         }
-
+    
         $content->type      = $request->get('type');
         $content->title     = $request->get('title');
         $content->slug      = (isset($content->slug) && !!$content->slug) ? Str::slug(strip_tags($content->slug)) : Str::slug(strip_tags($content->title));
         $content->status    = !!$request->get('status');
-
+    
         $content->ContentCustom($request->get('content'));
-
-        if($content->save()){
+    
+        if ($content->save()) {
             return response()->json([
                 'response'  => true,
                 'data'      => $content->setCustomContent()
             ]);
         }
-
+    
         return response()->json([
             'response'  => false
         ]);
-    }
+    }    
 
     public function RemoveContent(Request $request){
 
