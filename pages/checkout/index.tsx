@@ -30,6 +30,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
 import { deliveryToName } from "@/src/models/delivery";
+import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
 
 const FormInitialType = {
   sended: false,
@@ -105,6 +106,7 @@ export default function Checkout({
   const api = new Api();
 
   const platformCommission = Roles?.platformCommission ?? 5;
+  const deliveryTax = parseFloat(Roles?.kmPrice) ?? 2.5;
 
   let stores: Array<StoreType> = [];
 
@@ -140,7 +142,7 @@ export default function Checkout({
 
     const { distance } = data;
 
-    setDeliveryPrice((distance / 1000) * 2.5);
+    setDeliveryPrice((distance / 1000) * deliveryTax);
   };
 
   useEffect(() => {
@@ -176,25 +178,6 @@ export default function Checkout({
       window.location.href = "/acesso";
     }
   }, [user, token]);
-
-  const handleZipCode = async (zipCode: string) => {
-    const location = await getZipCode(zipCode);
-
-    let handle = {} as AddressType;
-
-    handle["zipCode"] = justNumber(zipCode);
-    handle["country"] = "Brasil";
-
-    if (!location?.erro) {
-      handle["street"] = location.logradouro;
-      handle["neighborhood"] = location.bairro;
-      handle["city"] = location.localidade;
-      handle["state"] = location.uf;
-      handle["main"] = true;
-    }
-
-    handleAddress(handle);
-  };
 
   const submitOrder = async (e: any) => {
     e.preventDefault();
@@ -284,488 +267,393 @@ export default function Checkout({
     }
   }, []);
 
-  return (
-    !isFallback && (
-      <Template
-        scripts={Scripts}
-        metaPage={{
-          title: `Checkout | ${DataSeo?.site_text}`,
-          url: `checkout`,
-        }}
-        header={{
-          template: "clean",
-          position: "solid",
-        }}
-        footer={{
-          template: "clean",
-        }}
-      >
-        <section className="py-6 md:py-10">
-          <form onSubmit={(e: any) => submitOrder(e)}>
-            <div className="container-medium pb-14">
-              <div className="grid md:flex gap-4 md:gap-10 items-start">
-                <div className="grid gap-6 w-full">
-                  <div className="pb-4 md:pb-6 border-b">
-                    <div className="pb-4">
-                      <Breadcrumbs
-                        links={[
-                          { url: "/produtos", name: "Produtos" },
-                          { url: "/carrinho", name: "Carrinho" },
-                        ]}
-                      />
-                    </div>
-                    <div className="flex items-center">
-                      <Link passHref href="/carrinho">
-                        <Icon
-                          icon="fa-long-arrow-left"
-                          className="mr-4 md:mr-6 text-2xl text-zinc-900"
-                        />
-                      </Link>
-                      <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900">
-                        Finalizar
-                      </div>
-                    </div>
+  return !isFallback && !!token ? (
+    <Template
+      scripts={Scripts}
+      metaPage={{
+        title: `Checkout | ${DataSeo?.site_text}`,
+        url: `checkout`,
+      }}
+      header={{
+        template: "clean",
+        position: "solid",
+      }}
+      footer={{
+        template: "clean",
+      }}
+    >
+      <section className="py-6 md:py-10">
+        <form onSubmit={(e: any) => submitOrder(e)}>
+          <div className="container-medium pb-14">
+            <div className="grid md:flex gap-4 md:gap-10 items-start">
+              <div className="grid gap-6 w-full">
+                <div className="pb-4 md:pb-6 border-b">
+                  <div className="pb-4">
+                    <Breadcrumbs
+                      links={[
+                        { url: "/produtos", name: "Produtos" },
+                        { url: "/carrinho", name: "Carrinho" },
+                      ]}
+                    />
                   </div>
-
-                  <div className="grid gap-6 md:gap-10">
-                    <div className="grid gap-4 mb-0">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Endereço de entrega
-                      </h4>
-                      {!!address?.zipCode &&
-                        !isCEPInRegion(address?.zipCode) && (
-                          <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
-                            <Icon
-                              icon="fa-exclamation-triangle"
-                              className="mr-2"
-                            />
-                            <div>
-                              Sua região ainda não está disponível para nossos
-                              fornecedores.
-                            </div>
-                          </div>
-                        )}
-
-                      {(!address?.complement ||
-                        !address?.street ||
-                        !address?.number ||
-                        !address?.city ||
-                        !address?.state) && (
-                        <div className="flex items-start bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
-                          <Icon
-                            icon="fa-exclamation-triangle"
-                            className="mr-3 mt-1"
-                          />
-                          <div>
-                            Preencha seu endereço corretamente. Não se esqueça
-                            do informar o complemento.
-                          </div>
-                        </div>
-                      )}
-
-                      {!!locations.length && !customLocation && (
-                        <div className="grid gap-2">
-                          <div className="">
-                            {locations.map((addr: AddressType, key: any) => (
-                              <div
-                                className={`${
-                                  addr == address
-                                    ? "border-yellow-400"
-                                    : "border-zinc-200 hover:border-zinc-400"
-                                } rounded-md border ease cursor-pointer`}
-                                key={key}
-                                onClick={() => {
-                                  setAddress(addr);
-                                }}
-                              >
-                                <div className={`flex gap-3 p-4 items-center`}>
-                                  <div className="pr-2">
-                                    <div
-                                      className={`${
-                                        addr?.street == address?.street
-                                          ? "border-zinc-400"
-                                          : "border-zinc-300"
-                                      } w-[1rem] h-[1rem] rounded-full border relative`}
-                                    >
-                                      {addr?.street == address?.street && (
-                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div>
-                                      {addr.street}, {addr.number}
-                                    </div>
-                                    <div>
-                                      {addr.neighborhood} - {addr.city} |{" "}
-                                      {addr.state}
-                                    </div>
-                                    <div>
-                                      CEP: {addr.zipCode} - {addr.country}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          {!customLocation && (
-                            <div>
-                              <button
-                                type="button"
-                                onClick={() => setCustomLocation(true)}
-                                className="text-sm underline text-zinc-900 hover:text-yellow-500 ease"
-                              >
-                                Entregar em outro endereço
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {!!locations.length && !!customLocation && (
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => setCustomLocation(false)}
-                            className="text-sm underline text-zinc-900 hover:text-yellow-500 ease"
-                          >
-                            Selecionar meu endereço
-                          </button>
-                        </div>
-                      )}
-
-                      {(!locations.length || customLocation) && (
-                        <div>
-                          <div className="grid gap-2">
-                            <Input
-                              name="cep"
-                              onChange={(e: any) =>
-                                handleZipCode(e.target.value)
-                              }
-                              required
-                              defaultValue={address?.zipCode}
-                              placeholder="CEP"
-                            />
-                            <div className="flex gap-2">
-                              <div className="w-full">
-                                <Input
-                                  name="rua"
-                                  required
-                                  defaultValue={address?.street}
-                                  placeholder="Rua"
-                                  onChange={(e: any) =>
-                                    handleAddress({ street: e.target.value })
-                                  }
-                                />
-                              </div>
-                              <div className="w-[10rem]">
-                                <Input
-                                  name="numero"
-                                  onChange={(e: any) =>
-                                    handleAddress({
-                                      number: e.target.value,
-                                    })
-                                  }
-                                  required
-                                  defaultValue={address?.number}
-                                  placeholder="Número"
-                                />
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="w-full">
-                                <Input
-                                  name="bairro"
-                                  required
-                                  defaultValue={address?.neighborhood}
-                                  placeholder="Bairro"
-                                  onChange={(e: any) =>
-                                    handleAddress({
-                                      neighborhood: e.target.value,
-                                    })
-                                  }
-                                />
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="w-full">
-                                <Input
-                                  name="cidade"
-                                  required
-                                  defaultValue={address?.city}
-                                  placeholder="Cidade"
-                                  onChange={(e: any) =>
-                                    handleAddress({
-                                      city: e.target.value,
-                                    })
-                                  }
-                                />
-                              </div>
-                              <div className="w-[10rem]">
-                                <Input
-                                  name="estado"
-                                  required
-                                  defaultValue={address?.state}
-                                  placeholder="UF"
-                                  onChange={(e: any) =>
-                                    handleAddress({
-                                      state: e.target.value,
-                                    })
-                                  }
-                                />
-                              </div>
-                            </div>
-                            <div className="w-full">
-                              <Input
-                                name="complemento"
-                                onChange={(e: any) =>
-                                  handleAddress({
-                                    complement: e.target.value,
-                                  })
-                                }
-                                required
-                                defaultValue={address?.complement}
-                                placeholder="Complemento. Ex: Ap, Casa, Condomínio, etc..."
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mb-0 relative overflow-hidden">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Detalhes de entrega
-                      </h4>
-                      <div className="flex pt-4 flex-col gap-6">
-                        <div className="grid md:grid-cols-3 gap-2 md:gap-4">
-                          {[
-                            { type: "reception", icon: "🏢" },
-                            { type: "door", icon: "🚪" },
-                            { type: "for_me", icon: "📦" },
-                          ].map((option: any, key: any) => (
-                            <div
-                              key={key}
-                              onClick={(e: any) => {
-                                setDeliveryTo(option.type);
-                              }}
-                              className={`border ${
-                                deliveryTo == option.type
-                                  ? "border-yellow-400"
-                                  : "hover:border-zinc-400"
-                              } p-3 md:p-4 cursor-pointer rounded-md ease flex gap-2 items-center`}
-                            >
-                              <div
-                                className={`${
-                                  deliveryTo == option.type
-                                    ? "border-zinc-400"
-                                    : ""
-                                } w-[1rem] h-[1rem] rounded-full border relative`}
-                              >
-                                {deliveryTo == option.type && (
-                                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                                )}
-                              </div>
-                              <div className="text-[.85rem] leading-tight text-nowrap">
-                                {deliveryToName[option.type]}
-                              </div>
-                              <span className="text-lg self-end">
-                                {option.icon}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="border relative rounded-lg py-4">
-                          <div className="h-0 relative overflow-hidden">
-                            {!schedule && (
-                              <input readOnly name="agendamento" required />
-                            )}
-                          </div>
-                          <div className="absolute top-0 left-0 bg-white text-sm -mt-3 px-1 mx-1">
-                            Horário
-                          </div>
-                          <Swiper
-                            spaceBetween={0}
-                            breakpoints={{
-                              0: {
-                                slidesPerView: 4.5,
-                              },
-                              1024: {
-                                slidesPerView: 7.5,
-                              },
-                            }}
-                          >
-                            {[
-                              { period: "Manhã", time: "09:00" },
-                              { period: "Manhã", time: "10:00" },
-                              { period: "Manhã", time: "11:00" },
-                              { period: "Manhã", time: "12:00" },
-                              { period: "Tarde", time: "13:00" },
-                              { period: "Tarde", time: "14:00" },
-                              { period: "Tarde", time: "15:00" },
-                              { period: "Tarde", time: "16:00" },
-                              { period: "Tarde", time: "17:00" },
-                              { period: "Noite", time: "18:00" },
-                              { period: "Noite", time: "19:00" },
-                              { period: "Noite", time: "20:00" },
-                              { period: "Noite", time: "21:00" },
-                            ].map((item: any, key) => (
-                              <SwiperSlide key={key} className="pl-4">
-                                <div
-                                  onClick={() =>
-                                    setSchedule(`${item.period} - ${item.time}`)
-                                  }
-                                  className={`${
-                                    schedule == item.period + " - " + item.time
-                                      ? "text-yellow-500"
-                                      : "text-zinc-500 hover:text-zinc-900"
-                                  }  ease cursor-pointer`}
-                                >
-                                  <div className="text-xs">{item.period}</div>
-                                  <div className="font-semibold">
-                                    {item.time}
-                                  </div>
-                                </div>
-                              </SwiperSlide>
-                            ))}
-                          </Swiper>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 pb-4 md:pb-8 mb-0">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Fornecedores
-                      </h4>
-                      <div className="grid lg:grid-cols-2 gap-4">
-                        {stores.map((store: any, key: any) => (
-                          <div key={key}>
-                            <Partner params={store} />
-                          </div>
-                        ))}
-                      </div>
+                  <div className="flex items-center">
+                    <Link passHref href="/carrinho">
+                      <Icon
+                        icon="fa-long-arrow-left"
+                        className="mr-4 md:mr-6 text-2xl text-zinc-900"
+                      />
+                    </Link>
+                    <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900">
+                      Finalizar
                     </div>
                   </div>
                 </div>
 
-                <div className="w-full md:max-w-[28rem] md:mb-[2rem] relative">
-                  <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
-                    <div className="font-title font-bold text-zinc-900 text-xl mb-6">
-                      Resumo
-                    </div>
-
-                    <div className="grid gap-2">
-                      <div className="flex items-start justify-between">
-                        <div className="font-bold text-sm text-zinc-900 flex items-center">
-                          <Icon
-                            icon="fa-calendar"
-                            className="text-sm mr-2 opacity-75"
-                          />
-                          Data da locação
-                        </div>
-                        <div className="whitespace-nowrap text-right text-sm">
-                          {dateBRFormat(resume.startDate)}{" "}
-                          {resume.endDate != resume.startDate
-                            ? `- ${dateBRFormat(resume.endDate)}`
-                            : ""}
-                          <div>{schedule}</div>
+                <div className="grid gap-6 md:gap-10">
+                  <div className="grid gap-4 mb-0">
+                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                      Endereço de entrega
+                    </h4>
+                    {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
+                      <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
+                        <Icon icon="fa-exclamation-triangle" className="mr-2" />
+                        <div>
+                          Sua região ainda não está disponível para nossos
+                          fornecedores.
                         </div>
                       </div>
-                      <div className="border-t"></div>
-                      <div className="flex">
-                        <div className="w-full whitespace-nowrap">
-                          Subtotal ({listCart.length}{" "}
-                          {listCart.length == 1 ? "item" : "itens"})
-                        </div>
-                        <div className="whitespace-nowrap">
-                          R$ {moneyFormat(resume.subtotal)}
+                    )}
+
+                    {(!address?.complement ||
+                      !address?.street ||
+                      !address?.number ||
+                      !address?.city ||
+                      !address?.state) && (
+                      <div className="flex items-start bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
+                        <Icon
+                          icon="fa-exclamation-triangle"
+                          className="mr-3 mt-1"
+                        />
+                        <div>
+                          Preencha seu endereço corretamente. Não se esqueça do
+                          informar o complemento.
                         </div>
                       </div>
+                    )}
 
-                      <div className="border-t"></div>
-
-                      <div className="flex items-start justify-between">
-                        <div className="font-bold text-sm text-zinc-900 flex items-center">
-                          <Icon
-                            icon="fa-truck"
-                            className="text-sm mr-1 opacity-75"
-                          />
-                          Frete {!!address?.zipCode && `(${address?.zipCode})`}
-                        </div>
-                        <div className="grid text-right">
-                          {/* <s className="text-xs">R$ 24,00</s> */}
-                          <div className="whitespace-nowrap font-semibold text-sm">
-                            {/* Gratuito */}
-                            {!isCEPInRegion(address?.zipCode)
-                              ? "Entrega indisponível"
-                              : !!address?.zipCode
-                              ? `R$ ${moneyFormat(deliveryPrice)}`
-                              : "Informe um endereço"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="border-t"></div>
-
-                      <div className="flex gap-4 md:mb-4">
-                        <div className="w-full pt-1 text-zinc-900 font-bold">
-                          TOTAL
-                        </div>
-                        <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
-                          R$ {moneyFormat(resume.total)}
-                        </div>
-                      </div>
-
-                      {!!CheckoutPageContent?.terms_list?.length && (
-                        <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
-                          {CheckoutPageContent?.terms_list.map(
-                            (term: any, key: any) => (
-                              <div key={key} className="flex gap-2 pb-1">
-                                <div className="pt-[2px]">
-                                  <input type="checkbox" required />
+                    {!!locations.length && !customLocation && (
+                      <div className="grid gap-2">
+                        <div className="">
+                          {locations.map((addr: AddressType, key: any) => (
+                            <div
+                              className={`${
+                                addr == address
+                                  ? "border-yellow-400"
+                                  : "border-zinc-200 hover:border-zinc-400"
+                              } rounded-md border ease cursor-pointer`}
+                              key={key}
+                              onClick={() => {
+                                setAddress(addr);
+                              }}
+                            >
+                              <div className={`flex gap-3 p-4 items-center`}>
+                                <div className="pr-2">
+                                  <div
+                                    className={`${
+                                      addr?.street == address?.street
+                                        ? "border-zinc-400"
+                                        : "border-zinc-300"
+                                    } w-[1rem] h-[1rem] rounded-full border relative`}
+                                  >
+                                    {addr?.street == address?.street && (
+                                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
+                                    )}
+                                  </div>
                                 </div>
-                                <div
-                                  dangerouslySetInnerHTML={{
-                                    __html: term.term_description,
-                                  }}
-                                ></div>
+                                <div>
+                                  <div>
+                                    {addr.street}, {addr.number}
+                                  </div>
+                                  <div>
+                                    {addr.neighborhood} - {addr.city} |{" "}
+                                    {addr.state}
+                                  </div>
+                                  <div>
+                                    CEP: {addr.zipCode} - {addr.country}
+                                  </div>
+                                </div>
                               </div>
-                            )
-                          )}
+                            </div>
+                          ))}
                         </div>
-                      )}
-
-                      <div className="grid fixed z-10 md:relative bg-white md:bg-transparent bottom-0 left-0 w-full p-1 md:p-0">
-                        {!!address?.street &&
-                        !!address?.complement &&
-                        !!address?.number &&
-                        !!schedule &&
-                        !!address?.zipCode &&
-                        !!isCEPInRegion(address?.zipCode) ? (
-                          <Button
-                            loading={form.loading}
-                            style="btn-success"
-                            className="py-6 mb-4 md:mb-0"
-                          >
-                            Confirmar e efetuar pagamento
-                          </Button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn bg-green-500 text-white border border-transparent opacity-40 py-6 mb-4 md:mb-0 text cursor-not-allowed"
-                          >
-                            Confirmar e efetuar pagamento
-                          </button>
+                        {!customLocation && (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => setCustomLocation(true)}
+                              className="text-sm underline text-zinc-900 hover:text-yellow-500 ease"
+                            >
+                              Entregar em outro endereço
+                            </button>
+                          </div>
                         )}
                       </div>
+                    )}
+
+                    {!!locations.length && !!customLocation && (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setCustomLocation(false)}
+                          className="text-sm underline text-zinc-900 hover:text-yellow-500 ease"
+                        >
+                          Selecionar meu endereço
+                        </button>
+                      </div>
+                    )}
+
+                    {(!locations.length || customLocation) && (
+                      <div>
+                        <AddressCheckoutForm
+                          address={address}
+                          onChange={(value: any) => handleAddress(value)}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mb-0 relative overflow-hidden">
+                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                      Detalhes de entrega
+                    </h4>
+                    <div className="flex pt-4 flex-col gap-6">
+                      <div className="grid md:grid-cols-3 gap-2 md:gap-4">
+                        {[
+                          { type: "reception", icon: "🏢" },
+                          { type: "door", icon: "🚪" },
+                          { type: "for_me", icon: "📦" },
+                        ].map((option: any, key: any) => (
+                          <div
+                            key={key}
+                            onClick={(e: any) => {
+                              setDeliveryTo(option.type);
+                            }}
+                            className={`border ${
+                              deliveryTo == option.type
+                                ? "border-yellow-400"
+                                : "hover:border-zinc-400"
+                            } p-3 md:p-4 cursor-pointer rounded-md ease flex gap-2 items-center`}
+                          >
+                            <div
+                              className={`${
+                                deliveryTo == option.type
+                                  ? "border-zinc-400"
+                                  : ""
+                              } w-[1rem] h-[1rem] rounded-full border relative`}
+                            >
+                              {deliveryTo == option.type && (
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
+                              )}
+                            </div>
+                            <div className="text-[.85rem] leading-tight text-nowrap">
+                              {deliveryToName[option.type]}
+                            </div>
+                            <span className="text-lg self-end">
+                              {option.icon}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border relative rounded-lg py-4">
+                        <div className="h-0 relative overflow-hidden">
+                          {!schedule && (
+                            <input readOnly name="agendamento" required />
+                          )}
+                        </div>
+                        <div className="absolute top-0 left-0 bg-white text-sm -mt-3 px-1 mx-1">
+                          Horário
+                        </div>
+                        <Swiper
+                          spaceBetween={0}
+                          breakpoints={{
+                            0: {
+                              slidesPerView: 4.5,
+                            },
+                            1024: {
+                              slidesPerView: 7.5,
+                            },
+                          }}
+                        >
+                          {[
+                            { period: "Manhã", time: "09:00" },
+                            { period: "Manhã", time: "10:00" },
+                            { period: "Manhã", time: "11:00" },
+                            { period: "Manhã", time: "12:00" },
+                            { period: "Tarde", time: "13:00" },
+                            { period: "Tarde", time: "14:00" },
+                            { period: "Tarde", time: "15:00" },
+                            { period: "Tarde", time: "16:00" },
+                            { period: "Tarde", time: "17:00" },
+                            { period: "Noite", time: "18:00" },
+                            { period: "Noite", time: "19:00" },
+                            { period: "Noite", time: "20:00" },
+                            { period: "Noite", time: "21:00" },
+                          ].map((item: any, key) => (
+                            <SwiperSlide key={key} className="pl-4">
+                              <div
+                                onClick={() =>
+                                  setSchedule(`${item.period} - ${item.time}`)
+                                }
+                                className={`${
+                                  schedule == item.period + " - " + item.time
+                                    ? "text-yellow-500"
+                                    : "text-zinc-500 hover:text-zinc-900"
+                                }  ease cursor-pointer`}
+                              >
+                                <div className="text-xs">{item.period}</div>
+                                <div className="font-semibold">{item.time}</div>
+                              </div>
+                            </SwiperSlide>
+                          ))}
+                        </Swiper>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 pb-4 md:pb-8 mb-0">
+                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                      Fornecedores
+                    </h4>
+                    <div className="grid lg:grid-cols-2 gap-4">
+                      {stores.map((store: any, key: any) => (
+                        <div key={key}>
+                          <Partner params={store} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full md:max-w-[28rem] md:mb-[2rem] relative">
+                <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
+                  <div className="font-title font-bold text-zinc-900 text-xl mb-6">
+                    Resumo
+                  </div>
+
+                  <div className="grid gap-2">
+                    <div className="flex items-start justify-between">
+                      <div className="font-bold text-sm text-zinc-900 flex items-center">
+                        <Icon
+                          icon="fa-calendar"
+                          className="text-sm mr-2 opacity-75"
+                        />
+                        Data da locação
+                      </div>
+                      <div className="whitespace-nowrap text-right text-sm">
+                        {dateBRFormat(resume.startDate)}{" "}
+                        {resume.endDate != resume.startDate
+                          ? `- ${dateBRFormat(resume.endDate)}`
+                          : ""}
+                        <div>{schedule}</div>
+                      </div>
+                    </div>
+                    <div className="border-t"></div>
+                    <div className="flex">
+                      <div className="w-full whitespace-nowrap">
+                        Subtotal ({listCart.length}{" "}
+                        {listCart.length == 1 ? "item" : "itens"})
+                      </div>
+                      <div className="whitespace-nowrap">
+                        R$ {moneyFormat(resume.subtotal)}
+                      </div>
+                    </div>
+
+                    <div className="border-t"></div>
+
+                    <div className="flex items-start justify-between">
+                      <div className="font-bold text-sm text-zinc-900 flex items-center">
+                        <Icon
+                          icon="fa-truck"
+                          className="text-sm mr-1 opacity-75"
+                        />
+                        Frete {!!address?.zipCode && `(${address?.zipCode})`}
+                      </div>
+                      <div className="grid text-right">
+                        {/* <s className="text-xs">R$ 24,00</s> */}
+                        <div className="whitespace-nowrap font-semibold text-sm">
+                          {/* Gratuito */}
+                          {!isCEPInRegion(address?.zipCode)
+                            ? "Entrega indisponível"
+                            : !!address?.zipCode
+                            ? `R$ ${moneyFormat(deliveryPrice)}`
+                            : "Informe um endereço"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t"></div>
+
+                    <div className="flex gap-4 md:mb-4">
+                      <div className="w-full pt-1 text-zinc-900 font-bold">
+                        TOTAL
+                      </div>
+                      <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
+                        R$ {moneyFormat(resume.total)}
+                      </div>
+                    </div>
+
+                    {!!CheckoutPageContent?.terms_list?.length && (
+                      <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
+                        {CheckoutPageContent?.terms_list.map(
+                          (term: any, key: any) => (
+                            <div key={key} className="flex gap-2 pb-1">
+                              <div className="pt-[2px]">
+                                <input type="checkbox" required />
+                              </div>
+                              <div
+                                dangerouslySetInnerHTML={{
+                                  __html: term.term_description,
+                                }}
+                              ></div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+
+                    <div className="grid fixed z-10 md:relative bg-white md:bg-transparent bottom-0 left-0 w-full p-1 md:p-0">
+                      {!!address?.street &&
+                      !!address?.complement &&
+                      !!address?.number &&
+                      !!schedule &&
+                      !!address?.zipCode &&
+                      !!isCEPInRegion(address?.zipCode) ? (
+                        <Button
+                          loading={form.loading}
+                          style="btn-success"
+                          className="py-6 mb-4 md:mb-0"
+                        >
+                          Confirmar e efetuar pagamento
+                        </Button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn bg-green-500 text-white border border-transparent opacity-40 py-6 mb-4 md:mb-0 text cursor-not-allowed"
+                        >
+                          Confirmar e efetuar pagamento
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </form>
-        </section>
-      </Template>
-    )
+          </div>
+        </form>
+      </section>
+    </Template>
+  ) : (
+    <></>
   );
 }

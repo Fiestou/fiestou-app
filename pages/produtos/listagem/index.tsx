@@ -5,7 +5,7 @@ import Product from "@/src/components/common/Product";
 import { Button } from "@/src/components/ui/form";
 import Img from "@/src/components/utils/ImgBase";
 import RegionConfirm from "@/src/default/alerts/RegionConfirm";
-import { getImage } from "@/src/helper";
+import { getImage, getQueryUrlParams } from "@/src/helper";
 import { ProductType } from "@/src/models/product";
 import { RelationType } from "@/src/models/relation";
 import { StoreType } from "@/src/models/store";
@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 
 let limit = 15;
 
-export async function getServerSideProps(ctx: any) {
+export async function getStaticProps(ctx: any) {
   const api = new Api();
 
   let request: any = await api.content(
@@ -37,6 +37,7 @@ export async function getServerSideProps(ctx: any) {
       DataSeo: DataSeo,
       Scripts: Scripts,
     },
+    revalidate: 60 * 60 * 60,
   };
 }
 
@@ -59,7 +60,7 @@ export default function Listagem({
   const [products, setProducts] = useState([] as Array<ProductType>);
 
   const getProducts = async () => {
-    const handleParams: any = router.query;
+    const handleParams: any = getQueryUrlParams();
 
     if (!!handleParams["categoria[]"]) {
       handleParams["categorias"] = handleParams["categoria[]"];
@@ -67,8 +68,6 @@ export default function Listagem({
     }
 
     setParams(handleParams);
-
-    const api = new Api();
 
     let offset = page * limit;
 
@@ -95,7 +94,9 @@ export default function Listagem({
   };
 
   useEffect(() => {
-    getProducts();
+    if (!!window) {
+      getProducts();
+    }
   }, []);
 
   return (
@@ -135,11 +136,17 @@ export default function Listagem({
       </div>
 
       <div className="relative pt-5">
-        <Filter {...params} />
+        {placeholder ? (
+          <div className="container-medium">
+            <div className="animate-pulse py-8 rounded-lg overflow-hidden bg-zinc-200"></div>
+          </div>
+        ) : (
+          <Filter {...params} />
+        )}
       </div>
 
       <section className="container-medium md:pt-4">
-        {!!placeholder ? (
+        {placeholder ? (
           <div className="cursor-wait grid md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item, key) => (
               <div

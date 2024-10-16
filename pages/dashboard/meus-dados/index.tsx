@@ -16,9 +16,11 @@ export async function getServerSideProps(ctx: any) {
 
   request = await api.bridge(
     {
+      method: "get",
       url: "users/get",
       data: {
         ref: user.email,
+        person: "client",
       },
     },
     ctx
@@ -26,55 +28,22 @@ export async function getServerSideProps(ctx: any) {
 
   user = request?.data ?? {};
 
-  request = await api.call(
-    {
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "account",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
+  request = await api.content({
+    url: "account/user",
+  });
 
-  const page: any = request?.data?.query?.page[0] ?? {};
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const Account: any = request?.data?.Account ?? {};
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
 
   return {
     props: {
       user: user,
-      page: page,
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
+      page: Account,
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
     },
   };
 }

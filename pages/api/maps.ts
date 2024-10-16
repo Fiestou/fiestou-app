@@ -12,8 +12,6 @@ const getCoordinatesFromCEP = async (cep: string) => {
   );
   const data = await response.json();
 
-  console.log(data, "getCoordinatesFromCEP");
-
   if (data.status === "OK") {
     const { lat, lng }: GeoType = data.results[0].geometry.location;
     return { lat, lng };

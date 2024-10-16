@@ -33,7 +33,6 @@ export default function Filter(params: any) {
   };
   const startQueryHandle = () => {
     const routerQuery: any = router.query;
-    console.log(routerQuery);
 
     const handleQuery: any = {
       categories: [],

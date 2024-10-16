@@ -395,16 +395,20 @@ export default function Produto({
   const [match, setMatch] = useState([] as Array<any>);
   const renderMatch = async () => {
     const api = new Api();
+
     let request: any = await api.request({
       method: "get",
       url: "request/products",
       data: {
+        ignore: product.slug,
         store: store?.id ?? 0,
-        busca: (product?.tags ?? ",").split(",").filter((item) => !!item),
+        tags: (product?.tags ?? ",").split(",").filter((item) => !!item),
         categorias: (product?.category ?? []).map((cat: any) => cat.slug),
         limit: 10,
       },
     });
+
+    console.log(request, "request");
 
     setMatch(request?.data ?? []);
   };

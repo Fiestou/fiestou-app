@@ -230,8 +230,8 @@ export default function Pedido({
                   <div>
                     <div>{suborder.user?.name}</div>
                     <div>{suborder.user?.email}</div>
-                    {/* <div>{suborder.user?.phone}</div>
-                    <div>{suborder.user?.cpf}</div> */}
+                    <div>{suborder.user?.phone}</div>
+                    <div>{suborder.user?.cpf}</div>
                   </div>
                 </div>
                 {!!order.metadata && (
