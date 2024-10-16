@@ -16,11 +16,11 @@ export async function getServerSideProps(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { slug } = req.query;
+  const { id } = req.query;
 
   return {
     props: {
-      slug: slug,
+      id: id,
     },
   };
 }
@@ -39,7 +39,7 @@ interface PostType {
   status: string | number;
 }
 
-export default function Form({ slug }: { slug: string }) {
+export default function Form({ id }: { id: number | string }) {
   const api = new Api();
   const router = useRouter();
 
@@ -101,13 +101,13 @@ export default function Form({ slug }: { slug: string }) {
   const getPost = async () => {
     setPlaceholder(true);
 
-    if (slug != "form") {
+    if (id != "form") {
       let request: any = await api.bridge({
         method: "get",
         url: "admin/content/get",
         data: {
           type: "blog",
-          slug: slug,
+          id: id,
         },
       });
 
@@ -146,7 +146,7 @@ export default function Form({ slug }: { slug: string }) {
                     ]}
                   />
                 </div>
-                {!!content.slug && (
+                {!!content?.slug && (
                   <Link
                     href={`/api/cache?route=/blog/${content.slug}&redirect=/blog/${content.slug}`}
                     target="_blank"
@@ -166,7 +166,7 @@ export default function Form({ slug }: { slug: string }) {
                     />
                   </Link>
                   <div className="font-title font-bold text-2xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                    {slug != "form" ? "Editando" : "Novo post"}
+                    {id != "form" ? "Editando" : "Novo post"}
                   </div>
                 </div>
               </div>
@@ -178,13 +178,13 @@ export default function Form({ slug }: { slug: string }) {
                 <div className="w-full grid gap-8">
                   <div className="">
                     <Input
-                      value={content.title}
+                      value={content?.title}
                       onChange={(e: any) =>
                         handleContent({ title: e.target.value })
                       }
                       placeholder="Título"
                     />
-                    {!!content.slug && (
+                    {!!content?.slug && (
                       <div className="pt-2 text-sm">
                         <Link
                           target="_blank"
