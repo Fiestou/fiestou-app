@@ -52,7 +52,16 @@ class SubordersController extends Controller
                                           ->get();
 
                 $suborder->order = $order;
-                $suborder->user  = $order->user;
+
+                $details = json_decode($order->user->details);
+
+                $user           = $order->user;
+                $user->phone    = $details->phone ?? "";
+                $user->gender   = $details->gender ?? "";
+                $user->cpf      = $details->cpf ?? "";
+                $user->address  = $details->address ?? [];
+
+                $suborder->user = $user;
 
                 return response()->json([
                     'response'  => true,

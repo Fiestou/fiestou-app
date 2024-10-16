@@ -435,6 +435,48 @@ class ContentController extends Controller
         return Content::getDefault(true);
     }
 
+    public function AccountUser(Request $request){
+
+        $content = Content::where(["slug" => "account", "type" => "page"])
+                          ->first();
+
+        if(isset($content->id)){
+
+            return response()->json([
+                'response'  => true,
+                'data'      => array_merge(
+                                    Content::getDefault(),
+                                    ["Account" => $content->setCustomContent()]
+                                )
+            ]);
+        }
+
+        return response()->json([
+            'response'  => false
+        ]);
+    }
+
+    public function AccountAddress(Request $request){
+
+        $content = Content::where(["slug" => "address", "type" => "page"])
+                          ->first();
+
+        if(isset($content->id)){
+
+            return response()->json([
+                'response'  => true,
+                'data'      => array_merge(
+                                    Content::getDefault(),
+                                    ["Address" => $content->setCustomContent()]
+                                )
+            ]);
+        }
+
+        return response()->json([
+            'response'  => false
+        ]);
+    }
+
     // ADMIN
     public function GetListContent(Request $request){
         $pages = Content::where(["type" => "page"])

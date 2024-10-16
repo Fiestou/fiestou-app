@@ -68,6 +68,11 @@ class ProductsController extends Controller
             });
         }
 
+        if($request->has('ignore')){
+            $slugs      = (is_array($request->get('ignore'))) ? $request->get('ignore') : [$request->get('ignore')];
+            $products   = $products->whereNotIn('slug', $slugs);
+        }
+
         if($request->has('cores') && $request->get('cores')){
             $colors = (is_array($request->get('cores'))) ? $request->get('cores') : [$request->get('cores')];
             $products = $products->where(function ($query) use ($colors) {
@@ -91,6 +96,15 @@ class ProductsController extends Controller
                             ->orWhere('tags', 'like', '%' . $term . '%')
                             ->orWhere('color', 'like', '%' . $term . '%');
                     });
+                }
+            });
+        }
+
+        if($request->has('tags') && $request->get('tags')){
+            $tags = (is_array($request->get('tags'))) ? $request->get('tags') : [$request->get('tags')];
+            $products = $products->where(function ($query) use ($tags) {
+                foreach ($tags as $key => $tag) {
+                    $query->orWhere('tags', "like", '%'.$tag.'%');
                 }
             });
         }
@@ -153,7 +167,6 @@ class ProductsController extends Controller
         if(isset($product->id)){
             return response()->json([
                 'response'  => true,
-                '$product'  => $product,
                 'data'      => Product::normalize([$product])[0]
             ]);
         }

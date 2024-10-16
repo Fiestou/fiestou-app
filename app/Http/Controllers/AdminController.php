@@ -92,7 +92,14 @@ class AdminController extends Controller
 
         $content = new Content;
 
-        if($request->has('id')){
+        if($request->has('slug')){
+            $content = Content::where([
+                                    "type"  => $request->get('type'),
+                                    "slug"  => $request->get('slug')
+                                ])
+                                ->first();
+        }
+        else if($request->has('id')){
             $content = Content::where([
                                     "type"  => $request->get('type'),
                                     "id"    => $request->get('id')

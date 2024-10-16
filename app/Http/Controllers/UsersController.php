@@ -150,7 +150,7 @@ class UsersController extends Controller
             $user->hash = $hash;
         }
 
-        $user->RequestToThis($request);
+        $user->RequestToThis($request->all());
         $user->RequestToDetails($request->all());
 
         $user->email    = $request->get('email');
@@ -192,8 +192,8 @@ class UsersController extends Controller
         $m_user = User::where([ 'email' => $request->email ])->first();
 
         if(!isset($m_user->id)){
-            $user->RequestToThis($request);
-            $user->RequestToDetails($request);
+            $user->RequestToThis($request->all());
+            $user->RequestToDetails($request->all());
 
             $user->name = $request->name;
             $user->hash = md5($request->email);
@@ -252,7 +252,7 @@ class UsersController extends Controller
                 $user->status = 1;
             }
 
-            $user->RequestToThis($request);
+            $user->RequestToThis($request->all());
             $user->RequestToDetails($request->all());
 
             $user->hash = md5($user->email);

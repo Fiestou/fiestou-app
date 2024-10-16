@@ -189,6 +189,9 @@ Route::group([ 'prefix' => 'content' ], function(){
     Route::get('/communicate/{slug?}', [ContentController::class, 'Communicate']);
     Route::get('/order', [ContentController::class, 'Order']);
     Route::get('/register', [ContentController::class, 'Register']);
+    Route::get('/roles', [ContentController::class, 'Roles']);
+    Route::get('/account/user', [ContentController::class, 'AccountUser']);
+    Route::get('/account/address', [ContentController::class, 'AccountAddress']);
 });
 
 // REST / GRAPH
