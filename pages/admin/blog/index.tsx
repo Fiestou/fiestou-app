@@ -20,6 +20,7 @@ export default function Blog() {
       url: "admin/content/list",
       data: {
         type: "blog",
+        orderBy: "id desc",
       },
     });
 
