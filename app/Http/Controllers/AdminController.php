@@ -71,14 +71,22 @@ class AdminController extends Controller
 
         $request->validate([
             'type'   => 'required',
-            'slug'   => 'required',
         ]);
 
-        $content = Content::where([
-                                "type" => $request->get('type'),
-                                "slug" => $request->get('slug')
-                            ])
-                            ->first();
+        if($request->has('slug')){
+            $content = Content::where([
+                                    "type"  => $request->get('type'),
+                                    "slug"  => $request->get('slug')
+                                ])
+                                ->first();
+        }
+        else if($request->has('id')){
+            $content = Content::where([
+                                    "type"  => $request->get('type'),
+                                    "id"    => $request->get('id')
+                                ])
+                                ->first();
+        }
 
         if($content){
             return response()->json([
@@ -99,17 +107,17 @@ class AdminController extends Controller
             'title' => 'required',
         ]);
     
-        if($request->has('slug')){
-            $content = Content::where([
-                                    "type"  => $request->get('type'),
-                                    "slug"  => $request->get('slug')
-                                ])
-                                ->first();
-        }
-        else if($request->has('id')){
+        if($request->has('id')){
             $content = Content::where([
                                     "type"  => $request->get('type'),
                                     "id"    => $request->get('id')
+                                ])
+                                ->first();
+        }
+        else if($request->has('slug')){
+            $content = Content::where([
+                                    "type"  => $request->get('type'),
+                                    "slug"  => $request->get('slug')
                                 ])
                                 ->first();
         }
