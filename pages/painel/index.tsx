@@ -157,23 +157,23 @@ export default function Parceiro({ content }: { content: any }) {
       }}
     >
       <section className="">
-        <div className="container-medium py-4 lg:py-16">
-          <div className="lg:flex items-start gap-8 lg:gap-20">
-            <div className="w-full pb-10 md:pb-14">
-              <div className="font-title font-bold text-5xl flex gap-4 items-center mb-2 text-zinc-900">
+        <div className="container-medium py-6 lg:py-16">
+          <div className="grid sm:flex items-center gap-8 lg:gap-20 pb-8 lg:pb-10">
+            <div className="w-full">
+              <div className="font-title max-w-[38rem] font-bold text-2xl md:text-5xl flex gap-4 items-center mb-2 text-zinc-900">
                 Olá, {user.name}
               </div>
               <div
                 dangerouslySetInnerHTML={{ __html: content.main_text }}
               ></div>
             </div>
-            <div className="lg:w-full lg:max-w-[24rem] pb-8 -mx-4 lg:mx-0 relative overflow-x-auto no-scrollbar">
-              <div className="flex gap-4 items-center">
+            <div className="w-fit">
+              <div className="flex gap-4 items-center justify-center">
                 <div>
                   <DobleIcon icon="fa-piggy-bank" />
                 </div>
                 <div className="pl-2">
-                  <div>Em caixa</div>
+                  <div className="text-xs md:text-base">Em caixa</div>
                   <h4 className="text-zinc-900 -mb-1 font-bold text-2xl lg:text-5xl leading-none whitespace-nowrap">
                     <span className="text-base lg:text-2xl">R$</span>{" "}
                     {moneyFormat(balance.cash)}
@@ -181,7 +181,7 @@ export default function Parceiro({ content }: { content: any }) {
                   <div className="pt-3">
                     <Button
                       href="/painel/saques"
-                      className="btn p-2 pl-3 pr-5 text-sm"
+                      className="btn p-2 pl-3 pr-5 text-sm text-nowrap"
                     >
                       <Icon icon="fa-hand-holding-usd" />
                       Solicitar saque
@@ -193,7 +193,7 @@ export default function Parceiro({ content }: { content: any }) {
           </div>
           <div className="lg:flex items-start gap-8 lg:gap-20">
             <div className="lg:w-full lg:max-w-[24rem] pb-8 -mx-4 lg:mx-0 order-1 md:order-2 relative overflow-x-auto no-scrollbar">
-              <div className="max-w-full flex lg:grid items-start gap-4 px-4">
+              <div className="max-w-full flex lg:grid items-start gap-4 px-4 lg:px-0">
                 {menuSidebar.map((item: any, key: any) => (
                   <Link
                     passHref

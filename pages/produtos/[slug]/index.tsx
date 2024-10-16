@@ -655,8 +655,9 @@ export default function Produto({
                 <div className="relative -mx-4 md:mx-0 md:mb-10">
                   <Swiper
                     onSwiper={(swiper) => setSwiperInstance(swiper)}
-                    spaceBetween={16}
+                    spaceBetween={0}
                     modules={[Pagination, Navigation]}
+                    centeredSlides={true}
                     navigation={{
                       prevEl: ".swiper-gallery-prev", // define o botão anterior
                       nextEl: ".swiper-gallery-next", // define o botão próximo
@@ -666,6 +667,9 @@ export default function Produto({
                     }}
                     breakpoints={{
                       0: {
+                        slidesPerView: 2,
+                      },
+                      480: {
                         slidesPerView: 1,
                       },
                     }}
@@ -677,11 +681,11 @@ export default function Produto({
                           !!img?.details?.sizes["lg"] && (
                             <SwiperSlide key={key}>
                               <div className="w-full">
-                                <div className="aspect-square">
+                                <div className="aspect-square flex justify-center items-center px-1 md:px-2">
                                   {!!getImage(img, "xl") && (
                                     <Img
                                       src={getImage(img, "xl")}
-                                      className="w-full h-full object-contain"
+                                      className="w-full rounded-md"
                                     />
                                   )}
                                 </div>
@@ -990,7 +994,7 @@ export default function Produto({
                     </div>
                   </div>
 
-                  <div className="bg-white drop-shadow-2xl md:drop-shadow-none fixed z-10 md:-mx-4 md:relative w-full md:w-auto left-0 bottom-0 flex justify-between">
+                  <div className="bg-white drop-shadow-2xl md:drop-shadow-none fixed z-[20] md:-mx-4 md:relative w-full md:w-auto left-0 bottom-0 flex justify-between">
                     {!!productToCart?.total && (
                       <>
                         <div className="leading-tight self-center w-full px-4">
@@ -1203,7 +1207,7 @@ export default function Produto({
       </section>
 
       {!!product?.combinations && (
-        <section className="pt-16">
+        <section className="pt-8 md:pt-16">
           <div className="container-medium relative">
             <div className="grid md:flex items-center justify-between gap-2">
               <div className="flex w-full items-center gap-2">
@@ -1229,7 +1233,7 @@ export default function Produto({
       )}
 
       {!!match.length && (
-        <section className="pt-16">
+        <section className="pt-8 md:pt-16">
           <div className="container-medium relative">
             <div className="grid md:flex items-center justify-between gap-2">
               <div className="flex w-full items-center gap-2">
