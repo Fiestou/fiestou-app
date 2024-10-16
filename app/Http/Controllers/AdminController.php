@@ -36,8 +36,17 @@ class AdminController extends Controller
             'type'   => 'required'
         ]);
 
-        $contents = Content::where(["type" => $request->get('type')])
-                            ->get();
+        $contents = Content::where(["type" => $request->get('type')]);
+
+        if ($request->has('orderBy')) {
+            list($field, $direction) = explode(' ', $request->get('orderBy'));
+        
+            if (in_array(strtolower($direction), ['asc', 'desc'])) {
+                $contents = $contents->orderBy($field, $direction);
+            }
+        }
+
+        $contents = $contents->get();
 
         if($contents){
 
@@ -89,8 +98,6 @@ class AdminController extends Controller
             'type'  => 'required',
             'title' => 'required',
         ]);
-
-        $content = new Content;
     
         if($request->has('slug')){
             $content = Content::where([
@@ -107,6 +114,10 @@ class AdminController extends Controller
                                 ->first();
         }
     
+        if (!$content) {
+            $content = new Content;
+        }
+
         $content->type      = $request->get('type');
         $content->title     = $request->get('title');
         $content->slug      = (isset($content->slug) && !!$content->slug) ? Str::slug(strip_tags($content->slug)) : Str::slug(strip_tags($content->title));
