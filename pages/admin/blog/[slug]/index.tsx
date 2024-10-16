@@ -146,14 +146,16 @@ export default function Form({ slug }: { slug: string }) {
                     ]}
                   />
                 </div>
-                <Link
-                  href={`/api/cache?route=/blog/${content.slug}&redirect=/blog/${content.slug}`}
-                  target="_blank"
-                  className="whitespace-nowrap flex items-center gap-2 ease hover:text-zinc-950 font-semibold"
-                >
-                  Limpar cache
-                  <Icon icon="fa-sync" className="text-xs mt-1" />
-                </Link>
+                {!!content.slug && (
+                  <Link
+                    href={`/api/cache?route=/blog/${content.slug}&redirect=/blog/${content.slug}`}
+                    target="_blank"
+                    className="whitespace-nowrap flex items-center gap-2 ease hover:text-zinc-950 font-semibold"
+                  >
+                    Limpar cache
+                    <Icon icon="fa-sync" className="text-xs mt-1" />
+                  </Link>
+                )}
               </div>
               <div className="flex items-end">
                 <div className="w-full flex items-center">
@@ -182,12 +184,14 @@ export default function Form({ slug }: { slug: string }) {
                       }
                       placeholder="Título"
                     />
-                    <div className="pt-2 text-sm">
-                      <Link
-                        target="_blank"
-                        href={`/blog/${content.slug}`}
-                      >{`/blog/${content.slug}`}</Link>
-                    </div>
+                    {!!content.slug && (
+                      <div className="pt-2 text-sm">
+                        <Link
+                          target="_blank"
+                          href={`/blog/${content.slug}`}
+                        >{`/blog/${content.slug}`}</Link>
+                      </div>
+                    )}
                   </div>
                   <div className="">
                     <Editor
