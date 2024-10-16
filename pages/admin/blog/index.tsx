@@ -118,7 +118,7 @@ export default function Blog() {
                       </>
                     )}
                     <Button
-                      href={`/admin/blog/${item.slug}`}
+                      href={`/admin/blog/${item.id}`}
                       style="btn-transparent"
                       className="py-2 px-3"
                     >
