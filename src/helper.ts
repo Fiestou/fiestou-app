@@ -65,6 +65,17 @@ export function serializeParam(key: string, value: any): string {
   }
 }
 
+export function getQueryUrlParams() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const paramsObj: any = {};
+
+  searchParams.forEach((value, key) => {
+    paramsObj[key] = value;
+  });
+
+  return paramsObj;
+}
+
 export function dateFormat(date?: any) {
   const handle = date ?? new Date();
 

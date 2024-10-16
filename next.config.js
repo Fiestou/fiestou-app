@@ -71,14 +71,6 @@ const nextConfig = {
     PAGARME_ID: process.env.PAGARME_ID,
     PAGARME_PUBLIC_KEY: process.env.PAGARME_PUBLIC_KEY,
     PAGARME_SECRET_KEY: process.env.PAGARME_SECRET_KEY,
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
-      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-    MAIL_MAILER: process.env.MAIL_MAILER,
-    MAIL_HOST: process.env.MAIL_HOST,
-    MAIL_PORT: process.env.MAIL_PORT,
-    MAIL_ENCRYPTION: process.env.MAIL_ENCRYPTION,
-    MAIL_USERNAME: process.env.MAIL_USERNAME,
-    MAIL_PASSWORD: process.env.MAIL_PASSWORD,
   },
   trailingSlash: true,
   experimental: {
@@ -96,6 +88,12 @@ const nextConfig = {
         protocol: "http",
         hostname: "localhost",
         port: "8000",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "8080",
         pathname: "/**",
       },
     ],

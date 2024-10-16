@@ -116,7 +116,7 @@ export default function Loja({
 
     const handle = request.data ?? {};
 
-    console.log(handle);
+    console.log(handle, "<<--");
 
     setOldStore(handle);
 

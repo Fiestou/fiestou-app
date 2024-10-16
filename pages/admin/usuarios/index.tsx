@@ -10,10 +10,10 @@ import { UserType } from "@/src/models/user";
 import { useEffect, useState } from "react";
 
 export default function Usuarios() {
+  const api = new Api();
   const [users, setUsers] = useState([] as Array<UserType>);
 
   const getUsers = async () => {
-    const api = new Api();
     const request: any = await api.bridge({
       method: "get",
       url: "users/list",

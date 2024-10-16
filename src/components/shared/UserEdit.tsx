@@ -205,7 +205,6 @@ export default function UserEdit({ user }: { user: UserType }) {
 
   return (
     <>
-      {/*  */}
       <form
         onSubmit={(e: any) => handleSubmit(e)}
         method="POST"
@@ -223,9 +222,10 @@ export default function UserEdit({ user }: { user: UserType }) {
         </div>
         <div className="w-full text-sm md:text-base">
           {form.edit == "name" ? (
-            <Input
+            <input
+              className="form-control"
               onChange={(e: any) => handleContent({ name: e.target.value })}
-              value={content?.name}
+              defaultValue={content?.name}
               placeholder="Digite o nome aqui"
             />
           ) : (
@@ -251,9 +251,10 @@ export default function UserEdit({ user }: { user: UserType }) {
         </div>
         <div className="w-full text-sm md:text-base">
           {form.edit == "email" ? (
-            <Input
+            <input
+              className="form-control"
               onChange={(e: any) => handleContent({ email: e.target.value })}
-              value={content?.email}
+              defaultValue={content?.email}
               placeholder="Digite o e-mail aqui"
             />
           ) : (
@@ -279,10 +280,11 @@ export default function UserEdit({ user }: { user: UserType }) {
         </div>
         <div className="w-full text-sm md:text-base">
           {form.edit == "date" ? (
-            <Input
+            <input
+              className="form-control"
               type="date"
               onChange={(e: any) => handleContent({ date: e.target.value })}
-              value={content?.date}
+              defaultValue={content?.date}
               placeholder="Digite a sua data de nascimento aqui"
             />
           ) : content?.date ? (
@@ -358,10 +360,11 @@ export default function UserEdit({ user }: { user: UserType }) {
         </div>
         <div className="w-full text-sm md:text-base">
           {form.edit == "phone" ? (
-            <Input
+            <input
+              className="form-control"
               name="celular"
               onChange={(e: any) => handleContent({ phone: e.target.value })}
-              value={content?.phone}
+              defaultValue={content?.phone}
               placeholder="Digite o número de celular aqui"
             />
           ) : (
