@@ -127,7 +127,10 @@ export default function Checkout({
     country: "Brasil",
   } as AddressType);
   const handleAddress = (value: any) => {
-    setAddress({ ...address, ...value });
+    setAddress((prevAddress) => ({
+      ...prevAddress,
+      ...value,
+    }));
   };
 
   const [deliveryPrice, setDeliveryPrice] = useState(0 as number);
@@ -283,7 +286,7 @@ export default function Checkout({
       }}
     >
       <section className="py-6 md:py-10">
-        <form onSubmit={(e: any) => submitOrder(e)}>
+        <form autoComplete="off" onSubmit={(e: any) => submitOrder(e)}>
           <div className="container-medium pb-14">
             <div className="grid md:flex gap-4 md:gap-10 items-start">
               <div className="grid gap-6 w-full">
