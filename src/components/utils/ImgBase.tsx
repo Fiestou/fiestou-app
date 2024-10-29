@@ -26,15 +26,24 @@ export default function Img(props: ImageType) {
     }[size]);
 
   return (
-    <Image
+    <img
       src={props.src}
       {...(!!props?.id ? { id: props?.id } : {})}
       {...(!!props?.title ? { title: props?.title } : {})}
       alt={props?.alt ?? "Imagem"}
       width={size(props?.size)}
-      height={size(props?.size)}
       // onError={(e: any) => e.target.remove()}
       className={props?.className ?? ""}
     />
+    // <Image
+    //   src={props.src}
+    //   {...(!!props?.id ? { id: props?.id } : {})}
+    //   {...(!!props?.title ? { title: props?.title } : {})}
+    //   alt={props?.alt ?? "Imagem"}
+    //   width={size(props?.size)}
+    //   height={size(props?.size)}
+    //   // onError={(e: any) => e.target.remove()}
+    //   className={props?.className ?? ""}
+    // />
   );
 }
