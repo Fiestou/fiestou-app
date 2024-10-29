@@ -1,122 +1,164 @@
 import { Button, Input } from "@/src/components/ui/form";
 import { getZipCode, justNumber } from "@/src/helper";
 import { AddressType } from "@/src/models/address";
+import Icon from "@/src/icons/fontAwesome/FIcon";
+import { useEffect, useState } from "react";
 
 export default function AddressCheckoutForm(attrs: any) {
-  const handleChange = (value: any) => {
-    attrs.onChange({
-      ...attrs.address,
-      ...value,
-    });
-  };
+  const [mounted, setMounted] = useState(false as boolean);
 
-  const handleZipCode = async (zipCode: string) => {
+  const [zipCode, setZipCode] = useState("" as string);
+  const [street, setStreet] = useState("" as string);
+  const [number, setNumber] = useState("" as string);
+  const [neighborhood, setNeighborhood] = useState("" as string);
+  const [city, setCity] = useState("" as string);
+  const [state, setState] = useState("" as string);
+  const [country, setCountry] = useState("Brasil" as string);
+  const [complement, setComplement] = useState("" as string);
+  const [main, setMain] = useState(false as boolean);
+
+  useEffect(() => {
+    const handle = {} as AddressType;
+
+    handle["zipCode"] = zipCode;
+    handle["street"] = street;
+    handle["number"] = number;
+    handle["neighborhood"] = neighborhood;
+    handle["city"] = city;
+    handle["state"] = state;
+    handle["country"] = country;
+    handle["complement"] = complement;
+    handle["main"] = main;
+
+    attrs.onChange(handle);
+  }, [
+    zipCode,
+    street,
+    number,
+    neighborhood,
+    city,
+    state,
+    country,
+    complement,
+    main,
+  ]);
+
+  useEffect(() => {
+    if (!mounted) {
+      setMounted(true);
+
+      setZipCode(attrs.address?.zipCode ?? "");
+      setStreet(attrs.address?.street ?? "");
+      setNumber(attrs.address?.number ?? "");
+      setNeighborhood(attrs.address?.neighborhood ?? "");
+      setCity(attrs.address?.city ?? "");
+      setState(attrs.address?.state ?? "");
+      setCountry(attrs.address?.country ?? "");
+      setComplement(attrs.address?.complement ?? "");
+      setMain(attrs.address?.main ?? "");
+    }
+  }, [attrs.address]);
+
+  const handleZipCode = async () => {
     const location = await getZipCode(zipCode);
 
-    let handle = {} as AddressType;
-
-    handle["zipCode"] = justNumber(zipCode);
-    handle["country"] = "Brasil";
+    setZipCode(justNumber(zipCode));
+    setCountry("Brasil");
 
     if (!location?.erro) {
-      handle["street"] = location.logradouro;
-      handle["neighborhood"] = location.bairro;
-      handle["city"] = location.localidade;
-      handle["state"] = location.uf;
-      handle["main"] = true;
+      setStreet(location.logradouro);
+      setNeighborhood(location.bairro);
+      setCity(location.localidade);
+      setState(location.uf);
+      setMain(true);
     }
-
-    handleChange(handle);
   };
 
   return (
     <>
       <div className="grid gap-2">
-        <Input
-          name="cep"
-          onChange={(e: any) => handleZipCode(e.target.value)}
-          required
-          defaultValue={attrs.address?.zipCode}
-          placeholder="CEP"
-        />
+        <div className="relative">
+          <input
+            name="cep"
+            onChange={(e: any) => setZipCode(e.target.value)}
+            required
+            value={zipCode ?? ""}
+            placeholder="CEP"
+            className="form-control pr-[3rem]"
+          />
+          <Button
+            type="button"
+            style="btn-light"
+            onClick={() => handleZipCode()}
+            className="absolute top-1/2 -translate-y-1/2 right-0 p-3 mr-1"
+          >
+            <Icon icon="fa-search" />
+          </Button>
+        </div>
         <div className="flex gap-2">
           <div className="w-full">
-            <Input
+            <input
               name="rua"
               required
-              defaultValue={attrs.address?.street}
+              value={street ?? ""}
               placeholder="Rua"
-              onChange={(e: any) => handleChange({ street: e.target.value })}
+              onChange={(e: any) => setStreet(e.target.value)}
+              className="form-control"
             />
           </div>
           <div className="w-[10rem]">
-            <Input
+            <input
               name="numero"
-              onChange={(e: any) =>
-                handleChange({
-                  number: e.target.value,
-                })
-              }
+              onChange={(e: any) => setNumber(e.target.value)}
               required
-              defaultValue={attrs.address?.number}
+              value={number ?? ""}
               placeholder="Número"
+              className="form-control"
             />
           </div>
         </div>
         <div className="flex gap-2">
           <div className="w-full">
-            <Input
+            <input
               name="bairro"
               required
-              defaultValue={attrs.address?.neighborhood}
+              value={neighborhood ?? ""}
               placeholder="Bairro"
-              onChange={(e: any) =>
-                handleChange({
-                  neighborhood: e.target.value,
-                })
-              }
+              onChange={(e: any) => setNeighborhood(e.target.value)}
+              className="form-control"
             />
           </div>
         </div>
         <div className="flex gap-2">
           <div className="w-full">
-            <Input
+            <input
               name="cidade"
               required
-              defaultValue={attrs.address?.city}
+              value={city ?? ""}
               placeholder="Cidade"
-              onChange={(e: any) =>
-                handleChange({
-                  city: e.target.value,
-                })
-              }
+              onChange={(e: any) => setCity(e.target.value)}
+              className="form-control"
             />
           </div>
           <div className="w-[10rem]">
-            <Input
+            <input
               name="estado"
               required
-              defaultValue={attrs.address?.state}
+              value={state ?? ""}
               placeholder="UF"
-              onChange={(e: any) =>
-                handleChange({
-                  state: e.target.value,
-                })
-              }
+              onChange={(e: any) => setState(e.target.value)}
+              className="form-control"
             />
           </div>
         </div>
         <div className="w-full">
-          <Input
+          <input
             name="complemento"
-            onChange={(e: any) =>
-              handleChange({
-                complement: e.target.value,
-              })
-            }
+            onChange={(e: any) => setComplement(e.target.value)}
             required
-            defaultValue={attrs.address?.complement}
+            value={complement ?? ""}
             placeholder="Complemento. Ex: Ap, Casa, Condomínio, etc..."
+            className="form-control"
           />
         </div>
       </div>

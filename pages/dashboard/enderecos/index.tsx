@@ -270,15 +270,17 @@ export default function Conta({
                       <div className="w-full">
                         {form.edit == key ? (
                           <div className="grid gap-2">
-                            <Input
-                              name="cep"
-                              onChange={(e: any) =>
-                                handleZipCode(e.target.value, key)
-                              }
-                              required
-                              value={locate?.zipCode ?? ""}
-                              placeholder="CEP"
-                            />
+                            <div className="relative">
+                              <Input
+                                name="cep"
+                                onChange={(e: any) =>
+                                  handleZipCode(e.target.value, key)
+                                }
+                                required
+                                value={locate?.zipCode ?? ""}
+                                placeholder="CEP"
+                              />
+                            </div>
                             <div className="flex gap-2">
                               <div className="w-full">
                                 <Input
