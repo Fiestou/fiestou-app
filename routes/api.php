@@ -57,12 +57,10 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/redefine', [AuthController::class, 'Redefine']);
     });
 
-    //USERSCONTROLLER
-    Route::get('/validate-mail-token/{token}', [UsersController::class, 'ValidateMailToken']);
-    Route::post('/complete-this-register', [UsersController::class, 'CompleteThisRegister']);
-    Route::post('/try-to-restore-the-password', [UsersController::class, 'TryToRestoreThePassword']);
-    Route::post('/restore-the-password', [UsersController::class, 'RestoreThePassword']);
-    Route::post('/validate-and-change-my-email', [UsersController::class, 'ValidateAndChangeMyEmail']);
+    //STORESCONTROLLER
+    Route::group([ 'prefix' => 'stores' ], function(){
+        Route::post('/complete-register', [StoresController::class, 'CompleteRegister']);
+    });
 
     Route::group(['middleware' => 'jwt.auth'],function(){
 

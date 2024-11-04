@@ -241,6 +241,49 @@ class StoresController extends Controller
         ], 500);
     }
 
+    public function CompleteRegister(Request $request){
+
+        $request->validate([
+            'email' => 'required'
+        ]);
+
+        $user  = User::where(["email" => $request->get("email")])
+                     ->first();
+
+        $store  = Store::where(["user" => $user->id])->first();
+
+        if(!$store){
+            $store = new Store;
+        }
+
+        if($request->has("cnpj")){
+            $store->document = $request->get("cnpj");
+        }
+
+        if($request->has("companyName")){
+            $store->title       = $request->get("companyName");
+            $store->slug        = Str::slug(strip_tags($request->get("companyName")));
+            $store->companyName = $request->get("companyName");
+        }
+
+        $user->RequestToThis($request);
+
+        $user->person = "partner";
+        $user->save();
+
+        $store->RequestToThis($request);
+
+        $store->user        = $user->id;
+        $store->hasDelivery = $request->get("hasDelivery", false);
+        $store->status      = 0;
+        $store->save();
+
+        return response()->json([
+            'response'  => true,
+            'data'      => $request->all()
+        ]);
+    }
+
     public function Products(Request $request){
 
         $user   = auth()->user();
