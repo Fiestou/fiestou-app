@@ -65,54 +65,18 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
     setStore({ ...store, ...value });
   };
 
-  const handleStepOne = async (e: any) => {
+  const submitStep = async (e: any) => {
     e.preventDefault();
 
     setForm({ ...form, loading: true });
 
-    const request: any = await api.graph({
-      url: "content/graph",
-      data: [
-        {
-          method: "register",
-          model: "store",
-          user_id: user.id,
-          title: store?.title,
-          slug: store?.title,
-          content: store,
-        },
-      ],
+    const request: any = await api.bridge({
+      url: "stores/complete-register",
+      data: { ...store, ...user },
     });
 
     if (request.response) {
-      console.log(request, store, user);
-      setStep(2);
-    }
-
-    setForm({ ...form, sended: true, loading: false });
-  };
-
-  const handleStepTwo = async (e: any) => {
-    e.preventDefault();
-
-    setForm({ ...form, loading: true });
-
-    if (true) {
-      // console.log(store, user);
-      setStep(3);
-    }
-
-    setForm({ ...form, sended: true, loading: false });
-  };
-
-  const handleStepThree = async (e: any) => {
-    e.preventDefault();
-
-    setForm({ ...form, loading: true });
-
-    if (true) {
-      // console.log(store, user);
-      setStep(4);
+      setStep(step + 1);
     }
 
     setForm({ ...form, sended: true, loading: false });
@@ -172,7 +136,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
               >
                 <form
                   onSubmit={(e: any) => {
-                    handleStepOne(e);
+                    submitStep(e);
                   }}
                   method="POST"
                 >
@@ -276,7 +240,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
               >
                 <form
                   onSubmit={(e: any) => {
-                    handleStepTwo(e);
+                    submitStep(e);
                   }}
                 >
                   <div className="text-center mb-4 md:mb-10">
@@ -380,7 +344,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
               >
                 <form
                   onSubmit={(e: any) => {
-                    handleStepThree(e);
+                    submitStep(e);
                   }}
                 >
                   <div className="text-center mb-4 md:mb-10">
@@ -399,7 +363,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                       onChange={(e: any) =>
                         handleUser({ name: e.target.value })
                       }
-                      value={user.name}
+                      value={user.name ?? ""}
                       name="nome"
                     />
                   </div>
@@ -410,13 +374,13 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                       readonly
                       name="email"
                       type="email"
-                      value={user.email}
+                      value={user.email ?? ""}
                     />
                   </div>
 
                   <div className="form-group">
                     <Label>Celular (com DDD)</Label>
-                    <Input readonly name="celular" value={user?.phone} />
+                    <Input readonly name="celular" value={user?.phone ?? ""} />
                   </div>
 
                   <div className="form-group">
@@ -427,7 +391,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                         handleUser({ cpf: justNumber(e.target.value) })
                       }
                       name="cpf"
-                      value={user?.cpf}
+                      value={user?.cpf ?? ""}
                     />
                   </div>
 
@@ -440,7 +404,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                           handleUser({ rg: justNumber(e.target.value) })
                         }
                         name="rg"
-                        value={user?.rg}
+                        value={user?.rg ?? ""}
                       />
                     </div>
 
@@ -451,7 +415,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                           handleUser({ issuer: e.target.value })
                         }
                         name="orgao-emissor"
-                        value={user?.issuer}
+                        value={user?.issuer ?? ""}
                         placeholder="Ex: SSP"
                       />
                     </div>
