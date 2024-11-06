@@ -119,7 +119,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
       <div className="container-medium">
         <div className="grid grid-cols-4 py-6 md:py-20">
           <div>
-            {step < 4 && (
+            {step > 1 && step < 4 && (
               <button type="button" onClick={backStep}>
                 <div className="flex items-center h-fit text-lg gap-2 text-zinc-900">
                   <Icon icon="fa-long-arrow-left" />
