@@ -289,6 +289,14 @@ export default function Pagamento({
       handlePayment["credit_card"] = {
         card: {
           ...card,
+          billing_address: {
+            country: "BR",
+            state: order.deliveryAddress?.state,
+            city: order.deliveryAddress?.city,
+            zip_code: order.deliveryAddress?.zipCode,
+            line_1: order.deliveryAddress?.street,
+            line_2: order.deliveryAddress?.number,
+          },
           // number: "4000000000000010",
           // holder_name: "Tony Stark",
           // exp_month: 1,
