@@ -488,6 +488,7 @@ export default function Checkout({
                           }}
                         >
                           {[
+                            { period: "Manhã", time: "08:00" },
                             { period: "Manhã", time: "09:00" },
                             { period: "Manhã", time: "10:00" },
                             { period: "Manhã", time: "11:00" },

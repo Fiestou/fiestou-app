@@ -29,6 +29,28 @@ export default function Blog() {
     }
   };
 
+  const removePost = async (postID: string | number) => {
+    const userConfirmed = window.confirm(
+      "Tem certeza de que deseja remover este post?"
+    );
+
+    if (!userConfirmed) {
+      return;
+    }
+
+    let request: any = await api.bridge({
+      method: "post",
+      url: "admin/content/remove",
+      data: {
+        remove: postID,
+      },
+    });
+
+    if (request.response) {
+      setPosts(posts.filter((post: any) => post.id != postID));
+    }
+  };
+
   useEffect(() => {
     getPosts();
   }, []);
@@ -123,6 +145,13 @@ export default function Blog() {
                       className="py-2 px-3"
                     >
                       <Icon icon="fa-edit" type="far" />
+                    </Button>
+                    <Button
+                      onClick={() => removePost(item.id)}
+                      style="btn-transparent"
+                      className="py-2 px-3"
+                    >
+                      <Icon icon="fa-trash" type="far" />
                     </Button>
                   </div>
                 </div>
