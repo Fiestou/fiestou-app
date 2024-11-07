@@ -131,7 +131,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
             Route::get('/content/get', [AdminController::class, 'GetContent']);
             Route::get('/content/list', [AdminController::class, 'ListContent']);
             Route::post('/content/register', [AdminController::class, 'RegisterContent']);
-            // Route::post('/content/remove', [AdminController::class, 'RemoveContent']);
+            Route::post('/content/remove', [AdminController::class, 'RemoveContent']);
             // Route::post('/content/reorder', [AdminController::class, 'ReorderContent']);
         });
 

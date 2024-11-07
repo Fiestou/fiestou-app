@@ -147,30 +147,16 @@ class AdminController extends Controller
 
     public function RemoveContent(Request $request){
 
-        $app_id = json_decode($this->user->details)->app;
-
         $request->validate([
-            'contents_id'   => 'required',
-            'area_id'       => 'required'
+            'remove' => 'required',
         ]);
 
-        $contents_id = (is_array($request->get('contents_id'))) ? $request->get('contents_id') : [$request->get('contents_id')];
+        $contents_id = (is_array($request->get('remove'))) ? $request->get('remove') : [$request->get('remove')];
 
-        $contents = Content::with(['contents'])
-                            ->whereIn('id', $contents_id)
-                            ->where('application_id', $app_id)
-                            ->get();
-
-        $this->RecursiveRemoveContent($contents);
-
-        $contents = $contents->where('application_id', $app_id)
-                            ->orderBy('order', 'ASC')
-                            ->orderBy('id', 'DESC')
-                            ->get();
+        $contents = Content::whereIn('id', $contents_id)->delete();
 
         return response()->json([
-            'response'  => true,
-            'list'      => ""
+            'response'  => true
         ]);
     }
 
