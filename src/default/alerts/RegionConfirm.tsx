@@ -7,19 +7,80 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import { getUser } from "@/src/contexts/AuthContext";
+import LocationComponent from "@/src/components/utils/LocationComponent";
+
+interface Location {
+  lat: number;
+  lng: number;
+}
+
+const expires = { expires: 14 };
 
 export default function RegionConfirm() {
   const api = new Api();
-  const [status, setStatus] = useState(false as boolean);
+
+  const [formLoader, setFormLoader] = useState(false as boolean);
+
+  const [askForZipCode, setAskForZipCode] = useState(false as boolean);
   const [region, setRegion] = useState({} as any);
   const [cep, setCEP] = useState("" as string);
+
+  const getLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(behaviorPosition, behaviorError);
+    } else {
+      setAskForZipCode(true);
+      console.log("Geolocalização não é suportada por este navegador.");
+    }
+  };
+
+  const behaviorPosition = async (position: GeolocationPosition) => {
+    setFormLoader(true);
+
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+
+    try {
+      const response = await fetch(
+        `/api/get-cep-from-coords?lat=${lat}&lng=${lng}`
+      );
+
+      const data = await response.json();
+
+      if (data.cep) {
+        registerRegion(data.cep);
+      } else {
+        setAskForZipCode(true);
+        console.error("Erro ao buscar o CEP");
+      }
+    } catch (error) {
+      setAskForZipCode(true);
+      console.error("Erro ao buscar o CEP:", error);
+    }
+
+    setFormLoader(false);
+  };
+
+  const behaviorError = (error: GeolocationPositionError) => {
+    setAskForZipCode(true);
+
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        console.log("Permissão negada pelo usuário.");
+        break;
+      case error.POSITION_UNAVAILABLE:
+        console.log("Informação de localização indisponível.");
+        break;
+      case error.TIMEOUT:
+        console.log("O pedido para obter a localização expirou.");
+        break;
+    }
+  };
 
   const verifyCEP = async (e?: any) => {
     e?.preventDefault();
 
-    // let request: any = await api.request({
-    //   url: "content/default",
-    // });
+    setFormLoader(true);
 
     const handle: any = {
       cep: cep,
@@ -28,78 +89,119 @@ export default function RegionConfirm() {
 
     setRegion(handle);
 
-    Cookies.set("fiestou.region", JSON.stringify(handle), { expires: 14 });
+    Cookies.set("fiestou.region", JSON.stringify(handle), expires);
 
     if (handle?.validate) {
       setTimeout(() => {
-        setStatus(false);
+        setAskForZipCode(false);
       }, 2000);
     }
+
+    setTimeout(() => {
+      setFormLoader(false);
+    }, 2000);
 
     return false;
   };
 
+  const registerRegion = (zipCode: string) => {
+    const handle: any = {
+      cep: zipCode,
+      validate: isCEPInRegion(zipCode),
+    };
+
+    setRegion(handle);
+
+    Cookies.set("fiestou.region", JSON.stringify(handle), expires);
+
+    setCEP(zipCode);
+  };
+
   useEffect(() => {
-    if (!!window && !Cookies.get("fiestou.region")) {
-      const user = getUser();
+    if (!!window) {
+      if (!!Cookies.get("fiestou.region")) {
+        const handle: any = JSON.parse(Cookies.get("fiestou.region") ?? "");
 
-      if ((user?.address ?? []).filter((item: any) => !!item.zipCode).length) {
-        user.address
-          ?.filter((item: any) => !!item.zipCode)
-          .map((item: any) => {
-            setCEP(item.zipCode);
-          });
+        setRegion(handle);
+        setCEP(handle.cep);
+      } else {
+        const user = getUser();
+
+        let zipCode = "";
+
+        if (
+          !!user?.address &&
+          (user?.address ?? []).filter((item: any) => !!item.zipCode).length
+        ) {
+          user.address
+            ?.filter((item: any) => !!item.zipCode)
+            .map((item: any) => {
+              zipCode = item.zipCode;
+            });
+        }
+
+        if (!!zipCode) {
+          registerRegion(zipCode);
+        } else {
+          getLocation();
+        }
       }
-
-      setStatus(true);
     }
   }, []);
 
   return (
     <>
+      <div>
+        <div
+          onClick={() => setAskForZipCode(true)}
+          className="flex cursor-pointer py-2 justify-end gap-2 items-center text-white"
+        >
+          <Icon icon="fa-map-marker-alt" className="text-xl" />
+          <div className="grid text-nowrap">
+            {!!region.cep && <span className="text-xs">{region.cep}</span>}
+
+            <span className="text-xs">
+              {!!region?.validate ? "Região disponível" : "Região indisponível"}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <Modal
-        status={status}
-        title={
-          !!region?.cep && !region?.validate
-            ? "Aviso importante!"
-            : "Informe sua região"
-        }
-        close={() => setStatus(false)}
+        status={askForZipCode}
+        title="Informe sua região"
+        close={() => setAskForZipCode(false)}
       >
-        {!!region?.cep && (
+        <div className="text-zinc-950">
           <>
             {!region?.validate ? (
-              <div className="flex flex-col gap-8 text-center pt-5 md:pb-8">
-                <div className="text-xl md:text-2xl text-zinc-900 max-w-[32rem] mx-auto">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="relative p-3 rounded-full text-white bg-yellow-300">
+                  <Icon
+                    icon="fa-exclamation"
+                    type="fa"
+                    className="absolute text-xs text-zinc-950 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  />
+                </div>
+                <div className="w-full">
                   Sua região ainda não está disponível para nossos fornecedores.
-                </div>
-                {/*
-                <div className="text-sm">
-                  Compartilhe nosso site com seus fornecedores:
-                </div>
-                <ShareModal url="https://fiestou.com.br/" title={`Fiestou`} />
-                <div>OU</div> */}
-                <div>
-                  <Button href="contato">Entre em contato com a gente</Button>
                 </div>
               </div>
             ) : (
-              <div className="text-center pt-5 md:pb-8">
-                <div className="inline-block relative p-6 rounded-full text-white bg-green-500 text-2xl">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="relative p-3 rounded-full text-white bg-green-500">
                   <Icon
                     icon="fa-check"
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                   />
                 </div>
-                <div className="text-xl pt-4 md:text-2xl text-zinc-900 max-w-[32rem] mx-auto">
+                <div className="w-full">
                   Sua região está disponível para nossos fornecedores.
                 </div>
               </div>
             )}
           </>
-        )}
 
-        {!region?.cep && (
           <form onSubmit={(e) => verifyCEP(e)} className="grid gap-4">
             <Input
               defaultValue={cep ?? ""}
@@ -107,9 +209,9 @@ export default function RegionConfirm() {
               onChange={(e: any) => setCEP(e.target.value)}
               className="h-14 text-center"
             />
-            <Button>Verificar</Button>
+            <Button loading={formLoader}>Verificar</Button>
           </form>
-        )}
+        </div>
       </Modal>
     </>
   );

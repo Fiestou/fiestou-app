@@ -24,7 +24,9 @@ export default function LocationComponent() {
     setLocation({ lat, lng });
 
     try {
-      const response = await fetch(`/api/get-cep-from-coords?lat=${lat}&lng=${lng}`);
+      const response = await fetch(
+        `/api/get-cep-from-coords?lat=${lat}&lng=${lng}`
+      );
       const data = await response.json();
       if (data.cep) {
         setCep(data.cep);
@@ -46,12 +48,12 @@ export default function LocationComponent() {
         break;
       case error.TIMEOUT:
         console.log("O pedido para obter a localização expirou.");
-        break;    
+        break;
     }
   };
 
   return (
-    <div>
+    <div className="z-[10000] relative">
       <button onClick={getLocation}>Obter Localização</button>
       {location && (
         <p>
@@ -61,5 +63,4 @@ export default function LocationComponent() {
       {cep && <p>CEP: {cep}</p>}
     </div>
   );
-
 }
