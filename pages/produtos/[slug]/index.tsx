@@ -640,8 +640,6 @@ export default function Produto({
         content: HeaderFooter,
       }}
     >
-      <RegionConfirm />
-
       <section className="">
         <div className="container-medium py-4 md:py-6">
           <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
