@@ -4,6 +4,7 @@ import Router from "next/router";
 import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
 import { signOut } from "next-auth/react";
+import { isCEPInRegion } from "../helper";
 
 type SignInData = {
   email: string;
@@ -82,7 +83,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       Cookies.set("fiestou.authtoken", data.token, expires);
       Cookies.set("fiestou.user", JSON.stringify(user), expires);
+
       if (!!data?.store) Cookies.set("fiestou.store", data.store, expires);
+
+      if ((user?.address ?? []).some((item: any) => !!item.zipCode)) {
+        for (const item of user.address?.filter(
+          (item: any) => !!item.zipCode
+        ) ?? []) {
+          const handle: any = {
+            cep: item.zipCode,
+            validate: isCEPInRegion(item.zipCode),
+          };
+
+          Cookies.set("fiestou.region", JSON.stringify(handle), expires);
+          if (item.main) break;
+        }
+      }
 
       api.defaults.headers["Authorization"] = `Bearer ${data.token}`;
 

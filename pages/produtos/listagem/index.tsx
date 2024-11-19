@@ -119,8 +119,6 @@ export default function Listagem({
         content: HeaderFooter,
       }}
     >
-      <RegionConfirm />
-
       <div className="py-8"></div>
       <section className="pt-4 md:pt-8 relative"></section>
       <div className="container-medium">
