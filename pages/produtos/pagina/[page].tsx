@@ -145,8 +145,6 @@ export default function Produtos({
         content: HeaderFooter,
       }}
     >
-      <RegionConfirm />
-
       <section className="bg-cyan-500  pt-24 md:pt-32 relative">
         <div className="container-medium relative pb-14 md:pb-16 text-white">
           <div className="flex items-end">

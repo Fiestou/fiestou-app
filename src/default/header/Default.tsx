@@ -16,6 +16,7 @@ import User from "./utils/User";
 import Login from "./utils/Login";
 import BIcon from "@/src/icons/bootstrapIcons/BIcon";
 import FIcon from "@/src/icons/fontAwesome/FIcon";
+import RegionConfirm from "../alerts/RegionConfirm";
 
 export default function Default({
   params,
@@ -60,7 +61,7 @@ export default function Default({
         ></div>
         <div className="ease container-medium relative text-white pl-4 pr-2 lg:px-4">
           <div className="flex gap-4 lg:gap-16 items-center py-2">
-            <div className="w-full lg:w-[200px] order-1">
+            <div className="w-full min-w-[88px] lg:w-[120px] order-1">
               <div
                 className={`max-w-[80px] md:max-w-[120px] ${
                   params.position == "fixed" &&
@@ -84,7 +85,7 @@ export default function Default({
               </div>
             </div>
 
-            <div className="hidden lg:grid z-10 bottom-0 left-0 w-full order-2">
+            <div className="hidden lg:grid z-10 bottom-0 left-0 order-2">
               <div className="w-full flex gap-6">
                 {!!content?.menu_links &&
                   content.menu_links.map((item: any, key: any) => (
@@ -105,7 +106,10 @@ export default function Default({
               </div>
             </div>
 
-            <div className="w-fit order-3 lg:order-4">
+            <div className="w-fit order-3 lg:order-4 flex items-center gap-4 md:gap-8">
+              <div className="">
+                <RegionConfirm />
+              </div>
               {!!user?.id ? <User user={user} /> : <Login content={content} />}
             </div>
 
@@ -144,8 +148,8 @@ export default function Default({
           </div>
         </div>
         {!params.scroll && (
-          <div className="container-medium opacity-50">
-            <hr className="border-white" />
+          <div className="container-medium relative">
+            <hr className="border-white opacity-50" />
           </div>
         )}
       </header>
