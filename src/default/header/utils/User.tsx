@@ -44,8 +44,8 @@ export default function User({ user }: { user: UserType }) {
           ></div>
           <div className="absolute z-20 grid gap-3 text-stone-900 p-6 bg-white left-0 md:left-1/2 md:-translate-x-1/2 top-full md:rounded-md w-full md:mt-2 min-w-[250px]">
             {menuDashboard
-              .filter((item) => !item.blocked)
-              .map((item, key) => (
+              .filter((item: any) => !item.blocked)
+              .map((item: any, key) => (
                 <Link key={key} passHref href={`/dashboard/${item.endpoint}`}>
                   <div className="hover:text-yellow-500 ease">{item.title}</div>
                 </Link>
