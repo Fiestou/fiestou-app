@@ -73,7 +73,7 @@ export async function getStaticProps(ctx: any) {
       data: {
         limit: limit,
         offset: offset,
-        order: "desc",
+        ordem: "desc",
       },
     },
     ctx
