@@ -51,13 +51,13 @@ export const menuDashboard = [
     field: "board_address_desc",
     endpoint: "enderecos",
   },
-  {
-    title: "Chat",
-    icon: "fa-comment-alt-dots",
-    field: "board_chat_desc",
-    endpoint: "chat",
-    blocked: true,
-  },
+  // {
+  //   title: "Chat",
+  //   icon: "fa-comment-alt-dots",
+  //   field: "board_chat_desc",
+  //   endpoint: "chat",
+  //   blocked: true,
+  // },
   // {
   //   title: "Cartões salvos",
   //   icon: "fa-credit-card",

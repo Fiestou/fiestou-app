@@ -73,12 +73,13 @@ export async function getStaticProps(ctx: any) {
       data: {
         limit: limit,
         offset: offset,
+        order: "desc",
       },
     },
     ctx
   );
 
-  // console.log(request, "< request");
+  console.log(request, "< request");
 
   let metadata: any = request?.metadata ?? {};
 

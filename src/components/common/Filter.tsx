@@ -67,7 +67,6 @@ export default function Filter(params: any) {
       handleQuery["order"] = routerQuery.ordem;
     }
 
-    console.log(handleQuery);
     setQuery({ ...query, ...handleQuery });
   };
 

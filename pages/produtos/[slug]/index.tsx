@@ -301,6 +301,20 @@ export default function Produto({
       setInCart(handle);
     }
 
+    if (product?.availability) {
+      const today = new Date();
+      const minimumDates = Array.from(
+        { length: product.availability },
+        (_, key) => {
+          const date = new Date();
+          date.setDate(today.getDate() + key + 1);
+          return date.toISOString().split("T")[0];
+        }
+      );
+
+      handleDates = [...handleDates, ...minimumDates];
+    }
+
     setUnavailable(handleDates);
   };
 
