@@ -59,7 +59,7 @@ export default function Modal(attr: Modal) {
               size[attr.size ?? "xl"]
             } relative ease w-full mx-auto px-4`}
           >
-            <div className="relative rounded-xl bg-white p-4 md:p-6">
+            <div className="relative rounded-xl bg-white text-zinc-950 p-4 md:p-6">
               <div
                 className={`w-full flex items-start ${
                   !!attr?.title ? "border-b mb-2" : ""
