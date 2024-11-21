@@ -256,8 +256,8 @@ class StoresController extends Controller
             $store = new Store;
         }
 
-        if($request->has("cnpj")){
-            $store->document = $request->get("cnpj");
+        if($request->has("document")){
+            $store->document = $request->get("document");
         }
 
         if($request->has("companyName")){
