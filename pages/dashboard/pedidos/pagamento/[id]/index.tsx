@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   CopyClipboard,
   dateBRFormat,
+  documentIsValid,
   findDates,
   generateDocumentNumber,
   getCurrentDate,
@@ -308,6 +309,10 @@ export default function Pagamento({
         installments: installments,
         statement_descriptor: "FIESTOU",
       };
+
+      console.log(handlePayment);
+
+      // return false;
     }
 
     if (handlePayment.payment_method == "pix") {
@@ -783,6 +788,12 @@ export default function Pagamento({
                                   required
                                   className="form-control"
                                 />
+                                {(card?.holder_document ?? "").length > 8 &&
+                                  !documentIsValid(card?.holder_document) && (
+                                    <div className="text-[0.75rem] opacity-50">
+                                      * Insira um documento válido
+                                    </div>
+                                  )}
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="flex gap-4">
@@ -1003,6 +1014,12 @@ export default function Pagamento({
                                     required
                                     className="form-control placeholder:italic"
                                   />
+                                  {(order.user?.document ?? "").length > 10 &&
+                                    !documentIsValid(order.user?.document) && (
+                                      <div className="text-[0.75rem] opacity-50">
+                                        * Insira um documento válido
+                                      </div>
+                                    )}
                                 </div>
                               )}
 
@@ -1029,6 +1046,13 @@ export default function Pagamento({
                           checked={form.sended || pix.status}
                           style="btn-success"
                           className="py-6 px-3"
+                          disable={
+                            (payment.payment_method == "pix" &&
+                              !documentIsValid(order.user?.document)) ||
+                            (payment.payment_method == "credit_card" &&
+                              !documentIsValid(card?.holder_document) &&
+                              true)
+                          }
                         >
                           Confirmar e pagar
                         </Button>

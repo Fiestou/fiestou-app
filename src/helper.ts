@@ -505,3 +505,184 @@ export const getSocial = (link: string) => {
 
   return "link";
 };
+
+export const maskHandle: any = {
+  date: (input: string) => {
+    input = input.replace(/\D/g, "");
+
+    input = input.substring(0, 8);
+
+    const size = input.length;
+    if (size > 2 && size <= 4) {
+      input = `${input.substring(0, 2)}/${input.substring(2)}`;
+    } else if (size > 4) {
+      input = `${input.substring(0, 2)}/${input.substring(
+        2,
+        4
+      )}/${input.substring(4)}`;
+    }
+    return input;
+  },
+  decimal: (input: any) => {
+    if (!input) {
+      return "";
+    }
+
+    // Remove todos os caracteres que não sejam dígitos, pontos ou vírgulas
+    input = input.replace(/[^0-9.,]/g, "");
+
+    // Substitui vírgulas por pontos para unificar o separador decimal
+    input = input.replace(/,/g, ".");
+
+    // Se houver mais de um ponto, remove os extras
+    const parts = input.split(".");
+    if (parts.length > 2) {
+      input = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    return input;
+  },
+  phone: (input: string) => {
+    if (!input) return "";
+
+    input = input.replace(/\D/g, "");
+
+    input = input.substring(0, 11);
+
+    if (input.length > 10) {
+      input = `(${input.substring(0, 2)}) ${input.substring(
+        2,
+        7
+      )}-${input.substring(7)}`;
+    } else if (input.length > 6) {
+      input = `(${input.substring(0, 2)}) ${input.substring(
+        2,
+        6
+      )}-${input.substring(6)}`;
+    } else if (input.length > 2) {
+      input = `(${input.substring(0, 2)}) ${input.substring(2)}`;
+    } else if (input.length > 0) {
+      input = `(${input}`;
+    }
+
+    return input;
+  },
+  real: (input: any) => {
+    input = input.replace(/\D/g, "");
+
+    const options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    const formattedValue = new Intl.NumberFormat("pt-BR", options).format(
+      input / 100
+    );
+
+    return formattedValue;
+  },
+  dollar: (input: any) => {
+    input = input.replace(/\D/g, "");
+
+    const options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    const formattedValue = new Intl.NumberFormat("en-US", options).format(
+      input / 100
+    );
+
+    return formattedValue;
+  },
+  euro: (input: any) => {
+    input = input.replace(/\D/g, "");
+
+    const options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    const formattedValue = new Intl.NumberFormat("de-DE", options).format(
+      input / 100
+    );
+
+    return formattedValue;
+  },
+  cnpj: (input: string): boolean => {
+    if (!input) return false;
+
+    let cnpj = input.replace(/\D/g, "");
+
+    if (cnpj.length !== 14) return false;
+
+    let length = cnpj.length - 2;
+    let numbers = cnpj.substring(0, length);
+    let digits = cnpj.substring(length);
+    let sum = 0;
+    let pos = length - 7;
+
+    for (let i = length; i >= 1; i--) {
+      sum += parseInt(numbers.charAt(length - i)) * pos--;
+      if (pos < 2) pos = 9;
+    }
+
+    let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+    if (result !== parseInt(digits.charAt(0))) return false;
+
+    length += 1;
+    numbers = cnpj.substring(0, length);
+    sum = 0;
+    pos = length - 7;
+
+    for (let i = length; i >= 1; i--) {
+      sum += parseInt(numbers.charAt(length - i)) * pos--;
+      if (pos < 2) pos = 9;
+    }
+
+    result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+    return result === parseInt(digits.charAt(1));
+  },
+  cpf: (input: string): boolean => {
+    if (!input) return false;
+
+    let cpf = input.replace(/\D/g, "");
+
+    if (cpf.length !== 11) return false;
+
+    if (/^(\d)\1+$/.test(cpf)) return false;
+
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(cpf.charAt(i)) * (10 - i);
+    }
+
+    let check1 = (sum * 10) % 11;
+    if (check1 === 10) check1 = 0;
+
+    if (check1 !== parseInt(cpf.charAt(9))) return false;
+
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(cpf.charAt(i)) * (11 - i);
+    }
+
+    let check2 = (sum * 10) % 11;
+    if (check2 === 10) check2 = 0;
+
+    return check2 === parseInt(cpf.charAt(10));
+  },
+  dni: (input: string): boolean => {
+    if (!input) return false;
+
+    const dni = input.replace(/\D/g, "");
+    const dniNumber = parseInt(dni.slice(0, 8));
+    const dniLetter = input.slice(-1).toUpperCase();
+    const letters = "TRWAGMYFPDXBNJZSQVHLCKE";
+    const validLetter = letters.charAt(dniNumber % 23);
+
+    return validLetter === dniLetter;
+  },
+  ssn: (input: string): boolean => {
+    if (!input) return false;
+    const ssn = input.replace(/\D/g, ""); // Remove caracteres não numéricos
+    return /^\d{3}-\d{2}-\d{4}$/.test(ssn); // Verifica se segue o formato correto
+  },
+  nuip: (input: string): boolean => {
+    if (!input) return false;
+    const nuip = input.replace(/\D/g, ""); // Remove caracteres não numéricos
+    return nuip.length >= 6 && nuip.length <= 10; // Verifica se tem entre 6 e 10 dígitos
+  },
+};
+
+export const documentIsValid = (document?: string) => {
+  return maskHandle.cpf(document) || maskHandle.cnpj(document);
+};
