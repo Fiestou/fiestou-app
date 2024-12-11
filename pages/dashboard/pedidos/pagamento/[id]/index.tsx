@@ -248,7 +248,7 @@ export default function Pagamento({
 
   const [card, setCard] = useState({} as CardType);
   const handleCard = (value: any) => {
-    setCard({ ...card, ...value });
+    setCard((old: any) => ({ ...old, ...value }));
   };
 
   const [payment, setPayment] = useState({

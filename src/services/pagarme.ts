@@ -30,6 +30,11 @@ class Pagarme {
   ) {
     const api = new Api();
 
+    const handleDocument: any =
+      payment.payment_method == "credit_card"
+        ? payment.credit_card.card.holder_document
+        : order.user?.cpf ?? order.user?.document;
+
     const customer: any = {
       address: {
         country: "BR",
@@ -42,7 +47,7 @@ class Pagarme {
       name: order.user?.name,
       type: "individual",
       email: order.user?.email,
-      document: order.user?.cpf ?? order.user?.document,
+      document: handleDocument,
       code: order.user?.id,
       gender: order.user?.gender,
       birthdate: order.user?.date,
