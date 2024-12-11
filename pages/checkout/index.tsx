@@ -145,7 +145,7 @@ export default function Checkout({
 
     const { distance } = data;
 
-    setDeliveryPrice((distance / 1000) * deliveryTax);
+    setDeliveryPrice(!!distance ? (distance / 1000) * deliveryTax : 0);
   };
 
   useEffect(() => {
