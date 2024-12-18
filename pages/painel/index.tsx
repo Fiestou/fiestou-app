@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { getUser } from "@/src/contexts/AuthContext";
@@ -10,10 +9,9 @@ import { getExtenseData, moneyFormat } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { Chart } from "@/src/components/utils/Chart";
 import DobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
-import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import { BalanceType } from "@/src/models/order";
-import { signOut } from "next-auth/react";
+import { PARTNER_MENU } from "@/src/default/header/Painel";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -45,63 +43,6 @@ export async function getServerSideProps(ctx: any) {
     },
   };
 }
-
-const menuSidebar: Array<{
-  name: string;
-  icon: string;
-  description: string;
-  url: string;
-}> = [
-  {
-    name: "Pedidos",
-    icon: "fa-box-alt",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
-    url: "/painel/pedidos",
-  },
-  {
-    name: "Produtos",
-    icon: "fa-tag",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
-    url: "/painel/produtos",
-  },
-  {
-    name: "Clientes",
-    icon: "fa-users",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
-    url: "/painel/clientes",
-  },
-  {
-    name: "Chat",
-    icon: "fa-comment-alt-dots",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
-    url: "/painel/chat",
-  },
-  {
-    name: "Conta bancária",
-    icon: "fa-university",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
-    url: "/painel/conta",
-  },
-  {
-    name: "Seus dados",
-    icon: "fa-user-circle",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
-    url: "/painel/meus-dados",
-  },
-  {
-    name: "Personalizar loja",
-    icon: "fa-palette",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
-    url: "/painel/loja",
-  },
-];
 
 export default function Parceiro({ content }: { content: any }) {
   const { UserLogout } = useContext(AuthContext);
@@ -191,10 +132,10 @@ export default function Parceiro({ content }: { content: any }) {
               </div>
             </div>
           </div>
-          <div className="lg:flex items-start gap-8 lg:gap-20">
-            <div className="lg:w-full lg:max-w-[24rem] pb-8 -mx-4 lg:mx-0 order-1 md:order-2 relative overflow-x-auto no-scrollbar">
+          <div className="lg:flex items-start gap-8 xl:gap-20">
+            <div className="hidden lg:block lg:w-full lg:max-w-[24rem] pb-8 -mx-4 lg:mx-0 order-1 md:order-2 relative overflow-x-auto no-scrollbar">
               <div className="max-w-full flex lg:grid items-start gap-4 px-4 lg:px-0">
-                {menuSidebar.map((item: any, key: any) => (
+                {PARTNER_MENU.map((item: any, key: any) => (
                   <Link
                     passHref
                     href={item.url}
@@ -230,25 +171,25 @@ export default function Parceiro({ content }: { content: any }) {
             <div className="w-full order-2 md:order-1">
               <div className="flex gap-4 items-start">
                 <div className="w-3/4 md:w-full">
-                  <div className="w-full flex">
+                  <div className="w-full flex gap-4">
                     <div className="w-full grid border-l-2 pl-2 border-lime-500">
-                      <div className="pb-1 md:pb-1 text-sm :text-base leading-tight">
+                      <div className="pb-1 md:pb-1 text-xs :text-base leading-tight">
                         Pagamentos
                         <br />
                         recebidos
                       </div>
-                      <h4 className="text-zinc-900 -mb-1 font-bold text-2xl lg:text-3xl leading-none whitespace-nowrap">
+                      <h4 className="text-zinc-900 -mb-1 font-bold text-xl md:text-3xl leading-none whitespace-nowrap">
                         <span className="text-base lg:text-lg">R$</span>{" "}
                         {moneyFormat(balance.payments)}
                       </h4>
                     </div>
                     <div className="w-full grid border-l-2 pl-2 border-red-500">
-                      <div className="pb-1 md:pb-1 text-sm :text-base leading-tight">
+                      <div className="pb-1 md:pb-1 text-xs :text-base leading-tight">
                         Promessas
                         <br />
                         de pagamento
                       </div>
-                      <h4 className="text-zinc-900 -mb-1 font-bold text-2xl lg:text-3xl leading-none whitespace-nowrap">
+                      <h4 className="text-zinc-900 -mb-1 font-bold text-xl md:text-3xl leading-none whitespace-nowrap">
                         <span className="text-base lg:text-lg">R$</span>{" "}
                         {moneyFormat(balance.promises)}
                       </h4>
@@ -261,12 +202,12 @@ export default function Parceiro({ content }: { content: any }) {
                 </div>
                 <div className="w-1/4 md:w-full grid md:max-w-[10rem]">
                   <div className="w-full grid border-l-2 pl-2 border-yellow-300">
-                    <div className="pb-1 md:pb-1 text-sm :text-base leading-tight">
+                    <div className="pb-1 md:pb-1 text-xs :text-base leading-tight">
                       Pedidos
                       <br />
                       realizados
                     </div>
-                    <h4 className="text-zinc-900 -mb-1 font-bold text-2xl lg:text-3xl leading-none whitespace-nowrap">
+                    <h4 className="text-zinc-900 -mb-1 font-bold text-xl md:text-3xl leading-none whitespace-nowrap">
                       {balance.orders}
                     </h4>
                   </div>
@@ -275,7 +216,7 @@ export default function Parceiro({ content }: { content: any }) {
                   </div>
                 </div>
               </div>
-              <div className="pb-8 pt-12 md:pb-12">
+              <div className="py-8 md:pb-12">
                 <hr />
               </div>
 
