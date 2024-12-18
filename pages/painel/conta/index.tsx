@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Input, Select, TextArea } from "@/src/components/ui/form";
 import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
@@ -16,23 +16,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
-  let request: any = {};
-
-  let user = JSON.parse(ctx.req.cookies["fiestou.user"]);
-
-  request = await api.bridge(
-    {
-      url: "users/get",
-      data: {
-        ref: user.email,
-      },
-    },
-    ctx
-  );
-
-  user = request?.data ?? {};
-
-  request = await api.call(
+  let request: any = await api.call(
     {
       url: "request/graph",
       data: [
@@ -55,7 +39,6 @@ export async function getServerSideProps(ctx: any) {
 
   return {
     props: {
-      user: user,
       page: page,
     },
   };
@@ -66,18 +49,13 @@ const formInitial = {
   loading: false,
 };
 
-export default function Conta({ user, page }: { user: UserType; page: any }) {
+export default function Conta({ page }: { page: any }) {
   const api = new Api();
-  const router = useRouter();
 
-  const [form, setForm] = useState(formInitial);
-  const handleForm = (value: Object) => {
-    setForm({ ...form, ...value });
-  };
+  const [content, setContent] = useState({} as UserType);
+  const [user, setUser] = useState({} as UserType);
 
-  const [banks, setBanks] = useState(
-    user?.bankAccounts ?? ([] as Array<BankAccountType>)
-  );
+  const [banks, setBanks] = useState([] as Array<BankAccountType>);
   const handleBankAccounts = (value: any, key: any) => {
     setBanks((banks: Array<BankAccountType>) =>
       banks.map((bank: BankAccountType, index: any) =>
@@ -91,7 +69,27 @@ export default function Conta({ user, page }: { user: UserType; page: any }) {
     );
   };
 
-  const [content, setContent] = useState(user as UserType);
+  const getUserData = async () => {
+    const request: any = await api.bridge({
+      method: "get",
+      url: "users/get",
+    });
+
+    if (request.response) {
+      setUser(request.data);
+      setContent(request.data);
+      setBanks(request.data.bankAccounts);
+    }
+  };
+
+  useEffect(() => {
+    getUserData();
+  }, []);
+
+  const [form, setForm] = useState(formInitial);
+  const handleForm = (value: Object) => {
+    setForm({ ...form, ...value });
+  };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -167,41 +165,41 @@ export default function Conta({ user, page }: { user: UserType; page: any }) {
   };
 
   return (
-    !router.isFallback && (
-      <Template
-        header={{
-          template: "painel",
-          position: "solid",
-        }}
-        footer={{
-          template: "clean",
-        }}
-      >
-        <section className="">
-          <div className="container-medium pt-12">
-            <div className="pb-4">
-              <Breadcrumbs
-                links={[
-                  { url: "/painel", name: "Painel" },
-                  { url: "/painel/conta", name: "Conta bancária" },
-                ]}
-              />
-            </div>
-            <div className="grid md:flex gap-4 items-center w-full">
-              <div className="w-full flex items-center">
-                <Link passHref href="/painel">
-                  <Icon
-                    icon="fa-long-arrow-left"
-                    className="mr-6 text-2xl text-zinc-900"
-                  />
-                </Link>
-                <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                  <span className="font-title font-bold">Conta bancária</span>
-                </div>
+    <Template
+      header={{
+        template: "painel",
+        position: "solid",
+      }}
+      footer={{
+        template: "clean",
+      }}
+    >
+      <section className="">
+        <div className="container-medium pt-12">
+          <div className="pb-4">
+            <Breadcrumbs
+              links={[
+                { url: "/painel", name: "Painel" },
+                { url: "/painel/conta", name: "Conta bancária" },
+              ]}
+            />
+          </div>
+          <div className="grid md:flex gap-4 items-center w-full">
+            <div className="w-full flex items-center">
+              <Link passHref href="/painel">
+                <Icon
+                  icon="fa-long-arrow-left"
+                  className="mr-6 text-2xl text-zinc-900"
+                />
+              </Link>
+              <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
+                <span className="font-title font-bold">Conta bancária</span>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
+      {!!user?.id && (
         <section className="pt-6">
           <div className="container-medium pb-12">
             <div className="grid md:flex align-top gap-10 lg:gap-20">
@@ -339,7 +337,7 @@ export default function Conta({ user, page }: { user: UserType; page: any }) {
             </div>
           </div>
         </section>
-      </Template>
-    )
+      )}
+    </Template>
   );
 }

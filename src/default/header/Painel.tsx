@@ -7,39 +7,62 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { AuthCheck } from "@/src/contexts/AuthContext";
+import { Button } from "@/src/components/ui/form";
 
-const menu = [
+export const PARTNER_MENU: Array<{
+  name: string;
+  icon: string;
+  description: string;
+  url: string;
+}> = [
   {
-    title: "início",
-    endpoint: "/painel/",
+    name: "Pedidos",
+    icon: "fa-box-alt",
+    description:
+      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+    url: "/painel/pedidos",
   },
   {
-    title: "pedidos",
-    endpoint: "/painel/pedidos",
+    name: "Produtos",
+    icon: "fa-tag",
+    description:
+      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+    url: "/painel/produtos",
   },
   {
-    title: "produtos",
-    endpoint: "/painel/produtos",
-  },
-  {
-    title: "clientes",
-    endpoint: "/painel/clientes",
+    name: "Clientes",
+    icon: "fa-users",
+    description:
+      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+    url: "/painel/clientes",
   },
   // {
-  //   title: "chat",
-  //   endpoint: "/painel/chat",
+  //   name: "Chat",
+  //   icon: "fa-comment-alt-dots",
+  //   description:
+  //     "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+  //   url: "/painel/chat",
   // },
   {
-    title: "conta",
-    endpoint: "/painel/conta",
+    name: "Conta bancária",
+    icon: "fa-university",
+    description:
+      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+    url: "/painel/conta",
   },
   {
-    title: "meus dados",
-    endpoint: "/painel/meus-dados",
+    name: "Seus dados",
+    icon: "fa-user-circle",
+    description:
+      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+    url: "/painel/meus-dados",
   },
   {
-    title: "personalizar loja",
-    endpoint: "/painel/loja",
+    name: "Personalizar loja",
+    icon: "fa-palette",
+    description:
+      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+    url: "/painel/loja",
   },
 ];
 
@@ -52,7 +75,7 @@ export default function Painel({
 }) {
   const api = new Api();
 
-  const [dropdown, setDropdown] = useState(false);
+  const [menuModal, setMenuModal] = useState(false);
 
   useEffect(() => {
     AuthCheck();
@@ -71,41 +94,27 @@ export default function Painel({
           } ease bg-zinc-900 absolute h-full w-full inset-0`}
         ></div>
         <div className="ease container-medium relative text-white px-4">
-          <div className="flex gap-4 lg:gap-16 items-center py-2">
-            <div className="w-full lg:w-[200px]">
-              <div
-                className={`max-w-[80px] md:max-w-[120px] ${
-                  params.position == "fixed" &&
-                  params.scroll &&
-                  "lg:max-w-[100px]"
-                } ease`}
-              >
-                <Link passHref href="/">
-                  <div className="aspect aspect-video -mt-2">
-                    <Img
-                      src="/images/logo.png"
-                      size="md"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                </Link>
+          <div className="flex gap-4 justify-between items-center py-2">
+            <div className="w-full">
+              <div className="lg:w-[200px]">
+                <div
+                  className={`max-w-[80px] md:max-w-[120px] ${
+                    params.position == "fixed" &&
+                    params.scroll &&
+                    "lg:max-w-[100px]"
+                  } ease`}
+                >
+                  <Link passHref href="/">
+                    <div className="aspect aspect-video -mt-2">
+                      <Img
+                        src="/images/logo.png"
+                        size="md"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  </Link>
+                </div>
               </div>
-            </div>
-
-            <div className="w-full hidden lg:flex items-center gap-8">
-              {menu.map((item, key) => (
-                <Link passHref key={key} href={item.endpoint}>
-                  <div
-                    className={`whitespace-nowrap leading-tight ease ${
-                      params.pathname == `${item.endpoint}/`
-                        ? "text-yellow-300 font-bold"
-                        : "hover:text-yellow-300"
-                    }`}
-                  >
-                    {item.title}
-                  </div>
-                </Link>
-              ))}
             </div>
 
             <div className="w-fit relative">
@@ -118,7 +127,7 @@ export default function Painel({
                   <div>
                     <Icon icon="fa-user-circle" className="text-4xl" />
                   </div>
-                  <div className="w-fit font-semibold font-title">
+                  <div className="hidden md:block w-fit font-semibold font-title">
                     <div className="whitespace-nowrap">
                       Olá, {getFirstName(user.name)}
                     </div>
@@ -127,12 +136,78 @@ export default function Painel({
                 </div>
               </Link>
             </div>
+
+            <div className="w-fit lg:hidden relative text-right">
+              <Button
+                style="btn-transparent"
+                type="button"
+                onClick={() => setMenuModal(!menuModal)}
+                className="py-2 px-1 text-white"
+              >
+                <Icon
+                  icon={menuModal ? "fa-times" : "fa-bars"}
+                  className={`${
+                    menuModal ? "mx-[.15rem]" : ""
+                  } text-xl lg:text-3xl`}
+                />
+              </Button>
+            </div>
           </div>
         </div>
-        <div className="container-medium opacity-50">
-          <hr className="border-white" />
-        </div>
       </header>
+
+      {menuModal && (
+        <div className="w-full border-t border-zinc-700 bg-zinc-900 text-white grid items-center gap-8">
+          <div className="container-medium">
+            <div className="grid gap-4 py-6">
+              <Link passHref href="/painel">
+                <div
+                  className={`whitespace-nowrap flex justify-between leading-tight ease ${
+                    params.pathname == `/painel/`
+                      ? "text-yellow-300 font-bold"
+                      : "hover:text-yellow-300"
+                  }`}
+                >
+                  <div className="w-full lg:max-w-[2rem] h-[2rem] text-[1rem] leading-none relative">
+                    <Icon
+                      icon="fa-home"
+                      className="lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:absolute"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="font-title text-base whitespace-nowrap lg:text-lg">
+                      Início
+                    </div>
+                  </div>
+                </div>
+              </Link>
+              {PARTNER_MENU.map((item: any, key) => (
+                <Link passHref key={key} href={item.url}>
+                  <div
+                    className={`whitespace-nowrap flex justify-between leading-tight ease ${
+                      params.pathname == `${item.url}/`
+                        ? "text-yellow-300 font-bold"
+                        : "hover:text-yellow-300"
+                    }`}
+                  >
+                    <div className="w-full lg:max-w-[2rem] h-[2rem] text-[1rem] leading-none relative">
+                      <Icon
+                        icon={item.icon}
+                        className="lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:absolute"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="font-title text-base whitespace-nowrap lg:text-lg">
+                        {item.name}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

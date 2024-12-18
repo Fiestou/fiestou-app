@@ -60,10 +60,10 @@ export default function Default({
           } ease absolute h-full w-full inset-0`}
         ></div>
         <div className="ease container-medium relative text-white pl-4 pr-2 lg:px-4">
-          <div className="flex gap-4 lg:gap-16 items-center py-2">
-            <div className="w-full min-w-[88px] lg:w-[120px] order-1">
+          <div className="flex gap-2 lg:gap-16 items-center py-2">
+            <div className="w-full lg:w-[120px] order-1">
               <div
-                className={`max-w-[80px] md:max-w-[120px] ${
+                className={`max-w-[72px] md:max-w-[120px] ${
                   params.position == "fixed" &&
                   params.scroll &&
                   "lg:max-w-[100px]"
