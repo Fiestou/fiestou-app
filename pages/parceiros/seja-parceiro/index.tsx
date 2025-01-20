@@ -76,7 +76,7 @@ export default function SejaParceiro({
       data: {
         name: name,
         email: email,
-        details: { phone: phone },
+        phone: phone,
         person: "partner",
       },
     });

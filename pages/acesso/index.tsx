@@ -92,7 +92,7 @@ export default function Acesso({
           });
         } else if (handleUser.status == 0) {
           setModalStatus(true);
-          setModalType("confirm");
+          setModalType(handleUser.person == "partner" ? "await" : "confirm");
 
           setFormValue({
             sended: false,
@@ -200,7 +200,7 @@ export default function Acesso({
         </div>
       </div>
       <Modal status={modalStatus} close={() => setModalStatus(false)} size="sm">
-        <div className="text-center max-w-[20rem] mx-auto py-4 grid">
+        <div className="text-center max-w-[22rem] mx-auto py-4 grid">
           <div className="relative mb-2">
             <Icon
               icon="fa-envelope-open-text"
@@ -215,11 +215,21 @@ export default function Acesso({
           <h4 className="font-title text-zinc-900 text-2xl md:text-3xl font-bold py-3">
             {modalType == "register"
               ? "Sua conta foi criada!"
+              : modalType == "await"
+              ? "Cadastro em análise!"
               : "Confirme seu endereço de e-mail!"}
           </h4>
-          <div className="py-2">
+          <div className="pt-2">
             {modalType == "register" ? (
-              "Para fazer seu primeiro acesso, confirme seu cadastro através da mensagem que enviamos no e-mail cadastrado."
+              <>
+                Para fazer seu primeiro acesso, confirme seu cadastro através da
+                mensagem que enviamos no e-mail cadastrado.
+              </>
+            ) : modalType == "await" ? (
+              <>
+                Nossa equipe esta analisando seu cadastro. Responderemos via
+                e-mail em breve.
+              </>
             ) : (
               <>
                 Não recebeu o link? Verifique sua caixa de span, lixeira ou
@@ -233,9 +243,11 @@ export default function Acesso({
               </>
             )}
           </div>
-          <Button onClick={() => setModalStatus(false)} className="mt-6">
-            Fazer login
-          </Button>
+          {modalType != "await" && (
+            <Button onClick={() => setModalStatus(false)} className="mt-6">
+              Fazer login
+            </Button>
+          )}
         </div>
       </Modal>
     </Template>
