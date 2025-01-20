@@ -169,17 +169,18 @@ class AuthController extends Controller
 
         if(isset($user->id)){
             if($request->has('status') && !!$request->get('status')){
-                Mail::to($request->email)->queue((new RegisterUser(['user' => $user]))->onQueue('default'));
+                try {
+                    Mail::to($request->email)->queue((new RegisterUser(['user' => $user]))->onQueue('default'));
+                } catch (\Throwable $th) {}
             }
 
             $user->status = $request->get('status');
         }
 
-        if($user->save())
-        {
+        if($user->save()){
             return response()->json([
                 'response'  => true,
-                'actor'     => $user
+                'data'      => $user
             ], 200);
         }
 
