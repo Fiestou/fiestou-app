@@ -84,7 +84,9 @@ export default function Partner({ id }: any) {
             </div>
           </div>
         </section>
-        {!!partner && <UserEditAdmin user={partner} />}
+        {!!partner && (
+          <UserEditAdmin user={partner} redirect="/admin/parceiros" />
+        )}
       </Template>
     )
   );

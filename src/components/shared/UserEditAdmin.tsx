@@ -2,7 +2,7 @@ import { print_r } from "@/src/helper";
 import { UserType } from "@/src/models/user";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Select } from "../ui/form";
 import { MailType } from "@/src/models/mail";
 
@@ -11,7 +11,13 @@ const formInitial = {
   loading: false,
 };
 
-export default function UserEditAdmin({ user }: { user: UserType }) {
+export default function UserEditAdmin({
+  user,
+  redirect,
+}: {
+  user: UserType;
+  redirect?: string;
+}) {
   const api = new Api();
 
   const router = useRouter();
@@ -44,11 +50,15 @@ export default function UserEditAdmin({ user }: { user: UserType }) {
     });
 
     if (request.response) {
-      router.push({ pathname: "/admin/usuarios" });
+      router.push({ pathname: redirect ?? "/admin/usuarios" });
     }
 
     handleForm({ edit: "", loading: false });
   };
+
+  useEffect(() => {
+    setData(user);
+  }, [user]);
 
   return (
     <section className="">
@@ -65,10 +75,15 @@ export default function UserEditAdmin({ user }: { user: UserType }) {
           <div className="w-full max-w-[24rem]">
             <form className="grid" onSubmit={(e: any) => submitUser(e)}>
               <div className="pb-6">
-                <Select
+                <select
                   name="status"
-                  value={user.status}
-                  options={[
+                  value={data.status}
+                  onChange={(e: any) =>
+                    handleData({ status: parseInt(e.target.value) })
+                  }
+                  className="form-control"
+                >
+                  {[
                     {
                       name: "Ativo",
                       value: 1,
@@ -77,9 +92,12 @@ export default function UserEditAdmin({ user }: { user: UserType }) {
                       name: "Bloqueado",
                       value: 0,
                     },
-                  ]}
-                  onChange={(e: any) => handleData({ status: e.target.value })}
-                />
+                  ].map((option: any, key: any) => (
+                    <option key={key} value={option.value}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="pb-6 grid">
                 <Button loading={form.loading}>Salvar</Button>

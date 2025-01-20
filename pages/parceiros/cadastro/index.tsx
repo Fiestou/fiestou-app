@@ -48,6 +48,8 @@ export async function getServerSideProps(ctx: any) {
 }
 
 export default function Cadastro({ preUser }: { preUser: UserType }) {
+  console.log(preUser);
+
   const api = new Api();
   const router = useRouter();
 
@@ -395,7 +397,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-8">
+                  {/* <div className="grid grid-cols-2 gap-8">
                     <div className="form-group">
                       <Label>RG</Label>
                       <Input
@@ -419,7 +421,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                         placeholder="Ex: SSP"
                       />
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="grid mt-8">
                     <Button loading={form.loading}>Avançar</Button>
