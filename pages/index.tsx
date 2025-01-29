@@ -162,7 +162,7 @@ export default function Home({
                         !!slide?.main_slide_redirect?.label && (
                           <div className="pt-4 md:pt-6">
                             <Button
-                              href={slide?.main_slide_redirect?.url ?? "#"}
+                              href={`${process.env.APP_URL}/acesso`}
                               className="md:text-lg px-4 py-2 md:py-4 md:px-8"
                             >
                               {/* <Icon icon="fa-user-plus" type="far" /> */}
