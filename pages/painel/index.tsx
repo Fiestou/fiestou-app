@@ -58,10 +58,10 @@ export default function Parceiro({ content }: { content: any }) {
     const handle = request.data;
 
     setBalance({
-      cash: handle.cash,
-      payments: handle.payments,
-      promises: handle.promises,
-      orders: handle.orders,
+      cash: handle?.cash || 0,
+      payments: handle?.payments || 0,
+      promises: handle?.promises || 0,
+      orders: handle?.orders || 0,
     });
   };
 
