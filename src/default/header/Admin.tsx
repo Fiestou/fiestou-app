@@ -9,51 +9,51 @@ import { AuthCheck } from "@/src/contexts/AuthContext";
 
 const menu = [
   {
-    title: "início",
+    title: "Início",
     endpoint: "/admin/",
   },
   {
-    title: "produtos",
+    title: "Produtos",
     endpoint: "/admin/produtos",
   },
   {
-    title: "solicitações de saque",
+    title: "Solicitações de Saque",
     endpoint: "/admin/saques",
   },
   {
-    title: "filtro",
+    title: "Filtro",
     endpoint: "/admin/filtro",
   },
   {
-    title: "parceiros",
+    title: "Parceiros",
     endpoint: "/admin/parceiros",
   },
   {
-    title: "usuários",
+    title: "Usuários",
     endpoint: "/admin/usuarios",
   },
   {
-    title: "entregadores",
+    title: "Entregadores",
     endpoint: "/admin/entregadores",
   },
   {
-    title: "conteúdo da plataforma",
+    title: "Conteúdo da Plataforma",
     endpoint: "/admin/conteudo",
   },
   {
-    title: "comunicados",
+    title: "Comunicados",
     endpoint: "/admin/comunicados",
   },
   {
-    title: "teste de mensagem",
+    title: "Teste de Mensagem",
     endpoint: "/admin/teste",
   },
   {
-    title: "blog",
+    title: "Blog",
     endpoint: "/admin/blog",
   },
   {
-    title: "regras de negócio",
+    title: "Regras de Negócio",
     endpoint: "/admin/sistema",
   },
 ];

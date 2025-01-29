@@ -204,7 +204,7 @@ export default function Conta({ page }: { page: any }) {
           <div className="container-medium pb-12">
             <div className="grid md:flex align-top gap-10 lg:gap-20">
               <div className="w-full">
-                {!!banks.length ? (
+                {!!Array.isArray(banks) && banks.length ? (
                   <div className="grid">
                     {banks.map((bank: BankAccountType, key: any) => (
                       <form
