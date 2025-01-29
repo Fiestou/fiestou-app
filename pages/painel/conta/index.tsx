@@ -139,12 +139,12 @@ export default function Conta({ page }: { page: any }) {
         >
           {label?.cancel ? label.cancel : "Cancelar"}
         </Button>
-        <Button
-          loading={form.edit == key && form.loading}
-          className="py-2 px-4"
-        >
-          {label?.save ? label.save : "Salvar"}
-        </Button>
+          <Button
+            loading={form.edit == key && form.loading}
+            className="py-2 px-4"
+          >
+            {label?.save ? label.save : "Salvar"}
+          </Button>
       </div>
     ) : !form.loading ? (
       <Button
@@ -180,7 +180,7 @@ export default function Conta({ page }: { page: any }) {
             <Breadcrumbs
               links={[
                 { url: "/painel", name: "Painel" },
-                { url: "/painel/conta", name: "Conta bancária" },
+                { url: "/painel/conta", name: "Conta Bancária" },
               ]}
             />
           </div>
@@ -193,7 +193,7 @@ export default function Conta({ page }: { page: any }) {
                 />
               </Link>
               <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                <span className="font-title font-bold">Conta bancária</span>
+                <span className="font-title font-bold">Conta Bancária</span>
               </div>
             </div>
           </div>
@@ -216,10 +216,9 @@ export default function Conta({ page }: { page: any }) {
                         <div className="flex items-center">
                           <div className="w-full">
                             <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                              {!!bank.title ? bank.title : "Nova conta"}
+                              {!!bank.title ? bank.title : "Nova Conta"}
                             </h4>
                           </div>
-                          <div className="w-fit">{renderAction(key)}</div>
                         </div>
                         <div className="w-full pt-4">
                           {form.edit == key ? (
@@ -314,9 +313,10 @@ export default function Conta({ page }: { page: any }) {
                               </div>
                             </div>
                           ) : (
-                            "Conta corrente " + bank.accountNumber
+                            "Conta Corrente: " + bank.accountNumber
                           )}
                         </div>
+                        <div className="flex w-full justify-end items-end mt-2">{renderAction(key)}</div>
                       </form>
                     ))}
                   </div>
