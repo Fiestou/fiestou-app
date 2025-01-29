@@ -182,22 +182,18 @@ class UsersController extends Controller
             'password'      => 'min:6|required_with:re_password|same:re_password',
             're_password'   => 'min:6'
         ]);
-
+        
         $request = json_decode(json_encode($request->all()));
 
         unset($request->re_password);
 
-        $user = new User;
-
         $m_user = User::where([ 'email' => $request->email ])->first();
 
-        if(!isset($m_user->id)){
-            $user->RequestToThis($request->all());
-            $user->RequestToDetails($request->all());
+        if(!$m_user){
+            $user = new User;
 
             $user->name = $request->name;
             $user->hash = md5($request->email);
-            $user->date = $request->date;
             $user->email = $request->email;
             $user->login = $request->email;
             $user->type = "user";
@@ -209,7 +205,7 @@ class UsersController extends Controller
 
         try{
             if($user->save()){
-                Message::RegisterUser($user);
+                Message::RegisterUser( $user);
             }
          }
          catch(\Exception $e){
