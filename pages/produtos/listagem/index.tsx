@@ -4,7 +4,6 @@ import Newsletter from "@/src/components/common/Newsletter";
 import Product from "@/src/components/common/Product";
 import { Button } from "@/src/components/ui/form";
 import Img from "@/src/components/utils/ImgBase";
-import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 import { getImage, getQueryUrlParams } from "@/src/helper";
 import { ProductType } from "@/src/models/product";
 import { RelationType } from "@/src/models/relation";
