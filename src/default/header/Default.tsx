@@ -16,7 +16,6 @@ import User from "./utils/User";
 import Login from "./utils/Login";
 import BIcon from "@/src/icons/bootstrapIcons/BIcon";
 import FIcon from "@/src/icons/fontAwesome/FIcon";
-import RegionConfirm from "../alerts/RegionConfirm";
 
 export default function Default({
   params,
@@ -104,13 +103,6 @@ export default function Default({
                     </div>
                   ))}
               </div>
-            </div>
-
-            <div className="w-fit order-3 lg:order-4 flex items-center gap-4 md:gap-8">
-              <div className="">
-                <RegionConfirm />
-              </div>
-              {!!user?.id ? <User user={user} /> : <Login content={content} />}
             </div>
 
             <div className="relative w-fit order-3 lg:order-5 text-center">

@@ -5,7 +5,7 @@ import { Button, Input, Select, TextArea } from "@/src/components/ui/form";
 import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
-import { DayType, StoreType } from "@/src/models/store";
+import { Cover, DayType, StoreType } from "@/src/models/store";
 import Img from "@/src/components/utils/ImgBase";
 import FileInput from "@/src/components/ui/form/FileInputUI";
 import { getImage, getZipCode, justNumber } from "@/src/helper";

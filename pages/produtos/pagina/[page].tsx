@@ -15,7 +15,6 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { Button } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
 import Paginate from "@/src/components/utils/Paginate";
-import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 
 let limit = 15;
 
