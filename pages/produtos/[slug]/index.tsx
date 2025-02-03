@@ -47,7 +47,6 @@ import ShareModal from "@/src/components/utils/ShareModal";
 import { RelationType } from "@/src/models/relation";
 import LikeButton from "@/src/components/ui/LikeButton";
 import SidebarCart from "@/src/components/common/SidebarCart";
-import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";

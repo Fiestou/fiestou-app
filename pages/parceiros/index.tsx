@@ -10,6 +10,11 @@ import { getImage } from "@/src/helper";
 import Img from "@/src/components/utils/ImgBase";
 import Filter from "@/src/components/common/Filter";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { useEffect } from "react";
+import { PartnerType } from "@/src/models/partner";
+import { HeaderFooterType } from "@/src/models/headerFooter";
+import { DataSeoType } from "@/src/models/dataSeo";
+import { ScriptsType } from "@/src/models/scripts";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -21,7 +26,7 @@ export async function getStaticProps(ctx: any) {
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
-
+  
   return {
     props: {
       Stores: Stores,
@@ -41,18 +46,19 @@ export default function Parceiros({
   DataSeo,
   Scripts,
 }: {
-  Stores: Array<StoreType>;
-  Partners: any;
-  HeaderFooter: any;
-  DataSeo: any;
-  Scripts: any;
+  Stores: StoreType[];
+  Partners: PartnerType;
+  HeaderFooter: HeaderFooterType;
+  DataSeo: DataSeoType;
+  Scripts: ScriptsType;
 }) {
+  
   return (
     <Template
       scripts={Scripts}
       metaPage={{
         title: `${Partners?.main_text} | ${DataSeo?.site_text}`,
-        image: !!getImage(DataSeo?.site_image)
+        image: getImage(DataSeo?.site_image)
           ? getImage(DataSeo?.site_image)
           : "",
         description: `${Partners?.main_description} - ${DataSeo?.site_description}`,
@@ -101,7 +107,7 @@ export default function Parceiros({
       <section className="pt-6 md:pt-10 pb-10 md:pb-20">
         <div className="container-medium">
           <div className="grid sm:grid-cols-3 gap-2 md:gap-y-10 md:gap-x-6">
-            {!!Stores &&
+            {Stores &&
               Stores.map((store, key) => (
                 <div key={key}>
                   <Partner params={store} />
