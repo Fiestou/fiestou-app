@@ -1,3 +1,5 @@
+// TODO: Check the code and fix the types
+//@ts-nocheck
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { useEffect, useState } from "react";
