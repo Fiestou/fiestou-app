@@ -1,5 +1,4 @@
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
-import { StoreCategoryType } from "@/src/models/store";
 import Api from "@/src/services/api";
 import React, { useEffect, useRef, useState } from "react";
 import Modal from "../utils/Modal";
