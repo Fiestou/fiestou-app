@@ -7,6 +7,7 @@ use App\Mail\ValidateUser;
 use App\Mail\RegisterUser;
 
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use JWTAuth;
 use Auth;
@@ -164,28 +165,36 @@ class AuthController extends Controller
         $this->validate($request, [
             'email' => 'required',
         ]);
-
-        $user = User::where([ 'email' => $request->get('email') ])->first();
-
-        if(isset($user->id)){
-            if($request->has('status') && !!$request->get('status')){
-                try {
-                    Mail::to($request->email)->queue((new RegisterUser(['user' => $user]))->onQueue('default'));
-                } catch (\Throwable $th) {}
+    
+        $user = User::where(['email' => $request->get('email')])->first();
+    
+        if (isset($user->id)) {
+            if ($request->has('status')) {
+                $user->status = $request->get('status');
             }
-
-            $user->status = $request->get('status');
+    
+            try {
+                if ($user->save()) {
+                    DB::table('store')
+                      ->where('user', $user->id)
+                      ->update(['status' => $user->status]);
+    
+                    return response()->json([
+                        'response' => true,
+                        'data' => $user
+                    ], 200);
+                }
+            } catch (\Exception $e) {
+                return response()->json([
+                    'response' => false,
+                    'message' => 'Erro ao salvar usuário',
+                    'errors' => $e->getMessage()
+                ], 500);
+            }
         }
-
-        if($user->save()){
-            return response()->json([
-                'response'  => true,
-                'data'      => $user
-            ], 200);
-        }
-
+    
         return response()->json([
-            'response'  => false
+            'response' => false
         ], 422);
     }
 
