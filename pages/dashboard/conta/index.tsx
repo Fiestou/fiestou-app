@@ -19,6 +19,7 @@ export async function getServerSideProps(req: any, res: any) {
 
   const request: any = await api.bridge(
     {
+      method: "get",
       url: "users/get",
       data: {
         ref: user.email,

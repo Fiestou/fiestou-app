@@ -32,7 +32,7 @@ export async function getServerSideProps(
     req
   );
 
-  const hasStore = !!store?.data?.query?.store ?? false;
+  const hasStore = !!store?.data?.query?.store;
 
   let products: any = [];
 
@@ -289,9 +289,9 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                     <div className="font-semibold">{item.title}</div>
                   </div>
                   <div className="w-full lg:w-[32rem] lg:max-w-[6rem] text-center">
-                    {item?.details?.quantity ? (
+                    {!!item?.quantity ? (
                       <div className="rounded-md bg-zinc-100 py-2">
-                        {item?.details?.quantity}
+                        {item?.quantity}
                       </div>
                     ) : (
                       <div className="rounded-md bg-zinc-100 py-3 px-2 text-xs whitespace-nowrap">

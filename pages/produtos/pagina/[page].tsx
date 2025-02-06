@@ -15,7 +15,6 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { Button } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
 import Paginate from "@/src/components/utils/Paginate";
-import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 
 let limit = 15;
 
@@ -73,12 +72,13 @@ export async function getStaticProps(ctx: any) {
       data: {
         limit: limit,
         offset: offset,
+        ordem: "desc",
       },
     },
     ctx
   );
 
-  // console.log(request, "< request");
+  console.log(request, "< request");
 
   let metadata: any = request?.metadata ?? {};
 
@@ -144,8 +144,6 @@ export default function Produtos({
         content: HeaderFooter,
       }}
     >
-      <RegionConfirm />
-
       <section className="bg-cyan-500  pt-24 md:pt-32 relative">
         <div className="container-medium relative pb-14 md:pb-16 text-white">
           <div className="flex items-end">

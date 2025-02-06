@@ -51,13 +51,13 @@ export const menuDashboard = [
     field: "board_address_desc",
     endpoint: "enderecos",
   },
-  {
-    title: "Chat",
-    icon: "fa-comment-alt-dots",
-    field: "board_chat_desc",
-    endpoint: "chat",
-    blocked: true,
-  },
+  // {
+  //   title: "Chat",
+  //   icon: "fa-comment-alt-dots",
+  //   field: "board_chat_desc",
+  //   endpoint: "chat",
+  //   blocked: true,
+  // },
   // {
   //   title: "Cartões salvos",
   //   icon: "fa-credit-card",
@@ -117,7 +117,7 @@ export default function Dashboard({ HeaderFooter, Dashboard }: any) {
       <section>
         <div className="container-medium pb-14">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-            {menuDashboard.map((item, key) => (
+            {menuDashboard.map((item: any, key) => (
               <Link
                 passHref
                 href={!!item?.blocked ? "#" : `/dashboard/${item.endpoint}`}

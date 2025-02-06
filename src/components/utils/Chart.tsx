@@ -4,12 +4,12 @@ import {
   CategoryScale,
   LinearScale,
   PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
 } from "chart.js";
-import { Line } from "react-chartjs-2";
+import { Bar, Line } from "react-chartjs-2";
 import { faker } from "@faker-js/faker";
 import { getExtenseData, getShortMonth, moneyFormat } from "@/src/helper";
 import Api from "@/src/services/api";
@@ -18,7 +18,7 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
@@ -280,7 +280,7 @@ export function Chart(params: any) {
   };
 
   return (
-    <Line
+    <Bar
       options={options}
       data={{
         labels: handleChart.labels,
@@ -288,10 +288,8 @@ export function Chart(params: any) {
           {
             data: handleChart.values,
             borderColor: "rgb(0, 0, 0, 1)",
-            backgroundColor: "rgba(255, 239, 161, 1)",
-            borderWidth: 2,
-            tension: 0.25,
-            pointRadius: 4,
+            backgroundColor: "rgba(255, 218, 74, 1)",
+            borderWidth: 1,
           },
         ],
       }}

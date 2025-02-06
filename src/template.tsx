@@ -2,7 +2,6 @@ import Image from "next/image";
 import { Header, HeaderType } from "@/src/default/header";
 import { Footer, FooterType } from "@/src/default/footer";
 import Head from "next/head";
-import RegionConfirm from "./default/alerts/RegionConfirm";
 import { getImage } from "./helper";
 import Lgpd from "./default/alerts/lgpd";
 import { useEffect, useState } from "react";
