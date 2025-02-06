@@ -7,26 +7,12 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import HelpCard from "@/src/components/common/HelpCard";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { useEffect, useState } from "react";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
-  let request: any = {};
 
-  let user = JSON.parse(ctx.req.cookies["fiestou.user"]);
-
-  request = await api.bridge(
-    {
-      url: "users/get",
-      data: {
-        ref: user.email,
-      },
-    },
-    ctx
-  );
-
-  user = request?.data ?? {};
-
-  request = await api.call(
+  const request: any = await api.call(
     {
       url: "request/graph",
       data: [
@@ -49,22 +35,34 @@ export async function getServerSideProps(ctx: any) {
 
   return {
     props: {
-      user: user,
       page: page,
     },
   };
 }
 
-export default function MeusDados({
-  user,
-  page,
-}: {
-  user: UserType;
-  page: any;
-}) {
-  const router = useRouter();
+export default function MeusDados({ page }: { page: any }) {
+  const api = new Api();
 
-  return !router.isFallback ? (
+  const [user, setUser] = useState({} as UserType);
+
+  const getUserData = async () => {
+    const request: any = await api.bridge({
+      method: "get",
+      url: "users/get",
+    });
+
+    console.log(request);
+
+    if (request.response) {
+      setUser(request.data);
+    }
+  };
+
+  useEffect(() => {
+    getUserData();
+  }, []);
+
+  return (
     <Template
       header={{
         template: "painel",
@@ -99,20 +97,20 @@ export default function MeusDados({
           </div>
         </div>
       </section>
-      <section className="pt-6">
-        <div className="container-medium pb-12">
-          <div className="grid lg:flex gap-10 lg:gap-20">
-            <div className="w-full grid gap-8">
-              <UserEdit user={user} />
-            </div>
-            <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
-              <HelpCard list={page.help_list} />
+      {!!user?.id && (
+        <section className="pt-6">
+          <div className="container-medium pb-12">
+            <div className="grid lg:flex gap-10 lg:gap-20">
+              <div className="w-full grid gap-8">
+                <UserEdit user={user} />
+              </div>
+              <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
+                <HelpCard list={page.help_list} />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </Template>
-  ) : (
-    <></>
   );
 }

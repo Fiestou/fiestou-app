@@ -47,7 +47,6 @@ import ShareModal from "@/src/components/utils/ShareModal";
 import { RelationType } from "@/src/models/relation";
 import LikeButton from "@/src/components/ui/LikeButton";
 import SidebarCart from "@/src/components/common/SidebarCart";
-import RegionConfirm from "@/src/default/alerts/RegionConfirm";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
@@ -299,6 +298,20 @@ export default function Produto({
       }
 
       setInCart(handle);
+    }
+
+    if (product?.availability) {
+      const today = new Date();
+      const minimumDates = Array.from(
+        { length: product.availability },
+        (_, key) => {
+          const date = new Date();
+          date.setDate(today.getDate() + key + 1);
+          return date.toISOString().split("T")[0];
+        }
+      );
+
+      handleDates = [...handleDates, ...minimumDates];
     }
 
     setUnavailable(handleDates);
@@ -640,8 +653,6 @@ export default function Produto({
         content: HeaderFooter,
       }}
     >
-      <RegionConfirm />
-
       <section className="">
         <div className="container-medium py-4 md:py-6">
           <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
@@ -650,9 +661,9 @@ export default function Produto({
       <section className="">
         <div className="container-medium">
           <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-8 items-start">
-            <div className="w-full md:w-1/2 md:pb-4">
+            <div className="sticky md:relative top-0 left-0 z-[10] w-full md:w-1/2 md:pb-4">
               {!!product?.gallery && (
-                <div className="relative -mx-4 md:mx-0 md:mb-10">
+                <div className="relative bg-white -mx-4 md:mx-0 md:mb-10">
                   <Swiper
                     onSwiper={(swiper) => setSwiperInstance(swiper)}
                     spaceBetween={0}
@@ -719,7 +730,7 @@ export default function Produto({
                   <div className="swiper-pagination"></div>
                 </div>
               )}
-              <div className="grid gap-3 py-3">
+              <div className="hidden md:grid gap-3 py-3">
                 {!layout.isMobile && renderDetails()}
                 {!layout.isMobile && renderComments()}
               </div>
@@ -986,6 +997,7 @@ export default function Produto({
                           required
                           unavailable={unavailable ?? []}
                           onChange={(emit: any) => handleDetails(emit)}
+                          availability={product?.availability ?? 1}
                         />
                         {!productUpdated?.title && (
                           <div className="absolute z-10 bg-white opacity-60 w-full h-full top-0 left-0"></div>
@@ -1134,7 +1146,7 @@ export default function Produto({
                     </div>
                   )}
                   <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       <div className="w-[1.25rem] flex justify-center">
                         <Icon
                           icon="fa-shield-check"
@@ -1149,7 +1161,7 @@ export default function Produto({
                         Receba o item no dia marcado ou devolvemos o dinheiro
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       <div className="w-[1.25rem] flex justify-center">
                         <Icon
                           icon="fa-undo"
@@ -1164,7 +1176,7 @@ export default function Produto({
                         1 dia antes da entrega, pode cancelar o pedido.
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       <div className="w-[1.25rem] flex justify-center">
                         <Icon
                           icon="fa-badge-check"
@@ -1179,21 +1191,26 @@ export default function Produto({
                         Garantia do Fiestou da entrega.
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <div className="w-[1.25rem] flex justify-center">
-                        <Icon
-                          icon="fa-truck"
-                          type="far"
-                          className="text-yellow-400 text-base"
-                        />
+                    {!!product?.availability && (
+                      <div className="flex gap-2 items-center">
+                        <div className="w-[1.25rem] flex justify-center">
+                          <Icon
+                            icon="fa-clock"
+                            type="far"
+                            className="text-yellow-400 text-base"
+                          />
+                        </div>
+                        <div>
+                          <strong className="text-zinc-950">
+                            Entrega em {product?.availability} dia
+                            {product?.availability > 1 ? `s` : ""}:
+                          </strong>{" "}
+                          Esse produto é entregue em até {product?.availability}{" "}
+                          dia
+                          {product?.availability > 1 ? `s` : ""}.
+                        </div>
                       </div>
-                      <div>
-                        <strong className="text-zinc-950">
-                          Entrega em 24h:
-                        </strong>{" "}
-                        Esse produto é entregue com 1 dia de antecedência.
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </form>

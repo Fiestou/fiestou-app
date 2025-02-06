@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import {
   CopyClipboard,
   dateBRFormat,
+  documentIsValid,
   findDates,
   generateDocumentNumber,
+  getBrazilianStates,
   getCurrentDate,
   getImage,
   getShorDate,
+  getZipCode,
   justNumber,
   moneyFormat,
 } from "@/src/helper";
@@ -22,6 +25,7 @@ import Img from "@/src/components/utils/ImgBase";
 import Pagarme from "@/src/services/pagarme";
 import { deliveryToName } from "@/src/models/delivery";
 import { UserType } from "@/src/models/user";
+import { AddressType } from "@/src/models/address";
 
 export interface CardType {
   number: number;
@@ -115,6 +119,31 @@ export default function Pagamento({
 
   const handleCustomer = (value: any) => {
     setOrder({ ...order, user: { ...order.user, ...value } });
+  };
+
+  const [address, setAddress] = useState({} as AddressType | any);
+  const handleAddress = (value: any) => {
+    setAddress((old: any) => ({ ...old, ...value }));
+  };
+  const [useOrderAddress, setUseOrderAddress] = useState(true as boolean);
+
+  const [errorZipCode, setErrorZipCode] = useState(false as boolean);
+  const handleZipCode = async () => {
+    const handle: any = await getZipCode(address.zipCode);
+
+    if (!handle?.localidade) {
+      setErrorZipCode(true);
+    } else {
+      setErrorZipCode(false);
+
+      handleAddress({
+        street: handle.logradouro,
+        neighborhood: handle.bairro,
+        city: handle.localidade,
+        state: handle.uf,
+        country: "Brasil",
+      });
+    }
   };
 
   const [products, setProducts] = useState([] as Array<any>);
@@ -219,7 +248,7 @@ export default function Pagamento({
 
   const [card, setCard] = useState({} as CardType);
   const handleCard = (value: any) => {
-    setCard({ ...card, ...value });
+    setCard((old: any) => ({ ...old, ...value }));
   };
 
   const [payment, setPayment] = useState({
@@ -282,6 +311,8 @@ export default function Pagamento({
 
     const handlePayment: any = payment;
 
+    const orderAddress: any = useOrderAddress ? order.deliveryAddress : address;
+
     if (handlePayment.payment_method == "credit_card") {
       delete handlePayment["pix"];
       delete handlePayment["boleto"];
@@ -291,23 +322,19 @@ export default function Pagamento({
           ...card,
           billing_address: {
             country: "BR",
-            state: order.deliveryAddress?.state,
-            city: order.deliveryAddress?.city,
-            zip_code: order.deliveryAddress?.zipCode,
-            line_1: order.deliveryAddress?.street,
-            line_2: order.deliveryAddress?.number,
+            state: orderAddress?.state,
+            city: orderAddress?.city,
+            zip_code: orderAddress?.zipCode,
+            line_1: orderAddress?.street,
+            line_2: orderAddress?.number,
           },
-          // number: "4000000000000010",
-          // holder_name: "Tony Stark",
-          // exp_month: 1,
-          // exp_year: 2030,
-          // cvv: 3531,
-          // holder_document: "39937710871",
         },
         operation_type: "auth_and_capture",
         installments: installments,
         statement_descriptor: "FIESTOU",
       };
+
+      console.log(handlePayment);
     }
 
     if (handlePayment.payment_method == "pix") {
@@ -331,7 +358,11 @@ export default function Pagamento({
 
     const pagarme = new Pagarme();
 
-    const request = await pagarme.createOrder(order, handlePayment);
+    const request = await pagarme.createOrder(
+      order,
+      handlePayment,
+      orderAddress
+    );
 
     formFeedback["loading"] = false;
 
@@ -747,92 +778,201 @@ export default function Pagamento({
 
                           {payment.payment_method == "credit_card" && (
                             <div className="px-3 md:px-4 pb-3 md:pb-4">
-                              <div className="bg-zinc-100 mb-2 py-2 px-3 text-sm rounded-md">
+                              <div className="bg-zinc-100 mb-2 py-2 px-3 text-xs rounded-md">
                                 * Os dados de pagamento não ficam salvos em
                                 nossa base de dados
                               </div>
-                              <div className="form-group">
-                                <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                  Titular
-                                </label>
-                                <input
-                                  type="text"
-                                  onChange={(e: any) =>
-                                    handleCard({
-                                      holder_name: e.target.value,
-                                    })
-                                  }
-                                  required
-                                  className="form-control"
-                                />
+
+                              <div className="grid grid-cols-2 items-start gap-4">
+                                <div className="form-group">
+                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
+                                    Titular
+                                  </label>
+                                  <input
+                                    type="text"
+                                    onChange={(e: any) =>
+                                      handleCard({
+                                        holder_name: e.target.value,
+                                      })
+                                    }
+                                    required
+                                    className="form-control"
+                                  />
+                                </div>
+                                <div className="form-group">
+                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
+                                    CPF/CNPJ
+                                  </label>
+                                  <input
+                                    type="tel"
+                                    onChange={(e: any) =>
+                                      handleCard({
+                                        holder_document: (
+                                          justNumber(e.target.value) ?? ""
+                                        ).toString(),
+                                      })
+                                    }
+                                    value={card?.holder_document ?? ""}
+                                    required
+                                    className="form-control"
+                                  />
+                                  {(card?.holder_document ?? "").length > 8 &&
+                                    !documentIsValid(card?.holder_document) && (
+                                      <div className="text-[0.7rem] opacity-65">
+                                        * Insira um documento válido
+                                      </div>
+                                    )}
+                                </div>
                               </div>
+
+                              {!useOrderAddress && (
+                                <div className="grid md:grid-cols-4 items-end gap-x-4">
+                                  <div className="form-group col-span-4">
+                                    <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
+                                      CEP
+                                    </label>
+                                    <input
+                                      required
+                                      value={address.zipCode ?? ""}
+                                      className="form-control"
+                                      onChange={(e: any) =>
+                                        handleAddress({
+                                          zipCode: e.target.value,
+                                        })
+                                      }
+                                      onBlur={() => handleZipCode()}
+                                    />
+                                  </div>
+
+                                  <div className="form-group col-span-3">
+                                    <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
+                                      Rua
+                                    </label>
+                                    <input
+                                      required
+                                      value={address.street ?? ""}
+                                      className="form-control"
+                                      onChange={(e: any) =>
+                                        handleAddress({
+                                          street: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  </div>
+
+                                  <div className="form-group col-span-1">
+                                    <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
+                                      Número
+                                    </label>
+                                    <input
+                                      required
+                                      value={address.number ?? ""}
+                                      className="form-control"
+                                      onChange={(e: any) => {
+                                        handleAddress({
+                                          number: justNumber(e.target.value),
+                                        });
+                                      }}
+                                    />
+                                  </div>
+
+                                  {errorZipCode ? (
+                                    <>
+                                      <div className="form-group col-span-1">
+                                        <label className="float">Estado</label>
+                                        <select
+                                          required
+                                          value={address.state ?? ""}
+                                          className="form-control"
+                                          onChange={(e: any) =>
+                                            handleAddress({
+                                              state: e.target.value,
+                                            })
+                                          }
+                                        >
+                                          {getBrazilianStates.map(
+                                            (uf: string) => (
+                                              <option key={uf}>{uf}</option>
+                                            )
+                                          )}
+                                        </select>
+                                      </div>
+                                      <div className="form-group col-span-3">
+                                        <label className="float">Cidade</label>
+                                        <input
+                                          required
+                                          value={address.city ?? ""}
+                                          className="form-control"
+                                          onChange={(e: any) =>
+                                            handleAddress({
+                                              city: e.target.value,
+                                            })
+                                          }
+                                        />
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {address?.zipCode && address?.city && (
+                                        <div className="col-span-4 mt-2 text-xs text-center bg-gray-100 rounded-md py-2 text-gray-950">
+                                          {address?.city}
+                                          {address?.state &&
+                                            ` - ${address?.state}`}
+                                          {address?.country && (
+                                            <span className="font-bold">
+                                              , {address?.country}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* {JSON.stringify(address)} */}
+
+                              <div className="flex gap-1 text-xs mt-2">
+                                <input
+                                  type="checkbox"
+                                  onChange={(e: any) =>
+                                    setUseOrderAddress(e.target.checked)
+                                  }
+                                  checked={useOrderAddress}
+                                />
+                                <div>
+                                  Usar endereço de entrega para faturamento
+                                </div>
+                              </div>
+
+                              <div className="border-t mb-5 mt-4"></div>
+
                               <div className="form-group">
                                 <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                  CPF/CNPJ
+                                  Número do Cartão
                                 </label>
                                 <input
                                   type="tel"
                                   onChange={(e: any) =>
                                     handleCard({
-                                      holder_document: (
+                                      number: (
                                         justNumber(e.target.value) ?? ""
                                       ).toString(),
                                     })
                                   }
-                                  value={card?.holder_document ?? ""}
+                                  value={card?.number ?? ""}
                                   required
-                                  className="form-control"
+                                  className="form-control appearance-none"
                                 />
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="flex gap-4">
-                                  <div className="form-group w-full">
-                                    <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                      Número do Cartão
-                                    </label>
-                                    <input
-                                      type="tel"
-                                      onChange={(e: any) =>
-                                        handleCard({
-                                          number: (
-                                            justNumber(e.target.value) ?? ""
-                                          ).toString(),
-                                        })
-                                      }
-                                      value={card?.number ?? ""}
-                                      required
-                                      className="form-control appearance-none"
-                                    />
-                                  </div>
-                                </div>
-                                <div className="form-group">
-                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    Parcelas
-                                  </label>
-                                  <select
-                                    required
-                                    className="form-control appearance-none"
-                                    onChange={(e: any) =>
-                                      setInstallments(
-                                        justNumber(e.target.value)
-                                      )
-                                    }
-                                  >
-                                    <option value={1}>1x</option>
-                                    <option value={2}>2x</option>
-                                    <option value={3}>3x</option>
-                                    <option value={4}>4x</option>
-                                    <option value={5}>5x</option>
-                                  </select>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
+
+                              <div className="grid grid-cols-3 gap-4">
                                 <div className="form-group">
                                   <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
                                     Validade
                                   </label>
-                                  <div className="flex items-center border border-zinc-300 rounded-lg">
-                                    <div className="w-full">
+                                  <div className="flex items-center px-1 border border-zinc-300 rounded-lg">
+                                    <div className="w-[5rem]">
                                       <select
                                         id="expiry_month"
                                         name="expiry_month"
@@ -844,7 +984,7 @@ export default function Pagamento({
                                             ),
                                           })
                                         }
-                                        className="form-control border-0 appearance-none"
+                                        className="form-control px-2 border-0 text-sm appearance-none"
                                       >
                                         <option value="">Mês</option>
                                         <option value="01">01</option>
@@ -874,7 +1014,7 @@ export default function Pagamento({
                                             ),
                                           })
                                         }
-                                        className="form-control border-0 appearance-none"
+                                        className="form-control px-2 border-0 text-sm appearance-none"
                                       >
                                         <option value="">Ano</option>
                                         {Array.from(
@@ -907,6 +1047,26 @@ export default function Pagamento({
                                     required
                                     className="form-control appearance-none"
                                   />
+                                </div>
+                                <div className="form-group">
+                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
+                                    Parcelas
+                                  </label>
+                                  <select
+                                    required
+                                    className="form-control appearance-none"
+                                    onChange={(e: any) =>
+                                      setInstallments(
+                                        justNumber(e.target.value)
+                                      )
+                                    }
+                                  >
+                                    <option value={1}>1x</option>
+                                    <option value={2}>2x</option>
+                                    <option value={3}>3x</option>
+                                    <option value={4}>4x</option>
+                                    <option value={5}>5x</option>
+                                  </select>
                                 </div>
                               </div>
                             </div>
@@ -943,7 +1103,7 @@ export default function Pagamento({
 
                           {payment.payment_method == "boleto" && (
                             <div className="px-3 md:px-4 pb-3 md:pb-4 grid gap-4">
-                              <div className="bg-zinc-100 py-2 px-3 text-sm rounded-md">
+                              <div className="bg-zinc-100 py-2 px-3 text-xs rounded-md">
                                 * Ao confirmar, será gerado um boleto para
                                 pagamento.
                               </div>
@@ -1003,10 +1163,16 @@ export default function Pagamento({
                                     required
                                     className="form-control placeholder:italic"
                                   />
+                                  {(order.user?.document ?? "").length > 10 &&
+                                    !documentIsValid(order.user?.document) && (
+                                      <div className="text-[0.75rem] opacity-50">
+                                        * Insira um documento válido
+                                      </div>
+                                    )}
                                 </div>
                               )}
 
-                              <div className="bg-zinc-100 py-2 px-3 text-sm rounded-md">
+                              <div className="bg-zinc-100 py-2 px-3 text-xs rounded-md">
                                 * Ao confirmar, será gerado um código para
                                 pagamento via pix. Utilize o QRcode ou o código{" "}
                                 {`"copiar e colar"`} para efetuar o pagamento no
@@ -1029,6 +1195,13 @@ export default function Pagamento({
                           checked={form.sended || pix.status}
                           style="btn-success"
                           className="py-6 px-3"
+                          disable={
+                            (payment.payment_method == "pix" &&
+                              !documentIsValid(order.user?.document)) ||
+                            (payment.payment_method == "credit_card" &&
+                              !documentIsValid(card?.holder_document) &&
+                              true)
+                          }
                         >
                           Confirmar e pagar
                         </Button>

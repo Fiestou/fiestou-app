@@ -39,6 +39,7 @@ export async function getServerSideProps(ctx: any) {
 
   request = await api.bridge(
     {
+      method: "get",
       url: "users/get",
     },
     ctx
@@ -46,7 +47,7 @@ export async function getServerSideProps(ctx: any) {
 
   const user: any = request?.data ?? {};
 
-  const bankAccounts = user?.bankAccounts.map((item: any) => {
+  const bankAccounts = (user?.bankAccounts ?? []).map((item: any) => {
     return {
       value: JSON.stringify(item),
       name: item.title,

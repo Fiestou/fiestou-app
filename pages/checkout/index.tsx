@@ -145,7 +145,7 @@ export default function Checkout({
 
     const { distance } = data;
 
-    setDeliveryPrice((distance / 1000) * deliveryTax);
+    setDeliveryPrice(!!distance ? (distance / 1000) * deliveryTax : 0);
   };
 
   useEffect(() => {
@@ -488,6 +488,7 @@ export default function Checkout({
                           }}
                         >
                           {[
+                            { period: "Manhã", time: "08:00" },
                             { period: "Manhã", time: "09:00" },
                             { period: "Manhã", time: "10:00" },
                             { period: "Manhã", time: "11:00" },

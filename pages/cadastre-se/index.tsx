@@ -109,22 +109,22 @@ export default function CadastreSe({
   }, [password, repeat]);
 
   const handleSubmit = async (e: any) => {
-    e.preventDefault();
+      e.preventDefault();
 
-    setForm({ ...form, loading: true });
+      setForm({ ...form, loading: true });
 
-    const data: any = await api.bridge({
-      url: "auth/register",
-      data: {
-        name: name,
-        date: date,
-        email: email,
-        phone: phone,
-        person: "client",
-        password: password,
-        re_password: repeat,
-      },
-    });
+      const data: any = await api.bridge({
+        url: "auth/register",
+        data: {
+          name: name,
+          // date: date,
+          email: email,
+          phone: phone,
+          person: "client",
+          password: password,
+          re_password: repeat,
+        },
+      });
 
     if (data.response) {
       window.location.href = "/acesso?modal=register";

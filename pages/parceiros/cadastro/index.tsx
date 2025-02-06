@@ -130,7 +130,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
               </button>
             )}
           </div>
-          <div className="col-span-2">
+          <div className="col-span-4 md:col-span-2">
             <div className="max-w-md mx-auto">
               {/* STEP1 */}
               <div
@@ -152,18 +152,18 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                   </div>
 
                   <div className="form-group">
-                    <Label>CNPJ</Label>
+                    <Label>CPF/CNPJ</Label>
                     <Input
                       onChange={(e: any) =>
-                        handleStore({ cnpj: e.target.value })
+                        handleStore({ document: e.target.value })
                       }
-                      name="cnpj"
-                      placeholder="00000000"
+                      name="documento"
+                      placeholder="00000000000"
                       required
                     />
                   </div>
 
-                  <div className="form-group">
+                  {/* <div className="form-group">
                     <Label>Razão social</Label>
                     <Input
                       onChange={(e: any) =>
@@ -173,13 +173,16 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                       placeholder="O nome jurídico da sua empresa"
                       required
                     />
-                  </div>
+                  </div> */}
 
                   <div className="form-group">
                     <Label>Nome fantasia</Label>
                     <Input
                       onChange={(e: any) =>
-                        handleStore({ title: e.target.value })
+                        handleStore({
+                          title: e.target.value,
+                          companyName: e.target.value,
+                        })
                       }
                       name="nome-fantasia"
                       placeholder="O nome pelo qual a sua empresa é conhecida"
