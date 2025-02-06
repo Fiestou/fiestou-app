@@ -59,7 +59,7 @@ export default function Default({
           } ease absolute h-full w-full inset-0`}
         ></div>
         <div className="ease container-medium relative text-white pl-4 pr-2 lg:px-4">
-          <div className="flex gap-2 lg:gap-16 items-center py-2">
+          <div className="flex justify-between gap-2 lg:gap-16 items-center py-2">
             <div className="w-full lg:w-[120px] order-1">
               <div
                 className={`max-w-[72px] md:max-w-[120px] ${
@@ -103,6 +103,10 @@ export default function Default({
                     </div>
                   ))}
               </div>
+            </div>
+
+            <div className="w-fit order-3 lg:order-4 flex items-center gap-4 md:gap-8">
+              {!!user?.id ? <User user={user} /> : <Login content={content} />}
             </div>
 
             <div className="relative w-fit order-3 lg:order-5 text-center">
