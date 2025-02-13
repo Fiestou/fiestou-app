@@ -107,6 +107,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         Router.push("/checkout");
         return {} as UserType;
       }
+      
+      if (user?.person == "master") {
+        Router.push("/admin");
+      }else if (user?.person == "partner") {
+        Router.push("/painel");
+      }else if (user.person == "delivery") {
+        Router.push("/delivery");
+      } else {
+        Router.push("/dashboard");
+      }
 
       return {
         status: 200,
