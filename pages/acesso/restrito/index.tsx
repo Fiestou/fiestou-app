@@ -42,11 +42,7 @@ export default function Restrito() {
       password: form.password,
     });
 
-    if (!!request.user) {
-      if (request.user.person == "master") {
-        router.push("/admin");
-      }
-    } else {
+    if (!request.user) {
       setFormValue({ loading: false, sended: false });
     }
   };

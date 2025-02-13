@@ -33,11 +33,7 @@ export default function Restrito() {
       password: form.password,
     });
 
-    if (!!user) {
-      if (user.person == "delivery") {
-        router.push("/delivery");
-      }
-    } else {
+    if (!user) {
       setFormValue({ loading: false, sended: false });
     }
   };

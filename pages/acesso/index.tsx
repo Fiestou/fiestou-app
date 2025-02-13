@@ -82,18 +82,7 @@ export default function Acesso({
       password: form.password,
     });
 
-    if (request.status == 200 && !!request?.user?.email) {
-      if (request?.user?.person == "master") {
-        router.push({
-          pathname: "acesso/restrito",
-          query: { ref: base64_encode(form.email) },
-        });
-      } else if (request?.user?.person == "partner") {
-        router.push("/painel");
-      } else {
-        router.push("/dashboard");
-      }
-    } else if (request.status == 422) {
+    if (request.status == 422) {
       setFormValue({
         loading: false,
         sended: false,
