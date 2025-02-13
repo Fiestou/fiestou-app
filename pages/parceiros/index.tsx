@@ -115,7 +115,7 @@ export default function Parceiros({
               ))}
           </div>
         </div>
-      </section>
+      </section> 
     </Template>
   );
 }
