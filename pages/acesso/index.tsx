@@ -82,11 +82,10 @@ export default function Acesso({
       password: form.password,
     });
 
-    console.log(request.status)
     if (request.status == 200 && !!request?.user?.email) {
       if (request?.user?.person == "master") {
         router.push({
-          pathname: "login/restrito",
+          pathname: "acesso/restrito",
           query: { ref: base64_encode(form.email) },
         });
       } else if (request?.user?.person == "partner") {
