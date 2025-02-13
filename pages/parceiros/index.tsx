@@ -35,7 +35,7 @@ export async function getStaticProps(ctx: any) {
       DataSeo: DataSeo,
       Scripts: Scripts,
     },
-    revalidate: 60 * 60 * 60,
+    revalidate: 60,
   };
 }
 
@@ -115,7 +115,7 @@ export default function Parceiros({
               ))}
           </div>
         </div>
-      </section>
+      </section> 
     </Template>
   );
 }
