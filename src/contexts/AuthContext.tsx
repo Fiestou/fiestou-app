@@ -1,4 +1,4 @@
-import { createContext, useEffect } from "react";
+import { createContext } from "react";
 import Api, { api } from "@/src/services/api";
 import Router from "next/router";
 import Cookies from "js-cookie";
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       url: "auth/login",
       data: { email: email, password: password },
     });
-
+    
     if (!!data.token) {
       const user: UserType = data.user;
 
