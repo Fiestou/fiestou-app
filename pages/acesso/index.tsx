@@ -3,13 +3,14 @@ import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useContext, useEffect, useState } from "react";
 import { encode as base64_encode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import Modal from "@/src/components/utils/Modal";
 import { UserType } from "@/src/models/user";
 import NextAuth from "@/src/components/pages/acesso/NextAuth";
 import { getSession } from "next-auth/react";
+import { AuthContext } from "@/src/contexts/AuthContext";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -43,6 +44,8 @@ const formInitial = {
   sended: false,
   loading: false,
   email: "",
+  password: '',
+  alert: "" 
 };
 
 export default function Acesso({
@@ -57,6 +60,7 @@ export default function Acesso({
   const api = new Api();
 
   const router = useRouter();
+  const { SignIn } = useContext(AuthContext);
 
   const [modalStatus, setModalStatus] = useState(!!modal as boolean);
   const [modalType, setModalType] = useState(modal as string);
@@ -68,52 +72,50 @@ export default function Acesso({
     setForm({ ...form, ...value });
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    setFormValue({ loading: true });
+    setFormValue({ loading: true, alert: "" });
 
-    const data: any = await api.bridge({
-      method: "post",
-      url: "auth/checkin",
-      data: { ref: form.email },
+    const request: any = await SignIn({
+      email: form.email,
+      password: form.password,
     });
 
-    if (data.response) {
-      if (!!data?.user) {
-        const handleUser = data?.user;
-
-        setUser(handleUser);
-
-        if (handleUser.person == "master") {
-          router.push({
-            pathname: "login/restrito",
-            query: { ref: base64_encode(form.email) },
-          });
-        } else if (handleUser.status == 0) {
-          setModalStatus(true);
-          setModalType(handleUser.person == "partner" ? "await" : "confirm");
-
-          setFormValue({
-            sended: false,
-            loading: false,
-          });
-        } else {
-          router.push({
-            pathname: "login",
-            query: { ref: base64_encode(form.email) },
-          });
-        }
-      } else {
+    if (request.status == 200 && !!request?.user?.email) {
+      if (request?.user?.person == "master") {
         router.push({
-          pathname: "cadastre-se",
+          pathname: "acesso/restrito",
           query: { ref: base64_encode(form.email) },
         });
+      } else if (request?.user?.person == "partner") {
+        router.push("/painel");
+      } else {
+        router.push("/dashboard");
       }
+    } else if (request.status == 422) {
+      setFormValue({
+        loading: false,
+        sended: false,
+        alert: request.error,
+      });
     } else {
-      setFormValue({ sended: data.response });
+      setFormValue({
+        loading: false,
+        sended: false,
+      });
     }
   };
+
+  useEffect(()=>{
+    if (form.alert){
+      setTimeout(()=>{
+        setFormValue({
+          alert: ""
+        })
+      }, 3000)
+    }
+  }, [form.alert])
 
   return (
     <Template
@@ -172,8 +174,33 @@ export default function Acesso({
                 </div>
 
                 <div className="form-group">
-                  <Button loading={form.loading}>Avançar</Button>
+                  <Label>Senha</Label>
+                  <Input
+                    onChange={(e: any) => {
+                      setFormValue({ password: e.target.value });
+                    }}
+                    type="password"
+                    name="senha"
+                    placeholder="Insira sua senha"
+                  />
                 </div>
+                <div>
+                  <Link
+                    href="/recuperar"
+                    className="underline text-zinc-900 text-sm font-semibold whitespace-nowrap"
+                  >
+                    Esqueci minha senha
+                  </Link>
+                </div>
+                <div className="form-group">
+                  <Button loading={form.loading}>Fazer Login</Button>
+                </div>
+
+                {form.alert && (
+                  <div className="py-3 pl-4 bg-red-50 text-red-600 rounded-md text-center mt-2">
+                    {form.alert}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-4 my-6">
                   <div className="border-t w-full"></div>
@@ -192,6 +219,15 @@ export default function Acesso({
                     className="text-blue-400 underline"
                   >
                     Clique aqui
+                  </Link>
+                </div>
+                <div className="text-center pt-4 text-sm">
+                  Não possui cadastro?
+                  <Link
+                    className="underline text-yellow-600 font-bold"
+                    href="/cadastre-se"
+                  >
+                    {" "}Cadastre-se
                   </Link>
                 </div>
               </form>
@@ -216,8 +252,8 @@ export default function Acesso({
             {modalType == "register"
               ? "Sua conta foi criada!"
               : modalType == "await"
-              ? "Cadastro em análise!"
-              : "Confirme seu endereço de e-mail!"}
+                ? "Cadastro em análise!"
+                : "Confirme seu endereço de e-mail!"}
           </h4>
           <div className="pt-2">
             {modalType == "register" ? (
