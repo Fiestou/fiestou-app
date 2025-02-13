@@ -114,8 +114,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         Router.push("/painel");
       }else if (user.person == "delivery") {
         Router.push("/delivery");
-      } else {
+      } else if (!Cookies.get("fiestou.cart")) {
         Router.push("/dashboard");
+      } else {
+        Router.push('/checkout')
       }
 
       return {
