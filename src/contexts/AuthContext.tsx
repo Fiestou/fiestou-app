@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
 import { signOut } from "next-auth/react";
 import { isCEPInRegion } from "../helper";
+import { CheckMail } from "../models/CheckEmail";
 
 type SignInData = {
   email: string;
@@ -73,11 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     Cookies.remove("fiestou.authtoken");
     Cookies.remove("fiestou.user");
 
-    const checkEmail: any = await request.bridge({
+    const checkEmail: CheckMail = await request.bridge({
       method: "post",
       url: "auth/checkin",
       data: { ref: email },
-    });
+    }) as CheckMail;
 
     if (checkEmail.response && !checkEmail.user){
       return {
