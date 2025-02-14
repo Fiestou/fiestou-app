@@ -73,6 +73,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     Cookies.remove("fiestou.authtoken");
     Cookies.remove("fiestou.user");
 
+    const checkEmail: any = await request.bridge({
+      method: "post",
+      url: "auth/checkin",
+      data: { ref: email },
+    });
+
+    if (checkEmail.response && !checkEmail.user){
+      return {
+        status: 422,
+        error: "Ops! O email não foi encontrado.",
+      };
+    }
+
     const data: any = await request.bridge({
       url: "auth/login",
       data: { email: email, password: password },
