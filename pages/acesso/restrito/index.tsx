@@ -2,11 +2,16 @@ import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { decode as base64_decode } from "base-64";
 import { FormEvent, useContext, useState } from "react";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import { AuthContext } from "@/src/contexts/AuthContext";
 
-const formInitial = {
+interface PageQueryType {
+  ref: string | "";
+}
+
+const FormInitialType = {
   sended: false,
   loading: false,
   email: "",
@@ -17,7 +22,11 @@ export default function Restrito() {
   const { SignIn } = useContext(AuthContext);
 
   const router = useRouter();
-  const [form, setForm] = useState(formInitial);
+  const { ref } = router.query as unknown as PageQueryType;
+
+  if (!!ref) FormInitialType.email = base64_decode(ref);
+
+  const [form, setForm] = useState(FormInitialType);
 
   const setFormValue = (value: any) => {
     setForm({ ...form, ...value });
@@ -28,16 +37,12 @@ export default function Restrito() {
 
     setFormValue({ loading: true });
 
-    const user = await SignIn({
+    const request = await SignIn({
       email: form.email,
       password: form.password,
     });
 
-    if (!!user) {
-      if (user.person == "delivery") {
-        router.push("/delivery");
-      }
-    } else {
+    if (!request.user) {
       setFormValue({ loading: false, sended: false });
     }
   };
@@ -47,7 +52,10 @@ export default function Restrito() {
       header={{
         template: "clean",
         position: "solid",
-        background: "purple",
+        background: "bg-zinc-900",
+      }}
+      footer={{
+        template: "clean",
       }}
     >
       <div className="container-medium">
@@ -74,6 +82,7 @@ export default function Restrito() {
                   onChange={(e: any) => {
                     setFormValue({ email: e.target.value });
                   }}
+                  value={form.email ?? ""}
                   type="text"
                   name="email"
                   placeholder="Informe seu e-mail"

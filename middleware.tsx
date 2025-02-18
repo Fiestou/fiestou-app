@@ -13,7 +13,7 @@ export async function middleware(req: any) {
     }
 
     if (url.includes("/admin")) {
-      permanentLink.pathname = "/login/restrito";
+      permanentLink.pathname = "/acesso/restrito";
       return NextResponse.redirect(permanentLink);
     }
   }
@@ -26,7 +26,7 @@ export async function middleware(req: any) {
       return NextResponse.redirect(permanentLink);
     }
 
-    if (url.includes("/login")) {
+    if (url.includes("/acesso")) {
       permanentLink.pathname = "/admin";
       return NextResponse.redirect(permanentLink);
     }

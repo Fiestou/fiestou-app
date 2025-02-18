@@ -8,6 +8,7 @@ import { useRouter } from "next/router";
 import { encode as base64_encode, decode as base64_decode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
+import { CheckMail } from "@/src/models/CheckEmail";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -73,6 +74,45 @@ export default function CadastreSe({
   const [repeat, setRepeat] = useState("" as string);
 
   const [token, setToken] = useState("" as string);
+  const [debouncedEmail, setDebouncedEmail] = useState("");
+  const [errorMail, setErrorMail] = useState<string>("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedEmail(email);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [email]);
+
+  useEffect(() => {
+    if (debouncedEmail) {
+      checkEmail(debouncedEmail);
+    }
+  }, [debouncedEmail]);
+
+  const checkEmail = async (email: string) => {
+    const data: CheckMail = await api.bridge({
+      method: "post",
+      url: "auth/checkin",
+      data: { ref: email },
+    }) as CheckMail;
+
+    if (data.response && data.user) {
+      setErrorMail("O email já está vinculado a um usuário.")
+      return false;
+    }
+
+    return true;
+  }
+
+  useEffect(()=>{
+    if (errorMail){
+      setTimeout(()=>{
+        setErrorMail("");
+      }, 30000)
+    }
+  }, [errorMail])
 
   useEffect(() => {
     if (password) {
@@ -109,23 +149,27 @@ export default function CadastreSe({
   }, [password, repeat]);
 
   const handleSubmit = async (e: any) => {
-      e.preventDefault();
+    e.preventDefault();
 
-      setForm({ ...form, loading: true });
+    if (!await checkEmail(email)){
+      return;
+    }
+    
+    setForm({ ...form, loading: true });
 
-      const data: any = await api.bridge({
-        url: "auth/register",
-        data: {
-          name: name,
-          // date: date,
-          email: email,
-          phone: phone,
-          person: "client",
-          password: password,
-          re_password: repeat,
-        },
-      });
-
+    const data: any = await api.bridge({
+      url: "auth/register",
+      data: {
+        name: name,
+        // date: date,
+        email: email,
+        phone: phone,
+        person: "client",
+        password: password,
+        re_password: repeat,
+      },
+    });
+    
     if (data.response) {
       window.location.href = "/acesso?modal=register";
     } else {
@@ -205,6 +249,9 @@ export default function CadastreSe({
                     name="email"
                     required
                   />
+                  {errorMail && (
+                    <label className="text-red-500">{errorMail}</label>
+                  )}
                 </div>
 
                 <div className="form-group">
