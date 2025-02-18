@@ -17,7 +17,7 @@ export default function User({ user }: { user: UserType }) {
     <div className="md:relative">
       <Button
         style="btn-transparent"
-        href={user.person == "client" ? "#" : "/login"}
+        href={user.person == "client" ? "#" : "/acesso"}
         onClick={() => (user.person == "client" ? setDropdown(true) : {})}
         className="hover:text-yellow-300 ease text-left"
       >
