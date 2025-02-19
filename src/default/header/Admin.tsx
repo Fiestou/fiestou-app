@@ -13,6 +13,10 @@ const menu = [
     endpoint: "/admin/",
   },
   {
+    title: "Pedidos",
+    endpoint: "/admin/pedidos",
+  },
+  {
     title: "Produtos",
     endpoint: "/admin/produtos",
   },
