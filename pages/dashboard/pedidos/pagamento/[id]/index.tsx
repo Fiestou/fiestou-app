@@ -212,8 +212,7 @@ export default function Pagamento({
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
       setExpire(
-        `${minutes < 10 ? "0" : ""}${minutes}:${
-          seconds < 10 ? "0" : ""
+        `${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""
         }${seconds}`
       );
     };
@@ -267,32 +266,41 @@ export default function Pagamento({
         id: orderId,
       },
     });
+    
+    if (!request.response){
+      
+      window.location.href = `/dashboard/meus-dados`;
+      if (typeof window !== 'undefined'){
+        localStorage.setItem('message', 'Por favor insira todas as informações necessárias para finalizar o pagamento.')
+      }
+     
+      return;
+    }
 
     const handle: OrderType = request?.data;
 
-    if (handle.status != 0) {
+    if (handle && handle.status != 0) {
       window.location.href = `/dashboard/pedidos/${handle.id}`;
+
+      let dates: any = [];
+      let products: any = [];
+
+      handle.listItems?.map((item: any) => {
+        dates.push(item.details.dateStart);
+        products.push(item.product);
+      });
+
+      setResume({
+        startDate: findDates(dates).minDate,
+        endDate: findDates(dates).maxDate,
+      } as any);
+
+      setOrder(handle);
+      setProducts(products);
+
+      if (!!handle?.user) setUser(handle.user);
+      setPlaceholder(false);
     }
-
-    let dates: any = [];
-    let products: any = [];
-
-    handle.listItems?.map((item: any) => {
-      dates.push(item.details.dateStart);
-      products.push(item.product);
-    });
-
-    setResume({
-      startDate: findDates(dates).minDate,
-      endDate: findDates(dates).maxDate,
-    } as any);
-
-    setOrder(handle);
-    setProducts(products);
-
-    if (!!handle?.user) setUser(handle.user);
-
-    setPlaceholder(false);
   };
 
   useEffect(() => {
@@ -757,11 +765,10 @@ export default function Pagamento({
                             className={`p-3 md:p-4 cursor-pointer flex gap-2 items-center`}
                           >
                             <div
-                              className={`border ${
-                                payment.payment_method == "credit_card"
+                              className={`border ${payment.payment_method == "credit_card"
                                   ? "border-zinc-400"
                                   : "border-zinc-300"
-                              } w-[1rem] rounded-full h-[1rem] relative`}
+                                } w-[1rem] rounded-full h-[1rem] relative`}
                             >
                               {payment.payment_method == "credit_card" && (
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
@@ -1081,11 +1088,10 @@ export default function Pagamento({
                             className={`p-3 md:p-4 cursor-pointer flex gap-2 items-center`}
                           >
                             <div
-                              className={`border ${
-                                payment.payment_method == "boleto"
+                              className={`border ${payment.payment_method == "boleto"
                                   ? "border-zinc-400"
                                   : "border-zinc-300"
-                              } w-[1rem] rounded-full h-[1rem] relative`}
+                                } w-[1rem] rounded-full h-[1rem] relative`}
                             >
                               {payment.payment_method == "boleto" && (
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
@@ -1119,11 +1125,10 @@ export default function Pagamento({
                             className={`p-3 md:p-4 cursor-pointer flex gap-2 items-center`}
                           >
                             <div
-                              className={`border ${
-                                payment.payment_method == "pix"
+                              className={`border ${payment.payment_method == "pix"
                                   ? "border-zinc-400"
                                   : "border-zinc-300"
-                              } w-[1rem] rounded-full h-[1rem] relative`}
+                                } w-[1rem] rounded-full h-[1rem] relative`}
                             >
                               {payment.payment_method == "pix" && (
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
