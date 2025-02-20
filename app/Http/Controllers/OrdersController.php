@@ -36,6 +36,12 @@ class OrdersController extends Controller
             $user = User::where(["id" => $order->user])->first();
 
             if(isset($user->id)){
+                if (!$user->details){
+                    return response()->json([
+                        'response'  => false,
+                        'data' => "Não foi possivel encontrar os detalhes do usuário"
+                    ]);
+                }
                 $details = json_decode($user->details, TRUE);
                 foreach ($details as $key => $value) {
                     $user->{$key} = $value;
