@@ -6,28 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 class CreateGroup extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
     {
         Schema::create('group', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description');
-            $table->foreignId('parent_id')->nullable()->constrained('group')->onDelete('cascade');
+            $table->bigIncrements('id');
+            $table->string('name', 255);
+            $table->text('description')->nullable();
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->boolean('active')->default(true);
-            $table->timestamps();
+
+            $table->foreign('parent_id')
+                  ->references('id')
+                  ->on('group')
+                  ->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
         Schema::dropIfExists('group');

@@ -6,28 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 class CreateElements extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
     {
         Schema::create('elements', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
+            $table->bigIncrements('id');
+            $table->string('name', 255);
+            $table->string('icon', 40)->nullable();
             $table->text('description')->nullable();
-            $table->foreignId('id_group')->constrained('group')->onDelete('cascade');
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->boolean('active')->default(true);
-            $table->timestamps();
+
+            $table->foreign('parent_id')
+                  ->references('id')
+                  ->on('elements')
+                  ->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
         Schema::dropIfExists('elements');
