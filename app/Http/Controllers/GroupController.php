@@ -16,70 +16,59 @@ class GroupController extends Controller
      */
     public function Register(Request $request)
     {
-        Log::debug(['ola']);
-
         $request->validate([
-            "name"   => "required",
-            "description" => 'required',
-            "isFather" => 'required'
+            "name"        => "required",
+            "description" => "required",
+            "isFather"    => "required|boolean"
         ]);
 
-        $group_father = Group::where(['parent_id' == null]);
-        Log::debug([$group_father, 'ola']);
-        if ($group_father && $request->get("isFather")){
+        $group_father = Group::whereNull('parent_id')->first();
+
+        if ($group_father && $request->get("isFather")) {
             return response()->json([
-                'response'  => false,
-                'message' => 'Não é possivel criar dois grupos gerais.'
+                'response' => false,
+                'message'  => 'Não é possível criar dois grupos gerais.'
             ]);
         }
 
         $group = new Group();
-
-        if (!$request->get("isFather")){
-            $request->validate([
-                "parent_id"   => "required",
-            ]);
-
-            $group->parent_id = $request->get('parent_id');
-        }
-
         $group->name = $request->get("name");
         $group->description = $request->get("description");
 
         DB::beginTransaction();
 
-        if ($group->save()){
-            $exists_parent = Group::where(['id' == $group->parent_id]);
+        try {
 
-            if (!$exists_parent){
-                DB::rollBack();
+            if ($group->save()) {
+                if (!$request->get("isFather")) {
+                    $request->validate([
+                        "parent_id" => "required|exists:group,id",
+                    ]);
+
+                    $group->parent_id = $request->get('parent_id');
+                    $group->save();
+                }
+
+                DB::commit();
+
                 return response()->json([
-                    'response'  => false,
-                    'message' => 'Parent id não existe.'
+                    'response' => true,
+                    'data'     => $group
                 ]);
             }
-
-            if ($exists_parent->id == $group->id){
-                DB::rollBack();
-                return response()->json([
-                    'response'  => false,
-                    'message' => 'Parent id não não pode ser igual ao id.'
-                ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'response'  => true,
-                'data'      => $group
-            ]);
-        }else{
+        } catch (\Exception $e) {
             DB::rollBack();
-
             return response()->json([
-                'response'  => false
+                'response' => false,
+                'message'  => 'Erro ao salvar o grupo: ' . $e->getMessage()
             ]);
         }
+
+        DB::rollBack();
+        return response()->json([
+            'response' => false,
+            'message'  => 'Erro ao salvar o grupo.'
+        ]);
     }
 
     /**
@@ -88,9 +77,20 @@ class GroupController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function get($id)
+    public function Get($id)
     {
-        //
+        $group = Group::where(['id'=> $id])->first();
+
+        if (!$group){
+            return response()->json([
+                'response' => false,
+                'message'  => 'Não foi possivel encontrar o grupo.'
+            ]);
+        }
+        return response()->json([
+            'response' => true,
+            'data'     => $group
+        ]);
     }
 
     /**
@@ -100,9 +100,37 @@ class GroupController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function Update(Request $request, $id)
     {
-        //
+        try{
+            $request->validate([
+                "name"        => "required",
+                "description" => "required",
+                "parent_id" => "nullable|exists:group,id"
+            ]);
+
+            $group = Group::where(['id'=> $id])->first();
+
+            if($request->get("parent_id")) $group->parent_id = $request->get("parent_id");
+
+            $group->name = $request->get("name");
+            $group->description = $request->get("description");
+
+            if ($group->save()) {
+                DB::commit();
+
+                return response()->json([
+                    'response' => true,
+                    'data'     => $group
+                ]);
+            }
+        }catch (\Exception $e){
+            DB::rollBack();
+            return response()->json([
+                'response' => false,
+                'message'  => 'Erro ao salvar o grupo: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -111,9 +139,12 @@ class GroupController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function list($id)
+    public function List()
     {
-        //
+        return response()->json([
+            'response' => true,
+            'data'     => Group::all()
+        ]);
     }
 
     /**
@@ -122,8 +153,23 @@ class GroupController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function delete($id)
-    {
-        //
+    public function Delete($id)
+    {   try{
+            $group = Group::where(['id'=> $id])->first();
+
+            $group->is_active = false;
+
+            if ($group->save()){
+                return response()->json([
+                    'response' => true,
+                    'message'     => 'ok'
+                ]);
+            }
+        }catch (\Exception $e){
+            return response()->json([
+                'response' => true,
+                'message'     => 'erro ao deletar o grupo'
+            ]);
+        }
     }
 }

@@ -156,6 +156,10 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
 
         Route::group([ 'prefix' => 'group' ], function(){
             Route::post('/register', [GroupController::class, 'Register']);
+            Route::get('/get/{id}', [GroupController::class, 'Get']);
+            Route::put('/update/{id}', [GroupController::class, 'Update']);
+            Route::get('/list', [GroupController::class, 'List']);
+            Route::get('/delete/{$id}', [GroupController::class, 'Delete']);
         });
     });
 
