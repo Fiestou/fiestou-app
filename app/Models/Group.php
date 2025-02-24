@@ -13,7 +13,5 @@ class Group extends BaseModel
         'description',
         'parent_id',
         'active',
-        'created_at',
-        'updated_at',
     ];
 }

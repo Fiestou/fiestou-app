@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\Models\BaseModel;
 
-class Group extends BaseModel
+class GroupElements extends BaseModel
 {
-    protected $table = 'group';
+    protected $table = 'group_elements';
     protected $fillable = [
         'id',
         'id_group',

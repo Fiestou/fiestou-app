@@ -11,6 +11,7 @@ class Elements extends BaseModel
         'id',
         'name',
         'description',
+        'icon',
         'id_group',
         'active',
         'created_at',

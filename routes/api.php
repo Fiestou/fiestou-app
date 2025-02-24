@@ -22,6 +22,7 @@ use App\Http\Controllers\CommentsController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\GroupController;
 
 
 /*
@@ -151,6 +152,10 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
             Route::post('/remove-medias', [FileController::class, 'RemoveMedias']);
             Route::post('/upload-media', [FileController::class, 'UploadMedia']);
             Route::post('/upload-base64', [FileController::class, 'UploadBase64']);
+        });
+
+        Route::group([ 'prefix' => 'group' ], function(){
+            Route::post('/register', [GroupController::class, 'Register']);
         });
     });
 

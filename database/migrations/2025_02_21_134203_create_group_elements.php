@@ -12,7 +12,7 @@ class CreateGroupElements extends Migration
             $table->bigIncrements('id');
             $table->unsignedBigInteger('id_group');
             $table->unsignedBigInteger('id_elements');
-
+            $table->timestamps();
             $table->foreign('id_group')
                   ->references('id')
                   ->on('group')
