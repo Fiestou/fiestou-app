@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\GroupElements;
 use App\Models\Elements;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
 {
@@ -227,7 +228,29 @@ class GroupController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'response' => true,
-                'message'     => 'Ero ao deletar o grupo' . $e->getMessage()
+                'message'     => 'Erro ao deletar o grupo' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function GetAllDescendants($id)
+    {
+        try {
+            return response()->json([
+                'response' => true,
+                'data'     =>  Group::getAllDescendants($id, 1)
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'response' => true,
+                'message'     => 'Erro ao pegar de descendentes' . $e->getMessage()
             ]);
         }
     }

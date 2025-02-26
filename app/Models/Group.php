@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\BaseModel;
+use Illuminate\Support\Facades\DB;
 
 class Group extends BaseModel
 {
@@ -18,5 +19,22 @@ class Group extends BaseModel
     public function elements()
     {
         return $this->hasMany(GroupElements::class, 'id_group');
+    }
+
+    /**
+     * Obtém todos os descendentes do grupo.
+     *
+     * @param int $groupId
+     * @param bool|null $isActive
+     * @return array
+     */
+    public static function getAllDescendants($groupId, $isActive = null)
+    {
+        $query = "CALL GetAllGroupDescendants(:group_id, :is_active)";
+
+        return DB::select($query, [
+            'group_id' => $groupId,
+            'is_active' => $isActive
+        ]);
     }
 }

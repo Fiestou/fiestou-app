@@ -160,6 +160,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
             Route::put('/update/{id}', [GroupController::class, 'Update']);
             Route::get('/list', [GroupController::class, 'List']);
             Route::delete('/delete/{id}', [GroupController::class, 'Delete']);
+            Route::get('/get-all-descendants/{id}', [GroupController::class, 'GetAllDescendants']);
         });
     });
 
