@@ -16,6 +16,7 @@ use Hash;
 use App\Models\User;
 use App\Models\Message;
 use App\Models\Store;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -26,6 +27,7 @@ class AuthController extends Controller
      */
     public function Login(Request $request)
     {
+        Log::debug('teste');
         $request->validate([
             'email'         => 'required|email',
             'password'      => 'required'
@@ -165,20 +167,20 @@ class AuthController extends Controller
         $this->validate($request, [
             'email' => 'required',
         ]);
-    
+
         $user = User::where(['email' => $request->get('email')])->first();
-    
+
         if (isset($user->id)) {
             if ($request->has('status')) {
                 $user->status = $request->get('status');
             }
-    
+
             try {
                 if ($user->save()) {
                     DB::table('store')
                       ->where('user', $user->id)
                       ->update(['status' => $user->status]);
-    
+
                     return response()->json([
                         'response' => true,
                         'data' => $user
@@ -192,7 +194,7 @@ class AuthController extends Controller
                 ], 500);
             }
         }
-    
+
         return response()->json([
             'response' => false
         ], 422);

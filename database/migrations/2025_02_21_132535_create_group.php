@@ -14,11 +14,12 @@ class CreateGroup extends Migration
             $table->text('description')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->boolean('active')->default(true);
-
+            $table->timestamps();
             $table->foreign('parent_id')
                   ->references('id')
                   ->on('group')
                   ->onDelete('cascade');
+
         });
     }
 

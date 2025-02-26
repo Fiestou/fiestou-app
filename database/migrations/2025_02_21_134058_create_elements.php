@@ -13,13 +13,8 @@ class CreateElements extends Migration
             $table->string('name', 255);
             $table->string('icon', 40)->nullable();
             $table->text('description')->nullable();
-            $table->unsignedBigInteger('parent_id')->nullable();
             $table->boolean('active')->default(true);
-
-            $table->foreign('parent_id')
-                  ->references('id')
-                  ->on('elements')
-                  ->onDelete('cascade');
+            $table->timestamps();
         });
     }
 

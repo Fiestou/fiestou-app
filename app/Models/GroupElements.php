@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\Models\BaseModel;
 
-class Group extends BaseModel
+class GroupElements extends BaseModel
 {
-    protected $table = 'group';
+    protected $table = 'group_elements';
     protected $fillable = [
         'id',
         'id_group',
@@ -14,4 +14,9 @@ class Group extends BaseModel
         'created_at',
         'updated_at',
     ];
+
+    public function element()
+    {
+        return $this->belongsTo(Elements::class, 'id_elements');
+    }
 }

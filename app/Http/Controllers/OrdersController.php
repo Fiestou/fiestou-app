@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use DB;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -13,6 +12,7 @@ use App\Models\Store;
 use App\Models\Suborder;
 use App\Models\Product;
 use App\Models\Message;
+use Illuminate\Support\Facades\DB;
 
 class OrdersController extends Controller
 {

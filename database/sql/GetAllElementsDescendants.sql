@@ -1,22 +1,37 @@
-CREATE PROCEDURE GetAllElementsDescendants(
-    IN element_id BIGINT UNSIGNED,
-    IN is_active BOOLEAN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetElementDescendants`(
+    IN parentId BIGINT UNSIGNED,
+    IN isActive TINYINT(1)
 )
 BEGIN
-    WITH RECURSIVE element_hierarchy AS (
-        SELECT id, name, icon, description, parent_id, active
-        FROM fiesto18_database.elements
-        WHERE id = element_id
-        AND (is_active IS NULL OR active = is_active)
+    WITH RECURSIVE element_tree AS (
+		-- Pegamos os filhos diretos do elemento pai fornecido
+		SELECT
+			er.child_id AS element_id,
+			er.parent_id,
+			1 AS depth
+		FROM elements_rel er
+		WHERE er.parent_id = 1  -- Substituir pelo ID desejado
 
-        UNION ALL
+		UNION ALL
 
-        SELECT e.id, e.name, e.icon, e.description, e.parent_id, e.active
-        FROM fiesto18_database.elements e
-        INNER JOIN element_hierarchy eh ON e.parent_id = eh.id
-        WHERE is_active IS NULL OR e.active = is_active
-    )
+		-- Pegamos os netos, bisnetos e assim por diante
+		SELECT
+			er.child_id,
+			er.parent_id,
+			et.depth + 1
+		FROM elements_rel er
+		INNER JOIN element_tree et ON er.parent_id = et.element_id
+	)
 
-    SELECT * FROM element_hierarchy
-    WHERE id != element_id;
+	SELECT
+		e.id,
+		e.name,
+		e.icon,
+		e.description,
+		e.active,
+		et.depth AS generation_level,
+		et.parent_id AS immediate_parent_id
+	FROM element_tree et
+	INNER JOIN elements e ON e.id = et.element_id
+	ORDER BY et.depth, e.name;
 END
