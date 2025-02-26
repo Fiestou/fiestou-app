@@ -7,7 +7,6 @@ use App\Models\Group;
 use App\Models\GroupElements;
 use App\Models\Elements;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
 {

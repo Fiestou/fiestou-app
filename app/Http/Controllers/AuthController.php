@@ -16,7 +16,6 @@ use Hash;
 use App\Models\User;
 use App\Models\Message;
 use App\Models\Store;
-use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -27,7 +26,6 @@ class AuthController extends Controller
      */
     public function Login(Request $request)
     {
-        Log::debug('teste');
         $request->validate([
             'email'         => 'required|email',
             'password'      => 'required'
