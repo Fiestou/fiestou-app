@@ -156,11 +156,11 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
 
         Route::group([ 'prefix' => 'group' ], function(){
             Route::post('/register', [GroupController::class, 'Register']);
-            Route::get('/get/{id}', [GroupController::class, 'Get']);
-            Route::put('/update/{id}', [GroupController::class, 'Update']);
+            Route::get('/get/{GroupId}', [GroupController::class, 'Get']);
+            Route::put('/update/{GroupId}', [GroupController::class, 'Update']);
             Route::get('/list', [GroupController::class, 'List']);
-            Route::delete('/delete/{id}', [GroupController::class, 'Delete']);
-            Route::get('/get-all-descendants/{id}', [GroupController::class, 'GetAllDescendants']);
+            Route::delete('/delete/{GroupId}', [GroupController::class, 'Delete']);
+            Route::get('/get-all-descendants/{GroupId}', [GroupController::class, 'GetAllDescendants']);
         });
     });
 

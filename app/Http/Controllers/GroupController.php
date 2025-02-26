@@ -7,12 +7,11 @@ use App\Models\Group;
 use App\Models\GroupElements;
 use App\Models\Elements;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
 {
     /**
-     * Show the form for creating a new resource.
+     * Create a new group.
      *
      * @return \Illuminate\Http\Response
      */
@@ -94,14 +93,14 @@ class GroupController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Get group with id.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function Get($id)
+    public function Get($GroupId)
     {
-        $group = Group::with('elements.element')->find($id);
+        $group = Group::with('elements.element')->find($GroupId);
 
         if (!$group) {
             return response()->json([
@@ -126,13 +125,13 @@ class GroupController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the group with id.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  int  $GroupId
      * @return \Illuminate\Http\Response
      */
-    public function Update(Request $request, $id)
+    public function Update(Request $request, $GroupId)
     {
         DB::beginTransaction();
 
@@ -145,7 +144,7 @@ class GroupController extends Controller
                 "elements.*"  => "exists:elements,id"
             ]);
 
-            $group = Group::with('elements.element')->find($id);
+            $group = Group::with('elements.element')->find($GroupId);
 
             if ($request->has("parent_id")) {
                 $group->parent_id = $request->get("parent_id");
@@ -158,11 +157,11 @@ class GroupController extends Controller
             if ($request->has("elements")) {
                 $elements = $request->get("elements");
 
-                GroupElements::where('id_group', $id)->delete();
+                GroupElements::where('id_group', $GroupId)->delete();
 
                 foreach ($elements as $elementId) {
                     GroupElements::create([
-                        'id_group'    => $id,
+                        'id_group'    => $GroupId,
                         'id_elements' => $elementId
                     ]);
                 }
@@ -193,9 +192,9 @@ class GroupController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove group with id.
      *
-     * @param  int  $id
+     * @param  int  $GroupId
      * @return \Illuminate\Http\Response
      */
     public function List()
@@ -209,13 +208,13 @@ class GroupController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param  int  $GroupId
      * @return \Illuminate\Http\Response
      */
-    public function Delete($id)
+    public function Delete($GroupId)
     {
         try {
-            $group = Group::where(['id' => $id])->first();
+            $group = Group::where(['id' => $GroupId])->first();
 
             $group->active = false;
 
@@ -234,17 +233,17 @@ class GroupController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Get all descendents of the group.
      *
-     * @param  int  $id
+     * @param  int  $GroupId
      * @return \Illuminate\Http\Response
      */
-    public function GetAllDescendants($id)
+    public function GetAllDescendants($GroupId)
     {
         try {
             return response()->json([
                 'response' => true,
-                'data'     =>  Group::getAllDescendants($id, 1)
+                'data'     =>  Group::getAllDescendants($GroupId, 1)
             ]);
 
         } catch (\Exception $e) {
