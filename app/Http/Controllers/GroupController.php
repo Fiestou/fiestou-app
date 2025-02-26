@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Group;
+use App\Models\GroupElements;
+use App\Models\Elements;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -19,7 +21,9 @@ class GroupController extends Controller
         $request->validate([
             "name"        => "required",
             "description" => "required",
-            "isFather"    => "required|boolean"
+            "isFather"    => "required|boolean",
+            "elements"    => "nullable|array",
+            "elements.*"  => "exists:elements,id"
         ]);
 
         $group_father = Group::whereNull('parent_id')->first();
@@ -28,6 +32,13 @@ class GroupController extends Controller
             return response()->json([
                 'response' => false,
                 'message'  => 'Não é possível criar dois grupos gerais.'
+            ]);
+        }
+
+        if (empty($request->get("elements"))) {
+            return response()->json([
+                'response' => false,
+                'message'  => 'É preciso informar pelo menos um elemento para salvar o grupo.'
             ]);
         }
 
@@ -48,6 +59,17 @@ class GroupController extends Controller
                     $group->parent_id = $request->get('parent_id');
                     $group->save();
                 }
+
+                $elements = Elements::whereIn('id', $request->get('elements'))->get();
+
+                foreach ($elements as $element) {
+                    GroupElements::create([
+                        'id_group'    => $group->id,
+                        'id_elements' => $element->id
+                    ]);
+                }
+
+                $group->elements = $elements;
 
                 DB::commit();
 
@@ -79,17 +101,27 @@ class GroupController extends Controller
      */
     public function Get($id)
     {
-        $group = Group::where(['id'=> $id])->first();
+        $group = Group::with('elements.element')->find($id);
 
-        if (!$group){
+        if (!$group) {
             return response()->json([
                 'response' => false,
                 'message'  => 'Não foi possivel encontrar o grupo.'
             ]);
         }
+
+        $elements = $group->elements->map(function ($groupElement) {
+            return $groupElement->element;
+        });
+
         return response()->json([
             'response' => true,
-            'data'     => $group
+            'data'     => [
+                'id'       => $group->id,
+                'name'     => $group->name,
+                'parent_id' => $group->parent_id,
+                'elements' => $elements
+            ]
         ]);
     }
 
@@ -102,33 +134,60 @@ class GroupController extends Controller
      */
     public function Update(Request $request, $id)
     {
-        try{
+        DB::beginTransaction();
+
+        try {
             $request->validate([
                 "name"        => "required",
                 "description" => "required",
-                "parent_id" => "nullable|exists:group,id"
+                "parent_id"   => "nullable|exists:group,id",
+                "elements"    => "nullable|array",
+                "elements.*"  => "exists:elements,id"
             ]);
 
-            $group = Group::where(['id'=> $id])->first();
+            $group = Group::with('elements.element')->find($id);
 
-            if($request->get("parent_id")) $group->parent_id = $request->get("parent_id");
+            if ($request->has("parent_id")) {
+                $group->parent_id = $request->get("parent_id");
+            }
 
             $group->name = $request->get("name");
             $group->description = $request->get("description");
+            $group->save();
 
-            if ($group->save()) {
-                DB::commit();
+            if ($request->has("elements")) {
+                $elements = $request->get("elements");
 
-                return response()->json([
-                    'response' => true,
-                    'data'     => $group
-                ]);
+                GroupElements::where('id_group', $id)->delete();
+
+                foreach ($elements as $elementId) {
+                    GroupElements::create([
+                        'id_group'    => $id,
+                        'id_elements' => $elementId
+                    ]);
+                }
             }
-        }catch (\Exception $e){
+
+            $elements = $group->elements->map(function ($groupElement) {
+                return $groupElement->element;
+            });
+
+            DB::commit();
+
+            return response()->json([
+                'response' => true,
+                'data'     => [
+                    'id'       => $group->id,
+                    'name'     => $group->name,
+                    'parent_id' => $group->parent_id,
+                    'elements' => $elements
+                ]
+            ]);
+        } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'response' => false,
-                'message'  => 'Erro ao salvar o grupo: ' . $e->getMessage()
+                'message'  => 'Erro ao atualizar o grupo: ' . $e->getMessage()
             ]);
         }
     }
@@ -154,21 +213,22 @@ class GroupController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function Delete($id)
-    {   try{
-            $group = Group::where(['id'=> $id])->first();
+    {
+        try {
+            $group = Group::where(['id' => $id])->first();
 
-            $group->is_active = false;
+            $group->active = false;
 
-            if ($group->save()){
+            if ($group->save()) {
                 return response()->json([
                     'response' => true,
                     'message'     => 'ok'
                 ]);
             }
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             return response()->json([
                 'response' => true,
-                'message'     => 'erro ao deletar o grupo'
+                'message'     => 'Ero ao deletar o grupo' . $e->getMessage()
             ]);
         }
     }

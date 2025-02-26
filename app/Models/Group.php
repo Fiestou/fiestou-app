@@ -14,4 +14,9 @@ class Group extends BaseModel
         'parent_id',
         'active',
     ];
+
+    public function elements()
+    {
+        return $this->hasMany(GroupElements::class, 'id_group');
+    }
 }

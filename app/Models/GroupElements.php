@@ -14,4 +14,9 @@ class GroupElements extends BaseModel
         'created_at',
         'updated_at',
     ];
+
+    public function element()
+    {
+        return $this->belongsTo(Elements::class, 'id_elements');
+    }
 }
