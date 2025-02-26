@@ -100,13 +100,10 @@
     };
 
     const getDeliveryPriceLabel = (deliveryPrice: number | string) => {
-      if (order?.deliveryPrice === "Não informado") {
-        return "Não informado";
-      } else if (order?.deliveryPrice === "Gratuita") {
-        return "Gratuita";
-      } else {
+      if (order?.deliveryPrice === "Não informado" || order?.deliveryPrice === "Gratuita")
+        return order?.deliveryPrice
+        
         return "R$" + order?.deliveryPrice;
-      }
     };
 
     const formatPhoneNumber = (phone: string) => {
