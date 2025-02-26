@@ -1,20 +1,18 @@
-CREATE DEFINER=`root`@`localhost` PROCEDURE `GetElementDescendants`(
+CREATE PROCEDURE `GetElementDescendants`(
     IN parentId BIGINT UNSIGNED,
     IN isActive TINYINT(1)
 )
 BEGIN
     WITH RECURSIVE element_tree AS (
-		-- Pegamos os filhos diretos do elemento pai fornecido
 		SELECT
 			er.child_id AS element_id,
 			er.parent_id,
 			1 AS depth
 		FROM elements_rel er
-		WHERE er.parent_id = 1  -- Substituir pelo ID desejado
+		WHERE er.parent_id = 1
 
 		UNION ALL
 
-		-- Pegamos os netos, bisnetos e assim por diante
 		SELECT
 			er.child_id,
 			er.parent_id,

@@ -34,13 +34,6 @@ class GroupController extends Controller
             ]);
         }
 
-        if (empty($request->get("elements"))) {
-            return response()->json([
-                'response' => false,
-                'message'  => 'É preciso informar pelo menos um elemento para salvar o grupo.'
-            ]);
-        }
-
         $group = new Group();
         $group->name = $request->get("name");
         $group->description = $request->get("description");
@@ -59,16 +52,18 @@ class GroupController extends Controller
                     $group->save();
                 }
 
-                $elements = Elements::whereIn('id', $request->get('elements'))->get();
+                if (!empty($request->get("elements"))) {
+                    $elements = Elements::whereIn('id', $request->get('elements'))->get();
 
-                foreach ($elements as $element) {
-                    GroupElements::create([
-                        'id_group'    => $group->id,
-                        'id_elements' => $element->id
-                    ]);
+                    foreach ($elements as $element) {
+                        GroupElements::create([
+                            'id_group'    => $group->id,
+                            'id_elements' => $element->id
+                        ]);
+                    }
+
+                    $group->elements = $elements;
                 }
-
-                $group->elements = $elements;
 
                 DB::commit();
 
