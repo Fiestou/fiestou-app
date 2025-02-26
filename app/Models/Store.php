@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Arr;
 use App\Models\BaseModel;
-use Illuminate\Support\Str;
-use DB;
+use App\Models\User;
+use App\Models\Media;
 
 class Store extends BaseModel
 {
     protected $table = 'store';
+
     protected $fillable = [
         "id",
         "user",
@@ -37,31 +37,33 @@ class Store extends BaseModel
         "updated_at"
     ];
 
-    public static function normalize($stores = []){
-        if(!empty($stores)){
-            foreach ($stores as $key => $store) {
-                if($store->profile){
-                    $profile = Media::where('id', $store->profile)->first();
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user', 'id');
+    }
 
-                    if($profile){
-                        $profile->details = isset($profile->details) && !!$profile->details ? json_decode($profile->details) : [];
+    public static function normalize($stores = [])
+    {
+        if (!empty($stores)) {
+            foreach ($stores as $store) {
+                if ($store->profile) {
+                    $profile = Media::find($store->profile);
+                    if ($profile) {
+                        $profile->details = json_decode($profile->details ?? '[]');
                     }
-
                     $store->profile = $profile;
                 }
 
-                if($store->cover){
-                    $cover = Media::where('id', $store->cover)->first();
-
-                    if($cover){
-                        $cover->details = isset($cover->details) && !!$cover->details ? json_decode($cover->details) : [];
+                if ($store->cover) {
+                    $cover = Media::find($store->cover);
+                    if ($cover) {
+                        $cover->details = json_decode($cover->details ?? '[]');
                     }
-
                     $store->cover = $cover;
                 }
 
-                $store->openClose   = !!$store->openClose   ? json_decode($store->openClose)    : [];
-                $store->metadata    = !!$store->metadata    ? json_decode($store->metadata)     : [];
+                $store->openClose = json_decode($store->openClose ?? '[]');
+                $store->metadata = json_decode($store->metadata ?? '[]');
             }
 
             return $stores;

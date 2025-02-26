@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\BaseModel;
+use App\Models\Order;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -134,11 +135,8 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
+
+    public function orders() {
+        return $this->hasMany(Order::class, 'user', 'id');
+    }    
 }
-
-
-
-
-
-
-
