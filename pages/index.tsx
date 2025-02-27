@@ -18,6 +18,7 @@ import Product from "@/src/components/common/Product";
 import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
 import Filter from "@/src/components/common/Filter";
+import { useState } from "react";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -87,7 +88,7 @@ export default function Home({
       <></>
     );
   };
-
+  const [imgLinks] = useState<string[]>([Home?.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)]);
   return (
     <Template
       scripts={Scripts}
@@ -129,8 +130,8 @@ export default function Home({
                 className="bg-cyan-500 pt-16 md:pt-24 relative"
                 style={{ backgroundColor: "#2dc3ff" }}
               >
-                {!!slide?.main_slide_redirect?.url ? (
-                  <Link href={slide?.main_slide_redirect?.url}>
+                {key > 0 && !!slide?.main_slide_redirect?.url && slide ? (
+                  <Link href={slide?.main_slide_redirect?.url }>
                     {renderImageSlider(slide)}
                   </Link>
                 ) : (
