@@ -186,7 +186,7 @@ export default function Acesso({
                 </div>
 
                 <div className="hidden form-group text-center text-sm pt-4">
-                  Quero se cadastrar como parceiro?{" "}
+                  Quer se cadastrar como parceiro?{" "}
                   <Link
                     href="/parceiros/cadastro"
                     className="text-blue-400 underline"
