@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\RequestController;
@@ -66,6 +65,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
 
         // ORDERS
         Route::post('/orders/list', [OrdersController::class, 'List']);
+        Route::get('/orders/list/{id}', [OrdersController::class, 'getOrderById']);
         Route::post('/orders/get', [OrdersController::class, 'Get']);
         Route::post('/orders/register', [OrdersController::class, 'Register']);
         Route::post('/orders/register-meta', [OrdersController::class, 'RegisterMeta']);

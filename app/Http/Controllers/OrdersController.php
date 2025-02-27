@@ -16,7 +16,8 @@ use App\Models\Message;
 
 class OrdersController extends Controller
 {
-    public function Get(Request $request){
+    public function Get(Request $request)
+    {
 
         $request->validate([
             "id" => "required"
@@ -25,9 +26,9 @@ class OrdersController extends Controller
         $user = auth()->user();
 
         $order = Order::where(['id' => $request->get('id'), "user" => $user->id])
-                      ->first();
+            ->first();
 
-        if(isset($order->id)){
+        if (isset($order->id)) {
 
             $order->metadata = json_decode($order->metadata);
             $order->listItems = json_decode($order->listItems);
@@ -58,25 +59,25 @@ class OrdersController extends Controller
             }
 
             $products = Product::with(['store'])
-                                      ->where(['status' => 1])
-                                      ->whereIn('id', $products)
-                                      ->get();
+                ->where(['status' => 1])
+                ->whereIn('id', $products)
+                ->get();
 
             $notificate = [];
 
             foreach ($products as $key => $item) {
-                if(!isset($notificate[$item->store])){
+                if (!isset($notificate[$item->store])) {
                     $store = Store::select(["user"])
-                                  ->where(["id" => $item->store])
-                                  ->first();
+                        ->where(["id" => $item->store])
+                        ->first();
 
                     $user = User::select(["name", "email", "details"])
-                                ->where([ 'id' => $store->user ])
-                                ->first();
+                        ->where(['id' => $store->user])
+                        ->first();
 
-                    if(isset($user->email)){
+                    if (isset($user->email)) {
                         $details = json_decode($user->details, TRUE);
-                        if(isset($details['phone'])){
+                        if (isset($details['phone'])) {
                             $user->phone = $details['phone'];
                         }
                         unset($user->details);
@@ -86,13 +87,13 @@ class OrdersController extends Controller
                 }
             }
 
-            $order->notificate  = array_values($notificate);
+            $order->notificate = array_values($notificate);
 
             $products = Product::normalize($products);
 
             foreach ($products as $key => $product) {
                 foreach ($order->listItems as $i => $item) {
-                    if($item->product->id == $product->id){
+                    if ($item->product->id == $product->id) {
                         unset($product->category);
                         unset($product->combinations);
                         unset($product->fragility);
@@ -104,82 +105,171 @@ class OrdersController extends Controller
             }
 
             return response()->json([
-                'response'  => true,
+                'response' => true,
                 'data' => $order
             ]);
         }
 
         return response()->json([
-            'response'  => false
+            'response' => false
         ]);
     }
 
-    public function List(Request $request){
+    public function List(Request $request)
+    {
         $user = auth()->user();
 
-        $orders = Order::orderBy('id', 'DESC');
+        $orders = Order::with('userDetail')->orderBy('id', 'DESC');
 
-        if($user->person != "master"){
+        if ($user->person != "master") {
             $orders = $orders->where(["user" => $user->id]);
         }
 
         $orders = $orders->get();
 
         foreach ($orders as $key => $order) {
-            $order->deliveryAddress = json_decode($order->deliveryAddress, TRUE);
-            $order->listItems = json_decode($order->listItems, TRUE);
-            $order->metadata = json_decode($order->metadata, TRUE);
+            $order->deliveryAddress = json_decode($order->deliveryAddress, true);
+            $order->listItems = json_decode($order->listItems, true);
+            $order->metadata = json_decode($order->metadata, true);
+            $order->userName = $order->userDetail->name ?? 'Usuário não encontrado';
+            $order->userEmail = $order->userDetail->email ?? 'Email não encontrado';
+        
+            $storeIds = [];
+        
+            if (!empty($order->listItems)) {
+                foreach ($order->listItems as $item) {
+                    if (isset($item['product']['store']['id'])) {
+                        $storeIds[] = $item['product']['store']['id'];
+                    }
+                }
+            }
+        
+            $order->storeId = !empty($storeIds) ? reset($storeIds) : null;
+        
+            if (!empty($order->storeId)) {
+                $storeUserId = Store::where('id', $order->storeId)->value('user');                
+                $order->partnerName = User::where('id', $storeUserId)->value('name') ?? 'Parceiro desconhecido';
+                $order->partnerEmail = User::where('id', $storeUserId)->value('email') ?? 'Parceiro desconhecido';
+            }        
+        }     
+
+        return response()->json([
+            'response' => true,
+            'data' => $orders
+        ]);
+    }
+
+    public function getOrderById($id)
+    {
+        $order = Order::with('userDetail')->find($id);
+
+        if (!$order) {
+            return response()->json(['message' => 'Pedido não encontrado'], 404);
+        }
+
+        $order->load('userDetail');
+
+        $metadata = json_decode($order->metadata, true);
+
+        if ($order->deliveryTo === 'reception') {
+            $order->deliveryTo = 'Entregar na portaria';
+        } elseif ($order->deliveryTo === 'door') {
+            $order->deliveryTo = 'Deixar na porta';
+        } else {
+            $order->deliveryTo = 'Estarei para receber';
+        }
+
+        $paymentMethod = $metadata['payment_method'] ?? null;
+        $installments = $metadata['installments'] ?? null;
+        
+        if ($paymentMethod === 'credit_card') {
+            $paymentMethod = 'Cartão de crédito';
+        } elseif ($paymentMethod === 'pix') {
+            $paymentMethod = 'PIX';
+        }
+        
+        $transformedMetadata = [
+            'payment_method' => $paymentMethod,
+            'installments' => $installments,
+        ];
+        
+        $deliveryPrice = $order->deliveryPrice;
+
+        if ($deliveryPrice === null) {
+            $deliveryPrice = 'Não informado';
+        } elseif ($deliveryPrice == 0) {
+            $deliveryPrice = 'Gratuita';
+        } elseif ($deliveryPrice > 0) {
+            $deliveryPrice = number_format($deliveryPrice, 2, ',', '.');
         }
 
         return response()->json([
-            'response'  => true,
-            'data'      => $orders
+            'id' => $order->id,
+            'user' => $order->userDetail,
+            'metadata' => $transformedMetadata,
+            'deliveryStatus' => $order->deliveryStatus,
+            'deliveryAddress' => $order->deliveryAddress,
+            'deliverySchedule' => $order->deliverySchedule,
+            'deliveryTo' => $order->deliveryTo,
+            'deliveryPrice' => $deliveryPrice,
         ]);
     }
 
-    public function Store(Request $request){
+    public function Store(Request $request)
+    {
 
         $user = auth()->user();
 
-        $store = Store::where(["user" => $user->id])
-                      ->first();
+        $store = Store::where(["user" => $user->id])->first();
 
         $suborders = Suborder::with(["order"])
-                             ->where(["store" => $store->id])
-                             ->get();
+                            ->where(["store" => $store->id])
+                            ->get();
+
+        if ($suborders->isNotEmpty()) {
+            $firstStore = $suborders->first()
+                                    ->store ?? $store->id;
+        } else {
+            $firstStore = $store->id;
+        }
 
         return response()->json([
-            'response'  => true,
-            'data'      => $suborders
+            'response' => true,
+            'data' => $suborders,
+            'store' => $firstStore
         ]);
     }
 
-    public function Register(Request $request){
-
+    public function Register(Request $request)
+    {
         $request->validate([
-            "deliveryAddress"   => "required",
-            "listItems"         => "required"
+            "deliveryAddress" => "required",
+            "listItems" => "required"
         ]);
 
         $listItems = $request->get("listItems");
 
         $user = auth()->user();
 
+        $firstItem = $listItems[0] ?? null;
+        $storeId = $firstItem['product']['store']['id'] ?? null;
+
         $order = new Order;
-        $order->user                = $user->id;
-        $order->platformCommission  = $request->get("platformCommission");
-        $order->total               = $request->get("total");
-        $order->deliverySchedule    = $request->get("deliverySchedule");
-        $order->deliveryAddress     = json_encode($request->get("deliveryAddress"));
-        $order->deliveryStatus      = $request->get("deliveryStatus");
-        $order->deliveryTo          = $request->get("deliveryTo") ?? "";
-        $order->deliveryPrice       = $request->get("deliveryPrice") ?? 0;
-        $order->listItems           = json_encode($listItems);
-        $order->status              = 0;
+        $order->user = $user->id;
+        $order->store = $storeId;
+        $order->platformCommission = $request->get("platformCommission");
+        $order->total = $request->get("total");
+        $order->deliverySchedule = $request->get("deliverySchedule");
+        $order->deliveryAddress = json_encode($request->get("deliveryAddress"));
+        $order->deliveryStatus = $request->get("deliveryStatus");
+        $order->deliveryTo = $request->get("deliveryTo") ?? "";
+        $order->deliveryPrice = $request->get("deliveryPrice") ?? 0;
+        $order->listItems = json_encode($listItems);
+        $order->status = 0;
 
         DB::beginTransaction();
 
-        if($order->save()){
+        if ($order->save()) {
             Message::RegisterOrder($order);
 
             $suborders = [];
@@ -190,7 +280,7 @@ class OrdersController extends Controller
                 if (!isset($suborders[$index])) {
                     $suborders[$index] = [
                         "listItems" => [],
-                        "total"    => 0
+                        "total" => 0
                     ];
                 }
 
@@ -200,101 +290,101 @@ class OrdersController extends Controller
 
             foreach ($suborders as $key => $suborder) {
                 $sub = new Suborder;
-                $sub->store     = $key;
-                $sub->user      = $user->id;
-                $sub->order     = $order->id;
-                $sub->total     = $suborder['total'];
-                $sub->paying    = $suborder['total'] - (($order->platformCommission / 100) * $suborder['total']);
+                $sub->store = $key;
+                $sub->user = $user->id;
+                $sub->order = $order->id;
+                $sub->total = $suborder['total'];
+                $sub->paying = $suborder['total'] - (($order->platformCommission / 100) * $suborder['total']);
                 $sub->listItems = json_encode($suborder['listItems']);
-                $sub->deliveryStatus        = "pending";
-                $sub->deliverySchedule      = $order->deliverySchedule;
-                $sub->deliveryTo            = $order->deliveryTo;
+                $sub->deliveryStatus = "pending";
+                $sub->deliverySchedule = $order->deliverySchedule;
+                $sub->deliveryTo = $order->deliveryTo;
                 $sub->status = -1;
                 $sub->save();
             }
-        }
-        else{
+        } else {
 
             DB::rollback();
 
             return response()->json([
-                'response'  => false
+                'response' => false
             ]);
         }
 
         DB::commit();
 
         return response()->json([
-            'response'  => true,
-            'data'      => $order
+            'response' => true,
+            'data' => $order
         ]);
     }
 
-    public function Processing(Request $request){
+    public function Processing(Request $request)
+    {
 
         $request->validate([
             "id" => "required"
         ]);
 
-        $user   = auth()->user();
-        $order  = Order::where(['id' => $request->get('id'), "user" => $user->id])
-                       ->first();
+        $user = auth()->user();
+        $order = Order::where(['id' => $request->get('id'), "user" => $user->id])
+            ->first();
 
-        if(isset($order->id)){
+        if (isset($order->id)) {
             $order->status = -1;
 
-            if($order->save()){
+            if ($order->save()) {
                 return response()->json([
-                    'response'  => true
+                    'response' => true
                 ]);
             }
         }
 
         return response()->json([
-            'response'  => false
+            'response' => false
         ]);
     }
 
-    public function RegisterMeta(Request $request){
+    public function RegisterMeta(Request $request)
+    {
 
         $request->validate([
-            "id"        => "required",
-            "metadata"  => "required"
+            "id" => "required",
+            "metadata" => "required"
         ]);
 
         $user = auth()->user();
 
         $order = Order::where(['id' => $request->get('id'), "user" => $user->id])
-                      ->first();
+            ->first();
 
-        if(isset($order->id)){
-            $metadata           = $request->get('metadata');
-            $order->metadata    = json_encode($metadata);
+        if (isset($order->id)) {
+            $metadata = $request->get('metadata');
+            $order->metadata = json_encode($metadata);
 
-            if($metadata['status'] == 'complete'){
+            if ($metadata['status'] == 'complete') {
                 Message::CompleteOrderMail();
                 Message::PartnerNewOrderMail();
 
                 $order->status = 1;
                 $order->deliveryStatus = 'processing';
                 Suborder::where('order', $order->id)->update(['status' => 1, 'deliveryStatus' => 'processing']);
-            }
-            else{
+            } else {
                 $order->status = 0;
                 $order->deliveryStatus = 'pending';
                 Suborder::where('order', $order->id)->update(['status' => 0, 'deliveryStatus' => 'pending']);
             }
 
-            if($order->save()){
+            if ($order->save()) {
 
                 return response()->json([
-                    'response'  => true
+                    'response' => true
                 ]);
             }
         }
 
         return response()->json([
-            'response'  => false
+            'response' => false
         ]);
     }
 }
