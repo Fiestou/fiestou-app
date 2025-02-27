@@ -235,7 +235,7 @@
                   <h2 className="text-lg font-semibold mb-3">Dados do Cliente</h2>
                   <p>{order.user?.name}</p>
                   <p>{order.user.email}</p>
-                  <p>{formatPhoneNumber(order.user?.details ? JSON.parse(order.user.details).phone : '')}</p>
+                  <p>{formatPhoneNumber(order.user?.details?.phone ?? '')}</p>
                 </div>
                 <div className="mb-6">
                   <h2 className="text-lg font-semibold mb-3">Pagamento</h2>
@@ -246,7 +246,7 @@
                 </div>
 
                 <div className="mb-6">
-                  <h2 className="text-lg font-semibold mb-3">Entrega ({getDeliveryPriceLabel()})</h2>
+                  <h2 className="text-lg font-semibold mb-3">Entrega ({getDeliveryPriceLabel(order.deliveryPrice ?? 0)})</h2>
                   <p>{(order.deliveryTo)}, {(order.deliverySchedule)}</p>
                   <p>{(typeof order.deliveryAddress !== 'string' && order.deliveryAddress.street) || 'N/A'}, {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress.number) || 'N/A'}, {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress.neighborhood) || 'N/A'}</p>
                   <p>CEP: {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.zipCode) ? formatCEP(order.deliveryAddress.zipCode) : 'N/A'}</p>
