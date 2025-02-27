@@ -23,6 +23,7 @@ use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\ElementsController;
 
 
 /*
@@ -161,6 +162,11 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
             Route::get('/list', [GroupController::class, 'List']);
             Route::delete('/delete/{GroupId}', [GroupController::class, 'Delete']);
             Route::get('/get-all-descendants/{GroupId}', [GroupController::class, 'GetAllDescendants']);
+        });
+
+        Route::group([ 'prefix' => 'element' ], function(){
+            Route::get('/get/{ElementId}', [ElementsController::class, 'Get']);
+            Route::get('/list', [ElementsController::class, 'List']);
         });
     });
 
