@@ -13,9 +13,11 @@ class AddDueDateToOrderTable extends Migration
      */
     public function up()
     {
-        Schema::table('order', function (Blueprint $table) {
-            $table->datetime('due_date')->nullable()->after('deliveryAddress');
-        });
+        if (!Schema::hasColumn('order', 'due_date')) {
+            Schema::table('order', function (Blueprint $table) {
+                $table->datetime('due_date')->nullable()->after('deliveryAddress');
+            });
+        }
     }
 
     /**
