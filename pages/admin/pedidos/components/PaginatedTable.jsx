@@ -48,9 +48,9 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
     });
   }, [filteredData, sortConfig]);
 
-  const totalPages = Math.ceil((sortedData ? sortedData.length : 0) / itemsPerPage);
+  const totalPages = Math.ceil((sortedData?.length) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedData = sortedData?.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePageChange = (page) => {
     if (page > 0 && page <= totalPages) setCurrentPage(page);
@@ -109,7 +109,7 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
           <div className="border rounded-lg overflow-hidden">
             {/* Table Header */}
             <div className="grid grid-cols-[minmax(100px,1fr)_minmax(150px,2fr)_minmax(100px,1fr)_minmax(200px,3fr)_minmax(100px,1fr)_minmax(100px,1fr)_minmax(100px,1fr)] gap-4 bg-zinc-100 p-4 font-bold text-zinc-900 font-title">
-              {columns.map((col, index) => (
+              {columns?.map((col, index) => (
                 <div
                   key={index}
                   className={`${col.sortable ? "cursor-pointer select-none" : ""}`}
@@ -125,12 +125,12 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
 
             {/* Table Body */}
             <div style={{ maxHeight: "500px" }}>
-              {paginatedData.map((row, rowIndex) => (
+              {paginatedData?.map((row, rowIndex) => (
                 <div
                   key={rowIndex}
                   className="grid grid-cols-[minmax(100px,1fr)_minmax(150px,2fr)_minmax(100px,1fr)_minmax(200px,3fr)_minmax(100px,1fr)_minmax(100px,1fr)_minmax(100px,1fr)] gap-4 border-t p-4 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 ease items-center"
                 >
-                  {columns.map((col, colIndex) => (
+                  {columns?.map((col, colIndex) => (
                     <div
                       key={colIndex}
                       className="whitespace-nowrap overflow-hidden text-ellipsis"
