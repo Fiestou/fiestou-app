@@ -48,7 +48,7 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
     });
   }, [filteredData, sortConfig]);
 
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const totalPages = Math.ceil((sortedData ? sortedData.length : 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
 
