@@ -1,7 +1,7 @@
 const PaginationLinks = ({ pages, currentPage, onPageChange }) => {
     return (
       <div className="flex gap-2">
-        {pages.map((item, index) =>
+        {pages?.map((item, index) =>
           item === "..." ? (
             <span key={index} className="px-2 py-1">
               ...
