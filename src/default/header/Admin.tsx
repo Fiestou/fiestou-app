@@ -1,16 +1,20 @@
+import { useEffect, useState } from "react";
 import Img from "@/src/components/utils/ImgBase";
 import Link from "next/link";
 import { HeaderType } from "@/src/default/header/index";
 import { UserType } from "@/src/models/user";
 import { getFirstName } from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { useEffect } from "react";
 import { AuthCheck } from "@/src/contexts/AuthContext";
 
 const menu = [
   {
     title: "Início",
     endpoint: "/admin/",
+  },
+  {
+    title: "Pedidos",
+    endpoint: "/admin/pedidos",
   },
   {
     title: "Produtos",
@@ -65,21 +69,57 @@ export default function Admin({
   params: HeaderType;
   user: UserType;
 }) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   useEffect(() => {
     AuthCheck();
+
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   return (
     <>
-      <div className="fixed w-full max-w-[16rem] top-0 left-0 bg-zinc-900 px-4 text-white">
+      <div
+        className={`fixed w-full max-w-[16rem] top-0 left-0 bg-zinc-900 px-4 text-white h-full z-50 transition-transform duration-300 ${
+          !isSidebarOpen ? "-translate-x-full" : ""
+        }`}
+      >
         <div
           dangerouslySetInnerHTML={{
             __html: `<style>
                       html {
-                        padding-left: 14rem !important;
+                        padding-left: ${isSidebarOpen ? "16rem" : "0"} !important;
+                      }
+                      .content-container {
+                        width: calc(100% - ${isSidebarOpen ? "16rem" : "0"});
+                        margin-left: ${isSidebarOpen ? "16rem" : "0"};
+                        overflow-x: auto;
+                      }
+                      main {
+                        min-width: fit-content;
                       }
                       .container-medium{
                         max-width: 64rem
+                      }
+                      @media (max-width: 768px) {
+                        .breadcrumb-container {
+                          min-width: 500px;
+                        }
                       }
                     </style>`,
           }}
@@ -134,6 +174,14 @@ export default function Admin({
           </div>
         </div>
       </div>
+
+      {/* Sidebar Buttons */}
+      <button
+        onClick={toggleSidebar}
+        className="fixed top-1 left-4 z-50 p-2 bg-zinc-900 text-white rounded-full shadow-lg"
+      >
+        <Icon icon={isSidebarOpen ? "fa-arrow-left" : "fa-bars"} />
+      </button>
     </>
   );
 }

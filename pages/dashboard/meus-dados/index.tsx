@@ -7,6 +7,7 @@ import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { useEffect, useState } from "react";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -58,7 +59,21 @@ export default function MeusDados({
   HeaderFooter: any;
 }) {
   const router = useRouter();
+  const [message, setMessage] = useState<string>('');
 
+  useEffect(()=>{
+    if (typeof window !== 'undefined') setMessage(localStorage.getItem('message') || '')
+  }, [])
+
+  useEffect(()=>{
+    if(message){
+      setTimeout(()=>{
+        setMessage('')
+        if (typeof window !== 'undefined') localStorage.setItem('message', '') 
+      }, 10000)
+    }
+  }, [message])
+  
   return (
     !router.isFallback && (
       <Template
@@ -96,6 +111,11 @@ export default function MeusDados({
           <div className="container-medium pb-12">
             <div className="grid md:flex gap-10 md:gap-24">
               <div className="w-full grid gap-8">
+                {message && (
+                    <div className="py-3 pl-4 bg-red-50 text-red-600 rounded-md text-center mt-2">
+                    {message}
+                  </div>
+                )}
                 <UserEdit user={user} />
               </div>
               <div className="w-full max-w-[24rem]">
