@@ -13,6 +13,7 @@ use App\Models\Store;
 use App\Models\Media;
 use App\Models\ContentRel;
 use Illuminate\Support\Str;
+use Log;
 
 class ContentController extends Controller
 {
@@ -127,7 +128,7 @@ class ContentController extends Controller
         ]);
     }
 
-    public function Partners(Request $request){
+    public function Partners(Request $request){ 
 
         $content = Content::where(["slug" => "parceiros", "type" => "page"])
                           ->first();
@@ -136,7 +137,7 @@ class ContentController extends Controller
 
             $stores = Store::where(["status" => 1])
                            ->get();
-
+                           
             return response()->json([
                 'response'  => true,
                 'data'      => array_merge(
