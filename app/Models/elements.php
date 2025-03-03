@@ -22,16 +22,16 @@ class Elements extends BaseModel
     /**
      * Obtém todos os descendentes do elemento.
      *
-     * @param int $groupId
+     * @param int $elementsId
      * @param bool|null $isActive
      * @return array
      */
-    public static function getElementDescendants($groupId, $isActive = null)
+    public static function getElementDescendants($elementsId, $isActive = null)
     {
-        $query = "CALL GetElementDescendants(:group_id, :is_active)";
+        $query = "CALL GetElementDescendants(:elementsId, :is_active)";
 
         return DB::select($query, [
-            'group_id' => $groupId,
+            'elementsId' => $elementsId,
             'is_active' => $isActive
         ]);
     }
