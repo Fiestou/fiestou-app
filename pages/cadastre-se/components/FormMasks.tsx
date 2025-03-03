@@ -2,33 +2,31 @@ import { useState } from "react";
 
 /* Phone Mask */
 export const formatPhone = (value: string): string => {
-  value = value.replace(/\D/g, ""); // Remove tudo que não é dígito
+  value = value.replace(/\D/g, "");
 
-  // Limits the number of digits to 11 (cell phone format in Brazil)
   if (value.length > 11) {
     value = value.slice(0, 11);
   }
 
   if (value.length > 0) {
-    // Format progressively as the user types
     if (value.length <= 2) {
-      // Start of DDD
       return value;
     } else if (value.length <= 7) {
-      // DDD + start of number
       return `(${value.slice(0, 2)}) ${value.slice(2)}`;
     } else if (value.length <= 11) {
-      // Standard cell format
-      const areaCode = value.slice(0, 2); // DDD
-      const firstPart = value.slice(2, 7); // First part of the number
-      const secondPart = value.slice(7); // Second part of the number
+      const areaCode = value.slice(0, 2); //Area code
+      const firstPart = value.slice(2, 7); //First part of the number
+      const secondPart = value.slice(7); //Second part of the number
 
-      // Final format: (XX) X XXXX-XXXX
-      return `(${areaCode}) ${firstPart[0]} ${firstPart.slice(1, 5)}-${firstPart.slice(5)}`;
+      //In case of 11 digits, use (XX) X XXXX-XXXX, otherwise (XX) XXXXX-XXXX
+      if (value.length === 11) {
+        return `(${areaCode}) ${firstPart[0]} ${firstPart.slice(1)}${secondPart ? `-${secondPart}` : ''}`;
+      }
+      return `(${areaCode}) ${firstPart}${secondPart ? `-${secondPart}` : ''}`;
     }
   }
-
-  return value;
+  
+  return "";
 };
 
 /* Mask for CPF/CNPJ */

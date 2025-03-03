@@ -260,6 +260,7 @@ export default function CadastreSe({
                     value={email}
                     type="email"
                     name="email"
+                    placeholder="Informe seu melhor e-mail"
                     required
                   />
                   {errorMail && (
@@ -277,7 +278,7 @@ export default function CadastreSe({
                     onChange={(e: any) => setPhone(formatPhone(e.target.value))}
                     type="text"
                     name="celular"
-                    placeholder="(00) 90000-0000"
+                    placeholder="(00) 9 0000-0000"
                     required
                   />
                   <div className="text-sm">
@@ -291,6 +292,7 @@ export default function CadastreSe({
                     onChange={(e: any) => setPassword(e.target.value)}
                     type="password"
                     name="senha"
+                    placeholder="Crie sua senha"
                     required
                   />
                 </div>
@@ -301,6 +303,7 @@ export default function CadastreSe({
                     onChange={(e: any) => setRepeat(e.target.value)}
                     type="password"
                     name="confirm_senha"
+                    placeholder="Confirme sua senha"
                     required
                   />
                 </div>
