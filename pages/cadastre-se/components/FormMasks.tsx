@@ -4,27 +4,27 @@ import { useState } from "react";
 export const formatPhone = (value: string): string => {
   value = value.replace(/\D/g, ""); // Remove tudo que não é dígito
 
-  // Limita o número de dígitos a 11 (formato de celular no Brasil)
+  // Limits the number of digits to 11 (cell phone format in Brazil)
   if (value.length > 11) {
     value = value.slice(0, 11);
   }
 
   if (value.length > 0) {
-    // Formatar progressivamente conforme o usuário digita
+    // Format progressively as the user types
     if (value.length <= 2) {
-      // Início do DDD
+      // Start of DDD
       return value;
     } else if (value.length <= 7) {
-      // DDD + início do número
+      // DDD + start of number
       return `(${value.slice(0, 2)}) ${value.slice(2)}`;
     } else if (value.length <= 11) {
-      // Formato padrão celular
+      // Standard cell format
       const areaCode = value.slice(0, 2); // DDD
-      const firstPart = value.slice(2, 7); // Primeira parte do número
-      const secondPart = value.slice(7); // Segunda parte do número
+      const firstPart = value.slice(2, 7); // First part of the number
+      const secondPart = value.slice(7); // Second part of the number
 
-      // Formato final: (XX) XXXXX-XXXX
-      return `(${areaCode}) ${firstPart}${secondPart ? `-${secondPart}` : ''}`;
+      // Final format: (XX) X XXXX-XXXX
+      return `(${areaCode}) ${firstPart[0]} ${firstPart.slice(1, 5)}-${firstPart.slice(5)}`;
     }
   }
 
