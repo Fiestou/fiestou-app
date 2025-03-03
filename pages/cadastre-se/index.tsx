@@ -9,7 +9,7 @@ import { encode as base64_encode, decode as base64_decode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
 import { CheckMail } from "@/src/models/CheckEmail";
-import { formatName, formatPhone, formatCpfCnpj, formatCep, validateEmail } from "./components/FormMasks";
+import { formatName, formatPhone, formatCpfCnpj, formatCep, validateEmail } from "../../src/components/utils/FormMasks";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
