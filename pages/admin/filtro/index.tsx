@@ -12,7 +12,7 @@ export default function Categorias() {
   const api = new Api();
 
   const [listRelation, setListRelation] = useState([] as Array<any>);
-
+  console.log(listRelation)
   const sendReorder = async () => {
     const request: any = await api.bridge({
       url: "categories/reorder",
@@ -75,7 +75,13 @@ export default function Categorias() {
         <div 
           className="w-full max-w-[1000px] max-h-screen bg-red"
         >
-          <Card description="teste" elements={[]} onDeleteClick={() => { }} onEditClick={() => { }} title="teste" />
+          <Card description="teste" elements={[
+            {
+              text: 'Engrenagem',
+              icon: "https://api.fiestou.com.br/storage/categories/media/12-07-2024/1626-2699png.png",
+              id: '1'
+            }
+          ]} onDeleteClick={() => { }} onEditClick={() => { }} onElementClick={()=>{}} title="teste" />
         </div>
       </section>
     </Template>
