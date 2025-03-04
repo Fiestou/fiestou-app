@@ -1,21 +1,21 @@
 import { useState } from "react";
 
-/* Phone Mask */
+/* Phone Mask */ 
 export const formatPhone = (value: string): string => {
   value = value.replace(/\D/g, "");
 
   if (value.length === 11) {
-    return value.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3"); /* Celular com 11 dígitos */
+    return value.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3"); /* Cell phone with 11 digits */
   } else if (value.length === 10) {
-    return value.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) 9$2-$3"); /* Celular com 10 dígitos (adiciona o 9) */
+    return value.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) 9$2-$3"); /* Cell phone with 10 digits (add 9) */
   } else if (value.length === 8) {
-    return value.replace(/^(\d{4})(\d{4})$/, "(00) 9$1-$2"); /* Fixo com 8 dígitos (adiciona o 9) */
+    return value.replace(/^(\d{4})(\d{4})$/, "(00) 9$1-$2"); /* Fixed with 8 digits (add 9) */
   }
 
   return value;
 };
 
-/* Máscara para CPF/CNPJ */
+/* CPF/CNPJ Mask */
 export const formatCpfCnpj = (value: string): string => {
   value = value.replace(/\D/g, "");
 
@@ -28,12 +28,12 @@ export const formatCpfCnpj = (value: string): string => {
   return value;
 };
 
-/* Validação de CPF/CNPJ */
+/* CPF/CNPJ Validation */
 export const validateCpfCnpj = (value: string): boolean => {
-  return /^\d{11}$/.test(value) || /^\d{14}$/.test(value); /* CPF ou CNPJ válido */
+  return /^\d{11}$/.test(value) || /^\d{14}$/.test(value); /* Invalid CPF/CNPJ */
 };
 
-/* Máscara para CEP */
+/* CEP (ZipCode) Mask */
 export const formatCep = (value: string): string => {
   value = value.replace(/\D/g, "");
 
@@ -52,13 +52,13 @@ export const formatName = (value: string): string => {
     .join(" "); 
 };
 
-/* Validação de Email */
+/* Email Validation */
 export const validateEmail = (email: string): boolean => {
   const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return regex.test(email);
 };
 
-/* Componente de Máscaras */
+/* Masks Components */
 const MaskComponent = () => {
   const [phone, setPhone] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
@@ -68,7 +68,7 @@ const MaskComponent = () => {
 
   return (
     <div>
-      {/* Campo de Telefone */}
+      {/* Phone Field */}
       <div>
         <label>Telefone</label>
         <input
@@ -79,7 +79,7 @@ const MaskComponent = () => {
         />
       </div>
 
-      {/* Campo de CPF/CNPJ */}
+      {/* CPF/CNPJ Field */}
       <div>
         <label>CPF/CNPJ</label>
         <input
@@ -90,7 +90,7 @@ const MaskComponent = () => {
         />
       </div>
 
-      {/* Campo de CEP */}
+      {/* CEP (brazilian zipcode) Field */}
       <div>
         <label>CEP</label>
         <input
@@ -101,7 +101,7 @@ const MaskComponent = () => {
         />
       </div>
 
-      {/* Campo de Nome */}
+      {/* Name Field */}
       <div>
         <label>Nome</label>
         <input
@@ -112,7 +112,7 @@ const MaskComponent = () => {
         />
       </div>
 
-      {/* Campo de Email */}
+      {/* Email Field */}
       <div>
         <label>Email</label>
         <input

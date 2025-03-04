@@ -62,7 +62,7 @@ export const formatCep = (value: string): string => {
   return value;
 };
 
-/* Name Formatting (first letter uppercase) */
+/* Name Formatting (first letter uppercase) */ 
 export const formatName = (value: string): string => {
   return value
     .toLowerCase() /* Converts everything to lowercase */
