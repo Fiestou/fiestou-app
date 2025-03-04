@@ -4,17 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Elements;
-use App\Models\Group;
 use App\Models\GroupElements;
 use App\Models\ElementsRel;
-use Dom\Element;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class ElementsController extends Controller
 {
     /**
-     * Show the form for creating a new resource.
+     * Register element
      *
      * @return \Illuminate\Http\Response
      */
@@ -94,7 +91,7 @@ class ElementsController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Get element by id.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
@@ -121,7 +118,7 @@ class ElementsController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * List all element.
      *
      * @return \Illuminate\Http\Response
      */
@@ -134,7 +131,7 @@ class ElementsController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update element by id.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -207,15 +204,40 @@ class ElementsController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete element by id.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function Delete($id)
+    public function Delete($ElementId)
     {
-        //
+        try {
+            $element = Elements::where(['id' => $ElementId])->first();
+
+            $element->active = false;
+
+            ElementsRel::where('parent_id', $ElementId)->delete();
+
+            if ($element->save()) {
+                return response()->json([
+                    'response' => true,
+                    'message'     => 'ok'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'response' => true,
+                'message'     => 'Erro ao deletar o grupo' . $e->getMessage()
+            ]);
+        }
     }
+
+    /**
+     * Get all Descendants by parent id
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
 
     public function GetAllDescendants($ElementId)
     {
