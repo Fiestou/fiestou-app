@@ -31,7 +31,7 @@ export const formatPhone = (value: string): string => {
 
 /* Mask for CPF/CNPJ */
 export const formatCpfCnpj = (value: string): string => {
-  value = value.replace(/\D/g, ""); /* Removes all non-digit characters */
+  value = value.replace(/\D/g, ""); /* Removes all non-digit characters */ 
 
   if (value.length === 11) {
     return value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4"); /* CPF */
