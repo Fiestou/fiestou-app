@@ -161,12 +161,15 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
             Route::put('/update/{GroupId}', [GroupController::class, 'Update']);
             Route::get('/list', [GroupController::class, 'List']);
             Route::delete('/delete/{GroupId}', [GroupController::class, 'Delete']);
-            Route::get('/get-all-descendants/{GroupId}', [GroupController::class, 'GetAllDescendants']);
+            Route::get('/{GroupId}/descendants', [GroupController::class, 'GetAllDescendants']);
         });
 
         Route::group([ 'prefix' => 'element' ], function(){
+            Route::post('/register', [ElementsController::class, 'Register']);
             Route::get('/get/{ElementId}', [ElementsController::class, 'Get']);
             Route::get('/list', [ElementsController::class, 'List']);
+            Route::put('/update/{ElementId}', [ElementsController::class, 'Update']);
+            Route::get('/{ElementId}/descendants', [ElementsController::class, 'GetAllDescendants']);
         });
     });
 
