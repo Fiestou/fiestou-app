@@ -65,13 +65,13 @@ export const formatCep = (value: string): string => {
 /* Name Formatting (first letter uppercase) */ 
 export const formatName = (value: string): string => {
   return value
-    .toLowerCase() /* Converts everything to lowercase */
-    .split(" ") /* Splits into words */
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) /* First letter uppercase */
-    .join(" "); /* Joins the words again */
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
-/* Email Validation */
+/* Email */
 export const validateEmail = (email: string): boolean => {
   const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return regex.test(email);
