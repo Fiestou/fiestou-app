@@ -279,8 +279,8 @@ export default function Pagamento({
 
     const handle: OrderType = request?.data;
 
-    if (handle && handle.status != 0) {
-      window.location.href = `/dashboard/pedidos/${handle.id}`;
+    //if (handle && handle.status != 0) {
+      //window.location.href = `/dashboard/pedidos/${handle.id}`;
 
       let dates: any = [];
       let products: any = [];
@@ -300,7 +300,7 @@ export default function Pagamento({
 
       if (!!handle?.user) setUser(handle.user);
       setPlaceholder(false);
-    }
+    //}
   };
 
   useEffect(() => {
