@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Elements;
 use App\Models\GroupElements;
+use App\Models\Group;
 use App\Models\ElementsRel;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +26,7 @@ class ElementsController extends Controller
                 "description"    => "required",
                 "id_group"       => "required|exists:group,id",
                 "childElements"  => "nullable|array",
-                "childElements.*"=> "exists:elements,id"
+                "childElements.*" => "exists:elements,id"
             ]);
 
             $element = new Elements();
@@ -80,7 +81,6 @@ class ElementsController extends Controller
                 'response' => true,
                 'data'     => $element
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -146,7 +146,7 @@ class ElementsController extends Controller
                 "name"           => "required",
                 "description"    => "required",
                 "childElements"  => "nullable|array",
-                "childElements.*"=> "exists:elements,id"
+                "childElements.*" => "exists:elements,id"
             ]);
 
             $element = Elements::find($ElementId);
@@ -241,12 +241,22 @@ class ElementsController extends Controller
 
     public function GetAllDescendants($ElementId)
     {
+
+        $descendants = Elements::getElementDescendants($ElementId, 1);
+
+        foreach ($descendants as $descendant) {
+            $groupElement = GroupElements::where('id_elements', $descendant->id)->first();
+
+            $group = Group::where('id', $groupElement->id_group)->first();
+
+            $descendant->group = $group;
+        };
+
         try {
             return response()->json([
                 'response' => true,
-                'data'     =>  Elements::getElementDescendants($ElementId, 1)
+                'data'     =>  $descendants
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'response' => true,
