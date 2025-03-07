@@ -1,35 +1,64 @@
-import React from "react";
+import React, { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import FileManager from "@/src/components/ui/form/FileManager";
+import { GoPlus } from "react-icons/go";
+import { FaPen } from "react-icons/fa";
+import { FaRegTrashAlt } from "react-icons/fa";
 
 interface CardProps {
     title: string;
     description: string;
     onEditClick: () => void;
     onDeleteClick: () => void;
-    onElementClick: (id: string) => void;
-    elements: ElementsCard[]
+    onElementClick: (ElementId: string) => void;
+    onNewElementClick: (groupId: number) => void;
+    elements: ElementsCard[];
+    id: number;
 }
 
 export interface ElementsCard {
     text: string;
     icon: string;
-    id: string;
+    id: number;
 }
 
 const Card: React.FC<CardProps> = (props) => {
-    return(
+    const [isTooltipVisible, setTooltipVisible] = useState(false);
+
+    return (
         <div className="flex flex-col justify-center items-center relative border-2 border-black rounded-md h-15 w-full p-4 text-black gap-3">
-            <button className="absolute top-0 right-0 flex justify-center items-center w-10 h-10 ">
+            <button
+                className="absolute top-0 right-0 flex justify-center items-center w-10 h-10"
+                onClick={() => setTooltipVisible(!isTooltipVisible)}
+            >
                 <BsThreeDotsVertical size={25} />
             </button>
+            {isTooltipVisible && (
+                <div className="absolute top-8 right-4 bg-white text-black text-sm p-2 rounded-md whitespace-nowrap border-2 border-black flex flex-col gap-2">
+                    <button className="flex p-1 gap-2 justify-center items-center text-black hover:bg-gray-200 rounded-md">
+                        <div className="flex-1 w-ful flex justify-center items-center">
+                            <FaPen size={20} />
+                        </div>
+                        <label className="flex-2 w-full flex justify-start items-start">
+                            Editar
+                        </label>
+                    </button>
+                    <button className="flex p-1 gap-2 justify-start items-start text-black  hover:bg-gray-200 rounded-md">
+                        <div className="flex-1 w-ful flex justify-start items-center">
+                            <FaRegTrashAlt size={20} />
+                        </div>
+                        <label className="flex-2 w-full flex justify-center items-center">
+                            Excluir
+                        </label>
+                    </button>
+                </div>
+            )}
 
             <div className="flex justify-center items-center flex-1 w-full">
                 <h1 className="font-bold text-xl">
                     {props.title}
                 </h1>
             </div>
-           
+
             <div className="flex justify-center items-start flex-1 w-full min-h-10">
                 <p>
                     {props.description}
@@ -42,28 +71,31 @@ const Card: React.FC<CardProps> = (props) => {
                 </h1>
             </div>
 
-            <div className="flex justify-center items-center flex-1 w-full">
+            <div className="flex justify-center items-center flex-1 w-full gap-1 flex-wrap">
 
                 {props.elements.length > 0 ? (
-                    props.elements.map((element, index)=>
-                        (
-                            <div 
-                                className="flex justify-center items-center text-black border-2 border-black rounded-md"
-                                key={index}  
-                            >
-                                <label className="flex-3 w-full flex justify-center items-center">
-                                    {element.text}
-                                </label>
-
-                                <div className="flex-1 w-ful flex justify-center items-centerl">
-                                    <img 
-                                        src={element.icon}
-                                        className="w-5 h-5"
-                                        
-                                    />
-                                </div>
+                    props.elements.map((element, index) =>
+                    (
+                        <div
+                            className="flex p-1 gap-1 justify-center items-center text-black border-2 border-black rounded-md"
+                            key={index}
+                        >
+                            <div className="flex-1 w-ful flex justify-center items-center">
+                                <img
+                                    src={element.icon}
+                                    className="max-w-[25px] max-h-[25px]" />
                             </div>
-                    ))
+                            <label className="flex-2 w-full flex justify-center items-center">
+                                {element.text}
+                            </label>
+                        </div>
+                    )).concat(
+                        <button 
+                            onClick={()=>props.onNewElementClick(props.id)}
+                            className="flex justify-center items-center p-1 rounded-md bg-yellow-300 border-2 border-black active:bg-yellow-300 active:text-white active:border-white">
+                            <GoPlus size={25} />
+                        </button>
+                    )
                 ) : (
                     <button className="flex p-2 rounded-md justify-center items-center text-black bg-yellow-300 active:bg-yellow-200" >
                         Adicionar elemento
