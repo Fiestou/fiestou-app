@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\GroupElements;
 use App\Models\Elements;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
 {
@@ -95,7 +96,7 @@ class GroupController extends Controller
      */
     public function Get($GroupId)
     {
-        $group = Group::with('elements.element')->find($GroupId);
+        $group = Group::with('elements')->find($GroupId);
 
         if (!$group) {
             return response()->json([
@@ -104,18 +105,18 @@ class GroupController extends Controller
             ]);
         }
 
-        $elements = $group->elements->map(function ($groupElement) {
-            return $groupElement->element;
-        });
+        $parent = null;
+
+        if ($group->parent_id){
+            $parent = Group::where('id', $group->parent_id)->get();
+            $group->parent = $parent;
+
+            unset($group->parent_id);
+        }
 
         return response()->json([
             'response' => true,
-            'data'     => [
-                'id'       => $group->id,
-                'name'     => $group->name,
-                'parent_id' => $group->parent_id,
-                'elements' => $elements
-            ]
+            'data'     => $group
         ]);
     }
 
@@ -139,7 +140,7 @@ class GroupController extends Controller
                 "elements.*"  => "exists:elements,id"
             ]);
 
-            $group = Group::with('elements.element')->find($GroupId);
+            $group = Group::with('elements')->find($GroupId);
 
             if ($request->has("parent_id")) {
                 $group->parent_id = $request->get("parent_id");
@@ -149,22 +150,26 @@ class GroupController extends Controller
             $group->description = $request->get("description");
             $group->save();
 
+            $elements = [];
+
             if ($request->has("elements")) {
-                $elements = $request->get("elements");
+                $elementsIds = $request->get("elements");
 
                 GroupElements::where('id_group', $GroupId)->delete();
 
-                foreach ($elements as $elementId) {
+                foreach ($elementsIds as $elementId) {
                     GroupElements::create([
                         'id_group'    => $GroupId,
                         'id_elements' => $elementId
                     ]);
-                }
-            }
 
-            $elements = $group->elements->map(function ($groupElement) {
-                return $groupElement->element;
-            });
+                    $element = Elements::where('id', $elementId)->first();
+
+                    array_push($elements, $element);
+                }
+
+                $group->elements = $elements;
+            }
 
             DB::commit();
 
@@ -194,9 +199,11 @@ class GroupController extends Controller
      */
     public function List()
     {
+        $groups = Group::with('elements')->get();
+
         return response()->json([
             'response' => true,
-            'data'     => Group::all()
+            'data'     => $groups
         ]);
     }
 

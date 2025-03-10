@@ -18,20 +18,24 @@ class Group extends BaseModel
 
     public function elements()
     {
-        return $this->hasMany(GroupElements::class, 'id_group');
+        return $this->hasManyThrough(
+            Elements::class,
+            GroupElements::class,
+            'id_group',
+            'id',
+            'id',
+            'id_elements'
+        );
     }
 
-    /**
-     * Obtém todos os descendentes do grupo.
-     *
-     * @param int $groupId
-     * @param bool|null $isActive
-     * @return array
-     */
+    public function getElementsAttribute()
+    {
+        return $this->directElements;
+    }
+
     public static function getAllDescendants($groupId, $isActive = null)
     {
         $query = "CALL GetAllGroupDescendants(:group_id, :is_active)";
-
         return DB::select($query, [
             'group_id' => $groupId,
             'is_active' => $isActive
