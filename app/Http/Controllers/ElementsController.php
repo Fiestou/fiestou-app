@@ -24,6 +24,7 @@ class ElementsController extends Controller
             $request->validate([
                 "name"           => "required",
                 "description"    => "required",
+                "icon"           => "required",
                 "id_group"       => "required|exists:group,id",
                 "childElements"  => "nullable|array",
                 "childElements.*" => "exists:elements,id"
@@ -41,6 +42,7 @@ class ElementsController extends Controller
 
             $element->name = $request->get("name");
             $element->description = $request->get("description");
+            $element->icon = $request->get("icon");
 
             if (!$element->save()) {
                 DB::rollBack();
