@@ -111,9 +111,9 @@ export default function Categorias() {
 
       <GroupModal onSaveClick={(data) => console.log(data)} open={openGroupModal} onRequestClose={() => { setOpenGroupModal(false) }} />
       <ElementModal groupId={groupId || 0} elementsChilds={[
-          {text: 'teste', id: 1},
-          {text: 'teste', id: 1},
-          {text: 'teste', id: 1}
+          {text: 'teste', id: 1, icon: '', checked: false},
+          {text: 'teste', id: 2, icon: '', checked: false},
+          {text: 'teste', id: 3, icon: '', checked: false}
           ]} onRequestClose={()=>{setOpenElementModal(false)}} open={openElementModal}/>
     </Template>
   ) : (
