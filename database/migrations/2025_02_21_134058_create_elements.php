@@ -11,7 +11,7 @@ class CreateElements extends Migration
         Schema::create('elements', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name', 255);
-            $table->string('icon', 40)->nullable();
+            $table->text('icon')->nullable();
             $table->text('description')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamps();
