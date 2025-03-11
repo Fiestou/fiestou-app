@@ -2,45 +2,67 @@ import FileManager from "@/src/components/ui/form/FileManager";
 import React, { useEffect, useState } from "react";
 import { IoClose } from "react-icons/io5";
 import { FaTrash } from 'react-icons/fa';
+import SelectElements from "../selectElements/selectElements";
+import { Element } from "@/pages/admin/filtro/types/response";
 
 interface ElementModalProps {
     open: boolean;
     onRequestClose: () => void;
     groupId: number;
-    elementsChilds: ElementChild[];
+    relatedElements: ElementChild[];
+    onSaveClick: (data: ReturnElementData) => void;
+    data?: Element | null
 }
 
-interface ElementChild {
-    text: string;
+export interface ElementChild {
+    name: string;
     id: number;
     icon: string;
     checked: boolean;
 }
 
+export interface ReturnElementData {
+    id?: string,
+    id_group: number,
+    icon: string,
+    name: string,
+    description: string,
+    childElements: number[]
+}
+
 const ElementModal: React.FC<ElementModalProps> = (props) => {
     if (!props.open) return null;
     const [icon, setIcon] = useState<string>('');
+    const [name, setName] = useState<string>('');
+    const [description, setDescription] = useState<string>('');
     const [openSelect, setOpenSelect] = useState<boolean>(false);
     const [selectedList, setSelectedList] = useState<ElementChild[]>([]);
 
-    const onCheckClick = (checked: boolean, value: ElementChild) => {
-        setSelectedList(prevSelectedList => {
-            if (checked) {
-                return [...prevSelectedList, { ...value, checked: true }];
-            } else {
-                return prevSelectedList.filter(item => item.id !== value.id);
-            }
-        });
-    };
-
-    const onCheckAllClick = (checked: boolean) => {
-        const updatedElements = props.elementsChilds.map(item => ({
-            ...item,
-            checked: checked
-        }));
-
-        setSelectedList(checked ? updatedElements : []);
+    const data: ReturnElementData = {
+        id_group: props.groupId,
+        icon: icon,
+        name: name,
+        description: description,
+        childElements: selectedList
+            .filter((value) => value.checked)
+            .map((value) => value.id)
     }
+
+    useEffect(() => {
+        console.log(props.data)
+        if (props.data) {
+            setIcon(props.data.icon);
+            setName(props.data.name);
+            setDescription(props.data.description);
+            if (props.data.descendents) {
+                setSelectedList(props.data.descendents);
+            }
+        }
+    }, [props.data])
+
+    useEffect(() => {
+        console.log(selectedList)
+    }, [selectedList])
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -80,54 +102,49 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
                                 dir: "categories",
                                 type: "thumb",
                             }}
-                            className="py-[.6rem] text-sm p-2"
+                            className="py-[.6rem] text-sm p-2 z-50"
                         />
                     )}
-                    <input className="flex-1 w-full border-[1px] border-black rounded-md p-2" placeholder="Insira o nome do elemento" />
+                    <input
+                        value={name}
+                        onChange={(event) => { setName(event.target.value) }}
+                        className="flex-1 w-full border-[1px] border-black rounded-md p-2"
+                        placeholder="Insira o nome do elemento"
+                    />
                 </div>
-                <div className="flex flex-col mt-4 w-full justify-start items-start">
+                <div className="flex flex-col w-full items-start justify-start gap-2">
+                    <h2 className="text-[20px] font-semibold text-black underline-offset-4">
+                        Descrição
+                    </h2>
+                    <textarea
+                        value={description}
+                        onChange={(event) => { setDescription(event.target.value) }}
+                        className="flex-1 w-full border-[1px] border-gray-500 min-h-[90px] rounded-md p-2" placeholder="Digite aqui a descrição do elemento" />
+                </div>
+                <div className="flex flex-col w-full justify-start items-start">
                     <h2 className="text-[20px] font-semibold text-black underline-offset-4">
                         Selecione os elementos relacionados
                     </h2>
                     <p>Categoria</p>
                 </div>
-                <div className="flex flex-col w-full justify-start items-start relative">
-                    <button
-                        className="flex flex-row w-full justify-start p-2 items-center rounded-md border-[1.5px] border-black gap-2 flex-wrap"
-                        onClick={() => setOpenSelect(!openSelect)}
-                    >
-                        {selectedList.length > 0 ? (
-                            selectedList.map((value) => (
-                                <div className="h-[30px] p-2 rounded-md flex items-center justify-center bg-yellow-300 text-black gap-1" key={value.id}>
-                                    <img src={value.icon} alt="icon" className="w-5 h-5" />
-                                    {value.text}
-                                </div>
-                            ))
-                        ) : ('Selecione ...')}
-                    </button>
 
-                    <div className={`absolute left-0 top-8 flex flex-col gap-1 w-full overflow-y-auto max-h-[100px] bg-white text-black p-2 rounded-md text-center transition-opacity duration-300 
-                            ${openSelect ? "opacity-100 translate-y-2 z-60" : "opacity-0 translate-y-2 z-0"}`}>
-                        <div className="w-full h-8 flex items-center justify-start gap-2">
-                            <input type="checkbox" id="check-all-box" onChange={(event) => onCheckAllClick(event.target.checked)} className="w-5 h-5 accent-yellow-500" />
-                            <label htmlFor="check-all-box">Selecionar todos</label>
-                        </div>
-                        {props.elementsChilds.map((value) => (
-                            <div key={value.id} className="w-full h-8 flex items-center justify-start gap-2">
-                                <input type="checkbox" id={`check-${value.id}`} onChange={(event) => onCheckClick(event.target.checked, value)} checked={selectedList.some(item => item.id === value.id)} className="w-5 h-5 accent-yellow-500" />
-                                <img src={value.icon} alt="icon" className="w-5 h-5" />
-                                <label htmlFor={`check-${value.id}`}>{value.text}</label>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <SelectElements
+                    selectedList={selectedList}
+                    onRequestClose={() => {
+                        setOpenSelect(false);
+                    }}
+                    onRequestOpen={() => setOpenSelect(!openSelect)}
+                    open={openSelect}
+                    relatedElements={props.relatedElements}
+                />
+
                 <div className="flex w-full justify-end gap-3">
-                    <button onClick={props.onRequestClose} 
-                        className={`flex ${!openSelect && ('z-50')} justify-center w-[100px] items-center p-2 text-yellow-400 border-2 border-yellow-400 rounded-md active:bg-yellow-400 active:text-white`}>
+                    <button onClick={props.onRequestClose}
+                        className={`flex ${!openSelect && ('z-10')} justify-center w-[100px] items-center p-2 text-yellow-400 border-2 border-yellow-400 rounded-md active:bg-yellow-400 active:text-white`}>
                         Cancelar
                     </button>
-                    <button onClick={() => console.log('Salvar clicado')} 
-                        className={`flex ${!openSelect && ('z-50')} justify-center w-[100px] items-center p-2 bg-yellow-400 text-white border-2 border-yellow-400 rounded-md active:bg-white active:text-yellow-400`}>
+                    <button onClick={() => props.onSaveClick(data)}
+                        className={`flex ${!openSelect && ('z-10')} justify-center w-[100px] items-center p-2 bg-yellow-400 text-white border-2 border-yellow-400 rounded-md active:bg-white active:text-yellow-400`}>
                         Salvar
                     </button>
                 </div>

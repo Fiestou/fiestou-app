@@ -9,14 +9,15 @@ interface CardProps {
     description: string;
     onEditClick: () => void;
     onDeleteClick: () => void;
-    onElementClick: (ElementId: string) => void;
+    onElementClick: (ElementId: number) => void;
     onNewElementClick: (groupId: number) => void;
     elements: ElementsCard[];
     id: number;
+
 }
 
 export interface ElementsCard {
-    text: string;
+    name: string;
     icon: string;
     id: number;
 }
@@ -76,19 +77,21 @@ const Card: React.FC<CardProps> = (props) => {
                 {props.elements.length > 0 ? (
                     props.elements.map((element, index) =>
                     (
-                        <div
+                        <button
                             className="flex p-1 gap-1 justify-center items-center text-black border-2 border-black rounded-md"
                             key={index}
+                            onClick={()=>{props.onElementClick(element.id)}}
+                            id={`button-element-${index}`}
                         >
                             <div className="flex-1 w-ful flex justify-center items-center">
                                 <img
                                     src={element.icon}
                                     className="max-w-[25px] max-h-[25px]" />
                             </div>
-                            <label className="flex-2 w-full flex justify-center items-center">
-                                {element.text}
+                            <label htmlFor={`button-element-${index}`} className="flex-2 w-full flex justify-center items-center">
+                                {element.name}
                             </label>
-                        </div>
+                        </button>
                     )).concat(
                         <button 
                             onClick={()=>props.onNewElementClick(props.id)}
@@ -97,7 +100,7 @@ const Card: React.FC<CardProps> = (props) => {
                         </button>
                     )
                 ) : (
-                    <button className="flex p-2 rounded-md justify-center items-center text-black bg-yellow-300 active:bg-yellow-200" >
+                    <button onClick={()=>props.onNewElementClick(props.id)} className="flex p-2 rounded-md justify-center items-center text-black bg-yellow-300 active:bg-yellow-200" >
                         Adicionar elemento
                     </button>
                 )}

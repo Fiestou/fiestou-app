@@ -8,7 +8,7 @@ interface CreateGroupProps {
   data?: GroupData;
 }
 
-interface GroupData {
+export interface GroupData {
   id?: number;
   title: string;
   description: string;
@@ -58,12 +58,12 @@ const GroupModal: React.FC<CreateGroupProps> = (props) => {
             className="flex-1 w-full border-[1px] border-gray-500 min-h-[90px] rounded-md p-2" placeholder="Digite aqui" />
         </div>
         <div className="flex w-full justify-end gap-3">
-          <button className="flex justify-center w-[100px] items-center p-2 text-yellow-400 border-2 border-yellow-400 rounded-md active:bg-yellow-400 active:text-white">
+          <button className="flex justify-center w-[100px] items-center p-2 text-yellow-400 border-2 border-yellow-400 rounded-md active:bg-yellow-400 active:text-black">
             Cancelar
           </button>
           <button
             onClick={() => props.onSaveClick(returnData)}
-            className="flex justify-center w-[100px] items-center p-2 bg-yellow-400 text-white border-2 border-yellow-400 rounded-md active:bg-white active:text-yellow-400">
+            className="flex justify-center w-[100px] items-center p-2 bg-yellow-400 text-black border-2 border-yellow-400 rounded-md active:bg-white active:text-yellow-400">
             Salvar
           </button>
         </div>

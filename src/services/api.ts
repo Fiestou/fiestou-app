@@ -116,10 +116,9 @@ class Api {
     return this.connect({ method, url, data, opts }, ctx);
   }
 
-  async bridge({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async bridge<T>({ method, url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
     url = `${process.env.API_REST}${url}`;
-
-    return this.connect({ method, url, data, opts }, ctx);
+    return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
   async graph({ method, url, data, opts }: ApiRequestType, ctx?: any) {
