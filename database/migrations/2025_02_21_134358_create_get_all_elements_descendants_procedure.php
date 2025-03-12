@@ -8,7 +8,7 @@ class CreateGetAllElementsDescendantsProcedure extends Migration
 {
     public function up()
     {
-        $sqlFile = database_path('sql\GetAllElementsDescendants.sql');
+        $sqlFile = database_path('sql/GetAllElementsDescendants.sql');
 
         if (!File::exists($sqlFile)) {
             throw new \Exception("Arquivo SQL não encontrado: {$sqlFile}");

@@ -8,7 +8,7 @@ class CreateGetAllGroupDescendantsProcedure extends Migration
 {
     public function up()
     {
-        $sqlFile = database_path('sql\GetAllGroupDescendants.sql');
+        $sqlFile = database_path('sql/GetAllGroupDescendants.sql');
 
         if (!File::exists($sqlFile)) {
             throw new \Exception("Arquivo SQL não encontrado: {$sqlFile}");
