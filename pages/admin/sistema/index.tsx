@@ -16,9 +16,6 @@ const formInitial = {
 export default function Sistema() {
   const api = new Api();
   const router = useRouter();
-
-  // console.log(roles, "<<--");
-
   const [form, setForm] = useState(formInitial);
   const handleForm = (value: any) => {
     setForm((form) => ({ ...form, ...value }));
