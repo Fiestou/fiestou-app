@@ -91,7 +91,7 @@ const PaginatedTable = ({
 
   const totalPages = Math.ceil(sortedData.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedData = sortedData?.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= totalPages) setCurrentPage(page);
@@ -150,7 +150,7 @@ const PaginatedTable = ({
           <div className="border rounded-lg overflow-hidden">
             {/* Table Header */}
             <div className="grid grid-cols-[minmax(100px,1fr)_minmax(150px,2fr)_minmax(100px,1fr)_minmax(200px,3fr)_minmax(100px,1fr)_minmax(100px,1fr)_minmax(100px,1fr)] gap-4 bg-zinc-100 p-4 font-bold text-zinc-900 font-title">
-              {columns.map((col, index) => (
+              {columns?.map((col, index) => (
                 <div
                   key={index}
                   className={`${col.sortable ? "cursor-pointer select-none" : ""}`}
