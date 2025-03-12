@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { ElementChild } from "../modals/ElementModal";
 
 interface SelectElementsProps {
@@ -7,17 +7,11 @@ interface SelectElementsProps {
     onRequestOpen: () => void;
     onRequestClose: () => void;
     selectedList: ElementChild[];
+    onChageSelectList: (data: ElementChild[]) => void; 
 }
 
 const SelectElements: React.FC<SelectElementsProps> = (props) => {
-    const [selectedList, setSelectedList] = useState<ElementChild[]>([]);
     const dropdownRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (props.selectedList){
-            setSelectedList(props.selectedList);
-        }
-    }, [props.selectedList]);
 
     const handleClickOutside = (event: MouseEvent) => {
         if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -33,16 +27,16 @@ const SelectElements: React.FC<SelectElementsProps> = (props) => {
     }, []);
 
     const onCheckClick = (checked: boolean, value: ElementChild) => {
-        setSelectedList(prevSelectedList =>
-            checked
-                ? [...prevSelectedList, { ...value, checked: true }]
-                : prevSelectedList.filter(item => item.id !== value.id)
+        props.onChageSelectList(checked
+            ? [...props.selectedList, { ...value, checked: true }]
+            : props.selectedList.filter(item => item.id !== value.id)
         );
+        console.log(props.selectedList)
     };
-
+ 
     const onCheckAllClick = (checked: boolean) => {
-        setSelectedList(checked ? props.relatedElements.map(item => ({ ...item, checked: true })) : []);
-        props.onRequestClose()
+        props.onChageSelectList(checked ? props.relatedElements.map(item => ({ ...item, checked: true })) : []);
+        props.onRequestClose();
     };
 
     return (
@@ -51,8 +45,8 @@ const SelectElements: React.FC<SelectElementsProps> = (props) => {
                 className="flex flex-row w-full justify-start p-2 items-center rounded-md border-[1.5px] border-black gap-2 flex-wrap"
                 onClick={() => props.onRequestOpen()}
             >
-                {selectedList.length > 0 ? (
-                    selectedList.map((value) => (
+                {props.selectedList.length > 0 ? (
+                    props.selectedList.map((value) => (
                         <div className="h-[30px] p-2 rounded-md flex items-center justify-center bg-yellow-300 text-black gap-1" key={value.id}>
                             <img src={value.icon} alt="icon" className="w-5 h-5" />
                             {value.name}
@@ -62,14 +56,14 @@ const SelectElements: React.FC<SelectElementsProps> = (props) => {
             </button>
 
             {props.open && (
-                <div className="absolute left-0 top-10 flex flex-col gap-1 w-full overflow-y-auto max-h-[100px] bg-white text-black p-2 rounded-md text-center transition-opacity duration-300 opacity-100 translate-y-2 z-10">
+                <div className="absolute left-0 top-10 flex flex-col gap-1 w-full overflow-y-auto max-h-[200px] bg-white text-black p-2 rounded-md text-center transition-opacity duration-300 opacity-100 translate-y-2 z-10">
                     <div className="w-full h-8 flex items-center justify-start gap-2">
                         <input type="checkbox" id="check-all-box" onChange={(event) => onCheckAllClick(event.target.checked)} className="w-5 h-5 accent-yellow-500" />
                         <label htmlFor="check-all-box">Selecionar todos</label>
                     </div>
                     {props.relatedElements.map((value) => (
                         <div key={value.id} className="w-full h-8 flex items-center justify-start gap-2">
-                            <input type="checkbox" id={`check-${value.id}`} onChange={(event) => onCheckClick(event.target.checked, value)} checked={selectedList.some(item => item.id === value.id)} className="w-5 h-5 accent-yellow-500" />
+                            <input type="checkbox" id={`check-${value.id}`} onChange={(event) => onCheckClick(event.target.checked, value)} checked={props.selectedList.some(item => item.id === value.id)} className="w-5 h-5 accent-yellow-500" />
                             <img src={value.icon} alt="icon" className="w-5 h-5" />
                             <label htmlFor={`check-${value.id}`}>{value.name}</label>
                         </div>

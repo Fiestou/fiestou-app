@@ -8,19 +8,14 @@ import { LuCirclePlus } from "react-icons/lu";
 import Eye from "../../../src/components/pages/admin/filtro/buttons/Eye";
 import Card from "../../../src/components/pages/admin/filtro/section/Card";
 import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modals/GroupModal";
-import ElementModal, { ReturnElementData } from "@/src/components/pages/admin/filtro/modals/ElementModal";
-import { Element, ElementResponse, ElementsResponse, Group, GroupResponse, ResponseRegister } from "./types/response";
+import { Group, GroupResponse, ResponseRegister } from "./types/response";
 import { RequestRegister } from "./types/request";
 
 export default function Categorias() {
   const api = new Api();
 
   const [openGroupModal, setOpenGroupModal] = useState<boolean>(false);
-  const [groupModalId, setGroupModalId] = useState<number>();
-  const [openElementModal, setOpenElementModal] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [relatedElements, setRelatedElements] = useState<Element[]>([]);
-  const [updateElement, setUpdateElement] = useState<Element | null>(null);
 
   const onSaveGroup = async (data: GroupData) => {
     let dataRequest: RequestRegister = {
@@ -47,30 +42,6 @@ export default function Categorias() {
     window.location.reload()
   }
 
-  const onSaveElement = async (data: ReturnElementData) => {
-    let request;
-    if (data.id) {
-      request = await api.bridge<GroupResponse>({
-        method: "put",
-        url: `element/update/${data.id}`,
-        data: data
-      });
-    } else {
-      request = await api.bridge<GroupResponse>({
-        method: "post",
-        url: "element/register",
-        data: data
-      });
-    }
-
-    if (!request.response) {
-      //alert
-    }
-    
-    setOpenElementModal(false);
-    window.location.reload()
-  }
-
   const getGroups = async () => {
     const request = await api.bridge<GroupResponse>({
       method: "get",
@@ -82,41 +53,13 @@ export default function Categorias() {
     }
   };
 
-  const getElements = async () => {
-    const request = await api.bridge<ElementsResponse>({
-      method: "get",
-      url: "element/list",
-    });
-
-    if (request.response) {
-      setRelatedElements(request.data)
-    }
-  }
-
-  const onElementClicked = async (id: number) => {
-    const request = await api.bridge<ElementResponse>({
-      method: "get",
-      url: `element/get/${id}`,
-    });
-
-    if (!request.response) {
-      //alert
-    }
-
-    setUpdateElement(request.data)
-    setOpenElementModal(true)
-  }
-
   useEffect(() => {
-    getGroups();
-    getElements();
   }, [])
 
-  useEffect(() => {
-    if (openElementModal === false) {
-      setUpdateElement(null)
-    }
-  }, [openElementModal])
+  useEffect(()=>{
+    getGroups();
+
+  }, [groups])
 
   return (
     <Template
@@ -164,8 +107,6 @@ export default function Categorias() {
               elements={value.elements}
               onDeleteClick={() => { }}
               onEditClick={() => { }}
-              onElementClick={onElementClicked}
-              onNewElementClick={(id) => { setGroupModalId(id); setOpenElementModal(true) }}
               title={value.name}
               description={value.description}
               id={value.id} />
@@ -175,7 +116,6 @@ export default function Categorias() {
       </section>
 
       <GroupModal onSaveClick={(data) => { onSaveGroup(data) }} open={openGroupModal} onRequestClose={() => { setOpenGroupModal(false) }} />
-      <ElementModal data={updateElement} onSaveClick={(data) => { onSaveElement(data) }} groupId={groupModalId || 0} relatedElements={relatedElements} onRequestClose={() => { setOpenElementModal(false) }} open={openElementModal} />
     </Template>
   )
 }
