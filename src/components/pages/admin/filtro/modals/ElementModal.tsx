@@ -22,7 +22,7 @@ export interface ElementChild {
 }
 
 export interface ReturnElementData {
-    id?: string,
+    id?: number,
     id_group: number,
     icon: string,
     name: string,
@@ -38,18 +38,22 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
     const [openSelect, setOpenSelect] = useState<boolean>(false);
     const [selectedList, setSelectedList] = useState<ElementChild[]>([]);
 
-    const data: ReturnElementData = {
-        id_group: props.groupId,
-        icon: icon,
-        name: name,
-        description: description,
-        childElements: selectedList
-            .filter((value) => value.checked)
-            .map((value) => value.id)
+    const onSaveClick = () => {
+        let data: ReturnElementData = {
+            id_group: props.groupId,
+            icon: icon,
+            name: name,
+            description: description,
+            childElements: selectedList.map((value) => value.id)
+        }
+
+        if (props.data){
+            data.id = props.data.id;
+        }
+        props.onSaveClick(data);
     }
 
     useEffect(() => {
-        console.log(props.data)
         if (props.data) {
             setIcon(props.data.icon);
             setName(props.data.name);
@@ -59,11 +63,14 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
             }
         }
     }, [props.data])
-
-    useEffect(() => {
+    
+    useEffect(()=>{
         console.log(selectedList)
     }, [selectedList])
 
+    
+    const newRelatedElements = props.relatedElements.filter((element) => element.id !== props.data?.id);
+    
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-[600px] relative gap-5 flex flex-col">
@@ -135,16 +142,17 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
                     }}
                     onRequestOpen={() => setOpenSelect(!openSelect)}
                     open={openSelect}
-                    relatedElements={props.relatedElements}
+                    relatedElements={newRelatedElements}
+                    onChageSelectList={(data) => {setSelectedList(data)}}
                 />
 
                 <div className="flex w-full justify-end gap-3">
                     <button onClick={props.onRequestClose}
-                        className={`flex ${!openSelect && ('z-10')} justify-center w-[100px] items-center p-2 text-yellow-400 border-2 border-yellow-400 rounded-md active:bg-yellow-400 active:text-white`}>
+                        className={`flex ${!openSelect && ('z-10')} justify-center w-[100px] items-center p-2 text-yellow-400 border-2 border-yellow-400 rounded-md active:bg-yellow-400 active:text-black`}>
                         Cancelar
                     </button>
-                    <button onClick={() => props.onSaveClick(data)}
-                        className={`flex ${!openSelect && ('z-10')} justify-center w-[100px] items-center p-2 bg-yellow-400 text-white border-2 border-yellow-400 rounded-md active:bg-white active:text-yellow-400`}>
+                    <button onClick={() => onSaveClick()}
+                        className={`flex ${!openSelect && ('z-10')} justify-center w-[100px] items-center p-2 bg-yellow-400 text-black border-2 border-yellow-400 rounded-md active:bg-white active:text-yellow-400`}>
                         Salvar
                     </button>
                 </div>
