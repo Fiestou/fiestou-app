@@ -251,13 +251,14 @@ export default function Carrinho({
                         </div>
                       </div>
                     ))}
-                  <Button
-                    href="/produtos"
-                    style="btn-link"
-                    className="hover:text-yellow-400 font-medium text-xs md:text-sm ease mb-4"
-                  >
-                    Acessar mais produtos
-                  </Button>
+                  <div className="pt-4 md:pt-6 flex justify-center">
+                    <Button
+                      href={`${process.env.APP_URL}/produtos`}
+                      className="md:text-lg px-4 py-2 md:py-4 md:px-8"
+                    >
+                      Acessar mais produtos
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="w-full md:max-w-[28rem] md:mb-[2rem] relative">
