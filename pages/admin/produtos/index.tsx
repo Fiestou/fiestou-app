@@ -18,7 +18,7 @@ export async function getServerSideProps(
 ) {
   const api = new Api();
 
-  const store: any = await api.graph(
+  const store = await api.graph(
     {
       url: "content/graph",
       data: [
@@ -28,7 +28,7 @@ export async function getServerSideProps(
       ],
     },
     req
-  );
+  ) as any;
 
   const hasStore = !!store?.data?.query?.store;
 

@@ -18,28 +18,32 @@ export interface FilterQueryType {
   order: string;
 }
 
-interface ApiResponse {
+interface Element {
+  id: number;
+  name: string;
+  icon: string | null;
+  description: string;
+  active: number;
+  created_at: string;
+  updated_at: string;
+  laravel_through_key: number;
+  slug?: string;
+}
+
+interface Group {
+  id: number;
+  name: string;
+  description: string;
+  parent_id: number | null;
+  active: number;
+  created_at: string;
+  updated_at: string;
+  elements: Element[];
+}
+
+interface GroupListResponse {
   response: boolean;
-  data: Array<{
-    id: number;
-    name: string;
-    description: string;
-    parent_id: number | null;
-    active: number;
-    created_at: string;
-    updated_at: string;
-    elements: Array<{
-      id: number;
-      name: string;
-      icon: string | null;
-      description: string;
-      active: number;
-      created_at: string;
-      updated_at: string;
-      laravel_through_key: number;
-      slug?: string;
-    }>;
-  }>;
+  data: Group[];
 }
 
 export default function Filter(params: any) {
@@ -106,7 +110,7 @@ export default function Filter(params: any) {
   }, [query]);
 
   const [filterModal, setFilterModal] = useState(false as boolean);
-  const [groups, setGroups] = useState<ApiResponse["data"]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [activeChecked, setActiveChecked] = useState<string[]>([]);
 
 
@@ -132,15 +136,15 @@ export default function Filter(params: any) {
 
   const getFilter = async () => {
     try {
-      const response: ApiResponse = await api.request({
+      const response = await api.request({
         method: "get",
         url: "api/app/group/list-with-elements",
-      });
+      }) as GroupListResponse;
   
       if (response.response && response.data) {
         setGroups(response.data);
-        const allElementSlugs = response.data.flatMap((group: ApiResponse["data"][number]) =>
-          group.elements.map((el: ApiResponse["data"][number]["elements"][number]) => el.slug || el.name)
+        const allElementSlugs = response.data.flatMap((group: GroupListResponse["data"][number]) =>
+          group.elements.map((el: GroupListResponse["data"][number]["elements"][number]) => el.slug || el.name)
         );
         setActiveChecked(allElementSlugs);
       }
