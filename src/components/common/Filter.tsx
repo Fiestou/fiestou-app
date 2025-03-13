@@ -120,8 +120,8 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
   const [filterModal, setFilterModal] = useState<boolean>(false);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [originalGroups, setOriginalGroups] = useState<Group[]>([]); // Estado original
-  const [clickedElements, setClickedElements] = useState<Set<number>>(new Set()); // Rastreia cliques
+  const [originalGroups, setOriginalGroups] = useState<Group[]>([]); 
+  const [clickedElements, setClickedElements] = useState<Set<number>>(new Set()); 
   const [activeChecked, setActiveChecked] = useState<string[]>([]);
 
   const handleActiveChecked = (elementSlug: string) => {
@@ -139,7 +139,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
   const openModal = () => {
     setFilterModal(true);
-    if (!groups.length) { // Corrige para carregar apenas se groups estiver vazio
+    if (!groups.length) { 
       getFilter();
     }
   };
@@ -158,7 +158,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
       }) as GroupListResponse;
       if (request.response && request.data) {
         setGroups(request.data);
-        setOriginalGroups([...request.data]); // Salva o estado original
+        setOriginalGroups([...request.data]); 
         const allElementSlugs = request.data.flatMap((group) =>
           group.elements.map((el) => el.slug || el.name)
         );
@@ -172,17 +172,17 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const onElementClick = async (elementId: number) => {
     const isClicked = clickedElements.has(elementId);
     if (!isClicked) {
-      // Busca os descendentes apenas na primeira vez
+      
       const request = await api.call({
         method: "get",
         url: `element/${elementId}/descendants`,
       }) as GroupListResponse;
 
       if (request.response && request.data) {
-        // Cria um Set para lookup eficiente dos descendentes
+        
         const descendantIds = new Set(request.data.map((el) => el.id));
 
-        // Filtra os grupos de forma performática
+        
         const newGroups = originalGroups.map((group) => ({
           ...group,
           elements: group.elements.filter(
@@ -191,13 +191,13 @@ export default function Filter(params: { store?: string; busca?: string }) {
         }));
 
         setGroups(newGroups);
-        setClickedElements(new Set(clickedElements.add(elementId))); // Marca como clicado
+        setClickedElements(new Set(clickedElements.add(elementId))); 
       }
     } else {
-      // Reverte ao estado original se clicado novamente
+      
       setGroups([...originalGroups]);
-      clickedElements.delete(elementId); // Remove o elemento do rastreamento
-      setClickedElements(new Set(clickedElements)); // Atualiza o Set
+      clickedElements.delete(elementId); 
+      setClickedElements(new Set(clickedElements)); 
     }
   };
 
