@@ -6,7 +6,7 @@ import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { moneyFormat } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import PaginatedTable from "./components/PaginatedTable";
+import PaginatedTable from "@/src/components/pages/paginated-table/PaginatedTable";
 
 interface Order {
   id: number;
@@ -27,9 +27,17 @@ type ApiResponse = {
   data: Order[];
 };
 
-export default function Order() {
+interface Column {
+  name: string;
+  width?: string;
+  sortable?: boolean;
+  sortKey?: string;
+  selector: (row: Order) => React.ReactNode;
+}
+
+export default function Order({ initialOrders = [] }: { initialOrders?: Order[] }) {
   const api = new Api();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>(initialOrders);
 
   const getOrders = async () => {
     try {
@@ -47,10 +55,12 @@ export default function Order() {
   };
 
   useEffect(() => {
-    getOrders();
-  }, []);
+    if (initialOrders.length === 0) {
+      getOrders();
+    }
+  }, [initialOrders]);
 
-  const columns = [
+  const columns: Column[] = [
     {
       name: "Pedido",
       width: "10rem",
@@ -99,9 +109,7 @@ export default function Order() {
       width: "30rem",
       sortable: true,
       sortKey: "amount_total",
-      selector: (row: Order) => (
-        moneyFormat(row.metadata?.amount_total || 0)
-      )
+      selector: (row: Order) => moneyFormat(row.metadata?.amount_total || 0),
     },
     {
       name: "Status",
@@ -171,7 +179,30 @@ export default function Order() {
           <PaginatedTable data={orders} columns={columns} itemsPerPage={6} />
         </div>
       </section>
-      
     </Template>
   );
+}
+
+export async function getStaticProps() {
+  const api = new Api();
+  try {
+    const request = (await api.bridge({
+      method: "post",
+      url: "orders/list",
+    })) as ApiResponse;
+    return {
+      props: {
+        initialOrders: request?.data || [],
+      },
+      revalidate: 60,
+    };
+  } catch (error) {
+    console.error("Erro ao buscar pedidos no getStaticProps", error);
+    return {
+      props: {
+        initialOrders: [],
+      },
+      revalidate: 60,
+    };
+  }
 }

@@ -31,6 +31,7 @@ import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
 import { deliveryToName } from "@/src/models/delivery";
 import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
+import { formatCep } from "@/src/components/utils/FormMasks";
 
 const FormInitialType = {
   sended: false,
@@ -581,7 +582,7 @@ export default function Checkout({
                           icon="fa-truck"
                           className="text-sm mr-1 opacity-75"
                         />
-                        Frete {!!address?.zipCode && `(${address?.zipCode})`}
+                        Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
                       </div>
                       <div className="grid text-right">
                         {/* <s className="text-xs">R$ 24,00</s> */}
