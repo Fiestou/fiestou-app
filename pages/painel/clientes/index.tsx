@@ -25,6 +25,7 @@ export default function Clientes({ store }: { store: any }) {
 
   const relationship = async () => {
     let request: any = await api.bridge({
+      method: "post",
       url: "stores/customers",
       data: {
         store: store,

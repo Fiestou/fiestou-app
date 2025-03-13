@@ -119,6 +119,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
     setPlaceholder(true);
 
     let request: any = await api.bridge({
+      method: "post",
       url: "products/remove",
       data: { id: item.id },
     });
