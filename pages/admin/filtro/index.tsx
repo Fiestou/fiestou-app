@@ -12,6 +12,7 @@ export default function Categorias() {
 
   const sendReorder = async () => {
     const request: any = await api.bridge({
+      method: "post",
       url: "categories/reorder",
       data: { list: listRelation },
     });
@@ -25,6 +26,7 @@ export default function Categorias() {
     const api = new Api();
 
     let request: any = await api.bridge({
+      method: "post",
       url: "categories/list",
     });
 

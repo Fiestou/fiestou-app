@@ -45,6 +45,7 @@ export const AuthCheck = () => {
 
       if (!document.hidden) {
         const data: any = await api.bridge({
+          method: "post",
           url: "me",
         });
 
@@ -74,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     Cookies.remove("fiestou.user");
 
     const data: any = await request.bridge({
+      method: "post",
       url: "auth/login",
       data: { email: email, password: password },
     });

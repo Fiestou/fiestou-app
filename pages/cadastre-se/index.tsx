@@ -114,6 +114,7 @@ export default function CadastreSe({
       setForm({ ...form, loading: true });
 
       const data: any = await api.bridge({
+        method: "post",
         url: "auth/register",
         data: {
           name: name,

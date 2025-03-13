@@ -120,6 +120,7 @@ export default function Conta({
     setContent(handle);
 
     const request: any = await api.bridge({
+      method: "post",
       url: "users/update",
       data: handle,
     });
