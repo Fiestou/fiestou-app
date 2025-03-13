@@ -137,7 +137,7 @@ export default function Form({
           busca: search,
           limit: 10,
         },
-      });
+      }) as RelationType[];
 
       if (request.response && !!request?.data.length) {
         let handle = request?.data?.map((item: any) => {
@@ -146,7 +146,7 @@ export default function Form({
             slug: item.slug,
             image: [],
             title: item.title,
-          } as RelationType;
+          };
         });
 
         setProductsFind(handle);
