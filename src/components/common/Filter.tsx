@@ -18,6 +18,30 @@ export interface FilterQueryType {
   order: string;
 }
 
+interface ApiResponse {
+  response: boolean;
+  data: Array<{
+    id: number;
+    name: string;
+    description: string;
+    parent_id: number | null;
+    active: number;
+    created_at: string;
+    updated_at: string;
+    elements: Array<{
+      id: number;
+      name: string;
+      icon: string | null;
+      description: string;
+      active: number;
+      created_at: string;
+      updated_at: string;
+      laravel_through_key: number;
+      slug?: string;
+    }>;
+  }>;
+}
+
 export default function Filter(params: any) {
   const api = new Api();
   const router = useRouter();
@@ -82,88 +106,46 @@ export default function Filter(params: any) {
   }, [query]);
 
   const [filterModal, setFilterModal] = useState(false as boolean);
+  const [groups, setGroups] = useState<ApiResponse["data"]>([]);
+  const [activeChecked, setActiveChecked] = useState<string[]>([]);
 
-  const [activeChecked, setActiveChecked] = useState([] as Array<any>);
-  const handleActiveChecked = (category: any) => {
-    let handleActive = activeChecked.includes(category.id)
-      ? activeChecked.filter((item) => item != category.id)
-      : [...activeChecked, category.id];
+
+  const handleActiveChecked = (elementSlug: string) => {
+    let handleActive = activeChecked.includes(elementSlug)
+      ? activeChecked.filter((item) => item !== elementSlug)
+      : [...activeChecked, elementSlug];
+
+    let handleQuery = query.categories.includes(elementSlug)
+      ? query.categories.filter((item: string) => item !== elementSlug)
+      : [...query.categories, elementSlug];
 
     setActiveChecked(handleActive);
-
-    let handleQuery = query.categories.includes(category.slug)
-      ? query.categories.filter((item: any) => item != category.slug)
-      : [...query.categories, category.slug];
-
     setQuery({ ...query, categories: handleQuery });
-  };
-
-  const [categories, setCategories] = useState([] as Array<RelationType>);
-  const handleCategoriesLevelsChilds = (handle: any) => {
-    let relations = [handle.parent ?? 0, ...(handle.closest ?? [])];
-
-    if (!!handle?.childs?.length) {
-      handle?.childs?.map((item: any) => {
-        relations = [...relations, ...handleCategoriesLevelsChilds(item)];
-      });
-    }
-
-    return filterRepeatRemove(relations);
-  };
-
-  const [categoriesLevels, setCategoriesLevels] = useState({} as any);
-  const handleCategoriesLevels = (
-    categories: any,
-    handleLevel: any,
-    level: number
-  ) => {
-    // --
-    if (!handleLevel[level]) handleLevel[level] = [];
-
-    handleLevel[level] = [...handleLevel[level], ...categories];
-
-    (categories ?? []).map((item: any) => {
-      if (item?.childs?.length) {
-        handleLevel = handleCategoriesLevels(
-          item?.childs,
-          handleLevel,
-          (level ?? 0) + 1
-        );
-      }
-    });
-
-    return handleLevel;
   };
 
   const openModal = () => {
     setFilterModal(true);
-
-    if (!categories.length) {
+    if (!groups.length) {
       getFilter();
     }
   };
 
-  const getFilter: any = async () => {
-    const request: any = await api.request({
-      method: "get",
-      url: "request/categories",
-    });
-
-    if (!!request.response) {
-      const mainCategories: any = request.data?.filter(
-        (item: any) => !item.parent
-      );
-      const levelCategories: any = {};
-
-      (mainCategories ?? []).map((item: any) => {
-        levelCategories[item.slug] = !!item?.childs?.length
-          ? handleCategoriesLevels(item?.childs, {}, 0)
-          : [];
+  const getFilter = async () => {
+    try {
+      const response: ApiResponse = await api.request({
+        method: "get",
+        url: "api/app/group/list-with-elements",
       });
-
-      setActiveChecked((mainCategories ?? []).map((item: any) => item.id));
-      setCategories(mainCategories);
-      setCategoriesLevels(levelCategories);
+  
+      if (response.response && response.data) {
+        setGroups(response.data);
+        const allElementSlugs = response.data.flatMap((group: ApiResponse["data"][number]) =>
+          group.elements.map((el: ApiResponse["data"][number]["elements"][number]) => el.slug || el.name)
+        );
+        setActiveChecked(allElementSlugs);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar filtros:", error);
     }
   };
 
@@ -342,77 +324,49 @@ export default function Filter(params: any) {
           </div>
         </div>
 
-        {!!categories?.length &&
-          categories.map((mainCategory: any, key: any) => (
-            <div key={key} className="pb-6">
-              <Label>{mainCategory.title}</Label>
-              <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
-                <div className="flex md:flex-wrap gap-2">
-                  {!!categoriesLevels[mainCategory.slug] &&
-                    Object.values(categoriesLevels[mainCategory.slug]).map(
-                      (level: any, index: any) => (
-                        <React.Fragment key={index}>
-                          {level.map(
-                            (category: any) =>
-                              !!activeChecked.includes(category.parent) && (
-                                <div
-                                  key={category.id}
-                                  id={`categories${category.id}`}
-                                  className={`border cursor-pointer  ease relative rounded p-2 ${
-                                    query.categories.includes(category.slug)
-                                      ? "border-zinc-800 hover:border-zinc-500"
-                                      : "hover:border-zinc-300"
-                                  }`}
-                                  onClick={() => handleActiveChecked(category)}
-                                >
-                                  <div className="px-3 md:px-1">
-                                    {query.categories.includes(
-                                      category.slug
-                                    ) && (
-                                      <input
-                                        type="checkbox"
-                                        name="categoria[]"
-                                        value={category.slug ?? ""}
-                                        defaultChecked={true}
-                                        className="absolute opacity-0 z-[-1]"
-                                      />
-                                    )}
-                                    <div
-                                      className={`${
-                                        mainCategory.metadata.style == "xl"
-                                          ? "flex-col w-[5.6rem]"
-                                          : ""
-                                      } w-full flex items-center justify-center gap-2`}
-                                    >
-                                      {!!getImage(category.image) && (
-                                        <Img
-                                          src={getImage(category.image)}
-                                          className={`${
-                                            mainCategory.metadata.style == "xl"
-                                              ? "h-[40px] w-[40px] md:h-[48px] md:w-[48px]"
-                                              : mainCategory.metadata.style ==
-                                                "lg"
-                                              ? "md:h-[32px] md:w-[32px]"
-                                              : "h-[20px] w-[20px]"
-                                          }  object-contain`}
-                                        />
-                                      )}
-                                      <div className="h-[20px] whitespace-nowrap text-sm md:text-base flex items-center">
-                                        {category.title}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                          )}
-                          <div className="w-full"></div>
-                        </React.Fragment>
-                      )
-                    )}
-                </div>
+        {groups.map((group, index) => (
+          <div key={index} className="pb-6">
+            <Label>{group.name}</Label>
+            <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
+              <div className="flex md:flex-wrap gap-2">
+                {group.elements.map((element: any) => (
+                  <div
+                    key={element.id}
+                    className={`border cursor-pointer ease relative rounded p-2 ${
+                      query.categories.includes(element.slug || element.name)
+                        ? "border-zinc-800 hover:border-zinc-500"
+                        : "hover:border-zinc-300"
+                    }`}
+                    onClick={() =>
+                      handleActiveChecked(element.slug || element.name)
+                    }
+                  >
+                    <div className="px-3 md:px-1 flex items-center gap-2">
+                      {element.icon && (
+                        <Img
+                          src={element.icon}
+                          className="h-[20px] w-[20px] object-contain"
+                        />
+                      )}
+                      <div className="h-[20px] whitespace-nowrap text-sm md:text-base">
+                        {element.name}
+                      </div>
+                      {query.categories.includes(element.slug || element.name) && (
+                        <input
+                          type="checkbox"
+                          name="categoria[]"
+                          value={element.slug || element.name}
+                          defaultChecked={true}
+                          className="absolute opacity-0 z-[-1]"
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          </div>
+        ))}
 
         <div className="flex justify-between items-center pt-4 w-full bg-white">
           <Button
@@ -423,7 +377,6 @@ export default function Filter(params: any) {
           >
             Limpar filtro
           </Button>
-
           <Button>Ver resultados</Button>
         </div>
       </Modal>
