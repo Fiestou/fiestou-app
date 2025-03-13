@@ -47,6 +47,7 @@ export default function Sistema() {
     handleForm({ loading: true });
 
     const request: any = await api.bridge({
+      method: "post",
       url: "admin/content/register",
       data: {
         type: "roles",

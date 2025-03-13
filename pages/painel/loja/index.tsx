@@ -113,6 +113,7 @@ export default function Loja({
 
   const getStore = async () => {
     let request: any = await api.bridge({
+      method: "post",
       url: "stores/form",
     });
 
@@ -220,6 +221,7 @@ export default function Loja({
     };
 
     const request: any = await api.bridge({
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -323,6 +325,7 @@ export default function Loja({
     };
 
     const request: any = await api.bridge({
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -366,6 +369,7 @@ export default function Loja({
     console.log(store);
 
     const request: any = await api.bridge({
+      method?: "post",
       url: "stores/register",
       data: store,
     });
