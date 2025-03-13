@@ -3,6 +3,45 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { serializeParam } from "../helper";
 
+// Interface para um elemento
+interface Element {
+  id: number;
+  name: string;
+  icon: string | null;
+  description: string;
+  active: number;
+  created_at: string;
+  updated_at: string;
+  laravel_through_key: number;
+  slug?: string;
+}
+
+// Interface para um grupo
+interface Group {
+  id: number;
+  name: string;
+  description: string;
+  parent_id: number | null;
+  active: number;
+  created_at: string;
+  updated_at: string;
+  elements: Element[];
+}
+
+// Interface para a resposta da API
+interface ApiResponse {
+  response: boolean;
+  data: Group[];
+}
+
+// Interface para os parâmetros da requisição
+interface ApiRequestType {
+  method?: string;
+  url: string;
+  data?: Record<string, unknown>;
+  opts?: Record<string, unknown>;
+}
+
 const token = Cookies.get("fiestou.authtoken");
 
 export const api = axios.create({
@@ -25,14 +64,14 @@ if (token) {
 interface ApiRequestType {
   method?: string;
   url: string;
-  data?: any;
-  opts?: Object;
+  data?: Record<string, unknown>;
+  opts?: Record<string, unknown>;
 }
 
 class Api {
   constructor() {}
 
-  async connect({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async connect<T = ApiResponse>({ method, url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
     return await new Promise((resolve, reject) => {
       if (!!ctx?.req) {
         const authtoken = !!ctx?.req.cookies
@@ -46,7 +85,7 @@ class Api {
 
       if (method === "get" && !!data && Object.keys(data).length > 0) {
         const queryString = Object.keys(data)
-          .map((key) => serializeParam(key, data[key]))
+          .map((key) => serializeParam(key, data?.[key]))
           .join("&");
 
         url = `${url}?${queryString}`;
@@ -54,45 +93,46 @@ class Api {
       }
 
       api[method == "get" ? "get" : "post"](url, data ?? {}, opts ?? {})
-        .then(({ data }: any) => {
+        .then(({ data }: { data: T }) => {
           resolve(data);
         })
         .catch((response: any) => {
           if ([400, 401, 418].indexOf(response.status) > -1) {
             reject(response);
           }
-          resolve(response);
+          resolve(response as T);
         });
     });
   }
 
-  async internal({
+  async internal<T = ApiResponse>({
     url,
     method,
     data,
     opts,
   }: {
     url: string;
-    data: any;
+    data: Record<string, unknown>;
     method?: string;
-    opts?: any;
-  }) {
-    if (method === "get" && !!data && Object.keys(data).length > 0) {
-      const queryString = new URLSearchParams(data).toString();
+    opts?: Record<string, unknown>;
+  }): Promise<T | null> {
+    if (method === "get" && data && Object.keys(data).length > 0) {
+      const queryString = new URLSearchParams(data as any).toString();
       url = `${url}?${queryString}`;
       data = {};
     }
-
-    return await axios[method == "get" ? "get" : "post"](
-      `/api${url}`,
-      data,
-      opts ?? {}
-    )
-      .then(({ data }: any) => data)
-      .catch((error) => {
-        console.log(error);
-        return null;
-      });
+  
+    try {
+      const response = await axios[method === "get" ? "get" : "post"](
+        `/api${url}`,
+        data,
+        opts ?? {}
+      );
+      return response.data as T;
+    } catch (error: unknown) {
+      console.log(error);
+      return null;
+    }
   }
 
   async trigger({ url, data, opts }: ApiRequestType, ctx?: any) {
