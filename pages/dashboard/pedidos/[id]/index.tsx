@@ -93,6 +93,7 @@ export default function Pedido({
     };
 
     const request: any = await api.bridge({
+      method: "post",
       url: "comments/register",
       data: handle,
     });
@@ -191,6 +192,7 @@ export default function Pedido({
 
   const getOrder = async (attempts?: number) => {
     let request: any = await api.bridge({
+      method: "post",
       url: "orders/get",
       data: {
         id: orderId,
