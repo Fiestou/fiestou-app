@@ -99,6 +99,7 @@ export default function Saque({
   const [withdrawList, setWithdrawList] = useState([] as Array<any>);
   const getWithdraw = async () => {
     let request: any = await api.bridge({
+      method: "post",
       url: "withdraw/list",
     });
 
@@ -122,6 +123,7 @@ export default function Saque({
     };
 
     const request: any = await api.bridge({
+      method: "post",
       url: "withdraw/register",
       data: handle,
     });

@@ -99,6 +99,7 @@ export default function Conta({ page }: { page: any }) {
     const handle: UserType = { ...content, id: user.id, bankAccounts: banks };
 
     const request: any = await api.bridge({
+      method: "post",
       url: "users/update",
       data: handle,
     });

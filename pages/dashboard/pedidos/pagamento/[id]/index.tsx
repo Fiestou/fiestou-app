@@ -162,6 +162,7 @@ export default function Pagamento({
 
   const ConfirmManager = async () => {
     let request: any = await api.bridge({
+      method: "post",
       url: "orders/get",
       data: {
         id: orderId,
@@ -261,6 +262,7 @@ export default function Pagamento({
     setPlaceholder(true);
 
     let request: any = await api.bridge({
+      method: "post",
       url: "orders/get",
       data: {
         id: orderId,

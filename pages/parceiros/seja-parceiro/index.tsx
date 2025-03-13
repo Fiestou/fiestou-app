@@ -72,6 +72,7 @@ export default function SejaParceiro({
     setForm({ ...form, loading: true });
 
     const data: any = await api.bridge({
+      method: "post",
       url: "auth/pre-register",
       data: {
         name: name,

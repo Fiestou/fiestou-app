@@ -170,6 +170,7 @@ export default function CadastreSe({
     const phoneClean = phone.replace(/\D/g, "");
 
     const data: any = await api.bridge({
+      method: "post",
       url: "auth/register",
       data: {
         name: name,
