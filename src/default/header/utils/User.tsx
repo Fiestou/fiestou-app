@@ -25,43 +25,18 @@ export default function User({ user }: { user: UserType }) {
           <div>
             <Icon icon="fa-user-circle" className="text-2xl lg:text-4xl" />
           </div>
+          <Link passHref href="/painel">
           <div className="hidden md:block w-fit text-sm lg:text-[1rem] whitespace-nowrap font-semibold font-title">
             <div className="whitespace-nowrap">
               Olá, {getFirstName(user.name)}
             </div>
             <div className="whitespace-nowrap">
               <span>Meu painel</span>
-              <Icon icon="fa-chevron-down" className="text-xs ml-3" type="fa" />
             </div>
           </div>
+          </Link>
         </div>
       </Button>
-      {dropdown && (
-        <>
-          <div
-            onClick={() => setDropdown(!dropdown)}
-            className="fixed inset-0 bg-stone-900 opacity-25 z-20"
-          ></div>
-          <div className="absolute z-20 grid gap-3 text-stone-900 p-6 bg-white left-0 md:left-1/2 md:-translate-x-1/2 top-full md:rounded-md w-full md:mt-2 min-w-[250px]">
-            {menuDashboard
-              .filter((item: any) => !item.blocked)
-              .map((item: any, key) => (
-                <Link key={key} passHref href={`/dashboard/${item.endpoint}`}>
-                  <div className="hover:text-yellow-500 ease">{item.title}</div>
-                </Link>
-              ))}
-            <div>
-              <hr className="my-2" />
-            </div>
-            <div
-              onClick={() => UserLogout()}
-              className="cursor-pointer hover:text-yellow-500 ease text-left"
-            >
-              Sair da conta
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
