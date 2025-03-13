@@ -1,11 +1,9 @@
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { menuDashboard } from "@/pages/dashboard";
 import { getFirstName } from "@/src/helper";
 import Link from "next/link";
 import { useContext, useState } from "react";
 import { Button } from "@/src/components/ui/form";
 import { UserType } from "@/src/models/user";
-import { signOut } from "next-auth/react";
 import { AuthContext } from "@/src/contexts/AuthContext";
 
 export default function User({ user }: { user: UserType }) {

@@ -48,7 +48,7 @@
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
 
-    type ApiResponse = {
+    type ApiOrderResponse = {
       data: Order;
     };
     
@@ -56,14 +56,14 @@
       if (!id) return;     
 
       try {
-        const request = (await api.bridge({
+        const request = await api.bridge({
           method: "get",
           url: `orders/list/${id}`,
-        })) as ApiResponse;
+        }) as ApiOrderResponse;
 
         const orderData = request?.data ?? request;
 
-        if (orderData) {
+        if (orderData && orderData?.listItems) {
           const listItems = JSON.parse(orderData.listItems || "[]");
 
           let deliveryAddress: DeliveryAddress;
