@@ -52,6 +52,7 @@ export default function Parceiro({ content }: { content: any }) {
   const [balance, setBalance] = useState({} as BalanceType);
   const getBalance = async () => {
     let request: any = await api.bridge({
+      method: "post",
       url: "stores/balance",
     });
 
@@ -68,6 +69,7 @@ export default function Parceiro({ content }: { content: any }) {
   const [orders, setOrders] = useState([] as Array<any>);
   const getOrders = async () => {
     let request: any = await api.bridge({
+      method: "post",
       url: "suborders/list",
       data: { limit: 10 },
     });
