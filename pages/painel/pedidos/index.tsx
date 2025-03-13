@@ -12,6 +12,7 @@ export async function getServerSideProps(ctx: any) {
 
   let request: any = await api.bridge(
     {
+      method: "post",
       url: "suborders/list",
     },
     ctx
