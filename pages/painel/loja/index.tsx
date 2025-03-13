@@ -369,7 +369,7 @@ export default function Loja({
     console.log(store);
 
     const request: any = await api.bridge({
-      method?: "post",
+      method: "post",
       url: "stores/register",
       data: store,
     });
