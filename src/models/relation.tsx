@@ -1,5 +1,5 @@
 export interface AssociatedElement {
-  id: number | string;
+  id: number;
   title: string;
   slug?: string;
   icon?: number | string;
@@ -17,13 +17,13 @@ export interface RelationType {
   feature?: string | boolean;
   closest?: AssociatedElement[];
   childs?: AssociatedElement[];
-  metadata?: { style?: "xl" | "lg" | string };
+  metadata?:{ style?: "xl" | "lg" | string; limitSelect?: any; };
   image?: string | null;
   icon?: number | string;
 }
 
 export interface GroupType {
-  id: number;
+  id: number; 
   name: string;
   description?: string;
   parent_id?: number;
