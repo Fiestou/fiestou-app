@@ -73,6 +73,7 @@ export default function Form({ id }: { id: number | string }) {
     };
 
     const request: any = await api.bridge({
+      method: "post",
       url: "admin/content/register",
       data: {
         type: "blog",
