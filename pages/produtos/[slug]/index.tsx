@@ -101,6 +101,7 @@ export async function getStaticProps(ctx: any) {
 
     request = await api.content(
       {
+        method: 'get',
         url: "product",
       },
       ctx

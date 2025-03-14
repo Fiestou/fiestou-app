@@ -74,6 +74,7 @@ export async function getServerSideProps(ctx: any) {
   const params = ctx.params;
 
   let request: any = await api.content({
+    method: 'get',
     url: "order",
   });
 
@@ -162,7 +163,7 @@ export default function Pagamento({
 
   const ConfirmManager = async () => {
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "orders/get",
       data: {
         id: orderId,
@@ -262,7 +263,7 @@ export default function Pagamento({
     setPlaceholder(true);
 
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "orders/get",
       data: {
         id: orderId,
