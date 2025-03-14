@@ -32,7 +32,7 @@ export async function getStaticProps(ctx: any) {
 
   const { slug } = ctx.params;
 
-  let request: any = await api.content({ url: `post/${slug}` });
+  let request: any = await api.content({method: 'get', url: `post/${slug}` });
 
   const Post = request?.data?.Post ?? {};
   const Related = request?.data?.Related ?? [];

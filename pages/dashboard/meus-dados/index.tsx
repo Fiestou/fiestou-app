@@ -30,6 +30,7 @@ export async function getServerSideProps(ctx: any) {
   user = request?.data ?? {};
 
   request = await api.content({
+    method: 'get',
     url: "account/user",
   });
 

@@ -46,6 +46,7 @@ export async function getServerSideProps(
 
   const request: any = await api.call(
     {
+      method: 'post',
       url: "request/graph",
       data: [
         {
@@ -157,6 +158,7 @@ export default function Form({
   const [product, setProduct] = useState({} as ProductType);
   const getProduct = async () => {
     let request: any = await api.bridge({
+      method: 'post',
       url: "products/form",
       data: { id: id },
     });
@@ -195,6 +197,7 @@ export default function Form({
     setSubimitStatus("register_content");
 
     let request: any = await api.bridge({
+      method: 'post',
       url: "products/register",
       data: data,
     });
