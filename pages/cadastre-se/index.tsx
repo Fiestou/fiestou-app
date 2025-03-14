@@ -15,6 +15,7 @@ export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
   let request: any = await api.content({
+    method: 'get',
     url: "register",
   });
 
@@ -170,7 +171,7 @@ export default function CadastreSe({
     const phoneClean = phone.replace(/\D/g, "");
 
     const data: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "auth/register",
       data: {
         name: name,

@@ -18,6 +18,7 @@ export async function getServerSideProps(ctx: any) {
 
   let request: any = await api.call(
     {
+      method: 'post',
       url: "request/graph",
       data: [
         {

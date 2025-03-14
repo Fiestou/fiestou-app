@@ -24,6 +24,7 @@ export async function getStaticProps(ctx: any) {
   const api = new Api();
 
   let request: any = await api.content({
+    method: 'get',
     url: `home`,
   });
 

@@ -34,7 +34,7 @@ export default function Categories({
 
   const getCategories = async () => {
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "categories/list",
     });
 
