@@ -18,6 +18,7 @@ export async function getServerSideProps(ctx: any) {
 
   let request: any = await api.call(
     {
+      method: 'post',
       url: "request/graph",
       data: [
         {
@@ -99,7 +100,7 @@ export default function Saque({
   const [withdrawList, setWithdrawList] = useState([] as Array<any>);
   const getWithdraw = async () => {
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "withdraw/list",
     });
 
@@ -123,7 +124,7 @@ export default function Saque({
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "withdraw/register",
       data: handle,
     });

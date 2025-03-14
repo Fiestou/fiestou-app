@@ -12,7 +12,7 @@ import { Button } from "@/src/components/ui/form";
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.content({ url: `dashboard` });
+  let request: any = await api.content({method: 'get', url: `dashboard` });
 
   const DataSeo = request?.data?.DataSeo ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};

@@ -32,6 +32,7 @@ export async function getServerSideProps({
   const cart = !!parse ? JSON.parse(parse) : [];
 
   let request: any = await api.content({
+    method: 'get',
     url: "default",
   });
 

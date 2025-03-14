@@ -60,7 +60,7 @@ export default function HandleCategory({
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "categories/register",
       data: handle,
     });

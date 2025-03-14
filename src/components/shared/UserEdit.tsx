@@ -119,7 +119,7 @@ export default function UserEdit({ user }: { user: UserType }) {
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "users/update",
       data: handle,
     });
@@ -148,7 +148,7 @@ export default function UserEdit({ user }: { user: UserType }) {
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "users/update",
       data: handle,
     });
