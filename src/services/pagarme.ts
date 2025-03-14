@@ -98,7 +98,7 @@ class Pagarme {
 
       if (!!request.response) {
         await api.bridge({
-          method: "post",
+          method: 'post',
           url: "orders/processing",
           data: {
             id: order.id,

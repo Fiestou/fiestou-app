@@ -15,7 +15,7 @@ export default function Saque() {
   const [withdrawList, setWithdrawList] = useState([] as Array<any>);
   const getWithdraw = async () => {
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "withdraw/list",
     });
 

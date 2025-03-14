@@ -27,6 +27,7 @@ export async function getServerSideProps(ctx: any) {
   const params = ctx.params;
 
   let request: any = await api.content({
+    method: 'get',
     url: "order",
   });
 
@@ -93,7 +94,7 @@ export default function Pedido({
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "comments/register",
       data: handle,
     });
@@ -192,7 +193,7 @@ export default function Pedido({
 
   const getOrder = async (attempts?: number) => {
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "orders/get",
       data: {
         id: orderId,
