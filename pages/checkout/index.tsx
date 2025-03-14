@@ -46,6 +46,7 @@ export async function getServerSideProps(ctx: any) {
 
   let request: any = await api.bridge(
     {
+      method: 'post',
       url: `checkout/create`,
       data: {
         products: cart.map((item: any) => item.product),
@@ -252,6 +253,7 @@ export default function Checkout({
     };
 
     const registerOrder: any = await api.bridge({
+      method: 'post',
       url: "orders/register",
       data: order,
     });

@@ -20,6 +20,7 @@ export async function getServerSideProps(
 
   const store = await api.graph(
     {
+      method: 'post',
       url: "content/graph",
       data: [
         {
@@ -37,6 +38,7 @@ export async function getServerSideProps(
   if (hasStore) {
     let request: any = await api.graph(
       {
+        method: 'post',
         url: "content/graph",
         data: [
           {
