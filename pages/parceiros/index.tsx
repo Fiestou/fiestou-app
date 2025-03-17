@@ -19,7 +19,7 @@ import { ScriptsType } from "@/src/models/scripts";
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.content({ url: `partners` });
+  let request: any = await api.content({method: 'get', url: `partners` });
 
   const Stores = request?.data?.Stores ?? [];
   const Partners = request?.data?.Partners ?? {};

@@ -11,7 +11,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 export const getStaticPaths = async (ctx: any) => {
   const api = new Api();
 
-  let request: any = await api.content({ url: `communicate` });
+  let request: any = await api.content({method: 'get', url: `communicate` });
 
   const paths = request.data
     .filter((slug: any) => !!slug)
@@ -30,7 +30,7 @@ export async function getStaticProps(ctx: any) {
 
   const { slug } = ctx.params;
 
-  let request: any = await api.content({ url: `communicate/${slug}` });
+  let request: any = await api.content({method: 'get', url: `communicate/${slug}` });
 
   const Communicate = request?.data?.Communicate ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};

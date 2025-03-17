@@ -139,36 +139,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
   const openModal = () => {
     setFilterModal(true);
-    if (!groups.length) { 
-      getFilter();
-    }
   };
-
-  useEffect(() => {
-    if (!groups.length) {
-      getFilter();
-    }
-  }, []);
-
-  const getFilter = async () => {
-    try {
-      const request = await api.call({
-        method: "get",
-        url: "group/list",
-      }) as GroupListResponse;
-      if (request.response && request.data) {
-        setGroups(request.data);
-        setOriginalGroups([...request.data]); 
-        const allElementSlugs = request.data.flatMap((group) =>
-          group.elements.map((el) => el.slug || el.name)
-        );
-        setActiveChecked(allElementSlugs);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar filtros:", error);
-    }
-  };
-
   const onElementClick = async (elementId: number) => {
     const isClicked = clickedElements.has(elementId);
     if (!isClicked) {

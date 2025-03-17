@@ -11,6 +11,7 @@ export async function getStaticProps(ctx: any) {
 
   let request: any = await api.content(
     {
+      method: 'get',
       url: "default",
     },
     ctx

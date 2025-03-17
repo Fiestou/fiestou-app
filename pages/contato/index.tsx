@@ -12,7 +12,7 @@ import Img from "@/src/components/utils/ImgBase";
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.content({ url: `contact` });
+  let request: any = await api.content({method: 'get', url: `contact` });
 
   const Contact = request?.data?.Contact ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
