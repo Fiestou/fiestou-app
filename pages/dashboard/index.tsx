@@ -9,6 +9,13 @@ import Api from "@/src/services/api";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { Button } from "@/src/components/ui/form";
 
+interface MenuItem {
+  title: string;
+  icon: string;
+  field: string;
+  endpoint: string;
+}
+
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
@@ -26,6 +33,33 @@ export async function getStaticProps(ctx: any) {
     },
   };
 }
+
+export const menuDashboard: MenuItem[] = [
+  {
+    title: "Pedidos",
+    icon: "fa-box-open",
+    field: "board_order_desc",
+    endpoint: "dashboard/pedidos",
+  },
+  {
+    title: "Meus dados",
+    icon: "fa-user-circle",
+    field: "board_user_desc",
+    endpoint: "dashboard/meus-dados",
+  },
+  {
+    title: "Favoritos",
+    icon: "fa-heart",
+    field: "board_likes_desc",
+    endpoint: "dashboard/favoritos",
+  },
+  {
+    title: "Endereços",
+    icon: "fa-map-marker-check",
+    field: "board_address_desc",
+    endpoint: "dashboard/enderecos",
+  },
+];
 
 export default function Dashboard({ HeaderFooter, Dashboard }: any) {
   const { UserLogout } = useContext(AuthContext);
@@ -67,10 +101,36 @@ export default function Dashboard({ HeaderFooter, Dashboard }: any) {
                     getFirstName(user.name)
                   )}
               </div>
-              {!!Dashboard?.board_desc && (
-                <div className="pt-4">{Dashboard?.board_desc ?? ""}</div>
-              )}
             </div>
+          </div>
+        </div>
+      </section>
+      <section>
+        {!!Dashboard?.board_desc && (
+          <div className="pt-4">{Dashboard?.board_desc ?? ""}</div>
+        )}
+        <div className="container-medium pb-14">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+            {menuDashboard.map((item) => (
+              <Link key={item.title} href={`/${item.endpoint}`} passHref>
+                <div className="hover:bg-yellow-300 group h-full bg-zinc-100 ease rounded-xl p-4 md:p-6 relative">
+                  <div className="flex justify-between items-center">
+                    <div className="aspect-square w-[1.5rem] md:w-[2.5rem] relative">
+                      <Icon
+                        icon={item.icon}
+                        className="absolute text-zinc-900 text-2xl md:text-4xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 text-zinc-900">
+                    <h3 className="font-bold md:text-lg pb-1">{item.title}</h3>
+                    <p className="text-[.85rem] md:text-base ease text-zinc-500 group-hover:text-zinc-900">
+                      {getDescription(item.field) || "Sem descrição"}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
