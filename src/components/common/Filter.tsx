@@ -1,15 +1,14 @@
-import Api from "@/src/services/api";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import Modal from "../utils/Modal";
-import { Button, Label, Select } from "../ui/form";
+import { Button, Label } from "../ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { RelationType } from "@/src/models/relation";
-import { filterRepeatRemove, getImage, moneyFormat } from "@/src/helper";
+import { moneyFormat } from "@/src/helper";
 import Img from "../utils/ImgBase";
 import React from "react";
 import Check from "../ui/form/CheckUI";
 import Colors from "../ui/form/ColorsUI";
+import { useGroup } from "@/src/store/filter";
 
 export interface FilterQueryType {
   categories: string[];
@@ -47,7 +46,6 @@ interface Element {
 }
 
 export default function Filter(params: { store?: string; busca?: string }) {
-  const api = new Api();
   const router = useRouter();
 
   const [query, setQuery] = useState<FilterQueryType>({
@@ -119,11 +117,12 @@ export default function Filter(params: { store?: string; busca?: string }) {
   }, [query]);
 
   const [filterModal, setFilterModal] = useState<boolean>(false);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [originalGroups, setOriginalGroups] = useState<Group[]>([]); 
-  const [clickedElements, setClickedElements] = useState<Set<number>>(new Set()); 
+  const filterArea = useRef<HTMLDivElement>(null);
+  const [stick, setStick] = useState<boolean>(false);
+  const { groups } = useGroup();
+  const [localGroups, setLocalGroups] = useState(groups);
   const [activeChecked, setActiveChecked] = useState<string[]>([]);
-
+  const [activeElementIds, setActiveElementIds] = useState<number[]>([]);
   const handleActiveChecked = (elementSlug: string) => {
     const handleActive = activeChecked.includes(elementSlug)
       ? activeChecked.filter((item) => item !== elementSlug)
@@ -137,43 +136,35 @@ export default function Filter(params: { store?: string; busca?: string }) {
     setQuery({ ...query, categories: handleQuery });
   };
 
-  const openModal = () => {
-    setFilterModal(true);
-  };
-  const onElementClick = async (elementId: number) => {
-    const isClicked = clickedElements.has(elementId);
-    if (!isClicked) {
-      
-      const request = await api.call({
-        method: "get",
-        url: `element/${elementId}/descendants`,
-      }) as GroupListResponse;
+  useEffect(() => {
+    if (activeElementIds.length === 0) {
+      setLocalGroups(groups); 
+    }
+  }, [groups, activeElementIds]);
 
-      if (request.response && request.data) {
-        
-        const descendantIds = new Set(request.data.map((el) => el.id));
+  const onClickElementFilter = (elementId: number) => {
+    const isAlreadyActive = activeElementIds.includes(elementId);
 
-        
-        const newGroups = originalGroups.map((group) => ({
-          ...group,
-          elements: group.elements.filter(
-            (element) => descendantIds.has(element.id) || element.id === elementId
-          ),
-        }));
+    const updatedActiveIds = isAlreadyActive
+      ? activeElementIds.filter((id) => id !== elementId) 
+      : [...activeElementIds, elementId]; 
 
-        setGroups(newGroups);
-        setClickedElements(new Set(clickedElements.add(elementId))); 
-      }
+    setActiveElementIds(updatedActiveIds);
+    
+    if (updatedActiveIds.length === 0) {
+      setLocalGroups(groups);
     } else {
       
-      setGroups([...originalGroups]);
-      clickedElements.delete(elementId); 
-      setClickedElements(new Set(clickedElements)); 
+      const filteredGroups = groups.filter((group) =>
+        group.elements.some((element) => updatedActiveIds.includes(element.id))
+      );
+      setLocalGroups(filteredGroups);
     }
   };
 
-  const filterArea = useRef<HTMLDivElement>(null);
-  const [stick, setStick] = useState<boolean>(false);
+  const openModal = () => {
+    setFilterModal(true);
+  };
 
   const handleStick = () => {
     const element = filterArea.current;
@@ -190,7 +181,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
       startQueryHandle();
     }
   }, [router.query]);
-
+  
   return (
     <form action="/produtos/listagem" method="GET">
       {params?.store && <input type="hidden" value={params.store} name="store" />}
@@ -315,7 +306,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
           </div>
         </div>
 
-        {groups.map((group, index) => (
+        {localGroups.map((group, index) => (
           <div key={index} className="pb-6">
             <Label>{group.name}</Label>
             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
@@ -323,14 +314,13 @@ export default function Filter(params: { store?: string; busca?: string }) {
                 {group.elements.map((element: Element) => (
                   <div
                     key={element.id}
-                    className={`border cursor-pointer ease relative rounded p-2 ${
-                      query.categories.includes(element.slug || element.name)
+                    className={`border cursor-pointer ease relative rounded p-2 ${query.categories.includes(element.slug || element.name)
                         ? "border-zinc-800 hover:border-zinc-500"
                         : "hover:border-zinc-300"
-                    }`}
+                      }`}
                     onClick={() => {
-                      onElementClick(element.id);
                       handleActiveChecked(element.slug || element.name);
+                      onClickElementFilter(element.id)
                     }}
                   >
                     <div className="px-3 md:px-1 flex items-center gap-2">
