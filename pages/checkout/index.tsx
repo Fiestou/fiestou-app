@@ -31,7 +31,8 @@ import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
 import { deliveryToName } from "@/src/models/delivery";
 import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
-import { formatCep } from "@/src/components/utils/FormMasks";
+import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
+import { FaSave } from "react-icons/fa";
 
 const FormInitialType = {
   sended: false,
@@ -125,6 +126,7 @@ export default function Checkout({
 
   const [customLocation, setCustomLocation] = useState(false as boolean);
   const [locations, setLocations] = useState([] as Array<AddressType>);
+  const [phone, setPhone] = useState(user?.phone ?? "");
   const [address, setAddress] = useState({
     country: "Brasil",
   } as AddressType);
@@ -133,6 +135,22 @@ export default function Checkout({
       ...prevAddress,
       ...value,
     }));
+  };
+  
+  const handleSavePhone = async () => {
+    try {
+      const phoneDigitsOnly = phone.replace(/\D/g, "");
+      
+      const response: { data: { response: boolean; message: string } } = await api.bridge({
+        method: "post",
+        url: "users/update",
+        data: {
+          phone: phoneDigitsOnly
+        }
+      })
+    } catch (error) {
+      console.error("Erro ao salvar telefone:", error);
+    }
   };
 
   const [deliveryPrice, setDeliveryPrice] = useState(0 as number);
@@ -428,6 +446,31 @@ export default function Checkout({
                     )}
                   </div>
 
+                  <div>
+                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                      Verifique seu número de telefone
+                    </h4>
+                    <p className="whitespace-nowrap text-sm">* O Fiestou utiliza seu número exclusivamente para enviar atualizações sobre o status do seu pedido.</p>
+                  </div>
+
+                  <div className="flex flex-row border-1 gap-2">
+                  <input
+                    name="phone"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(formatPhone(e.target.value))}
+                    required
+                    value={formatPhone(phone) ?? ""}
+                    placeholder="Insira seu telefone aqui"
+                    className="form-control flex flex-3 w-full"
+                    onBlur={() => setPhone(formatPhone(phone))}
+                  />
+                  <button 
+                    onClick={handleSavePhone}
+                    className="flex flex-1 justify-center items-center bg-yellow-300 text-black gap-2 rounded-md p-2 active:bg-white active:border-yellow-300 active:border-2 active:text-yellow-300"
+                  >
+                    Salvar<FaSave />
+                  </button>
+                </div>
+
                   <div className="mb-0 relative overflow-hidden">
                     <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
                       Detalhes de entrega
@@ -587,9 +630,7 @@ export default function Checkout({
                         Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
                       </div>
                       <div className="grid text-right">
-                        {/* <s className="text-xs">R$ 24,00</s> */}
                         <div className="whitespace-nowrap font-semibold text-sm">
-                          {/* Gratuito */}
                           {!isCEPInRegion(address?.zipCode)
                             ? "Entrega indisponível"
                             : !!address?.zipCode
