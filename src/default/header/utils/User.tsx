@@ -15,7 +15,7 @@ export default function User({ user }: { user: UserType }) {
     <div className="md:relative">
       <Button
         style="btn-transparent"
-        href={user.person == "client" ? "#" : "/acesso"}
+        href={user.person == "client" ? "/dashboard" : "/acesso"}
         onClick={() => (user.person == "client" ? setDropdown(true) : {})}
         className="hover:text-yellow-300 ease text-left"
       >
@@ -23,7 +23,6 @@ export default function User({ user }: { user: UserType }) {
           <div>
             <Icon icon="fa-user-circle" className="text-2xl lg:text-4xl" />
           </div>
-          <Link passHref href="/painel">
           <div className="hidden md:block w-fit text-sm lg:text-[1rem] whitespace-nowrap font-semibold font-title">
             <div className="whitespace-nowrap">
               Olá, {getFirstName(user.name)}
@@ -32,7 +31,6 @@ export default function User({ user }: { user: UserType }) {
               <span>Meu painel</span>
             </div>
           </div>
-          </Link>
         </div>
       </Button>
     </div>
