@@ -171,7 +171,7 @@ export default function FileManager(attr: FileManagerType) {
           className={`block py-3 px-3 w-full ${attr?.className} border-zinc-300`}
         >
           <Icon icon="fa-image" />
-          {attr?.placeholder ?? "Selecionar"}
+          {attr.placeholder && attr.placeholder}
         </Button>
 
         {!!selecteds.medias?.length && (
