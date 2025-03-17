@@ -66,6 +66,7 @@ export default function HandleCategories({
     };
 
     const request: any = await api.bridge({
+      method: 'post',
       url: "categories/register",
       data: handle,
     });
@@ -92,6 +93,7 @@ export default function HandleCategories({
 
   const handleRemove = async (child: any) => {
     const request: any = await api.bridge({
+      method: 'post',
       url: "categories/remove",
       data: { id: child.id },
     });

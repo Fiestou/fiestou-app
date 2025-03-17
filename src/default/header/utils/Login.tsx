@@ -36,7 +36,6 @@ export default function Login({ content }: any) {
             <Link href="/acesso" className="hover:text-yellow-500 ease">
               <div className="flex justify-between items-center font-semibold">
                 <span className="pb-1">Acesse ou cadastre-se</span>
-                <Icon icon="fa-chevron-right" className="text-xs" />
               </div>
             </Link>
             <div>

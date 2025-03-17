@@ -26,7 +26,7 @@ export async function getServerSideProps(ctx: any) {
     };
   }
 
-  let request: any = await api.content({ url: `default` });
+  let request: any = await api.content({method: 'get', url: `default` });
 
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};

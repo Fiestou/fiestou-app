@@ -32,6 +32,7 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
 
   const getUser = async () => {
     let request: any = await api.bridge({
+      method: 'post',
       url: "stores/customers",
       data: {
         id: id,
@@ -44,6 +45,7 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
 
   const getOrders = async () => {
     let request: any = await api.bridge({
+      method: "post",
       url: "suborders/list",
       data: {
         customer: id,
