@@ -4,22 +4,24 @@ import { useEffect, useState } from "react";
 
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import NewGroup from "../../../src/components/pages/admin/filtro/buttons/NewGroup";
-import { LuCirclePlus } from "react-icons/lu";
-import Eye from "../../../src/components/pages/admin/filtro/buttons/Eye";
+import { CirclePlus } from 'lucide-react';
+import EyeButton from "../../../src/components/pages/admin/filtro/buttons/Eye";
 import Card from "../../../src/components/pages/admin/filtro/section/Card";
 import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modals/GroupModal";
-import { Group, GroupResponse, ResponseRegister } from "./types/response";
+import { Group, GroupResponse, GroupsResponse, ResponseRegister } from "./types/response";
 import { RequestRegister } from "./types/request";
+import { toast } from "react-toastify";
 
 export default function Categorias() {
   const api = new Api();
 
   const [openGroupModal, setOpenGroupModal] = useState<boolean>(false);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [updateGroup, setUpdateGroup] = useState<Group | null>();
 
   const onSaveGroup = async (data: GroupData) => {
     let dataRequest: RequestRegister = {
-      name: data?.title || '',
+      name: data?.name || '',
       description: data?.description || '',
       isFather: groups.length === 0
     }
@@ -28,22 +30,34 @@ export default function Categorias() {
       dataRequest.parent_id = groups[groups.length - 1].id
     }
 
-    const request = await api.bridge<ResponseRegister>({
-      method: "post",
-      url: "group/register",
-      data: dataRequest
-    });
+    let request;
+
+    if (data.id){
+      request = await api.bridge<ResponseRegister>({
+        method: "put",
+        url: `group/update/${data.id}`,
+        data: dataRequest
+      });
+    }else{
+      request = await api.bridge<ResponseRegister>({
+        method: "post",
+        url: "group/register",
+        data: dataRequest
+      });
+  
+    }
 
     if (!request.response) {
-      //alert
+      toast.error('Não foi possível salvar o grupo de filtros.')
+      return;
     }
 
     setOpenGroupModal(false);
-    window.location.reload()
+    window.location.reload();
   }
 
   const getGroups = async () => {
-    const request = await api.bridge<GroupResponse>({
+    const request = await api.request<GroupsResponse>({
       method: "get",
       url: "group/list",
     });
@@ -53,13 +67,27 @@ export default function Categorias() {
     }
   };
 
+  const onEditClick = async (groupId: number) =>{
+    const request = await api.call<GroupResponse>({
+      method: "get",
+      url: `group/get/${groupId}`,
+    });
+
+    if(request.response){
+      setUpdateGroup(request.data);
+      setOpenGroupModal(true);
+    }
+  }
+
   useEffect(() => {
+    getGroups();
   }, [])
 
-  useEffect(()=>{
-    getGroups();
-
-  }, [groups])
+  useEffect(() => {
+    if (!openGroupModal){
+      setUpdateGroup(null);
+    }
+  }, [openGroupModal])
 
   return (
     <Template
@@ -84,13 +112,13 @@ export default function Categorias() {
                 Configurar filtro
               </div>
               <div className="flex-[1.2] gap-2 justify-center items-center flex flex-row" >
-                <Eye onClick={() => { }} />
+                {/* <EyeButton onClick={() => { }} /> */}
                 <NewGroup
                   onClick={() => {
                     setOpenGroupModal(true);
                   }}
                   text="Adicionar grupo"
-                  icon={<LuCirclePlus size={20} />}
+                  icon={<CirclePlus size={20} />}
                 />
               </div>
             </div>
@@ -102,20 +130,21 @@ export default function Categorias() {
         <div
           className=" flex flex-col gap-3 w-full max-w-[1000px] max-h-scree  "
         >
-          {groups.map((value) => (
+          {groups.map((value, index) => (
             <Card
+              key={index}
+              onEditClick={onEditClick}
               elements={value.elements}
-              onDeleteClick={() => { }}
-              onEditClick={() => { }}
               title={value.name}
               description={value.description}
-              id={value.id} />
+              id={value.id}
+              onDeleteGroup={() => {setGroups((prev) => prev.filter((group) => group.id !== value.id));              }} />
           ))}
 
         </div>
       </section>
 
-      <GroupModal onSaveClick={(data) => { onSaveGroup(data) }} open={openGroupModal} onRequestClose={() => { setOpenGroupModal(false) }} />
+      <GroupModal onSaveClick={(data) => { onSaveGroup(data) }} data={updateGroup} open={openGroupModal} onRequestClose={() => { setOpenGroupModal(false) }} />
     </Template>
   )
 }

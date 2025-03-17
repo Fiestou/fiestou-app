@@ -52,6 +52,19 @@
     outline: none;
   }
 
+  .Toastify__toast {
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .Toastify__toast {
+    background-color: white !important;
+  }
+  
+  .Toastify__progress-bar {
+    background-color:  #00a7eb !important; 
+  }
+  
   .arrow-number-none {
     -webkit-appearance: none !important;
     -moz-appearance: textfield !important;

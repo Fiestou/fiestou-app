@@ -11,9 +11,14 @@ export interface DataRegister {
     id: number
 }
 
-export interface GroupResponse {
+export interface GroupsResponse {
     response: boolean
     data: Group[]
+}
+
+export interface GroupResponse {
+    response: boolean
+    data: Group
 }
 
 export interface Group {
@@ -50,3 +55,4 @@ export interface ElementResponse {
     data: Element
 }
 
+export interface GenericResponse { response: boolean, data?: object, nessage?: string }
