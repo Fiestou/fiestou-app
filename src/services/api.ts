@@ -101,9 +101,9 @@ class Api {
     return this.connect({ method, url, data, opts }, ctx);
   }
 
-  async request({ method = "get", url, data, opts }: ApiRequestType, ctx?: any) {
+  async request<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
     url = `${process.env.BASE_URL}/api/${url}`;
-    return await this.connect({ method, url, data, opts }, ctx);
+    return await this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
   async content({ url, method = "get" }: any, ctx?: any) {
@@ -111,10 +111,10 @@ class Api {
     return await this.connect({ method, url }, ctx);
   }
 
-  async call({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
+  async call<T>({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) : Promise<T> {
     url = `${process.env.BASE_URL}/api/${url}`;
     data = { graphs: data };
-    return this.connect({ method, url, data, opts }, ctx);
+    return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
   async bridge<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
