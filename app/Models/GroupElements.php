@@ -15,6 +15,11 @@ class GroupElements extends BaseModel
         'updated_at',
     ];
 
+    public function group()
+    {
+        return $this->belongsTo(Group::class, 'id_group');
+    }
+
     public function element()
     {
         return $this->belongsTo(Elements::class, 'id_elements');

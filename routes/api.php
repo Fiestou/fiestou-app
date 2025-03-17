@@ -157,23 +157,32 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
 
         Route::group([ 'prefix' => 'group' ], function(){
             Route::post('/register', [GroupController::class, 'Register']);
-            Route::get('/get/{GroupId}', [GroupController::class, 'Get']);
             Route::put('/update/{GroupId}', [GroupController::class, 'Update']);
-            Route::get('/list', [GroupController::class, 'List']);
             Route::delete('/delete/{GroupId}', [GroupController::class, 'Delete']);
             Route::get('/{GroupId}/descendants', [GroupController::class, 'GetAllDescendants']);
+            Route::delete('/{GroupId}/Element/{ElementId}', [GroupController::class, 'DeleteGroupElement']);
+            Route::get('/ChildGroup/{GroupId}', [GroupController::class, 'GetChildGrouoWithElements']);
         });
 
         Route::group([ 'prefix' => 'element' ], function(){
             Route::post('/register', [ElementsController::class, 'Register']);
-            Route::get('/get/{ElementId}', [ElementsController::class, 'Get']);
-            Route::get('/list', [ElementsController::class, 'List']);
             Route::put('/update/{ElementId}', [ElementsController::class, 'Update']);
-            Route::get('/{ElementId}/descendants', [ElementsController::class, 'GetAllDescendants']);
         });
     });
 
     Route::post('/logout', [AuthController::class, 'Logout']);
+});
+
+Route::group([ 'prefix' => 'group' ], function(){
+    Route::get('/get/{GroupId}', [GroupController::class, 'Get']);
+    Route::get('/list', [GroupController::class, 'List']);
+    Route::get('/{GroupId}/descendants', [GroupController::class, 'GetAllDescendants']);
+});
+
+Route::group([ 'prefix' => 'element' ], function(){
+    Route::get('/get/{ElementId}', [ElementsController::class, 'Get']);
+    Route::get('/list', [ElementsController::class, 'List']);
+    Route::get('/{ElementId}/descendants', [ElementsController::class, 'GetAllDescendants']);
 });
 
 // CRON

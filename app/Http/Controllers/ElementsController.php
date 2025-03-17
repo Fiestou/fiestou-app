@@ -109,9 +109,20 @@ class ElementsController extends Controller
             ]);
         }
 
-        $descendents = Elements::getElementDescendants($ElementId, 1);
+        $descendents = collect(Elements::getElementDescendants($ElementId, 1));
 
-        $element->descendents = $descendents;
+        $filteredElements = $descendents->filter(function ($element) {
+
+            $groupElements = GroupElements::where('id_elements', $element->id)->first();
+
+            $group = Group::where('id', $groupElements->id_group)->first();
+
+            if ($group->active === 1){
+                return $element;
+            }
+        });
+
+        $element->descendents = $filteredElements;
 
         return response()->json([
             'response' => true,
@@ -126,9 +137,11 @@ class ElementsController extends Controller
      */
     public function List()
     {
+        $elements = Elements::fromActiveGroups()->get();
+
         return response()->json([
             'response' => true,
-            'data'     => Elements::all()
+            'data'     => $elements
         ]);
     }
 
@@ -249,7 +262,9 @@ class ElementsController extends Controller
         foreach ($descendants as $descendant) {
             $groupElement = GroupElements::where('id_elements', $descendant->id)->first();
 
-            $group = Group::where('id', $groupElement->id_group)->first();
+            $group = Group::where('id', $groupElement->id_group)
+                ->where('active', 1)
+                ->first();
 
             $descendant->group = $group;
         };

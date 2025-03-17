@@ -16,6 +16,11 @@ class Group extends BaseModel
         'active',
     ];
 
+    public function scopeActive($query)
+    {
+        return $query->where('active', 1);
+    }
+    
     public function elements()
     {
         return $this->hasManyThrough(
