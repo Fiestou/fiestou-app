@@ -1,19 +1,19 @@
 import React from "react";
-import { IoEyeOutline } from "react-icons/io5";
+import { Eye } from 'lucide-react';
 
 interface EyeProps {
     onClick: () => void;
 }
 
-const Eye: React.FC<EyeProps> = (props) => {
+const EyeButton: React.FC<EyeProps> = (props) => {
 
     return(
         <button
             className="flex text-black justify-center items-center active:text-yellow-300"
         >
-            <IoEyeOutline size={25}/>
+            <Eye size={25}/>
         </button>
     );
 };
 
-export default Eye;
+export default EyeButton;

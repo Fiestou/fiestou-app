@@ -1,7 +1,6 @@
 export interface RequestRegister {
-    name: string
-    description: string
-    isFather: boolean
-    parent_id?: number
-  }
-  
+  name: string
+  description: string
+  isFather: boolean
+  parent_id?: number
+}

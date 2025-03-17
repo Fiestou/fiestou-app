@@ -1,31 +1,40 @@
-import React, { useState } from "react";
-import { IoClose } from "react-icons/io5";
+import React, { useEffect, useState } from "react";
+import { X } from "lucide-react";
 
 interface CreateGroupProps {
   open: boolean;
   onRequestClose: () => void;
   onSaveClick: (data: GroupData) => void;
-  data?: GroupData;
+  data?: GroupData | null;
 }
 
 export interface GroupData {
   id?: number;
-  title: string;
+  name: string;
   description: string;
 }
 
 const GroupModal: React.FC<CreateGroupProps> = (props) => {
-  if (!props.open) return null;
-  const [title, setTitle] = useState<string>(props.data?.title || '');
-  const [description, setDescription] = useState<string>(props.data?.description || '');
+  const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+
+  useEffect(()=>{
+    if (props.data){
+      setTitle(props.data.name);
+      setDescription(props.data.description);
+    }else{
+      setTitle('');
+      setDescription('');
+    }
+  }, [props.data])
 
   const returnData: GroupData = {
     id: props.data?.id || undefined,
-    title: title,
+    name: title,
     description: description
   }
 
-  return (
+  return !props.open ? null : (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-[600px] relative gap-3 flex flex-col">
         <h1 className="text-[30px] font-semibold mb-4 text-black underline decoration-1 decoration-gray-400 underline-offset-4">
@@ -37,7 +46,7 @@ const GroupModal: React.FC<CreateGroupProps> = (props) => {
           onClick={props.onRequestClose}
           className="absolute top-3 right-3  text-gray-600 hover:text-gray-800"
         >
-          <IoClose size={25} />
+          <X size={25} />
         </button>
         <div className="flex flex-col w-full">
           <label className="flex flex-row flex-1 w-full text-black">

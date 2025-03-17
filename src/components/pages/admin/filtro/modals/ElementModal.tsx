@@ -1,10 +1,9 @@
 import FileManager from "@/src/components/ui/form/FileManager";
 import React, { useEffect, useState } from "react";
-import { IoClose } from "react-icons/io5";
-import { FaTrash } from 'react-icons/fa';
+import { X } from "lucide-react";
 import SelectElements from "../selectElements/selectElements";
 import { Element } from "@/pages/admin/filtro/types/response";
-
+import { Trash2 } from "lucide-react";
 interface ElementModalProps {
     open: boolean;
     onRequestClose: () => void;
@@ -31,7 +30,6 @@ export interface ReturnElementData {
 }
 
 const ElementModal: React.FC<ElementModalProps> = (props) => {
-    if (!props.open) return null;
     const [icon, setIcon] = useState<string>('');
     const [name, setName] = useState<string>('');
     const [description, setDescription] = useState<string>('');
@@ -47,10 +45,16 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
             childElements: selectedList.map((value) => value.id)
         }
 
-        if (props.data){
+        if (props.data) {
             data.id = props.data.id;
         }
+
         props.onSaveClick(data);
+
+        setIcon('');
+        setName('');
+        setDescription('');
+        setSelectedList([]);
     }
 
     useEffect(() => {
@@ -61,27 +65,31 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
             if (props.data.descendents) {
                 setSelectedList(props.data.descendents);
             }
+        } else {
+            setIcon('');
+            setName('');
+            setDescription('');
+            setSelectedList([]);
         }
     }, [props.data])
-    
-    useEffect(()=>{
-        console.log(selectedList)
-    }, [selectedList])
 
-    
     const newRelatedElements = props.relatedElements.filter((element) => element.id !== props.data?.id);
-    
-    return (
+
+    return !props.open ? null : (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-[600px] relative gap-5 flex flex-col">
                 <h1 className="text-[30px] font-semibold mb-4 text-black underline decoration-[1.5px] decoration-gray-400 underline-offset-8">
-                    Criar Elemento
+
+                    {
+                        props.data?.id ? 'Editar Elemento' : 'Criar Elemento'
+                    }
+
                 </h1>
                 <button
                     onClick={props.onRequestClose}
                     className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
                 >
-                    <IoClose size={25} />
+                    <X size={25} />
                 </button>
 
                 <div className="flex flex-row w-full gap-3 justify-center items-center">
@@ -92,7 +100,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
                                 alt="icon"
                                 className="w-6 h-6 transition-opacity duration-200 group-hover:opacity-0"
                             />
-                            <FaTrash
+                            <Trash2
                                 className="absolute inset-0 m-auto text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-4 h-4"
                             />
                         </button>
@@ -143,7 +151,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
                     onRequestOpen={() => setOpenSelect(!openSelect)}
                     open={openSelect}
                     relatedElements={newRelatedElements}
-                    onChageSelectList={(data) => {setSelectedList(data)}}
+                    onChageSelectList={(data) => { setSelectedList(data) }}
                 />
 
                 <div className="flex w-full justify-end gap-3">
