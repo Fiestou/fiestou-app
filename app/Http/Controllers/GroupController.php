@@ -7,7 +7,6 @@ use App\Models\Group;
 use App\Models\GroupElements;
 use App\Models\Elements;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
 {
@@ -26,7 +25,7 @@ class GroupController extends Controller
             "elements.*"  => "exists:elements,id"
         ]);
 
-        $group_father = Group::whereNull('parent_id')->first();
+        $group_father = Group::whereNull('parent_id')->where('active', 1)->first();
 
         if ($group_father && $request->get("isFather")) {
             return response()->json([
@@ -97,7 +96,7 @@ class GroupController extends Controller
     public function Get($GroupId)
     {
         $group = Group::with('elements')->find($GroupId);
-
+        
         if (!$group) {
             return response()->json([
                 'response' => false,
@@ -192,15 +191,17 @@ class GroupController extends Controller
     }
 
     /**
-     * Remove group with id.
+     * List groups.
      *
      * @param  int  $GroupId
      * @return \Illuminate\Http\Response
      */
     public function List()
     {
-        $groups = Group::with('elements')->get();
-
+        $groups = Group::active() 
+            ->with('elements') 
+            ->get();
+    
         return response()->json([
             'response' => true,
             'data'     => $groups
@@ -255,4 +256,53 @@ class GroupController extends Controller
             ]);
         }
     }
+
+     /**
+     * Delete relationship grupo and element.
+     *
+     * @param  int  $GroupId
+     * @return \Illuminate\Http\Response
+     */
+    public function DeleteGroupElement($GroupId, $ElementId)
+    {
+        try {
+            GroupElements::where('id_group', $GroupId)->where('id_elements', $ElementId)->delete();
+            Elements::where('id', $ElementId)->delete();
+            
+            return response()->json([
+                'response' => true,
+                'data'     => 'OK' 
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'response' => true,
+                'message'     => 'Erro ao deletar: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * Delete relationship grupo and element.
+     *
+     * @param  int  $GroupId
+     * @return \Illuminate\Http\Response
+     */
+    public function GetChildGrouoWithElements($GroupId)
+    {
+        try {   
+            $groupChild = Group::with('elements')->where('parent_id', $GroupId)->first();
+
+            return response()->json([
+                'response' => true,
+                'data'     => $groupChild
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'response' => true,
+                'message'     => 'Erro ao pegar de descendentes' . $e->getMessage()
+            ]);
+        }
+    }
+    
 }

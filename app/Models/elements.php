@@ -19,6 +19,18 @@ class Elements extends BaseModel
         'updated_at',
     ];
 
+    public function groupElements()
+    {
+        return $this->hasMany(GroupElements::class, 'id_elements');
+    }
+
+    public function scopeFromActiveGroups($query)
+    {
+        return $query->whereHas('groupElements.group', function ($q) {
+            $q->where('active', 1);
+        });
+    }
+
     /**
      * Obtém todos os descendentes do elemento.
      *
