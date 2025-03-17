@@ -74,6 +74,7 @@ export async function getServerSideProps(ctx: any) {
   const params = ctx.params;
 
   let request: any = await api.content({
+    method: 'get',
     url: "order",
   });
 
@@ -162,6 +163,7 @@ export default function Pagamento({
 
   const ConfirmManager = async () => {
     let request: any = await api.bridge({
+      method: 'post',
       url: "orders/get",
       data: {
         id: orderId,
@@ -261,6 +263,7 @@ export default function Pagamento({
     setPlaceholder(true);
 
     let request: any = await api.bridge({
+      method: 'post',
       url: "orders/get",
       data: {
         id: orderId,
@@ -279,8 +282,8 @@ export default function Pagamento({
 
     const handle: OrderType = request?.data;
 
-    if (handle && handle.status != 0) {
-      window.location.href = `/dashboard/pedidos/${handle.id}`;
+    //if (handle && handle.status != 0) {
+      //window.location.href = `/dashboard/pedidos/${handle.id}`;
 
       let dates: any = [];
       let products: any = [];
@@ -300,7 +303,7 @@ export default function Pagamento({
 
       if (!!handle?.user) setUser(handle.user);
       setPlaceholder(false);
-    }
+    //}
   };
 
   useEffect(() => {

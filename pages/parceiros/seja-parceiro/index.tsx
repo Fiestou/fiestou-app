@@ -18,7 +18,7 @@ import { clean, getImage, moneyFormat } from "@/src/helper";
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.content({ url: `become-partner` });
+  let request: any = await api.content({method: 'get', url: `become-partner` });
 
   const Partner = request?.data?.Partner ?? {};
   const Roles = request?.data?.Roles ?? {};
@@ -72,6 +72,7 @@ export default function SejaParceiro({
     setForm({ ...form, loading: true });
 
     const data: any = await api.bridge({
+      method: 'post',
       url: "auth/pre-register",
       data: {
         name: name,

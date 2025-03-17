@@ -36,6 +36,7 @@ export async function getServerSideProps(ctx: any) {
   user = request?.data ?? {};
 
   request = await api.content({
+    method: 'get',
     url: "account/address",
   });
 
@@ -120,6 +121,7 @@ export default function Conta({
     setContent(handle);
 
     const request: any = await api.bridge({
+      method: 'post',
       url: "users/update",
       data: handle,
     });
