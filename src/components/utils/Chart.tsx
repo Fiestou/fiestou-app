@@ -119,6 +119,7 @@ export function Chart(params: any) {
     }
 
     let request: any = await api.bridge({
+      method: "post",
       url: "suborders/list",
       data: datesRange,
     });

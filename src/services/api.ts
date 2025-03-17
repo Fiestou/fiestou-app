@@ -1,5 +1,4 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import Cookies from "js-cookie";
 import { serializeParam } from "../helper";
 
@@ -17,11 +16,6 @@ if (token) {
   api.defaults.headers["Authorization"] = `Bearer ${token}`;
 }
 
-// api.interceptors.request.use((config) => {
-//   console.log(config);
-//   return config;
-// });
-
 interface ApiRequestType {
   method?: string;
   url: string;
@@ -29,10 +23,12 @@ interface ApiRequestType {
   opts?: Object;
 }
 
+type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
+
 class Api {
   constructor() {}
 
-  async connect({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async connect({ method = "get", url, data, opts }: ApiRequestType, ctx?: any) {
     return await new Promise((resolve, reject) => {
       if (!!ctx?.req) {
         const authtoken = !!ctx?.req.cookies
@@ -48,27 +44,31 @@ class Api {
         const queryString = Object.keys(data)
           .map((key) => serializeParam(key, data[key]))
           .join("&");
-
         url = `${url}?${queryString}`;
         data = {};
       }
 
-      api[method == "get" ? "get" : "post"](url, data ?? {}, opts ?? {})
-        .then(({ data }: any) => {
-          resolve(data);
+      const validMethods: HttpMethod[] = ["get", "post", "put", "patch", "delete"];
+      const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
+        ? (method.toLowerCase() as HttpMethod)
+        : "get";
+
+      api[requestMethod](url, data ?? {}, opts ?? {})
+        .then((response: AxiosResponse) => {
+          resolve(response.data);
         })
-        .catch((response: any) => {
-          if ([400, 401, 418].indexOf(response.status) > -1) {
-            reject(response);
+        .catch((error: any) => {
+          if (error.response && [400, 401, 418].includes(error.response.status)) {
+            reject(error.response);
           }
-          resolve(response);
+          resolve(error.response);
         });
     });
   }
 
   async internal({
     url,
-    method,
+    method = "get",
     data,
     opts,
   }: {
@@ -82,47 +82,49 @@ class Api {
       url = `${url}?${queryString}`;
       data = {};
     }
-
-    return await axios[method == "get" ? "get" : "post"](
-      `/api${url}`,
-      data,
-      opts ?? {}
-    )
-      .then(({ data }: any) => data)
-      .catch((error) => {
+  
+    const validMethods: HttpMethod[] = ["get", "post", "put", "patch", "delete"];
+    const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
+      ? (method.toLowerCase() as HttpMethod)
+      : "get";
+  
+    return await axios[requestMethod](`/api${url}`, data, opts ?? {})
+      .then((response: AxiosResponse) => response.data)
+      .catch((error: any) => {
         console.log(error);
         return null;
       });
   }
 
-  async trigger({ url, data, opts }: ApiRequestType, ctx?: any) {
+  async trigger({ url, data, opts, method = "post" }: ApiRequestType, ctx?: any) {
     url = `${process.env.APP_URL}${url}`;
-    return this.connect({ url, data, opts }, ctx);
+    return this.connect({ method, url, data, opts }, ctx);
   }
 
-  async request({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async request({ method = "get", url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.BASE_URL}/api/${url}`;
     return await this.connect({ method, url, data, opts }, ctx);
   }
 
-  async content({ url }: any, ctx?: any) {
+  async content({ url, method = "get" }: any, ctx?: any) {
     url = `${process.env.BASE_URL}/api/content/${url}`;
-    return await this.connect({ method: "get", url }, ctx);
+    return await this.connect({ method, url }, ctx);
   }
 
-  async call({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async call({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.BASE_URL}/api/${url}`;
     data = { graphs: data };
     return this.connect({ method, url, data, opts }, ctx);
   }
 
-  async bridge({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async bridge<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
     url = `${process.env.API_REST}${url}`;
 
-    return this.connect({ method, url, data, opts }, ctx);
+    console.log(url)
+    return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
-  async graph({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async graph({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.API_REST}${url}`;
     data = { graphs: data };
     return this.connect({ method, url, data, opts }, ctx);
@@ -137,6 +139,7 @@ class Api {
     overwrite?: Object;
   }) {
     let url = "";
+    let requestMethod = "post"; 
 
     if (data?.method == "upload") {
       url = `app/files/upload-base64`;
@@ -144,12 +147,13 @@ class Api {
 
     if (data?.method == "remove") {
       url = `app/files/remove-medias`;
+      requestMethod = "delete"; 
     }
 
-    return this.request({ url, data });
+    return this.request({ method: requestMethod, url, data });
   }
 
-  async auth({ method, url, data, opts }: ApiRequestType, ctx?: any) {
+  async auth({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
     url = `${process.env.API_REST}${url}`;
     return this.connect({ method, url, data, opts }, ctx);
   }

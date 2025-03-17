@@ -12,7 +12,7 @@ import PostItem from "@/src/components/common/PostItem";
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.content({ url: `blog` });
+  let request: any = await api.content({method: 'get', url: `blog` });
 
   const Blog = request?.data?.Blog ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};

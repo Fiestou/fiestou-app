@@ -32,6 +32,7 @@ export async function getServerSideProps(ctx: any) {
 
   request = await api.call(
     {
+      method: 'post',
       url: "request/graph",
       data: [
         {

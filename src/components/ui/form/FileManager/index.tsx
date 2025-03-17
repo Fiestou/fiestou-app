@@ -92,6 +92,7 @@ export default function FileManager(attr: FileManagerType) {
 
       if (upload.response && !!upload.medias) {
         const request: any = await api.graph({
+          method: 'post',
           url: "files/list-medias",
         });
 
@@ -139,6 +140,7 @@ export default function FileManager(attr: FileManagerType) {
     setModalStatus(true);
 
     const request: any = await api.graph({
+      method: 'post',
       url: "files/list-medias",
     });
 

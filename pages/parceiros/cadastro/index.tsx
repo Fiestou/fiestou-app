@@ -24,6 +24,7 @@ export async function getServerSideProps(ctx: any) {
   if (!!ref) {
     const data: any = await api.bridge(
       {
+        method: 'post',
         url: "auth/checkin",
         data: { ref: ref },
       },
@@ -73,6 +74,7 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
     setForm({ ...form, loading: true });
 
     const request: any = await api.bridge({
+      method: 'post',
       url: "stores/complete-register",
       data: { ...store, ...user },
     });
