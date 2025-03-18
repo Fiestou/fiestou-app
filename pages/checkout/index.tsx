@@ -32,7 +32,10 @@ import { CartType } from "@/src/models/cart";
 import { deliveryToName } from "@/src/models/delivery";
 import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
 import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
-import { FaSave } from "react-icons/fa";
+import { Save } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
+import { ApiResponse } from "@/src/types/response";
+import 'react-toastify/dist/ReactToastify.css';
 
 const FormInitialType = {
   sended: false,
@@ -141,17 +144,29 @@ export default function Checkout({
     try {
       const phoneDigitsOnly = phone.replace(/\D/g, "");
       
-      const response: { data: { response: boolean; message: string } } = await api.bridge({
+      const response = await api.bridge<ApiResponse>({
         method: "post",
         url: "users/update",
         data: {
           phone: phoneDigitsOnly
         }
-      })
+      });
+
+      // Inspeciona a resposta do backend
+      console.log("Resposta do backend:", response);
+
+      if (response?.data?.id) {
+        setPhone(response.data.phone); // Atualiza o estado 'phone' com o valor retornado
+        toast.success("Telefone salvo com sucesso!");
+      } else {
+        toast.error("Não foi possível salvar o telefone");
+      }
+      
     } catch (error) {
       console.error("Erro ao salvar telefone:", error);
+      toast.error("Ocorreu um erro ao salvar o telefone. Tente novamente.");
     }
-  };
+};
 
   const [deliveryPrice, setDeliveryPrice] = useState(0 as number);
   const getCalculeDistancePrice = async () => {
@@ -196,10 +211,10 @@ export default function Checkout({
     setLocations(user?.address ?? []);
     setAddress((user?.address ?? []).filter((addr) => !!addr.main)[0]);
 
-    if (!!window && (!token || !user.id)) {
+    /* if (!!window && (!token || !user.id)) {
       Cookies.set("fiestou.redirect", "checkout", { expires: 1 });
       window.location.href = "/acesso";
-    }
+    } */
   }, [user, token]);
 
   const submitOrder = async (e: any) => {
@@ -454,22 +469,26 @@ export default function Checkout({
                   </div>
 
                   <div className="flex flex-row border-1 gap-2">
-                  <input
-                    name="phone"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(formatPhone(e.target.value))}
-                    required
-                    value={formatPhone(phone) ?? ""}
-                    placeholder="Insira seu telefone aqui"
-                    className="form-control flex flex-3 w-full"
-                    onBlur={() => setPhone(formatPhone(phone))}
-                  />
-                  <button 
-                    onClick={handleSavePhone}
-                    className="flex flex-1 justify-center items-center bg-yellow-300 text-black gap-2 rounded-md p-2 active:bg-white active:border-yellow-300 active:border-2 active:text-yellow-300"
-                  >
-                    Salvar<FaSave />
-                  </button>
-                </div>
+                    <input
+                      name="phone"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        const rawValue = e.target.value;
+                        const formattedValue = formatPhone(rawValue);
+                        setPhone(formattedValue);
+                      }}
+                      required
+                      value={phone}
+                      placeholder="Insira seu telefone aqui"
+                      className="form-control flex flex-3 w-full"
+                    />
+                    <button 
+                      onClick={handleSavePhone}
+                      className="flex flex-1 justify-center items-center bg-yellow-300 text-black gap-2 rounded-md p-2 active:bg-white active:border-yellow-300 active:border-2 active:text-yellow-300"
+                    >
+                      <b>Salvar</b> 
+                    <ToastContainer />
+                    </button>
+                  </div>
 
                   <div className="mb-0 relative overflow-hidden">
                     <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
