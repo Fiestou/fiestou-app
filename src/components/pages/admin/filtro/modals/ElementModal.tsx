@@ -63,7 +63,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
             setName(props.data.name);
             setDescription(props.data.description);
             if (props.data.descendents) {
-                setSelectedList(props.data.descendents);
+                setSelectedList(props.data.descendents.filter((desc) => desc.generation_level === 1));
             }
         } else {
             setIcon('');

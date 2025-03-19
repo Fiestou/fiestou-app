@@ -55,7 +55,7 @@ const Card: React.FC<CardProps> = (props) => {
         });
 
         if (request.response && request.data) {
-            setRelatedElements(request.data.elements.filter((element) => element.generation_level === 1));
+            setRelatedElements(request.data.elements);
         }
 
         if (elementId){
@@ -136,6 +136,10 @@ const Card: React.FC<CardProps> = (props) => {
             setLocalElements(props.elements);
         }
     }, []);
+
+    useEffect(()=>{
+        console.log(relatedElements)
+    }, [relatedElements])
 
     useEffect(() => {
         if (!openElementModal) {

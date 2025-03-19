@@ -93,55 +93,61 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const [stick, setStick] = useState<boolean>(false);
   const { groups } = useGroup();
   const [localGroups, setLocalGroups] = useState<Group[]>(groups);
-  const [lastElementsChecked, setLastElementChecked] = useState<Element[]>([]);
-  const [lastGroupsChecked, setLastGroupClicked] = useState<Group[]>([]);
-
-  const onClickElementFilter = (elementId: number, groupId: number , descendants: Element[] | []) => {
-    let checkedGroups = localGroups
+  
+  const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[]) => {
+    let checkedGroupElements: Group[] = [];
+    let updateLocalGroups = localGroups
       .map((group) => ({
         ...group,
         elements: group.elements
           .map((element) => {
             if (element.id === elementId) {
-              const updatedElement = { ...element, checked: !element.checked };
-              if (!element.checked === true){
-                setLastElementChecked([...lastElementsChecked, updatedElement])
-                setLastGroupClicked([...lastGroupsChecked, group])
-              }else if(lastElementsChecked && lastGroupsChecked){
-                elementId = lastElementsChecked.at(-1)?.id || 0
-                groupId = lastGroupsChecked.at(-1)?.id || 0
-                descendants = lastElementsChecked.at(-1)?.descendants || []
+              if(!element.checked === true){
+                checkedGroupElements.push(group)
               }
-              return updatedElement;
+              return { ...element, checked: !element.checked };
             }
             return element;
           })
-          .filter((element) => element.checked),
       }))
-      .filter((group) => group.elements.length > 0);
 
-    if (checkedGroups.length === 0) {
-      setLocalGroups(groups);
-      return;
+    let positionGroup = 0;
+    for (let i = 0; i < updateLocalGroups.length; i++) {
+      const localGroup = updateLocalGroups[i];
+
+      if (localGroup.elements.some(element => element.id === elementId)) {
+        positionGroup = i;
+      }
     }
 
-    let finalGroups: Group[] = checkedGroups;
+    if (updateLocalGroups.length + 1 > positionGroup + 1) {
+      let finalGroups: Group[] = updateLocalGroups;
 
-    if (descendants) {
-      localGroups.forEach((group) => {
-        if (group.id !== groupId && lastGroupsChecked.some((lastGroup) => lastGroup.id !== groupId)) {
-          descendants.forEach((elementDescendant) => {
-            if (group.elements.some((element) => element.id === elementDescendant.id) && !finalGroups.includes(group)) {
-              finalGroups.push(group);
-            }
-          });
+      finalGroups.map((group, index) => {
+        if (index === positionGroup + 1) {
+          let groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
+          let elements: Element[] = [];
+
+          if (!checked === true) {
+            groupGlobal?.elements.map((element) => {
+              if (descendants.some((descendant) => descendant.id === element.id) && !elements.includes(element)) {
+                elements.push(element)
+              }
+            })
+            group.elements = elements;
+          } else {
+            group.elements = groupGlobal?.elements || []
+          }
         }
-      });
+      })
+
+      setLocalGroups(finalGroups);
     }
-
-    setLocalGroups(finalGroups);
   };
+  
+  useEffect(() => {
 
+  }, [localGroups])
 
   useEffect(() => {
     setLocalGroups(groups);
@@ -304,7 +310,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
                       : "hover:border-zinc-300"
                       }`}
                     onClick={() => {
-                      onClickElementFilter(element.id, group.id, element.descendants || [])
+                      onClickElementFilter(element.id, element.checked, element.descendants || [])
                     }}
                   >
                     <div className="px-3 md:px-1 flex items-center gap-2">
