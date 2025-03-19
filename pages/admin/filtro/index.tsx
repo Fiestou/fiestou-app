@@ -8,8 +8,8 @@ import { CirclePlus } from 'lucide-react';
 import EyeButton from "../../../src/components/pages/admin/filtro/buttons/Eye";
 import Card from "../../../src/components/pages/admin/filtro/section/Card";
 import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modals/GroupModal";
-import { Group, GroupResponse, GroupsResponse, ResponseRegister } from "./types/response";
-import { RequestRegister } from "./types/request";
+import { Group, GroupResponse, GroupsResponse, ResponseRegister } from "../../../src/types/filtros/response";
+import { RequestRegister } from "../../../src/types/filtros/request";
 import { toast } from "react-toastify";
 
 export default function Categorias() {
@@ -39,12 +39,12 @@ export default function Categorias() {
         data: dataRequest
       });
     }else{
+      console.log(dataRequest)
       request = await api.bridge<ResponseRegister>({
         method: "post",
         url: "group/register",
         data: dataRequest
       });
-  
     }
 
     if (!request.response) {
@@ -63,6 +63,7 @@ export default function Categorias() {
     });
 
     if (request.response) {
+      console.log(request.data)
       setGroups(request.data);
     }
   };
@@ -138,7 +139,7 @@ export default function Categorias() {
               title={value.name}
               description={value.description}
               id={value.id}
-              onDeleteGroup={() => {setGroups((prev) => prev.filter((group) => group.id !== value.id));              }} />
+              onDeleteGroup={() => {setGroups((prev) => prev.filter((group) => group.id !== value.id))}} />
           ))}
 
         </div>

@@ -8,40 +8,26 @@ import Img from "../utils/ImgBase";
 import React from "react";
 import Check from "../ui/form/CheckUI";
 import Colors from "../ui/form/ColorsUI";
-import { useGroup } from "@/src/store/filter";
+import { Group, useGroup } from "@/src/store/filter";
 
 export interface FilterQueryType {
-  categories: string[];
+  categories: number[];
   colors: string[];
   range: number;
   order: string;
 }
 
-interface GroupListResponse {
-  response: boolean;
-  data: Group[];
-}
-
-interface Group {
+export interface Element {
   id: number;
   name: string;
-  description: string;
-  parent_id: number | null;
-  active: number;
-  created_at: string;
-  updated_at: string;
-  elements: Element[];
-}
-
-interface Element {
-  id: number;
-  name: string;
-  icon: string | null;
+  icon: string;
   description: string;
   active: number;
   created_at: string;
   updated_at: string;
   laravel_through_key: number;
+  checked: boolean;
+  descendants?: Element[];
   slug?: string;
 }
 
@@ -71,20 +57,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
     const handleQuery: Partial<FilterQueryType> = {
       categories: [],
     };
-
-    if (routerQuery?.categorias?.length) {
-      handleQuery["categories"] =
-        typeof routerQuery.categorias === "string"
-          ? [routerQuery.categorias]
-          : routerQuery.categorias;
-    }
-
-    if (routerQuery["categoria[]"] && routerQuery["categoria[]"].length) {
-      handleQuery["categories"] =
-        typeof routerQuery["categoria[]"] === "string"
-          ? [routerQuery["categoria[]"]]
-          : routerQuery["categoria[]"];
-    }
 
     if (routerQuery?.cores?.length) {
       handleQuery["colors"] =
@@ -120,47 +92,60 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const filterArea = useRef<HTMLDivElement>(null);
   const [stick, setStick] = useState<boolean>(false);
   const { groups } = useGroup();
-  const [localGroups, setLocalGroups] = useState(groups);
-  const [activeChecked, setActiveChecked] = useState<string[]>([]);
-  const [activeElementIds, setActiveElementIds] = useState<number[]>([]);
-  const handleActiveChecked = (elementSlug: string) => {
-    const handleActive = activeChecked.includes(elementSlug)
-      ? activeChecked.filter((item) => item !== elementSlug)
-      : [...activeChecked, elementSlug];
+  const [localGroups, setLocalGroups] = useState<Group[]>(groups);
+  const [lastElementsChecked, setLastElementChecked] = useState<Element[]>([]);
+  const [lastGroupsChecked, setLastGroupClicked] = useState<Group[]>([]);
 
-    const handleQuery = query.categories.includes(elementSlug)
-      ? query.categories.filter((item) => item !== elementSlug)
-      : [...query.categories, elementSlug];
+  const onClickElementFilter = (elementId: number, groupId: number , descendants: Element[] | []) => {
+    let checkedGroups = localGroups
+      .map((group) => ({
+        ...group,
+        elements: group.elements
+          .map((element) => {
+            if (element.id === elementId) {
+              const updatedElement = { ...element, checked: !element.checked };
+              if (!element.checked === true){
+                setLastElementChecked([...lastElementsChecked, updatedElement])
+                setLastGroupClicked([...lastGroupsChecked, group])
+              }else if(lastElementsChecked && lastGroupsChecked){
+                elementId = lastElementsChecked.at(-1)?.id || 0
+                groupId = lastGroupsChecked.at(-1)?.id || 0
+                descendants = lastElementsChecked.at(-1)?.descendants || []
+              }
+              return updatedElement;
+            }
+            return element;
+          })
+          .filter((element) => element.checked),
+      }))
+      .filter((group) => group.elements.length > 0);
 
-    setActiveChecked(handleActive);
-    setQuery({ ...query, categories: handleQuery });
+    if (checkedGroups.length === 0) {
+      setLocalGroups(groups);
+      return;
+    }
+
+    let finalGroups: Group[] = checkedGroups;
+
+    if (descendants) {
+      localGroups.forEach((group) => {
+        if (group.id !== groupId && lastGroupsChecked.some((lastGroup) => lastGroup.id !== groupId)) {
+          descendants.forEach((elementDescendant) => {
+            if (group.elements.some((element) => element.id === elementDescendant.id) && !finalGroups.includes(group)) {
+              finalGroups.push(group);
+            }
+          });
+        }
+      });
+    }
+
+    setLocalGroups(finalGroups);
   };
+
 
   useEffect(() => {
-    if (activeElementIds.length === 0) {
-      setLocalGroups(groups); 
-    }
-  }, [groups, activeElementIds]);
-
-  const onClickElementFilter = (elementId: number) => {
-    const isAlreadyActive = activeElementIds.includes(elementId);
-
-    const updatedActiveIds = isAlreadyActive
-      ? activeElementIds.filter((id) => id !== elementId) 
-      : [...activeElementIds, elementId]; 
-
-    setActiveElementIds(updatedActiveIds);
-    
-    if (updatedActiveIds.length === 0) {
-      setLocalGroups(groups);
-    } else {
-      
-      const filteredGroups = groups.filter((group) =>
-        group.elements.some((element) => updatedActiveIds.includes(element.id))
-      );
-      setLocalGroups(filteredGroups);
-    }
-  };
+    setLocalGroups(groups);
+  }, [groups]);
 
   const openModal = () => {
     setFilterModal(true);
@@ -181,7 +166,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
       startQueryHandle();
     }
   }, [router.query]);
-  
+
   return (
     <form action="/produtos/listagem" method="GET">
       {params?.store && <input type="hidden" value={params.store} name="store" />}
@@ -314,13 +299,12 @@ export default function Filter(params: { store?: string; busca?: string }) {
                 {group.elements.map((element: Element) => (
                   <div
                     key={element.id}
-                    className={`border cursor-pointer ease relative rounded p-2 ${query.categories.includes(element.slug || element.name)
-                        ? "border-zinc-800 hover:border-zinc-500"
-                        : "hover:border-zinc-300"
+                    className={`border cursor-pointer ease relative rounded p-2 ${element.checked
+                      ? "border-zinc-800 hover:border-zinc-500"
+                      : "hover:border-zinc-300"
                       }`}
                     onClick={() => {
-                      handleActiveChecked(element.slug || element.name);
-                      onClickElementFilter(element.id)
+                      onClickElementFilter(element.id, group.id, element.descendants || [])
                     }}
                   >
                     <div className="px-3 md:px-1 flex items-center gap-2">
@@ -330,7 +314,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
                       <div className="h-[20px] whitespace-nowrap text-sm md:text-base">
                         {element.name}
                       </div>
-                      {query.categories.includes(element.slug || element.name) && (
+                      {query.categories.includes(element.id) && (
                         <input
                           type="checkbox"
                           name="categoria[]"

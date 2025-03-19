@@ -42,7 +42,8 @@ export interface Element {
     updated_at: string
     laravel_through_key: number
     checked: false,
-    descendents?: Element[]
+    descendents?: Element[],
+    generation_level?: number
 }
 
 export interface ElementsResponse {

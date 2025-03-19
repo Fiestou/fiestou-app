@@ -21,7 +21,7 @@ export interface Element {
   updated_at: string;
   laravel_through_key: number;
   checked: boolean; 
-  descendents?: Element[]; 
+  descendants?: Element[]; 
 }
 
 interface GroupStore {

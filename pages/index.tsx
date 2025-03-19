@@ -19,7 +19,7 @@ import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
 import Filter from "@/src/components/common/Filter";
 import { useEffect, useState } from "react";
-import { GroupsResponse } from "./admin/filtro/types/response";
+import { GroupsResponse } from "../src/types/filtros/response";
 import { useGroup } from "@/src/store/filter";
 
 export async function getStaticProps(ctx: any) {
@@ -104,6 +104,7 @@ export default function Home({
     )
 
     if (request.data && request.response) {
+      console.log(request.data)
       setGroups(request.data)
     }
   }
