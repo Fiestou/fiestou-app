@@ -93,7 +93,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const [stick, setStick] = useState<boolean>(false);
   const { groups } = useGroup();
   const [localGroups, setLocalGroups] = useState<Group[]>(groups);
-  
+
   const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[]) => {
     let checkedGroupElements: Group[] = [];
     let updateLocalGroups = localGroups
@@ -102,7 +102,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
         elements: group.elements
           .map((element) => {
             if (element.id === elementId) {
-              if(!element.checked === true){
+              if (!element.checked === true) {
                 checkedGroupElements.push(group)
               }
               return { ...element, checked: !element.checked };
@@ -112,10 +112,12 @@ export default function Filter(params: { store?: string; busca?: string }) {
       }))
 
     let positionGroup = 0;
+    let lastGroup: Group;
     for (let i = 0; i < updateLocalGroups.length; i++) {
       const localGroup = updateLocalGroups[i];
 
       if (localGroup.elements.some(element => element.id === elementId)) {
+        lastGroup = localGroup;
         positionGroup = i;
       }
     }
@@ -124,16 +126,19 @@ export default function Filter(params: { store?: string; busca?: string }) {
       let finalGroups: Group[] = updateLocalGroups;
 
       finalGroups.map((group, index) => {
-        if (index === positionGroup + 1) {
-          let groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
-          let elements: Element[] = [];
+        let groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
+        let elements: Element[] = [];
 
+        if (index === positionGroup + 1) {
           if (!checked === true) {
             groupGlobal?.elements.map((element) => {
               if (descendants.some((descendant) => descendant.id === element.id) && !elements.includes(element)) {
                 elements.push(element)
               }
+
             })
+            lastGroup.elements.find((lastsElements) => lastsElements.checked === true)
+
             group.elements = elements;
           } else {
             group.elements = groupGlobal?.elements || []
@@ -144,7 +149,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
       setLocalGroups(finalGroups);
     }
   };
-  
+
   useEffect(() => {
 
   }, [localGroups])
