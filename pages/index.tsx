@@ -104,7 +104,6 @@ export default function Home({
     )
 
     if (request.data && request.response) {
-      console.log(request.data)
       setGroups(request.data)
     }
   }

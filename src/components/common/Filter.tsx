@@ -29,6 +29,8 @@ export interface Element {
   checked: boolean;
   descendants?: Element[];
   slug?: string;
+  parent_group_id?: number;
+  generation_level?: number;
 }
 
 export default function Filter(params: { store?: string; busca?: string }) {
@@ -93,6 +95,8 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const [stick, setStick] = useState<boolean>(false);
   const { groups } = useGroup();
   const [localGroups, setLocalGroups] = useState<Group[]>(groups);
+  const [lastElements, setLastElements] = useState<Element[]>([]);
+  const [lastGroupClicked, setLastGroupClicked] = useState<Group>({} as Group);
 
   const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[]) => {
     let checkedGroupElements: Group[] = [];
@@ -109,45 +113,56 @@ export default function Filter(params: { store?: string; busca?: string }) {
             }
             return element;
           })
-      }))
+      })
+    );
 
-    let positionGroup = 0;
-    let lastGroup: Group;
-    for (let i = 0; i < updateLocalGroups.length; i++) {
-      const localGroup = updateLocalGroups[i];
+    let finalGroups: Group[] = updateLocalGroups;
 
-      if (localGroup.elements.some(element => element.id === elementId)) {
-        lastGroup = localGroup;
-        positionGroup = i;
+    if (!checked === true) {
+      let positionGroup = 0;
+      let lastGroup: Group;
+
+      for (let i = 0; i < updateLocalGroups.length; i++) {
+        const localGroup = updateLocalGroups[i];
+
+        if (localGroup.elements.some(element => element.id === elementId)) {
+          lastGroup = updateLocalGroups[i + 1]
+          positionGroup = i;
+        }
       }
-    }
 
-    if (updateLocalGroups.length + 1 > positionGroup + 1) {
-      let finalGroups: Group[] = updateLocalGroups;
+      if (updateLocalGroups.length + 1 > positionGroup + 1) {
 
-      finalGroups.map((group, index) => {
-        let groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
-        let elements: Element[] = [];
+        finalGroups.map((group, index) => {
+          let groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
+          let elements: Element[] = [];
 
-        if (index === positionGroup + 1) {
-          if (!checked === true) {
+          if (index === positionGroup + 1) {
+
             groupGlobal?.elements.map((element) => {
               if (descendants.some((descendant) => descendant.id === element.id) && !elements.includes(element)) {
                 elements.push(element)
               }
-
             })
-            lastGroup.elements.find((lastsElements) => lastsElements.checked === true)
 
+            if (lastElements) {
+              lastElements.map((element: Element) => {
+                if (!elements.includes(element) && lastGroup && lastGroup.id === group.id && groupGlobal?.elements.includes(element)) {
+                  elements.push(element)
+                }
+              })
+            }
+
+            setLastElements(elements)
             group.elements = elements;
-          } else {
-            group.elements = groupGlobal?.elements || []
           }
-        }
-      })
+        })
+      }
+    }else if (!checked === false){
 
-      setLocalGroups(finalGroups);
     }
+
+    setLocalGroups(finalGroups);
   };
 
   useEffect(() => {
@@ -307,9 +322,9 @@ export default function Filter(params: { store?: string; busca?: string }) {
             <Label>{group.name}</Label>
             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
               <div className="flex md:flex-wrap gap-2">
-                {group.elements.map((element: Element) => (
+                {group.elements.map((element: Element, index: number) => (
                   <div
-                    key={element.id}
+                    key={index}
                     className={`border cursor-pointer ease relative rounded p-2 ${element.checked
                       ? "border-zinc-800 hover:border-zinc-500"
                       : "hover:border-zinc-300"
