@@ -96,7 +96,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const { groups } = useGroup();
   const [localGroups, setLocalGroups] = useState<Group[]>(groups);
   const [lastElements, setLastElements] = useState<Element[]>([]);
-  const [lastGroupClicked, setLastGroupClicked] = useState<Group>({} as Group);
 
   const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[]) => {
     let checkedGroupElements: Group[] = [];
@@ -107,14 +106,14 @@ export default function Filter(params: { store?: string; busca?: string }) {
           .map((element) => {
             if (element.id === elementId) {
               if (!element.checked === true) {
-                checkedGroupElements.push(group)
+                checkedGroupElements.push(group);
               }
               return { ...element, checked: !element.checked };
             }
             return element;
           })
       })
-    );
+      );
 
     let finalGroups: Group[] = updateLocalGroups;
 
@@ -126,48 +125,81 @@ export default function Filter(params: { store?: string; busca?: string }) {
         const localGroup = updateLocalGroups[i];
 
         if (localGroup.elements.some(element => element.id === elementId)) {
-          lastGroup = updateLocalGroups[i + 1]
+          lastGroup = updateLocalGroups[i + 1];
           positionGroup = i;
         }
       }
 
       if (updateLocalGroups.length + 1 > positionGroup + 1) {
-
         finalGroups.map((group, index) => {
           let groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
           let elements: Element[] = [];
 
           if (index === positionGroup + 1) {
-
             groupGlobal?.elements.map((element) => {
               if (descendants.some((descendant) => descendant.id === element.id) && !elements.includes(element)) {
-                elements.push(element)
+                elements.push(element);
               }
-            })
+            });
 
             if (lastElements) {
               lastElements.map((element: Element) => {
                 if (!elements.includes(element) && lastGroup && lastGroup.id === group.id && groupGlobal?.elements.includes(element)) {
-                  elements.push(element)
+                  elements.push(element);
                 }
-              })
+              });
             }
 
-            setLastElements(elements)
+            setLastElements(elements);
             group.elements = elements;
           }
-        })
+        });
       }
-    }else if (!checked === false){
+    } else if (!checked === false) {
+      let positionGroup = 0;
+      let lastGroup: Group;
 
+      for (let i = 0; i < updateLocalGroups.length; i++) {
+        const localGroup = updateLocalGroups[i];
+        if (localGroup.elements.some(element => element.id === elementId)) {
+          lastGroup = updateLocalGroups[i + 1];
+          positionGroup = i;
+        }
+      }
+
+      if (updateLocalGroups.length + 1 > positionGroup + 1) {
+        finalGroups = finalGroups.map((group, index) => {
+          if (index === positionGroup + 1) {
+            const groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
+
+            const filteredElements = group.elements.filter((element) =>
+              !descendants.some((descendant) => descendant.id === element.id)
+            );
+
+            if (filteredElements.length > 0) {
+              return {
+                ...group,
+                elements: filteredElements
+              };
+            }
+            return {
+              ...group,
+              elements: groupGlobal?.elements || []
+            };
+          }
+          return group;
+        });
+
+        setLastElements(prevElements =>
+          prevElements.filter((element) =>
+            !descendants.some((descendant) => descendant.id === element.id)
+          )
+        );
+      }
     }
 
     setLocalGroups(finalGroups);
   };
-
-  useEffect(() => {
-
-  }, [localGroups])
 
   useEffect(() => {
     setLocalGroups(groups);
