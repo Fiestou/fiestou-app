@@ -15,21 +15,21 @@ import Modal from "@/src/components/utils/Modal";
 import { useState } from "react";
 import { useRouter } from "next/router";
 
+export interface Store {
+  title: string;
+  slug?: string;
+}
+
+export interface Product {
+  title: string;
+  subtitle?: string;
+  price: number;
+  cover?: string;
+  store: Store;
+  slug?: string;
+}
+
 export const getStaticPaths = async (req: NextApiRequest) => {
-  // const api = new Api();
-  // let request: any = await api.request({
-  //   method: "get",
-  //   url: "request/stores",
-  // });
-
-  // const stores = request?.data ?? [];
-
-  // const paths = stores
-  //   .filter((post: any) => !!post.slug)
-  //   .map((post: any) => {
-  //     return { params: { slug: post.slug } };
-  //   });
-
   return {
     paths: [],
     fallback: "blocking",
@@ -68,7 +68,8 @@ export async function getStaticProps(ctx: any) {
       method: "get",
       url: "request/products",
       data: {
-        store: slug,
+        store: store.id,
+        user: store.user,
         limit: 16,
       },
     });
@@ -121,7 +122,8 @@ export default function Store({
       method: "get",
       url: "request/products",
       data: {
-        store: store?.slug,
+        store: store?.id, 
+        user: store?.user,
         limit: limit,
         offset: offset,
       },
@@ -271,9 +273,6 @@ export default function Store({
           {!!store?.description && (
             <div className="lg:w-1/2 mt-4 md:mt-6">
               {store?.description}
-              {/* <div className="text-zinc-900 font-bold underline mt-4">
-                Ver mais
-              </div> */}
             </div>
           )}
         </div>
@@ -294,7 +293,11 @@ export default function Store({
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
             {!!listProducts?.length &&
               listProducts.map((item, key) => (
-                <Product key={key} product={item}></Product>
+                <Product
+                  key={key}
+                  product={item}
+                  storeTitle={store?.title}
+                />
               ))}
           </div>
           {page != -1 && (

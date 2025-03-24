@@ -1,6 +1,37 @@
 import { moneyFormat } from "@/src/helper";
-import { RelationType } from "@/src/models/relation";
-import { StoreType } from "./store";
+
+export interface RelationType {
+  id: string | number;
+}
+
+export interface StoreType {
+  id: number | string;
+  name: string;
+  slug?: string;
+}
+
+export interface ImageType {
+  id?: number;
+  url: string;
+  alt?: string;
+}
+
+export interface StoreType {
+  id: number | string;
+  name: string;
+  slug?: string;
+}
+
+export interface VariationType {
+  id: string | number;
+  title: string;
+  price?: number;
+  image?: ImageType | string;
+}
+
+export interface RelationType {
+  id: string | number;
+}
 
 export interface AttributeType {
   id: string;
@@ -9,7 +40,7 @@ export interface AttributeType {
   limit?: number;
   priceType: string;
   image?: string | number;
-  variations: Array<any>;
+  variations: VariationType[];
 }
 
 export interface ProductType {
@@ -67,7 +98,7 @@ export interface AttributeProductOrderType {
 
 export interface ProductOrderType {
   product: any;
-  attributes: any; // Array<AttributeProductOrderType>;
+  attributes: any;
   quantity: number;
   details?: Object | any;
   total: number;
