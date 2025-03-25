@@ -161,7 +161,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
             Route::delete('/delete/{GroupId}', [GroupController::class, 'Delete']);
             Route::get('/{GroupId}/descendants', [GroupController::class, 'GetAllDescendants']);
             Route::delete('/{GroupId}/Element/{ElementId}', [GroupController::class, 'DeleteGroupElement']);
-            Route::get('/ChildGroup/{GroupId}', [GroupController::class, 'GetChildGrouoWithElements']);
+            Route::get('/ChildGroup/{GroupId}', [GroupController::class, 'GetChildGroupWithElements']);
         });
 
         Route::group([ 'prefix' => 'element' ], function(){

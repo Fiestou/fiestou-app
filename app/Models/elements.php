@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 class Elements extends BaseModel
 {
     protected $table = 'elements';
+    protected $appends = ['descendants'];
+
     protected $fillable = [
         'id',
         'name',
@@ -29,6 +31,11 @@ class Elements extends BaseModel
         return $query->whereHas('groupElements.group', function ($q) {
             $q->where('active', 1);
         });
+    }
+    
+    public function getDescendantsAttribute()
+    {
+        return self::getElementDescendants($this->id, 1);
     }
 
     /**

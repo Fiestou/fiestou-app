@@ -8,6 +8,7 @@ use App\Models\GroupElements;
 use App\Models\Group;
 use App\Models\ElementsRel;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ElementsController extends Controller
 {
@@ -23,7 +24,7 @@ class ElementsController extends Controller
 
             $request->validate([
                 "name"           => "required",
-                "description"    => "required",
+                "description"    => "nullable|string",
                 "icon"           => "required",
                 "id_group"       => "required|exists:group,id",
                 "childElements"  => "nullable|array",
@@ -41,7 +42,13 @@ class ElementsController extends Controller
             }
 
             $element->name = $request->get("name");
-            $element->description = $request->get("description");
+
+            $element->description = null;
+            
+            if ($request->get("description")) {
+                $element->description = $request->get("description");
+            }
+
             $element->icon = $request->get("icon");
 
             if (!$element->save()) {
@@ -117,7 +124,7 @@ class ElementsController extends Controller
 
             $group = Group::where('id', $groupElements->id_group)->first();
 
-            if ($group->active === 1){
+            if ($group->active === 1) {
                 return $element;
             }
         });
@@ -159,7 +166,7 @@ class ElementsController extends Controller
 
             $request->validate([
                 "name"           => "required",
-                "description"    => "required",
+                "description"    => "nullable|string",
                 "childElements"  => "nullable|array",
                 "childElements.*" => "exists:elements,id"
             ]);
@@ -175,7 +182,11 @@ class ElementsController extends Controller
             }
 
             $element->name = $request->get("name");
-            $element->description = $request->get("description");
+            $element->description = null;
+
+            if ($request->get("description")) {
+                $element->description = $request->get("description");
+            }
 
             if (!$element->save()) {
                 DB::rollBack();
@@ -187,11 +198,14 @@ class ElementsController extends Controller
 
             if ($request->has("childElements")) {
                 $childElements = $request->get("childElements");
+                Log::debug(ElementsRel::where('parent_id', $ElementId)->get());
+                Log::debug($childElements);
 
                 ElementsRel::where('parent_id', $ElementId)->delete();
-
+                
                 foreach ($childElements as $childElementId) {
-                    if ($ElementId != $childElementId) {
+                    if ($ElementId !== $childElementId) {
+                        Log::debug('entrou aqui');
                         ElementsRel::create([
                             'parent_id' => $ElementId,
                             'child_id'  => $childElementId
@@ -256,10 +270,10 @@ class ElementsController extends Controller
 
     public function GetAllDescendants($ElementId)
     {
-
         $descendants = Elements::getElementDescendants($ElementId, 1);
+        $filteredDescendants = collect($descendants)->where('generation_level', 1)->values();
 
-        foreach ($descendants as $descendant) {
+        foreach ($filteredDescendants as $descendant) {
             $groupElement = GroupElements::where('id_elements', $descendant->id)->first();
 
             $group = Group::where('id', $groupElement->id_group)

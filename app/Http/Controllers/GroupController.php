@@ -19,7 +19,7 @@ class GroupController extends Controller
     {
         $request->validate([
             "name"        => "required",
-            "description" => "required",
+            "description" => "nullable|string",
             "isFather"    => "required|boolean",
             "elements"    => "nullable|array",
             "elements.*"  => "exists:elements,id"
@@ -36,7 +36,11 @@ class GroupController extends Controller
 
         $group = new Group();
         $group->name = $request->get("name");
-        $group->description = $request->get("description");
+        $group->description = null;
+            
+        if ($request->get("description")) {
+            $group->description = $request->get("description");
+        }
 
         DB::beginTransaction();
 
@@ -96,7 +100,7 @@ class GroupController extends Controller
     public function Get($GroupId)
     {
         $group = Group::with('elements')->find($GroupId);
-        
+
         if (!$group) {
             return response()->json([
                 'response' => false,
@@ -106,7 +110,7 @@ class GroupController extends Controller
 
         $parent = null;
 
-        if ($group->parent_id){
+        if ($group->parent_id) {
             $parent = Group::where('id', $group->parent_id)->get();
             $group->parent = $parent;
 
@@ -133,7 +137,7 @@ class GroupController extends Controller
         try {
             $request->validate([
                 "name"        => "required",
-                "description" => "required",
+                "description" => "nullable|string",
                 "parent_id"   => "nullable|exists:group,id",
                 "elements"    => "nullable|array",
                 "elements.*"  => "exists:elements,id"
@@ -146,7 +150,11 @@ class GroupController extends Controller
             }
 
             $group->name = $request->get("name");
-            $group->description = $request->get("description");
+            $group->description = null;
+            
+            if ($request->get("description")) {
+                $group->description = $request->get("description");
+            }
             $group->save();
 
             $elements = [];
@@ -198,10 +206,18 @@ class GroupController extends Controller
      */
     public function List()
     {
-        $groups = Group::active() 
-            ->with('elements') 
+        $groups = Group::active()
+            ->with('elements')
             ->get();
-    
+
+        foreach($groups as $group){
+            if ($group->elements){
+                foreach ($group->elements as $element){
+                    $element->setAttribute('descendants', Elements::getElementDescendants($element->id, 1));
+                }
+            }
+        }
+
         return response()->json([
             'response' => true,
             'data'     => $groups
@@ -248,7 +264,6 @@ class GroupController extends Controller
                 'response' => true,
                 'data'     =>  Group::getAllDescendants($GroupId, 1)
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'response' => true,
@@ -257,7 +272,7 @@ class GroupController extends Controller
         }
     }
 
-     /**
+    /**
      * Delete relationship grupo and element.
      *
      * @param  int  $GroupId
@@ -268,12 +283,11 @@ class GroupController extends Controller
         try {
             GroupElements::where('id_group', $GroupId)->where('id_elements', $ElementId)->delete();
             Elements::where('id', $ElementId)->delete();
-            
+
             return response()->json([
                 'response' => true,
-                'data'     => 'OK' 
+                'data'     => 'OK'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'response' => true,
@@ -281,16 +295,16 @@ class GroupController extends Controller
             ]);
         }
     }
-    
+
     /**
      * Delete relationship grupo and element.
      *
      * @param  int  $GroupId
      * @return \Illuminate\Http\Response
      */
-    public function GetChildGrouoWithElements($GroupId)
+    public function GetChildGroupWithElements($GroupId)
     {
-        try {   
+        try {
             $groupChild = Group::with('elements')->where('parent_id', $GroupId)->first();
 
             return response()->json([
@@ -304,5 +318,4 @@ class GroupController extends Controller
             ]);
         }
     }
-    
 }
