@@ -59,7 +59,7 @@ const GroupModal: React.FC<CreateGroupProps> = (props) => {
         </div>
         <div className="flex flex-col w-full">
           <label className="flex flex-row flex-1 w-full text-black">
-            Descrição <p className="text-red-500">*</p>
+            Descrição
           </label>
           <textarea
             value={description}
