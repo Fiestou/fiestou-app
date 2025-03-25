@@ -2,7 +2,7 @@ import FileManager from "@/src/components/ui/form/FileManager";
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import SelectElements from "../selectElements/selectElements";
-import { Element } from "@/pages/admin/filtro/types/response";
+import { Element } from "@/src/types/filtros/response";
 import { Trash2 } from "lucide-react";
 interface ElementModalProps {
     open: boolean;
@@ -63,7 +63,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
             setName(props.data.name);
             setDescription(props.data.description);
             if (props.data.descendents) {
-                setSelectedList(props.data.descendents);
+                setSelectedList(props.data.descendents.filter((desc) => desc.generation_level === 1));
             }
         } else {
             setIcon('');
@@ -74,6 +74,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
     }, [props.data])
 
     const newRelatedElements = props.relatedElements.filter((element) => element.id !== props.data?.id);
+
 
     return !props.open ? null : (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
