@@ -50,6 +50,7 @@ import SidebarCart from "@/src/components/common/SidebarCart";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
+import FullscreenSwiper from "@/src/components/ui/swiper/swiper";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -646,7 +647,7 @@ export default function Produto({
             <div className="sticky md:relative top-0 left-0 z-[10] w-full md:w-1/2 md:pb-4">
               {!!product?.gallery && (
                 <div className="relative bg-white -mx-4 md:mx-0 md:mb-10">
-                  <Swiper
+                  {/* <Swiper
                     onSwiper={(swiper) => setSwiperInstance(swiper)}
                     spaceBetween={0}
                     modules={[Pagination, Navigation]}
@@ -666,26 +667,30 @@ export default function Produto({
                         slidesPerView: 1,
                       },
                     }}
-                    className="border-y md:border md:rounded-md"
+                    className="border-y md:border md:rounded-md h-full w-full" // Adicionei h-full e w-full aqui
                   >
                     {!!product?.gallery?.length &&
                       product?.gallery?.map(
                         (img, key) =>
                           !!img?.details?.sizes["lg"] && (
-                            <SwiperSlide key={key} style={{ height: "300px", width: '100%%' }}>
-                              <div className="w-[100%] h-[100%] flex justify-center items-center px-1 md:px-2">
+                            <SwiperSlide
+                              key={key}
+                              className="h-full w-full" // Garantir que o slide ocupe toda a altura e largura
+                            >
+                              <div className="w-full h-full flex justify-center items-center px-1 md:px-2">
                                 {!!getImage(img, "xl") && (
                                   <Img
                                     src={getImage(img, "xl")}
-                                    className="w-[100%] h-[100%] object-cover rounded-md"
+                                    className="w-full h-full object-cover rounded-md"
+                                    alt="Imagem do produto"
                                   />
                                 )}
                               </div>
                             </SwiperSlide>
-
                           )
                       )}
-                  </Swiper>
+                  </Swiper> */}
+                  <FullscreenSwiper images={product.gallery} />
                   <div className="absolute top-1/2 left-0 -translate-y-1/2 z-[5] p-2">
                     <button
                       type="button"
