@@ -79,7 +79,7 @@ export default function AddressCheckoutForm(attrs: any) {
   return (
     <>
       <div className="grid gap-2">
-        <div className="relative">
+        <div className="relative"> 
           <input
             name="cep"
             onChange={(e: any) => setZipCode(formatCep(e.target.value))}
