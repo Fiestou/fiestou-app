@@ -664,20 +664,17 @@ export default function Produto({
                       product?.gallery?.map(
                         (img, key) =>
                           !!img?.details?.sizes["lg"] && (
-                            <SwiperSlide
-                              key={key}
-                              className="h-full w-full" // Garantir que o slide ocupe toda a altura e largura
-                            >
-                              <div className="w-full h-full flex justify-center items-center px-1 md:px-2">
+                            <SwiperSlide key={key} style={{ height: "300px", width: '100%%' }}>
+                              <div className="w-[100%] h-[100%] flex justify-center items-center px-1 md:px-2">
                                 {!!getImage(img, "xl") && (
                                   <Img
                                     src={getImage(img, "xl")}
-                                    className="w-full h-full object-cover rounded-md"
-                                    alt="Imagem do produto"
+                                    className="w-[100%] h-[100%] object-cover rounded-md"
                                   />
                                 )}
                               </div>
                             </SwiperSlide>
+
                           )
                       )}
                   </Swiper> */}
