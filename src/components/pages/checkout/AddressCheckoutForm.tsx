@@ -91,7 +91,7 @@ export default function AddressCheckoutForm(attrs: any) {
           />
           <Button
             className="absolute top-1/2 -translate-y-1/2 right-0 p-3 mr-1"
-            onClick={() => zipCode ? handleZipCode() : alert("Por favor, informe o CEP antes de buscar!")}
+            onClick={() => zipCode ? handleZipCode() : alert("Por favor, informe o CEP antes de buscar!")} 
           >
               <Icon icon="fa-search" />
           </Button>
