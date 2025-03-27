@@ -51,7 +51,7 @@ import SidebarCart from "@/src/components/common/SidebarCart";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
-import FullscreenSwiper from "@/src/components/ui/swiper/FullscreenSwiper";
+import FullscreenSwiper from "@/src/components/ui/swiper/swiper";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -672,17 +672,20 @@ export default function Produto({
                       product?.gallery?.map(
                         (img, key) =>
                           !!img?.details?.sizes["lg"] && (
-                            <SwiperSlide key={key} style={{ height: "300px", width: '100%%' }}>
-                              <div className="w-[100%] h-[100%] flex justify-center items-center px-1 md:px-2">
+                            <SwiperSlide
+                              key={key}
+                              className="h-full w-full" // Garantir que o slide ocupe toda a altura e largura
+                            >
+                              <div className="w-full h-full flex justify-center items-center px-1 md:px-2">
                                 {!!getImage(img, "xl") && (
                                   <Img
                                     src={getImage(img, "xl")}
-                                    className="w-[100%] h-[100%] object-cover rounded-md"
+                                    className="w-full h-full object-cover rounded-md"
+                                    alt="Imagem do produto"
                                   />
                                 )}
                               </div>
                             </SwiperSlide>
-
                           )
                       )}
                   </Swiper> */}
