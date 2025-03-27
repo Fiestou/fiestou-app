@@ -51,7 +51,7 @@ import SidebarCart from "@/src/components/common/SidebarCart";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
-import FullscreenSwiper from "@/src/components/ui/swiper/FullscreenSwiper";
+import FullscreenSwiper from "@/src/components/ui/swiper/swiper";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -652,8 +652,8 @@ export default function Produto({
                     spaceBetween={0}
                     modules={[Zoom, Pagination, Navigation]}
                     navigation={{
-                      prevEl: ".swiper-gallery-prev", // define o botão anterior
-                      nextEl: ".swiper-gallery-next", // define o botão próximo
+                      prevEl: ".swiper-gallery-prev",
+                      nextEl: ".swiper-gallery-next",
                     }}
                     pagination={{
                       el: ".swiper-pagination",
@@ -686,7 +686,6 @@ export default function Produto({
                                 )}
                               </div>
                             </SwiperSlide>
-
                           )
                       )}
                   </Swiper> */}
