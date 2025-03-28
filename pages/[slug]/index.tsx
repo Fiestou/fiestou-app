@@ -296,7 +296,7 @@ export default function Store({
                 <Product
                   key={key}
                   product={item}
-                  storeTitle={store?.title}
+                  {...(store?.title ? { storeTitle: store.title } : {})}
                 />
               ))}
           </div>
