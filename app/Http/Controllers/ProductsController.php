@@ -51,7 +51,7 @@ class ProductsController extends Controller
 
     public function List(Request $request){
 
-        $log = [];
+        $log = []; 
         $metadata = [];
         $products = Product::where(['status' => 1])
                            ->with(["store"]);
@@ -141,7 +141,7 @@ class ProductsController extends Controller
                                 ->orderBy('tags', 'asc');
         }
 
-        return response()->json([
+        return response()->json([ 
             'response'  => true,
             'data'      => Product::normalize($products->get(), false),
             'metadata'  => $metadata,
