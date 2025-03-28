@@ -1011,6 +1011,24 @@ export default function Produto({
                     {!!productToCart?.total && (
                       <>
                         <div className="leading-tight self-center w-full px-4">
+                        <div>
+                          <strong className="text-zinc-950">
+                          {!!product?.availability && (
+                            <div className="flex gap-2 items-center">
+                              <div className="w-[1.25rem] flex justify-center">
+                                <Icon
+                                  icon="fa-truck"
+                                  type="far"
+                                  className="text-yellow-400 text-base"
+                                />
+                              </div>Entrega
+                            </div>
+                          )}
+                          </strong><br />{" "}
+                          <p>Esse produto é entregue em até {product?.availability}{" "}
+                          dia
+                          {product?.availability > 1 ? `s` : ""}.</p>
+                        </div><br />
                           <div className="text-xs">
                             {!!productToCart?.details?.dateStart
                               ? dateBRFormat(productToCart?.details?.dateStart)
@@ -1191,27 +1209,7 @@ export default function Produto({
                         </strong>{" "}
                         Garantia do Fiestou da entrega.
                       </div>
-                    </div>
-                    {!!product?.availability && (
-                      <div className="flex gap-2 items-center">
-                        <div className="w-[1.25rem] flex justify-center">
-                          <Icon
-                            icon="fa-clock"
-                            type="far"
-                            className="text-yellow-400 text-base"
-                          />
-                        </div>
-                        <div>
-                          <strong className="text-zinc-950">
-                            Entrega em {product?.availability} dia
-                            {product?.availability > 1 ? `s` : ""}:
-                          </strong>{" "}
-                          Esse produto é entregue em até {product?.availability}{" "}
-                          dia
-                          {product?.availability > 1 ? `s` : ""}.
-                        </div>
-                      </div>
-                    )}
+                    </div>                    
                   </div>
                 </div>
               </form>
