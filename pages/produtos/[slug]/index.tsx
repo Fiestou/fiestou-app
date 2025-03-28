@@ -1027,7 +1027,7 @@ export default function Produto({
                           </strong><br />{" "}
                           <p>Esse produto é entregue em até {product?.availability}{" "}
                           dia
-                          {product?.availability > 1 ? `s` : ""}.</p>
+                          {Number(product?.availability || 0) > 1 ? `s` : ""}.</p>
                         </div><br />
                           <div className="text-xs">
                             {!!productToCart?.details?.dateStart
