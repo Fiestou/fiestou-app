@@ -27,10 +27,13 @@ export interface VariationType {
   title: string;
   price?: number;
   image?: ImageType | string;
+  priceSale?: number;
 }
 
 export interface RelationType {
   id: string | number;
+  name?: string;
+  title: string;
 }
 
 export interface AttributeType {
