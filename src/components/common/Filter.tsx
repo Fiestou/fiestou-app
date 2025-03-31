@@ -96,8 +96,17 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const { groups } = useGroup();
   const [localGroups, setLocalGroups] = useState<Group[]>(groups);
   const [lastElements, setLastElements] = useState<Element[]>([]);
+  const [openGroupIndex, setOpenGroupIndex] = useState<number>(0);
 
-  const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[]) => {
+  useEffect(() => {
+    console.log(openGroupIndex)
+  }, [openGroupIndex])
+
+  const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[], groupIndex: number) => {
+    if (groupIndex + 1 > localGroups.length) {
+      setOpenGroupIndex(groupIndex + 1);
+    }
+
     let checkedGroupElements: Group[] = [];
     let updateLocalGroups = localGroups
       .map((group) => ({
@@ -349,21 +358,19 @@ export default function Filter(params: { store?: string; busca?: string }) {
           </div>
         </div>
 
-        {localGroups.map((group, index) => (
-          <div key={index} className="pb-6">
-            <Label>{group.name}</Label>
-            <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
+        {localGroups.map((group, groupIndex) => (
+          <div key={groupIndex} className="pb-6">
+            <Label>
+              {group.name}
+            </Label>
+            <div className={`-mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide ${openGroupIndex === groupIndex ? 'flex' : 'hidden'}  `}>
               <div className="flex md:flex-wrap gap-2">
                 {group.elements.map((element: Element, index: number) => (
                   <div
                     key={index}
-                    className={`border cursor-pointer ease relative rounded p-2 ${element.checked
-                      ? "border-zinc-800 hover:border-zinc-500"
-                      : "hover:border-zinc-300"
+                    className={`border cursor-pointer ease relative rounded p-2 ${element.checked ? "border-zinc-800 hover:border-zinc-500" : "hover:border-zinc-300"
                       }`}
-                    onClick={() => {
-                      onClickElementFilter(element.id, element.checked, element.descendants || [])
-                    }}
+                    onClick={() => onClickElementFilter(element.id, element.checked, element.descendants || [], groupIndex)}
                   >
                     <div className="px-3 md:px-1 flex items-center gap-2">
                       {element.icon && (
