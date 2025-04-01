@@ -2,7 +2,7 @@ import Template from "@/src/template";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import Payment from "@/src/services/payment";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   dateBRFormat,
   findDates,
@@ -130,6 +130,7 @@ export default function Checkout({
   const [customLocation, setCustomLocation] = useState(false as boolean);
   const [locations, setLocations] = useState([] as Array<AddressType>);
   const [phone, setPhone] = useState(user?.phone ?? "");
+  const [initialPhone] = useState(formatPhone(user?.phone || ""));
   const [address, setAddress] = useState({
     country: "Brasil",
   } as AddressType);
@@ -139,34 +140,37 @@ export default function Checkout({
       ...value,
     }));
   };
+
+  const isPhoneValid = (phone: string): boolean => {
+    const digitsOnly = phone.replace(/\D/g, '');
+    return digitsOnly.length >= 10 && digitsOnly.length <= 11;
+  };
+
+  const hasChanged = useCallback(() => {
+    return phone !== initialPhone;
+  }, [phone, initialPhone]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(formatPhone(e.target.value));
+  };
   
   const handleSavePhone = async () => {
+    if (!isPhoneValid(phone)) {
+      toast.error("Telefone inválido!");
+      return;
+    }
+  
     try {
-      const phoneDigitsOnly = phone.replace(/\D/g, "");
-      
-      const response = await api.bridge<ApiResponse>({
+      await api.bridge({
         method: "post",
         url: "users/update",
-        data: {
-          phone: phoneDigitsOnly
-        }
+        data: { phone: phone.replace(/\D/g, '') }
       });
-
-      // Inspeciona a resposta do backend
-      console.log("Resposta do backend:", response);
-
-      if (response?.data?.id) {
-        setPhone(response.data.phone); // Atualiza o estado 'phone' com o valor retornado
-        toast.success("Telefone salvo com sucesso!");
-      } else {
-        toast.error("Não foi possível salvar o telefone");
-      }
-      
+      toast.success("Salvo com sucesso!");
     } catch (error) {
-      console.error("Erro ao salvar telefone:", error);
-      toast.error("Ocorreu um erro ao salvar o telefone. Tente novamente.");
+      toast.error("Erro ao salvar!");
     }
-};
+  };
 
   const [deliveryPrice, setDeliveryPrice] = useState(0 as number);
   const getCalculeDistancePrice = async () => {
@@ -182,6 +186,12 @@ export default function Checkout({
 
     setDeliveryPrice(!!distance ? (distance / 1000) * deliveryTax : 0);
   };
+
+  useEffect(() => {
+    if (user?.phone) {
+      setPhone(formatPhone(user.phone));
+    }
+  }, [user?.phone]);
 
   useEffect(() => {
     if (!!address?.zipCode && justNumber(address?.zipCode).length >= 8) {
@@ -211,10 +221,10 @@ export default function Checkout({
     setLocations(user?.address ?? []);
     setAddress((user?.address ?? []).filter((addr) => !!addr.main)[0]);
 
-    /* if (!!window && (!token || !user.id)) {
+    if (!!window && (!token || !user.id)) {
       Cookies.set("fiestou.redirect", "checkout", { expires: 1 });
       window.location.href = "/acesso";
-    } */
+    }
   }, [user, token]);
 
   const submitOrder = async (e: any) => {
@@ -471,7 +481,7 @@ export default function Checkout({
                   <div className="flex flex-row border-1 gap-2">
                     <input
                       name="phone"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      onChange={(e) => {
                         const rawValue = e.target.value;
                         const formattedValue = formatPhone(rawValue);
                         setPhone(formattedValue);
@@ -479,15 +489,22 @@ export default function Checkout({
                       required
                       value={phone}
                       placeholder="Insira seu telefone aqui"
-                      className="form-control flex flex-3 w-full"
+                      className={`form-control flex flex-3 w-full ${
+                        phone && !isPhoneValid(phone) 
+                        ? 'border-2 border-red-500' 
+                        : !hasChanged() 
+                          ? 'bg-gray-100' 
+                          : 'border-2 border-green-500'
+                      }`}
                     />
-                    <button 
+                    <Button
                       onClick={handleSavePhone}
-                      className="flex flex-1 justify-center items-center bg-yellow-300 text-black gap-2 rounded-md p-2 active:bg-white active:border-yellow-300 active:border-2 active:text-yellow-300"
+                      disable={!isPhoneValid(phone) || phone === formatPhone(user?.phone || "")}
+                      style="btn-yellow"
                     >
-                      <b>Salvar</b> 
-                    <ToastContainer />
-                    </button>
+                      <b>Salvar</b>
+                      <ToastContainer />
+                    </Button>
                   </div>
 
                   <div className="mb-0 relative overflow-hidden">
@@ -695,7 +712,8 @@ export default function Checkout({
                       !!address?.number &&
                       !!schedule &&
                       !!address?.zipCode &&
-                      !!isCEPInRegion(address?.zipCode) ? (
+                      !!isCEPInRegion(address?.zipCode) &&
+                      isPhoneValid(phone) ? (
                         <Button
                           loading={form.loading}
                           style="btn-success"
