@@ -4,7 +4,7 @@ export interface Group {
   id: number;
   name: string;
   description: string;
-  parent_id: string;
+  parent_id: number;
   active: number;
   created_at: string;
   updated_at: string;
@@ -20,8 +20,8 @@ export interface Element {
   created_at: string;
   updated_at: string;
   laravel_through_key: number;
-  checked: boolean; 
-  descendants?: Element[]; 
+  checked: boolean;
+  descendants?: Element[];
 }
 
 interface GroupStore {
@@ -30,7 +30,7 @@ interface GroupStore {
 }
 
 export const useGroup = create<GroupStore>((set) => ({
-  groups: [], 
+  groups: [],
 
   setGroups: (groups) =>
     set(() => ({

@@ -96,17 +96,8 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const { groups } = useGroup();
   const [localGroups, setLocalGroups] = useState<Group[]>(groups);
   const [lastElements, setLastElements] = useState<Element[]>([]);
-  const [openGroupIndex, setOpenGroupIndex] = useState<number>(0);
 
-  useEffect(() => {
-    console.log(openGroupIndex)
-  }, [openGroupIndex])
-
-  const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[], groupIndex: number) => {
-    if (groupIndex + 1 > localGroups.length) {
-      setOpenGroupIndex(groupIndex + 1);
-    }
-
+  const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[]) => {
     let checkedGroupElements: Group[] = [];
     let updateLocalGroups = localGroups
       .map((group) => ({
@@ -166,12 +157,10 @@ export default function Filter(params: { store?: string; busca?: string }) {
       }
     } else if (!checked === false) {
       let positionGroup = 0;
-      let lastGroup: Group;
 
       for (let i = 0; i < updateLocalGroups.length; i++) {
         const localGroup = updateLocalGroups[i];
         if (localGroup.elements.some(element => element.id === elementId)) {
-          lastGroup = updateLocalGroups[i + 1];
           positionGroup = i;
         }
       }
@@ -208,6 +197,11 @@ export default function Filter(params: { store?: string; busca?: string }) {
     }
 
     setLocalGroups(finalGroups);
+  };
+
+  const shouldShowGroup = (group: Group) => {
+    if (group.id === groups[0].id) return true;
+
   };
 
   useEffect(() => {
@@ -358,43 +352,45 @@ export default function Filter(params: { store?: string; busca?: string }) {
           </div>
         </div>
 
-        {localGroups.map((group, groupIndex) => (
-          <div key={groupIndex} className="pb-6">
-            <Label>
-              {group.name}
-            </Label>
-            <div className={`-mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide ${openGroupIndex === groupIndex ? 'flex' : 'hidden'}  `}>
-              <div className="flex md:flex-wrap gap-2">
-                {group.elements.map((element: Element, index: number) => (
-                  <div
-                    key={index}
-                    className={`border cursor-pointer ease relative rounded p-2 ${element.checked ? "border-zinc-800 hover:border-zinc-500" : "hover:border-zinc-300"
-                      }`}
-                    onClick={() => onClickElementFilter(element.id, element.checked, element.descendants || [], groupIndex)}
-                  >
-                    <div className="px-3 md:px-1 flex items-center gap-2">
-                      {element.icon && (
-                        <Img src={element.icon} className="h-[20px] w-[20px] object-contain" />
-                      )}
-                      <div className="h-[20px] whitespace-nowrap text-sm md:text-base">
-                        {element.name}
+        {localGroups
+          .filter(shouldShowGroup)
+          .map((group, groupIndex) => (
+            <div key={groupIndex} className="pb-6">
+              <Label>
+                {group.name}
+              </Label>
+              <div className={`-mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide flex `}>
+                <div className="flex md:flex-wrap gap-2">
+                  {group.elements.map((element: Element, index: number) => (
+                    <div
+                      key={index}
+                      className={`border cursor-pointer ease relative rounded p-2 ${element.checked ? "border-zinc-800 hover:border-zinc-500" : "hover:border-zinc-300"
+                        }`}
+                      onClick={() => onClickElementFilter(element.id, element.checked, element.descendants || [])}
+                    >
+                      <div className="px-3 md:px-1 flex items-center gap-2">
+                        {element.icon && (
+                          <Img src={element.icon} className="h-[20px] w-[20px] object-contain" />
+                        )}
+                        <div className="h-[20px] whitespace-nowrap text-sm md:text-base">
+                          {element.name}
+                        </div>
+                        {query.categories.includes(element.id) && (
+                          <input
+                            type="checkbox"
+                            name="categoria[]"
+                            value={element.slug || element.name}
+                            defaultChecked={true}
+                            className="absolute opacity-0 z-[-1]"
+                          />
+                        )}
                       </div>
-                      {query.categories.includes(element.id) && (
-                        <input
-                          type="checkbox"
-                          name="categoria[]"
-                          value={element.slug || element.name}
-                          defaultChecked={true}
-                          className="absolute opacity-0 z-[-1]"
-                        />
-                      )}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
 
         <div className="flex justify-between items-center pt-4 w-full bg-white">
           <Button type="button" className="text-sm" style="btn-link" href="/produtos/listagem/">
