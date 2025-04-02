@@ -79,7 +79,7 @@ export default function AddressCheckoutForm(attrs: any) {
   return (
     <>
       <div className="grid gap-2">
-        <div className="relative">
+        <div className="relative"> 
           <input
             name="cep"
             onChange={(e: any) => setZipCode(formatCep(e.target.value))}
@@ -90,12 +90,10 @@ export default function AddressCheckoutForm(attrs: any) {
             onBlur={() => setZipCode(formatCep(zipCode))}
           />
           <Button
-            type="button"
-            style="btn-light"
-            onClick={() => handleZipCode()}
             className="absolute top-1/2 -translate-y-1/2 right-0 p-3 mr-1"
+            onClick={() => zipCode ? handleZipCode() : alert("Por favor, informe o CEP antes de buscar!")} 
           >
-            <Icon icon="fa-search" />
+              <Icon icon="fa-search" />
           </Button>
         </div>
         <div className="flex gap-2">
