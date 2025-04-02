@@ -1,3 +1,5 @@
+import React from "react";
+
 export interface ResponseRegister {
     response: boolean
     data: DataRegister
@@ -56,4 +58,19 @@ export interface ElementResponse {
     data: Element
 }
 
-export interface GenericResponse { response: boolean, data?: object, nessage?: string }
+export interface GenericResponse { 
+    response: boolean, 
+    data?: object, 
+    nessage?: string 
+}
+
+const ResponseTypesPage: React.FC = () => {
+    return (
+        <div>
+            <h1>Response Types</h1>
+        </div>
+    );
+};
+
+export default ResponseTypesPage;
+
