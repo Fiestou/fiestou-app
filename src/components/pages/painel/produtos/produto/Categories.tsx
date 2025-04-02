@@ -87,7 +87,7 @@ export default function Categories({
                   <div
                     className=""
                     onClick={() => {
-                      handleRelationship(item.id || 0, master);
+                      handleRelationship(Number(item.id) || 0, master)
                     }}
                   >
                     <Checkbox
