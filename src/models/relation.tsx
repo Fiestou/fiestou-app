@@ -8,9 +8,10 @@ export interface AssociatedElement {
 }
 
 export interface RelationType {
-  id?: number;
+  id?: number | string;
   parent?: number | string;
-  title: string;
+  name?: string;
+  title?: string;
   slug?: string;
   multiple?: boolean;
   order?: number;
