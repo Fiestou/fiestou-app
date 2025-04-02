@@ -37,7 +37,7 @@ services:
             - laravel
 
     mysql:
-        image: mysql:8.0
+        image: mysql:5.7
         container_name: laravel-mysql
         restart: unless-stopped
         ports:
