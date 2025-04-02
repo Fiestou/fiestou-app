@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Element, ElementResponse, ElementsResponse, GenericResponse, GroupResponse, GroupsResponse } from "@/pages/admin/filtro/types/response";
+import { Element, ElementResponse, ElementsResponse, GenericResponse, GroupResponse, GroupsResponse } from "@/src/types/filtros/response";
 import Api from "@/src/services/api";
 import ElementModal, { ReturnElementData } from "../modals/ElementModal";
 import { toast } from "react-toastify";
@@ -48,7 +48,7 @@ const Card: React.FC<CardProps> = (props) => {
         setOpenElementModal(true);
     };
 
-    const getRelatedElements = async () => {
+    const getRelatedElements = async (elementId: number | null) => {
         const request = await api.bridge<GroupResponse>({
             method: "get",
             url: `group/ChildGroup/${props.id}`,
@@ -57,12 +57,15 @@ const Card: React.FC<CardProps> = (props) => {
         if (request.response && request.data) {
             setRelatedElements(request.data.elements);
         }
+
+        if (elementId){
+            onElementClicked(elementId);
+        }
     };
 
     const onSaveElement = async (data: ReturnElementData) => {
         let request;
         setUpdateElement(null);
-
         if (data.id) {
             request = await api.bridge<GroupResponse>({
                 method: "put",
@@ -127,12 +130,16 @@ const Card: React.FC<CardProps> = (props) => {
     };
 
     useEffect(() => {
-        getRelatedElements();
+        getRelatedElements(null);
 
         if (props.elements){
             setLocalElements(props.elements);
         }
     }, []);
+
+    useEffect(()=>{
+        console.log(relatedElements)
+    }, [relatedElements])
 
     useEffect(() => {
         if (!openElementModal) {
@@ -214,7 +221,7 @@ const Card: React.FC<CardProps> = (props) => {
                                 onMouseLeave={() => setHoveredElement(null)}
                             >
                                 <button
-                                    onClick={() => { if (!relatedElements) getRelatedElements(); onElementClicked(element.id)}}
+                                    onClick={() => { getRelatedElements(element.id)}}
                                     className="flex gap-2 justify-center items-center"
                                     id={`button-element-${element.id}`}
                                 >
