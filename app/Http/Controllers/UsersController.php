@@ -248,6 +248,30 @@ class UsersController extends Controller
                 $user->status = 1;
             }
 
+            $request->merge([
+                'phone' => preg_replace('/\D/', '', $request->get('phone')),
+                'cep'   => preg_replace('/\D/', '', $request->get('cep')),
+            ]);
+            
+            $validator = \Validator::make($request->all(), [
+                'phone' => ['nullable', 'regex:/^\d{10,11}$/'],
+                'cep'   => ['nullable', 'regex:/^\d{8}$/'],
+                'email' => ['nullable', 'email'],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'response' => false,
+                    'message'  => 'Validation error',
+                    'errors'   => $validator->errors(),
+                ], 422);
+            }
+
+            $request->merge([
+                'phone'   => preg_replace('/\D/', '', $request->get('phone')),
+                'cep'     => preg_replace('/\D/', '', $request->get('cep')),
+            ]);
+
             $user->RequestToThis($request->all());
             $user->RequestToDetails($request->all());
 
