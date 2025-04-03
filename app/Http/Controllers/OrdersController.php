@@ -169,43 +169,16 @@ class OrdersController extends Controller
                 $productIds[] = $item['product']['id'];
             }
         }
-
+        
         $products = Product::whereIn('id', $productIds)->get();
-
+        $normalizedProducts = Product::normalize($products);
+        
         $productsData = [];
         foreach ($listItems as $item) {
             if (isset($item['product']['id'])) {
-                $product = $products->find($item['product']['id']);
-                if ($product) {
-                    $gallery = $product->gallery ?? [];
-                    if (is_string($gallery)) {
-                        $gallery = json_decode($gallery, true) ?? [];
-                    }
-
-                    $normalizedGallery = [];
-                    if (is_array($gallery)) {
-                        foreach ($gallery as $galleryItem) {
-                            if (is_array($galleryItem) && isset($galleryItem['id'])) {
-                                $normalizedGallery[] = [
-                                    'base_url' => "http://localhost:8000/storage/{$galleryItem['id']}/",
-                                    'details' => [
-                                        'sizes' => [
-                                            'sm' => "sm/image.jpg",
-                                            'md' => "md/image.jpg"
-                                        ]
-                                    ]
-                                ];
-                            } elseif (is_array($galleryItem) && isset($galleryItem['base_url'])) {
-                                $normalizedGallery[] = $galleryItem;
-                            }
-                        }
-                    }
-
-                    $productsData[] = [
-                        'id' => $product->id,
-                        'title' => $product->title,
-                        'gallery' => $normalizedGallery
-                    ];
+                $productNormalized = collect($normalizedProducts)->firstWhere('id', $item['product']['id']);
+                if ($productNormalized) {
+                    $productsData[] = $productNormalized;
                 }
             }
         }
