@@ -160,8 +160,76 @@ class OrdersController extends Controller
         if (!$order) {
             return response()->json(['message' => 'Pedido não encontrado'], 404);
         }
+        
+        $listItems = json_decode($order->listItems, true) ?? [];
 
-        $order->load('userDetail');
+        $productIds = [];
+        foreach ($listItems as $item) {
+            if (isset($item['product']['id'])) {
+                $productIds[] = $item['product']['id'];
+            }
+        }
+
+        $products = Product::whereIn('id', $productIds)->get();
+
+        $productsData = [];
+        foreach ($listItems as $item) {
+            if (isset($item['product']['id'])) {
+                $product = $products->find($item['product']['id']);
+                if ($product) {
+                    $gallery = $product->gallery ?? [];
+                    if (is_string($gallery)) {
+                        $gallery = json_decode($gallery, true) ?? [];
+                    }
+
+                    $normalizedGallery = [];
+                    if (is_array($gallery)) {
+                        foreach ($gallery as $galleryItem) {
+                            if (is_array($galleryItem) && isset($galleryItem['id'])) {
+                                $normalizedGallery[] = [
+                                    'base_url' => "http://localhost:8000/storage/{$galleryItem['id']}/",
+                                    'details' => [
+                                        'sizes' => [
+                                            'sm' => "sm/image.jpg",
+                                            'md' => "md/image.jpg"
+                                        ]
+                                    ]
+                                ];
+                            } elseif (is_array($galleryItem) && isset($galleryItem['base_url'])) {
+                                $normalizedGallery[] = $galleryItem;
+                            }
+                        }
+                    }
+
+                    $productsData[] = [
+                        'id' => $product->id,
+                        'title' => $product->title,
+                        'gallery' => $normalizedGallery
+                    ];
+                }
+            }
+        }
+
+        $storeIds = [];
+        foreach ($listItems as $item) {
+            if (isset($item['product']['store']['id'])) {
+                $storeIds[] = $item['product']['store']['id'];
+            }
+        }
+
+        $partnerName = 'Parceiro desconhecido';
+        $partnerEmail = 'Parceiro desconhecido';
+        
+        if (!empty($storeIds)) {
+            $storeId = reset($storeIds);
+            $storeUserId = Store::where('id', $storeId)->value('user');
+            
+            if ($storeUserId) {
+                $partner = User::find($storeUserId);
+                $partnerName = $partner->name ?? $partnerName;
+                $partnerEmail = $partner->email ?? $partnerEmail;
+            }
+        }
 
         $metadata = json_decode($order->metadata, true);
 
@@ -206,6 +274,10 @@ class OrdersController extends Controller
             'deliverySchedule' => $order->deliverySchedule,
             'deliveryTo' => $order->deliveryTo,
             'deliveryPrice' => $deliveryPrice,
+            'partnerName' => $partnerName,
+            'partnerEmail' => $partnerEmail,
+            'storeId' => $storeId ?? null,
+            'productsData' => $productsData
         ]);
     }
 
