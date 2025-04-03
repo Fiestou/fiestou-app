@@ -133,7 +133,7 @@ export default function Categorias() {
         position: "solid",
       }}
     >
-      <section className="overflow-y-hidden">
+      <section className="">
         <div className="container-medium pt-12">
           <div className="">
             <Breadcrumbs
@@ -144,8 +144,8 @@ export default function Categorias() {
             />
           </div>
           <div className="flex mt-6 pb-6">
-            <div className="flex w-full flex-row">
-              <div className="flex-[4] font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
+            <div className="w-full">
+              <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
                 Configurar filtro
               </div>
               <div className="flex-[1.2] gap-2 justify-center items-center flex flex-row" >
