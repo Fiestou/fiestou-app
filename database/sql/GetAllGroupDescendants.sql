@@ -1,14 +1,17 @@
 CREATE PROCEDURE GetAllGroupDescendants(
     IN group_id BIGINT UNSIGNED,
-    IN is_active BOOLEAN
+    IN is_active TINYINT(1)
 )
 BEGIN
-    CREATE TEMPORARY TABLE IF NOT EXISTS temp_group_hierarchy (
+    DECLARE rows_affected INT DEFAULT 0;
+
+    DROP TEMPORARY TABLE IF EXISTS temp_group_hierarchy;
+    CREATE TEMPORARY TABLE temp_group_hierarchy (
         id BIGINT UNSIGNED,
         name VARCHAR(255),
         description TEXT,
         parent_id BIGINT UNSIGNED,
-        active BOOLEAN
+        active TINYINT(1)
     );
 
     INSERT INTO temp_group_hierarchy
@@ -16,7 +19,7 @@ BEGIN
     FROM `group`
     WHERE id = group_id;
 
-    DECLARE rows_affected INT DEFAULT 1;
+    SELECT COUNT(*) INTO rows_affected FROM temp_group_hierarchy;
 
     WHILE rows_affected > 0 DO
         INSERT INTO temp_group_hierarchy
@@ -28,10 +31,10 @@ BEGIN
         )
         AND (is_active IS NULL OR g.active = is_active);
 
-        SET rows_affected = ROW_COUNT();
+        SELECT ROW_COUNT() INTO rows_affected;
     END WHILE;
 
     SELECT * FROM temp_group_hierarchy WHERE id != group_id;
-    
-    DROP TEMPORARY TABLE temp_group_hierarchy;
-END
+
+    DROP TEMPORARY TABLE IF EXISTS temp_group_hierarchy;
+END 

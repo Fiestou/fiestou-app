@@ -166,8 +166,49 @@ class OrdersController extends Controller
         if (!$order) {
             return response()->json(['message' => 'Pedido não encontrado'], 404);
         }
+        
+        $listItems = json_decode($order->listItems, true) ?? [];
 
-        $order->load('userDetail');
+        $productIds = [];
+        foreach ($listItems as $item) {
+            if (isset($item['product']['id'])) {
+                $productIds[] = $item['product']['id'];
+            }
+        }
+        
+        $products = Product::whereIn('id', $productIds)->get();
+        $normalizedProducts = Product::normalize($products);
+        
+        $productsData = [];
+        foreach ($listItems as $item) {
+            if (isset($item['product']['id'])) {
+                $productNormalized = collect($normalizedProducts)->firstWhere('id', $item['product']['id']);
+                if ($productNormalized) {
+                    $productsData[] = $productNormalized;
+                }
+            }
+        }
+
+        $storeIds = [];
+        foreach ($listItems as $item) {
+            if (isset($item['product']['store']['id'])) {
+                $storeIds[] = $item['product']['store']['id'];
+            }
+        }
+
+        $partnerName = 'Parceiro desconhecido';
+        $partnerEmail = 'Parceiro desconhecido';
+        
+        if (!empty($storeIds)) {
+            $storeId = reset($storeIds);
+            $storeUserId = Store::where('id', $storeId)->value('user');
+            
+            if ($storeUserId) {
+                $partner = User::find($storeUserId);
+                $partnerName = $partner->name ?? $partnerName;
+                $partnerEmail = $partner->email ?? $partnerEmail;
+            }
+        }
 
         $metadata = json_decode($order->metadata, true);
 
@@ -212,6 +253,10 @@ class OrdersController extends Controller
             'deliverySchedule' => $order->deliverySchedule,
             'deliveryTo' => $order->deliveryTo,
             'deliveryPrice' => $deliveryPrice,
+            'partnerName' => $partnerName,
+            'partnerEmail' => $partnerEmail,
+            'storeId' => $storeId ?? null,
+            'productsData' => $productsData
         ]);
     }
 
