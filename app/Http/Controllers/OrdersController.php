@@ -226,6 +226,7 @@ class OrdersController extends Controller
         $transformedMetadata = [
             'payment_method' => $paymentMethod,
             'installments' => $installments,
+            'amount_total' => $metadata['amount_total'] ?? 0,
         ];
         
         $deliveryPrice = $order->deliveryPrice;
