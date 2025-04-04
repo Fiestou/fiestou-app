@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
@@ -7,6 +7,7 @@ import Api from "@/src/services/api";
 import { moneyFormat } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import PaginatedTable from "./components/PaginatedTable";
+import { GetServerSideProps } from "next";
 
 interface Order {
   id: number;
@@ -23,32 +24,39 @@ interface Order {
   storeId: number;
 }
 
-type ApiResponse = {
-  data: Order[];
+interface OrderPageProps {
+  initialOrders: Order[];
+}
+
+interface ApiResponse {
+  data?: Order[];
+}
+
+export const getServerSideProps: GetServerSideProps<OrderPageProps> = async () => {
+  const api = new Api();
+  try {
+    const request = await api.bridge({
+      method: "post",
+      url: "orders/list",
+    }) as ApiResponse;
+
+    return {
+      props: {
+        initialOrders: Array.isArray(request?.data) ? request.data : [],
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    return {
+      props: {
+        initialOrders: [],
+      },
+    };
+  }
 };
 
-export default function Order() {
-  const api = new Api();
-  const [orders, setOrders] = useState<Order[]>([]);
-
-  const getOrders = async () => {
-    try {
-      const request = (await api.bridge({
-        method: "post",
-        url: "orders/list",
-      })) as ApiResponse;
-
-      if (request?.data) {
-        setOrders(request.data);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar pedidos", error);
-    }
-  };
-
-  useEffect(() => {
-    getOrders();
-  }, []);
+export default function Order({ initialOrders }: OrderPageProps) {
+  const [orders, setOrders] = useState<Order[]>(initialOrders);
 
   const columns = [
     {
@@ -168,10 +176,14 @@ export default function Order() {
 
       <section className="pt-6">
         <div className="container-medium pb-12" style={{ maxWidth: "100rem" }}>
-          <PaginatedTable data={orders} columns={columns} itemsPerPage={6} />
+          <PaginatedTable 
+            data={orders} 
+            columns={columns} 
+            itemsPerPage={6}
+            key={`orders-table-${orders.length}`}
+          />
         </div>
       </section>
-      
     </Template>
   );
 }

@@ -1,4 +1,8 @@
-const PaginationLinks = ({ pages, currentPage, onPageChange }) => {
+const PaginationLinks = ({ pages = [], currentPage, onPageChange }) => {
+
+    if (!Array.isArray(pages)) 
+      return null;
+
     return (
       <div className="flex gap-2">
         {pages.map((item, index) =>

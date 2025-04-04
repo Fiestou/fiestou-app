@@ -47,9 +47,7 @@ interface Order {
   user: {
     name: string;
     email: string;
-    details: {
-      phone: string;
-    };
+    details: string;
   };
   partnerName?: string;
   partnerEmail?: string;
@@ -253,10 +251,16 @@ export default function OrderDetails() {
               <p className="text-xl font-bold mb-4">Detalhes do Pedido</p>
 
               <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-3">
+                  Valor: {order?.metadata?.amount_total ? 'R$ ' + moneyFormat(order.metadata?.amount_total) : 'Não informado'}
+                </h2>
+              </div>
+  
+              <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-3">Dados do Cliente</h2>
                 <p>{order.user?.name}</p>
                 <p>{order.user?.email}</p>
-                <p>{formatPhoneNumber(order.user?.details ? JSON.parse(order.user?.details).phone : '')}</p>
+                <p>{formatPhoneNumber(order.user?.details ? JSON.parse(order.user?.details).phone || '' : '')}</p>
               </div>
   
               {order.partnerName && (
@@ -267,7 +271,6 @@ export default function OrderDetails() {
                 </div>
               )}
 
-              {/* Seção de Produtos com as imagens */}
               {order.productsData && order.productsData.length > 0 && (
                 <div className="mb-6">
                   <h2 className="text-lg font-semibold mb-3">Produtos</h2>
@@ -282,13 +285,15 @@ export default function OrderDetails() {
                               .map((item: GalleryItem, key: number) => (
                                 <div key={key} className="w-full group">
                                   <div className="relative rounded-md bg-zinc-100 overflow-hidden aspect-square">
-                                    <Img
+                                    <img
                                       src={getImage(item, "thumb")}
                                       className="absolute object-contain h-full inset-0 w-full"
                                       alt={`${product.title} - Imagem ${key + 1}`}
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).src = '/placeholder.jpg';
                                       }}
+                                      width={300}
+                                      height={300}
                                     />
                                   </div>
                                 </div>
@@ -312,7 +317,7 @@ export default function OrderDetails() {
               </div>
 
               <div className="mb-6">
-                <h2 className="text-lg font-semibold mb-3">Entrega ({getDeliveryPriceLabel()})</h2>
+              <h2 className="text-lg font-semibold mb-3">Entrega ({getDeliveryPriceLabel(order.deliveryPrice)})</h2>
                 <p>{order.deliveryTo}, {order.deliverySchedule}</p>
                 <p>{(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.street) || 'N/A'}, {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.number) || 'N/A'}, {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.neighborhood) || 'N/A'}</p>
                 <p>CEP: {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.zipCode) ? formatCEP(order.deliveryAddress.zipCode) : 'N/A'}</p>
