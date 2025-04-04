@@ -349,27 +349,31 @@ export default function Filter(params: { store?: string; busca?: string }) {
           </div>
         </div>
 
-        {localGroups.map((group, index) => (
-          <div key={index} className="pb-6">
+        {localGroups.map((group, groupIndex) => (
+          <div key={groupIndex} className="pb-6">
             <Label>{group.name}</Label>
             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
-              <div className="flex md:flex-wrap gap-2">
+              <div className={`flex md:flex-wrap gap-2 ${groupIndex === 0 ? "space-x-2" : ""}`}>
                 {group.elements.map((element: Element, index: number) => (
                   <div
                     key={index}
-                    className={`border cursor-pointer ease relative rounded p-2 ${element.checked
-                      ? "border-zinc-800 hover:border-zinc-500"
-                      : "hover:border-zinc-300"
-                      }`}
+                    className={`border cursor-pointer ease relative rounded p-2 ${element.checked ? "border-zinc-800 hover:border-zinc-500" : "hover:border-zinc-300"
+                      } ${groupIndex === 0 ? "flex flex-col items-center p-4 w-[90px]" : ""}`}
                     onClick={() => {
-                      onClickElementFilter(element.id, element.checked, element.descendants || [])
+                      onClickElementFilter(element.id, element.checked, element.descendants || []);
                     }}
                   >
-                    <div className="px-3 md:px-1 flex items-center gap-2">
+                    <div className={`flex items-center gap-2 ${groupIndex === 0 ? "flex-col" : ""}`}>
                       {element.icon && (
-                        <Img src={element.icon} className="h-[20px] w-[20px] object-contain" />
+                        <Img
+                          src={element.icon}
+                          className={`object-contain ${groupIndex === 0 ? "h-[40px] w-[40px]" : "h-[20px] w-[20px]"}`}
+                        />
                       )}
-                      <div className="h-[20px] whitespace-nowrap text-sm md:text-base">
+                      <div
+                        className={`whitespace-nowrap text-sm md:text-base ${groupIndex === 0 ? "text-center font-medium" : ""
+                          }`}
+                      >
                         {element.name}
                       </div>
                       {query.categories.includes(element.id) && (
