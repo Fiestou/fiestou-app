@@ -8,9 +8,11 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const filteredData = useMemo(() => {
-    if (!searchQuery) return data;
+    const safeData = data || [];
+    if (!searchQuery) return safeData;
     const query = searchQuery.toLowerCase();
-    return data.filter((row) => {
+    return safeData.filter((row) => {
+      if (!row) return false;
       const { id, created_at, userName, metadata, status, partnerName } = row;
       const amount_total = metadata?.amount_total || 0;
       return (
@@ -25,12 +27,14 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
   }, [data, searchQuery]);
 
   const sortedData = useMemo(() => {
-    if (!sortConfig.key) return filteredData;
-    return [...filteredData].sort((a, b) => {
+    const safeFilteredData = filteredData || [];
+    if (!sortConfig.key) return safeFilteredData;
+    return [...safeFilteredData].sort((a, b) => {
+      if (!a || !b) return 0;
       let aVal, bVal;
       if (sortConfig.key === "created_at") {
-        aVal = new Date(a.created_at);
-        bVal = new Date(b.created_at);
+        aVal = new Date(a.created_at || "");
+        bVal = new Date(b.created_at || "");
       } else if (sortConfig.key === "amount_total") {
         aVal = a.metadata?.amount_total || 0;
         bVal = b.metadata?.amount_total || 0;
@@ -48,7 +52,8 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
     });
   }, [filteredData, sortConfig]);
 
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const safeSortedData = sortedData || [];
+  const totalPages = Math.ceil((sortedData?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
 
@@ -67,24 +72,41 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
 
   const getPaginationGroup = () => {
     const pages = [];
+    
+    if (!totalPages || totalPages <= 0) {
+      return [1];
+    }
+  
     const totalNumbers = 3;
     let startPage = Math.max(2, currentPage - Math.floor(totalNumbers / 2));
     let endPage = startPage + totalNumbers - 1;
-
+  
     if (endPage > totalPages - 1) {
       endPage = totalPages - 1;
       startPage = Math.max(2, endPage - totalNumbers + 1);
     }
-
+  
     pages.push(1);
-    if (startPage > 2) pages.push("...");
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
+  
+    if (startPage > 2) {
+      pages.push("...");
     }
-    if (endPage < totalPages - 1) pages.push("...");
-    if (totalPages > 1) pages.push(totalPages);
-
-    return pages;
+    
+    for (let i = startPage; i <= endPage; i++) {
+      if (i > 1 && i < totalPages) {
+        pages.push(i);
+      }
+    }
+    
+    if (endPage < totalPages - 1) {
+      pages.push("...");
+    }
+    
+    if (totalPages > 1) {
+      pages.push(totalPages);
+    }
+    
+    return pages.length > 0 ? pages : [1];
   };
 
   const paginationGroup = getPaginationGroup();
@@ -109,7 +131,7 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
           <div className="border rounded-lg overflow-hidden">
             {/* Table Header */}
             <div className="grid grid-cols-[minmax(100px,1fr)_minmax(150px,2fr)_minmax(100px,1fr)_minmax(200px,3fr)_minmax(100px,1fr)_minmax(100px,1fr)_minmax(100px,1fr)] gap-4 bg-zinc-100 p-4 font-bold text-zinc-900 font-title">
-              {columns.map((col, index) => (
+              {(columns || []).map((col, index) => (
                 <div
                   key={index}
                   className={`${col.sortable ? "cursor-pointer select-none" : ""}`}
@@ -125,7 +147,7 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
 
             {/* Table Body */}
             <div style={{ maxHeight: "500px" }}>
-              {paginatedData.map((row, rowIndex) => (
+              {(paginatedData || []).map((row, rowIndex) => (
                 <div
                   key={rowIndex}
                   className="grid grid-cols-[minmax(100px,1fr)_minmax(150px,2fr)_minmax(100px,1fr)_minmax(200px,3fr)_minmax(100px,1fr)_minmax(100px,1fr)_minmax(100px,1fr)] gap-4 border-t p-4 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 ease items-center"
