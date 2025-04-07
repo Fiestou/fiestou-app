@@ -252,7 +252,7 @@ class OrdersController extends Controller
             'partnerEmail' => $partnerEmail,
             'storeId' => $storeId ?? null,
             'productsData' => $productsData
-        ]);
+        ]); 
     }
 
     public function Store(Request $request)
