@@ -983,7 +983,7 @@ export default function Produto({
                             </div>
                           )}
                           </strong><br />{" "}
-                          <p>Esse produto é entregue em até {product?.availability}{" "}
+                          <p>Esse produto é entregue em até <strong>{product?.availability}{" "}</strong>
                           dia
                           {Number(product?.availability || 0) > 1 ? `s` : ""}.</p>
                         </div><br />
@@ -998,32 +998,16 @@ export default function Produto({
                           </div>
                         </div>
 
-                        <div className="relative grid w-fit p-3">
+                        <div className="text-center p-4">
                           {!inCart ? (
                             <Button
-                              type={
-                                !!productToCart?.details?.dateStart
-                                  ? "submit"
-                                  : "button"
-                              }
-                              style={
-                                !!productToCart?.details?.dateStart
-                                  ? "btn-yellow"
-                                  : "btn-light"
-                              }
-                              className={`${
-                                !!productToCart?.details?.dateStart
-                                  ? ""
-                                  : "opacity-50 bg-zinc-200"
-                              } whitespace-nowrap py-2 px-5 md:px-8 md:py-4`}
                             >
                               Adicionar
                             </Button>
                           ) : (
                             <Button
                               href="/carrinho"
-                              style="btn-light"
-                              className={`whitespace-nowrap py-2 px-5 md:px-8 md:py-4`}
+                              className="whitespace-nowrap"
                             >
                               Acessar carrinho
                             </Button>
