@@ -282,4 +282,4 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       </section>
     </Template>
   );
-}
+} 
