@@ -63,14 +63,3 @@ export interface GenericResponse {
     data?: object, 
     nessage?: string 
 }
-
-const ResponseTypesPage: React.FC = () => {
-    return (
-        <div>
-            <h1>Response Types</h1>
-        </div>
-    );
-};
-
-export default ResponseTypesPage;
-
