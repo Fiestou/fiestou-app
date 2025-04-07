@@ -53,7 +53,7 @@ class ProductsController extends Controller
 
         $log = []; 
         $metadata = [];
-        $products = Product::where(['status' => 1])
+        $products = Product::where(['status' => 1]) 
                            ->with(["store"]);
 
         if($request->has('store') && $request->get('store')){
