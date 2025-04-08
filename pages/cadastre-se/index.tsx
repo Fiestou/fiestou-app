@@ -8,11 +8,14 @@ import { useRouter } from "next/router";
 import { encode as base64_encode, decode as base64_decode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
+import { CheckMail } from "@/src/models/CheckEmail";
+import { formatName, formatPhone, formatCpfCnpj, formatCep, validateEmail } from "../../src/components/utils/FormMasks";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
   let request: any = await api.content({
+    method: 'get',
     url: "register",
   });
 
@@ -73,6 +76,53 @@ export default function CadastreSe({
   const [repeat, setRepeat] = useState("" as string);
 
   const [token, setToken] = useState("" as string);
+  const [debouncedEmail, setDebouncedEmail] = useState("");
+  const [errorMail, setErrorMail] = useState<string>("");
+  const [emailValid, setEmailValid] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedEmail(email);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [email]);
+
+  useEffect(() => {
+    if (debouncedEmail) {
+      checkEmail(debouncedEmail);
+    }
+  }, [debouncedEmail]);
+
+  const checkEmail = async (email: string) => {
+    // Validar formato do email antes de fazer a requisição
+    if (!validateEmail(email)) {
+      setEmailValid(false);
+      return false;
+    }
+    setEmailValid(true);
+
+    const data: CheckMail = await api.bridge({
+      method: "post",
+      url: "auth/checkin",
+      data: { ref: email },
+    }) as CheckMail;
+
+    if (data.response && data.user) {
+      setErrorMail("O email já está vinculado a um usuário.")
+      return false;
+    }
+
+    return true;
+  }
+
+  useEffect(()=>{
+    if (errorMail){
+      setTimeout(()=>{
+        setErrorMail("");
+      }, 30000)
+    }
+  }, [errorMail])
 
   useEffect(() => {
     if (password) {
@@ -109,24 +159,31 @@ export default function CadastreSe({
   }, [password, repeat]);
 
   const handleSubmit = async (e: any) => {
-      e.preventDefault();
+    e.preventDefault();
 
-      setForm({ ...form, loading: true });
+    if (!await checkEmail(email)){
+      return;
+    }
+    
+    setForm({ ...form, loading: true });
 
-      const data: any = await api.bridge({
-        method: "post",
-        url: "auth/register",
-        data: {
-          name: name,
-          // date: date,
-          email: email,
-          phone: phone,
-          person: "client",
-          password: password,
-          re_password: repeat,
-        },
-      });
+    // Remover formatação dos campos antes de enviar para a API
+    const phoneClean = phone.replace(/\D/g, "");
 
+    const data: any = await api.bridge({
+      method: 'post',
+      url: "auth/register",
+      data: {
+        name: name,
+        // date: date,
+        email: email,
+        phone: phoneClean, // Envia o telefone sem formatação
+        person: "client",
+        password: password,
+        re_password: repeat,
+      },
+    });
+    
     if (data.response) {
       window.location.href = "/acesso?modal=register";
     } else {
@@ -139,7 +196,7 @@ export default function CadastreSe({
       scripts={Scripts}
       metaPage={{
         title: `Cadastre-se | ${DataSeo?.site_text}`,
-        url: `cadastre-se`,
+        url: "cadastre-se",
       }}
       header={{
         template: "clean",
@@ -179,7 +236,8 @@ export default function CadastreSe({
                 <div className="form-group">
                   <Label>Nome</Label>
                   <Input
-                    onChange={(e: any) => setName(e.target.value)}
+                    value={name}
+                    onChange={(e: any) => setName(formatName(e.target.value))}
                     type="text"
                     name="nome"
                     placeholder="Seu nome completo"
@@ -200,21 +258,29 @@ export default function CadastreSe({
                 <div className="form-group">
                   <Label>E-mail</Label>
                   <Input
-                    onChange={(e: any) => setEmail(e.target.value)}
+                    onChange={(e: any) => setEmail(e.target.value.toLowerCase())}
                     value={email}
                     type="email"
                     name="email"
+                    placeholder="Informe seu melhor e-mail"
                     required
                   />
+                  {errorMail && (
+                    <label className="text-red-500">{errorMail}</label>
+                  )}
+                  {!emailValid && email && (
+                    <label className="text-red-500">Formato de e-mail inválido</label>
+                  )}
                 </div>
 
                 <div className="form-group">
                   <Label>Celular</Label>
                   <Input
                     value={phone}
-                    onChange={(e: any) => setPhone(e.target.value)}
+                    onChange={(e: any) => setPhone(formatPhone(e.target.value))}
                     type="text"
                     name="celular"
+                    placeholder="(00) 9 0000-0000"
                     required
                   />
                   <div className="text-sm">
@@ -228,6 +294,7 @@ export default function CadastreSe({
                     onChange={(e: any) => setPassword(e.target.value)}
                     type="password"
                     name="senha"
+                    placeholder="Crie sua senha"
                     required
                   />
                 </div>
@@ -238,6 +305,7 @@ export default function CadastreSe({
                     onChange={(e: any) => setRepeat(e.target.value)}
                     type="password"
                     name="confirm_senha"
+                    placeholder="Confirme sua senha"
                     required
                   />
                 </div>

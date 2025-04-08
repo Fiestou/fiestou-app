@@ -2,9 +2,43 @@ import { useState, useMemo } from "react";
 import PaginationButtons from "./PaginationButtons";
 import PaginationLinks from "./PaginationLinks";
 
-const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
+interface Order {
+  id: number;
+  created_at: string;
+  user: string;
+  metadata?: {
+    amount_total: number;
+  };
+  status: string;
+  partnerName: string;
+  partnerEmail: string;
+  userName: string;
+  userEmail: string;
+  storeId: number;
+}
+
+interface Column {
+  name: string;
+  width?: string;
+  sortable?: boolean;
+  sortKey?: string;
+  selector: (row: Order) => React.ReactNode;
+}
+
+const PaginatedTable = ({
+  data = [],
+  columns,
+  itemsPerPage = 7,
+}: {
+  data?: Order[];
+  columns: Column[];
+  itemsPerPage?: number;
+}) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: "asc" | "desc" }>({
+    key: null,
+    direction: "asc",
+  });
   const [currentPage, setCurrentPage] = useState(1);
 
   const filteredData = useMemo(() => {
@@ -39,13 +73,16 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
         aVal = a.metadata?.amount_total || 0;
         bVal = b.metadata?.amount_total || 0;
       } else {
-        aVal = a[sortConfig.key];
-        bVal = b[sortConfig.key];
+        const key = sortConfig.key as Exclude<keyof Order, "metadata">;
+        aVal = typeof a[key] === "string" || typeof a[key] === "number" ? a[key] : "";
+        bVal = typeof b[key] === "string" || typeof b[key] === "number" ? b[key] : "";
       }
-      if (typeof aVal === "string") {
+
+      if (typeof aVal === "string" && typeof bVal === "string") {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
       }
+
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
@@ -55,14 +92,14 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
   const safeSortedData = sortedData || [];
   const totalPages = Math.ceil((sortedData?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedData = sortedData?.slice(startIndex, startIndex + itemsPerPage);
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number) => {
     if (page > 0 && page <= totalPages) setCurrentPage(page);
   };
 
-  const handleSort = (sortKey) => {
-    let direction = "asc";
+  const handleSort = (sortKey: string) => {
+    let direction: "asc" | "desc" = "asc";
     if (sortConfig.key === sortKey && sortConfig.direction === "asc") {
       direction = "desc";
     }
@@ -135,7 +172,7 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
                 <div
                   key={index}
                   className={`${col.sortable ? "cursor-pointer select-none" : ""}`}
-                  onClick={() => col.sortable && handleSort(col.sortKey)}
+                  onClick={() => col.sortable && handleSort(col.sortKey!)}
                 >
                   {col.name}
                   {col.sortable && sortConfig.key === col.sortKey && (
@@ -161,13 +198,14 @@ const PaginatedTable = ({ data, columns, itemsPerPage = 7 }) => {
                     </div>
                   ))}
                 </div>
-              ))}
+                ),
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Pagination Bottons */}
+      {/* PaginationButtons */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
         <PaginationButtons
           onPrevious={() => handlePageChange(currentPage - 1)}

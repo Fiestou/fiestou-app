@@ -4,6 +4,7 @@ interface InputType {
   name?: string;
   onChange?: Function;
   onKeyUp?: Function;
+  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onBlur?: Function;
   prevent?: boolean;
   type?: string;
@@ -55,6 +56,7 @@ export default function Input(attr: InputType) {
         {...(!!attr?.focus ? { focus: attr?.focus } : {})}
         onChange={(e) => (!!attr?.onChange ? attr?.onChange(e) : {})}
         onKeyUp={(e) => (!!onKeyUp && !attr?.prevent ? onKeyUp(e) : {})}
+        onKeyPress={(e) => (attr?.onKeyPress ? attr?.onKeyPress(e) : {})}
         onBlur={(e) => (!!onBlur && !attr?.prevent ? onBlur(e) : {})}
         {...(!!attr?.required ? { required: true } : {})}
       />

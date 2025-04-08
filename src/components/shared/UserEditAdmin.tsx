@@ -43,7 +43,7 @@ export default function UserEditAdmin({
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "users/validate",
       data: {
         ...handle,

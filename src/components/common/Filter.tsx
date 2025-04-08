@@ -1,183 +1,225 @@
-import Api from "@/src/services/api";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import Modal from "../utils/Modal";
-import { Button, Label, Select } from "../ui/form";
+import { Button, Label } from "../ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { RelationType } from "@/src/models/relation";
-import { filterRepeatRemove, getImage, moneyFormat } from "@/src/helper";
+import { moneyFormat } from "@/src/helper";
 import Img from "../utils/ImgBase";
 import React from "react";
 import Check from "../ui/form/CheckUI";
 import Colors from "../ui/form/ColorsUI";
+import { Group, useGroup } from "@/src/store/filter";
 
 export interface FilterQueryType {
-  categories: Array<string>;
-  colors: Array<string>;
+  categories: number[];
+  colors: string[];
   range: number;
   order: string;
 }
 
-export default function Filter(params: any) {
-  const api = new Api();
+export interface Element {
+  id: number;
+  name: string;
+  icon: string;
+  description: string;
+  active: number;
+  created_at: string;
+  updated_at: string;
+  laravel_through_key: number;
+  checked: boolean;
+  descendants?: Element[];
+  slug?: string;
+  parent_group_id?: number;
+  generation_level?: number;
+}
+
+export default function Filter(params: { store?: string; busca?: string }) {
   const router = useRouter();
 
-  const [query, setQuery] = useState({
+  const [query, setQuery] = useState<FilterQueryType>({
     categories: [],
     colors: [],
     range: 1000,
     order: "desc",
-  } as FilterQueryType);
-  const handleQueryValues = (value: any) => {
+  });
+
+  const handleQueryValues = (value: Partial<FilterQueryType>) => {
     setQuery({ ...query, ...value });
   };
-  const startQueryHandle = () => {
-    const routerQuery: any = router.query;
 
-    const handleQuery: any = {
+  const startQueryHandle = () => {
+    const routerQuery = router.query as {
+      categorias?: string | string[];
+      "categoria[]"?: string | string[];
+      cores?: string | string[];
+      range?: string;
+      ordem?: string;
+    };
+
+    const handleQuery: Partial<FilterQueryType> = {
       categories: [],
     };
 
-    if (!!routerQuery?.categorias?.length) {
-      handleQuery["categories"] =
-        typeof routerQuery?.categorias == "string"
-          ? [routerQuery?.categorias]
-          : routerQuery?.categorias;
-    }
-
-    if (!!routerQuery["categoria[]"] && !!routerQuery["categoria[]"].length) {
-      handleQuery["categories"] =
-        typeof routerQuery["categoria[]"] == "string"
-          ? [routerQuery["categoria[]"]]
-          : routerQuery["categoria[]"];
-    }
-
-    if (!!routerQuery?.cores?.length) {
+    if (routerQuery?.cores?.length) {
       handleQuery["colors"] =
-        typeof routerQuery?.cores == "string"
-          ? [routerQuery?.cores]
-          : routerQuery?.cores;
+        typeof routerQuery.cores === "string"
+          ? [routerQuery.cores]
+          : routerQuery.cores;
     }
 
-    if (!!routerQuery?.range) {
-      handleQuery["range"] = routerQuery.range;
+    if (routerQuery?.range) {
+      handleQuery["range"] = parseInt(routerQuery.range, 10);
     }
 
-    if (!!routerQuery?.ordem) {
+    if (routerQuery?.ordem) {
       handleQuery["order"] = routerQuery.ordem;
     }
 
     setQuery({ ...query, ...handleQuery });
   };
 
-  const [count, setCount] = useState(0 as number);
+  const [count, setCount] = useState<number>(0);
+
   useEffect(() => {
     let handle = 0;
-    handle += query.categories?.length;
-    handle += query.colors?.length;
+    handle += query.categories.length;
+    handle += query.colors.length;
     handle += query.range < 1000 ? 1 : 0;
-    handle += query.order != "desc" ? 1 : 0;
+    handle += query.order !== "desc" ? 1 : 0;
 
     setCount(handle);
   }, [query]);
 
-  const [filterModal, setFilterModal] = useState(false as boolean);
+  const [filterModal, setFilterModal] = useState<boolean>(false);
+  const filterArea = useRef<HTMLDivElement>(null);
+  const [stick, setStick] = useState<boolean>(false);
+  const { groups } = useGroup();
+  const [localGroups, setLocalGroups] = useState<Group[]>(groups);
+  const [lastElements, setLastElements] = useState<Element[]>([]);
 
-  const [activeChecked, setActiveChecked] = useState([] as Array<any>);
-  const handleActiveChecked = (category: any) => {
-    let handleActive = activeChecked.includes(category.id)
-      ? activeChecked.filter((item) => item != category.id)
-      : [...activeChecked, category.id];
+  const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[]) => {
+    let checkedGroupElements: Group[] = [];
+    let updateLocalGroups = localGroups
+      .map((group) => ({
+        ...group,
+        elements: group.elements
+          .map((element) => {
+            if (element.id === elementId) {
+              if (!element.checked === true) {
+                checkedGroupElements.push(group);
+              }
+              return { ...element, checked: !element.checked };
+            }
+            return element;
+          })
+      })
+      );
 
-    setActiveChecked(handleActive);
+    let finalGroups: Group[] = updateLocalGroups;
 
-    let handleQuery = query.categories.includes(category.slug)
-      ? query.categories.filter((item: any) => item != category.slug)
-      : [...query.categories, category.slug];
+    if (!checked === true) {
+      let positionGroup = 0;
+      let lastGroup: Group;
 
-    setQuery({ ...query, categories: handleQuery });
-  };
+      for (let i = 0; i < updateLocalGroups.length; i++) {
+        const localGroup = updateLocalGroups[i];
 
-  const [categories, setCategories] = useState([] as Array<RelationType>);
-  const handleCategoriesLevelsChilds = (handle: any) => {
-    let relations = [handle.parent ?? 0, ...(handle.closest ?? [])];
+        if (localGroup.elements.some(element => element.id === elementId)) {
+          lastGroup = updateLocalGroups[i + 1];
+          positionGroup = i;
+        }
+      }
 
-    if (!!handle?.childs?.length) {
-      handle?.childs?.map((item: any) => {
-        relations = [...relations, ...handleCategoriesLevelsChilds(item)];
-      });
-    }
+      if (updateLocalGroups.length + 1 > positionGroup + 1) {
+        finalGroups.map((group, index) => {
+          let groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
+          let elements: Element[] = [];
 
-    return filterRepeatRemove(relations);
-  };
+          if (index === positionGroup + 1) {
+            groupGlobal?.elements.map((element) => {
+              if (descendants.some((descendant) => descendant.id === element.id) && !elements.includes(element)) {
+                elements.push(element);
+              }
+            });
 
-  const [categoriesLevels, setCategoriesLevels] = useState({} as any);
-  const handleCategoriesLevels = (
-    categories: any,
-    handleLevel: any,
-    level: number
-  ) => {
-    // --
-    if (!handleLevel[level]) handleLevel[level] = [];
+            if (lastElements) {
+              lastElements.map((element: Element) => {
+                if (!elements.includes(element) && lastGroup && lastGroup.id === group.id && groupGlobal?.elements.includes(element)) {
+                  elements.push(element);
+                }
+              });
+            }
 
-    handleLevel[level] = [...handleLevel[level], ...categories];
+            setLastElements(elements);
+            group.elements = elements;
+          }
+        });
+      }
+    } else if (!checked === false) {
+      let positionGroup = 0;
+      let lastGroup: Group;
 
-    (categories ?? []).map((item: any) => {
-      if (item?.childs?.length) {
-        handleLevel = handleCategoriesLevels(
-          item?.childs,
-          handleLevel,
-          (level ?? 0) + 1
+      for (let i = 0; i < updateLocalGroups.length; i++) {
+        const localGroup = updateLocalGroups[i];
+        if (localGroup.elements.some(element => element.id === elementId)) {
+          lastGroup = updateLocalGroups[i + 1];
+          positionGroup = i;
+        }
+      }
+
+      if (updateLocalGroups.length + 1 > positionGroup + 1) {
+        finalGroups = finalGroups.map((group, index) => {
+          if (index === positionGroup + 1) {
+            const groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
+
+            const filteredElements = group.elements.filter((element) =>
+              !descendants.some((descendant) => descendant.id === element.id)
+            );
+
+            if (filteredElements.length > 0) {
+              return {
+                ...group,
+                elements: filteredElements
+              };
+            }
+            return {
+              ...group,
+              elements: groupGlobal?.elements || []
+            };
+          }
+          return group;
+        });
+
+        setLastElements(prevElements =>
+          prevElements.filter((element) =>
+            !descendants.some((descendant) => descendant.id === element.id)
+          )
         );
       }
-    });
-
-    return handleLevel;
-  };
-
-  const openModal = () => {
-    setFilterModal(true);
-
-    if (!categories.length) {
-      getFilter();
     }
-  };
 
-  const getFilter: any = async () => {
-    const request: any = await api.request({
-      method: "get",
-      url: "request/categories",
-    });
-
-    if (!!request.response) {
-      const mainCategories: any = request.data?.filter(
-        (item: any) => !item.parent
-      );
-      const levelCategories: any = {};
-
-      (mainCategories ?? []).map((item: any) => {
-        levelCategories[item.slug] = !!item?.childs?.length
-          ? handleCategoriesLevels(item?.childs, {}, 0)
-          : [];
-      });
-
-      setActiveChecked((mainCategories ?? []).map((item: any) => item.id));
-      setCategories(mainCategories);
-      setCategoriesLevels(levelCategories);
-    }
-  };
-
-  const filterArea = useRef(null);
-  const [stick, setStick] = useState(false);
-  const handleStick = () => {
-    const element: any = filterArea.current;
-    window.addEventListener("scroll", () =>
-      setStick(window.scrollY > element?.getBoundingClientRect().top + 800)
-    );
+    setLocalGroups(finalGroups);
   };
 
   useEffect(() => {
-    if (!!window) {
+    setLocalGroups(groups);
+  }, [groups]);
+
+  const openModal = () => {
+    setFilterModal(true);
+  };
+
+  const handleStick = () => {
+    const element = filterArea.current;
+    if (element) {
+      window.addEventListener("scroll", () =>
+        setStick(window.scrollY > element.getBoundingClientRect().top + 800)
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
       handleStick();
       startQueryHandle();
     }
@@ -185,22 +227,14 @@ export default function Filter(params: any) {
 
   return (
     <form action="/produtos/listagem" method="GET">
-      {!!params?.store && (
-        <input type="hidden" value={params?.store} name="store" />
-      )}
+      {params?.store && <input type="hidden" value={params.store} name="store" />}
 
       <section ref={filterArea} className="w-full relative">
         <div className="h-[56px]"></div>
         <div
-          className={`w-full z-[20] top-0 left-0 ${
-            stick ? "fixed mt-[62px] md:mt-[70px]" : "absolute"
-          }`}
+          className={`w-full z-[20] top-0 left-0 ${stick ? "fixed mt-[62px] md:mt-[70px]" : "absolute"}`}
         >
-          <div
-            className={`bg-cyan-500 ${
-              stick ? "h-1/2" : "h-0"
-            } w-full absolute top-0 left-0`}
-          ></div>
+          <div className={`bg-cyan-500 ${stick ? "h-1/2" : "h-0"} w-full absolute top-0 left-0`}></div>
 
           <div className="container-medium">
             <div className="flex border rounded-lg bg-white overflow-hidden relative">
@@ -210,7 +244,7 @@ export default function Filter(params: any) {
                   onClick={() => openModal()}
                   className="font-normal py-2 px-3 md:pl-8 md:pr-7 h-full"
                 >
-                  <span className="hidden md:block">Filtros </span>
+                  <span className="hidden md:block">Filtros</span>
                   {!!count ? (
                     <div className="relative bg-zinc-950 -mr-1 rounded-full bg-yellow-300 p-[.55rem] text-[.55rem] font-bold">
                       <div className="text-white absolute h-[.65rem] top-50 left-50 -translate-x-1/2 -translate-y-1/2">
@@ -218,10 +252,7 @@ export default function Filter(params: any) {
                       </div>
                     </div>
                   ) : (
-                    <Icon
-                      icon="fa-sliders-h"
-                      className="text-zinc-900 text-xl md:text-base"
-                    />
+                    <Icon icon="fa-sliders-h" className="text-zinc-900 text-xl md:text-base" />
                   )}
                 </Button>
               </div>
@@ -234,11 +265,7 @@ export default function Filter(params: any) {
               />
               <div className="p-1">
                 <Button className="px-3 py-2 h-full">
-                  <Icon
-                    icon="fa-search"
-                    type="far"
-                    className="md:text-lg rounded-none"
-                  />
+                  <Icon icon="fa-search" type="far" className="md:text-lg rounded-none" />
                 </Button>
               </div>
             </div>
@@ -246,11 +273,7 @@ export default function Filter(params: any) {
         </div>
       </section>
 
-      <Modal
-        title="Filtros"
-        status={filterModal}
-        close={() => setFilterModal(false)}
-      >
+      <Modal title="Filtros" status={filterModal} close={() => setFilterModal(false)}>
         <div className="pb-6">
           <Label>Ordenar por</Label>
           <div className="relative">
@@ -260,35 +283,25 @@ export default function Filter(params: any) {
               className="font-normal w-full justify-start flex px-3 md:px-5 h-full"
             >
               <Icon
-                icon={
-                  query.order == "desc"
-                    ? "fa-sort-amount-down"
-                    : "fa-sort-amount-up"
-                }
+                icon={query.order === "desc" ? "fa-sort-amount-down" : "fa-sort-amount-up"}
                 className="text-zinc-900 text-xl md:text-base"
               />
               <div className="hidden md:block whitespace-nowrap">
-                {query.order == "desc" ? "Mais recente" : "Mais antigo"}
+                {query.order === "desc" ? "Mais recente" : "Mais antigo"}
               </div>
             </Button>
             <select
               name="ordem"
               value={query.order ?? "desc"}
               className="opacity-0 absolute h-full w-full top-0 left-0"
-              onChange={(e: any) =>
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 handleQueryValues({ order: e.target.value })
               }
             >
               {[
-                {
-                  name: "Mais recente",
-                  value: "desc",
-                },
-                {
-                  name: "Mais antigo",
-                  value: "asc",
-                },
-              ].map((item: any, key: any) => (
+                { name: "Mais recente", value: "desc" },
+                { name: "Mais antigo", value: "asc" },
+              ].map((item, key) => (
                 <option value={item.value} key={key}>
                   {item.name}
                 </option>
@@ -300,9 +313,7 @@ export default function Filter(params: any) {
         <div className="pb-6">
           <Label>Faixa de preço</Label>
           <div className="grid gap-2 py-1">
-            <div className="text-sm">
-              Exibir produtos até R$ {moneyFormat(query.range)}
-            </div>
+            <div className="text-sm">Exibir produtos até R$ {moneyFormat(query.range)}</div>
             <div className="">
               <div className="flex text-sm justify-between">
                 <span>R$ {moneyFormat(10)}</span>
@@ -317,15 +328,11 @@ export default function Filter(params: any) {
                   type="range"
                   name="range"
                   className="w-full"
-                  onChange={(e: any) =>
-                    handleQueryValues({ range: e.target.value })
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleQueryValues({ range: parseInt(e.target.value, 10) })
                   }
                 />
-                <span
-                  style={{
-                    width: `${(100 * query.range) / 1000}%`,
-                  }}
-                ></span>
+                <span style={{ width: `${(100 * query.range) / 1000}%` }}></span>
               </div>
             </div>
           </div>
@@ -337,93 +344,59 @@ export default function Filter(params: any) {
             <Colors
               name="cores"
               value={query.colors}
-              onChange={(value: any) => handleQueryValues({ colors: value })}
+              onChange={(value: string[]) => handleQueryValues({ colors: value })}
             />
           </div>
         </div>
 
-        {!!categories?.length &&
-          categories.map((mainCategory: any, key: any) => (
-            <div key={key} className="pb-6">
-              <Label>{mainCategory.title}</Label>
-              <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
-                <div className="flex md:flex-wrap gap-2">
-                  {!!categoriesLevels[mainCategory.slug] &&
-                    Object.values(categoriesLevels[mainCategory.slug]).map(
-                      (level: any, index: any) => (
-                        <React.Fragment key={index}>
-                          {level.map(
-                            (category: any) =>
-                              !!activeChecked.includes(category.parent) && (
-                                <div
-                                  key={category.id}
-                                  id={`categories${category.id}`}
-                                  className={`border cursor-pointer  ease relative rounded p-2 ${
-                                    query.categories.includes(category.slug)
-                                      ? "border-zinc-800 hover:border-zinc-500"
-                                      : "hover:border-zinc-300"
-                                  }`}
-                                  onClick={() => handleActiveChecked(category)}
-                                >
-                                  <div className="px-3 md:px-1">
-                                    {query.categories.includes(
-                                      category.slug
-                                    ) && (
-                                      <input
-                                        type="checkbox"
-                                        name="categoria[]"
-                                        value={category.slug ?? ""}
-                                        defaultChecked={true}
-                                        className="absolute opacity-0 z-[-1]"
-                                      />
-                                    )}
-                                    <div
-                                      className={`${
-                                        mainCategory.metadata.style == "xl"
-                                          ? "flex-col w-[5.6rem]"
-                                          : ""
-                                      } w-full flex items-center justify-center gap-2`}
-                                    >
-                                      {!!getImage(category.image) && (
-                                        <Img
-                                          src={getImage(category.image)}
-                                          className={`${
-                                            mainCategory.metadata.style == "xl"
-                                              ? "h-[40px] w-[40px] md:h-[48px] md:w-[48px]"
-                                              : mainCategory.metadata.style ==
-                                                "lg"
-                                              ? "md:h-[32px] md:w-[32px]"
-                                              : "h-[20px] w-[20px]"
-                                          }  object-contain`}
-                                        />
-                                      )}
-                                      <div className="h-[20px] whitespace-nowrap text-sm md:text-base flex items-center">
-                                        {category.title}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                          )}
-                          <div className="w-full"></div>
-                        </React.Fragment>
-                      )
-                    )}
-                </div>
+        {localGroups.map((group, groupIndex) => (
+          <div key={groupIndex} className="pb-6">
+            <Label>{group.name}</Label>
+            <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
+              <div className={`flex md:flex-wrap gap-2 ${groupIndex === 0 ? "space-x-2" : ""}`}>
+                {group.elements.map((element: Element, index: number) => (
+                  <div
+                    key={index}
+                    className={`border cursor-pointer ease relative rounded p-2 ${element.checked ? "border-zinc-800 hover:border-zinc-500" : "hover:border-zinc-300"
+                      } ${groupIndex === 0 ? "flex flex-col items-center p-4 w-[90px]" : ""}`}
+                    onClick={() => {
+                      onClickElementFilter(element.id, element.checked, element.descendants || []);
+                    }}
+                  >
+                    <div className={`flex items-center gap-2 ${groupIndex === 0 ? "flex-col" : ""}`}>
+                      {element.icon && (
+                        <Img
+                          src={element.icon}
+                          className={`object-contain ${groupIndex === 0 ? "h-[40px] w-[40px]" : "h-[20px] w-[20px]"}`}
+                        />
+                      )}
+                      <div
+                        className={`whitespace-nowrap text-sm md:text-base ${groupIndex === 0 ? "text-center font-medium" : ""
+                          }`}
+                      >
+                        {element.name}
+                      </div>
+                      {query.categories.includes(element.id) && (
+                        <input
+                          type="checkbox"
+                          name="categoria[]"
+                          value={element.slug || element.name}
+                          defaultChecked={true}
+                          className="absolute opacity-0 z-[-1]"
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          </div>
+        ))}
 
         <div className="flex justify-between items-center pt-4 w-full bg-white">
-          <Button
-            type="button"
-            className="text-sm"
-            style="btn-link"
-            href="/produtos/listagem/"
-          >
+          <Button type="button" className="text-sm" style="btn-link" href="/produtos/listagem/">
             Limpar filtro
           </Button>
-
           <Button>Ver resultados</Button>
         </div>
       </Modal>
