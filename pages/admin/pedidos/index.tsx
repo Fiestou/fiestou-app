@@ -41,31 +41,6 @@ interface Column {
   selector: (row: Order) => React.ReactNode;
 }
 
-  const api = new Api();
-  try {
-    const request = await api.bridge({
-      method: "post",
-      url: "orders/list",
-      data: { _nonce: Date.now() }
-    }) as ApiResponse;
-
-    return {
-      props: {
-        initialOrders: Array.isArray(request?.data) ? request.data : [],
-        timestamp: Date.now(),
-      },
-    };
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    return {
-      props: {
-        initialOrders: [],
-        timestamp: Date.now(),
-      },
-    };
-  }
-};
-
 export default function Order({ initialOrders, timestamp }: OrderPageProps) {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>(initialOrders);
