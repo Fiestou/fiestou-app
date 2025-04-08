@@ -15,6 +15,7 @@ interface Order {
   userName: string;
   userEmail: string;
   storeId: number;
+  total: number;
 }
 
 interface Column {
@@ -23,6 +24,7 @@ interface Column {
   sortable?: boolean;
   sortKey?: string;
   selector: (row: Order) => React.ReactNode;
+  onHeaderClick?: () => void;
 }
 
 const PaginatedTable = ({
@@ -35,7 +37,7 @@ const PaginatedTable = ({
   itemsPerPage?: number;
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: "asc" | "desc" }>({
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: "asc" | "desc" | "statusPaidFirst" | "statusOpenFirst" }>({
     key: null,
     direction: "asc",
   });
@@ -47,7 +49,7 @@ const PaginatedTable = ({
     const query = searchQuery.toLowerCase();
     return safeData.filter((row) => {
       if (!row) return false;
-      const { id, created_at, userName, metadata, status, partnerName } = row;
+      const { id, created_at, userName, metadata, status, partnerName, total } = row;
       const amount_total = metadata?.amount_total || 0;
       return (
         String(id).toLowerCase().includes(query) ||
@@ -55,7 +57,8 @@ const PaginatedTable = ({
         String(created_at).toLowerCase().includes(query) ||
         String(userName).toLowerCase().includes(query) ||
         String(amount_total).toLowerCase().includes(query) ||
-        String(status).toLowerCase().includes(query)
+        String(status).toLowerCase().includes(query) ||
+        String(total).toLowerCase().includes(query)
       );
     });
   }, [data, searchQuery]);
@@ -63,29 +66,42 @@ const PaginatedTable = ({
   const sortedData = useMemo(() => {
     const safeFilteredData = filteredData || [];
     if (!sortConfig.key) return safeFilteredData;
+
     return [...safeFilteredData].sort((a, b) => {
       if (!a || !b) return 0;
-      let aVal, bVal;
-      if (sortConfig.key === "created_at") {
-        aVal = new Date(a.created_at || "");
-        bVal = new Date(b.created_at || "");
-      } else if (sortConfig.key === "amount_total") {
-        aVal = a.metadata?.amount_total || 0;
-        bVal = b.metadata?.amount_total || 0;
+
+      if (sortConfig.key === "status" && (sortConfig.direction === "statusPaidFirst" || sortConfig.direction === "statusOpenFirst")) {
+        const aPaid = a.status === "paid";
+        const bPaid = b.status === "paid";
+        if (sortConfig.direction === "statusPaidFirst") {
+          return aPaid === bPaid ? 0 : aPaid ? -1 : 1;
+        } else if (sortConfig.direction === "statusOpenFirst") {
+          return aPaid === bPaid ? 0 : aPaid ? 1 : -1;
+        }
+        return 0;
       } else {
-        const key = sortConfig.key as Exclude<keyof Order, "metadata">;
-        aVal = typeof a[key] === "string" || typeof a[key] === "number" ? a[key] : "";
-        bVal = typeof b[key] === "string" || typeof b[key] === "number" ? b[key] : "";
-      }
+        let aVal, bVal;
+        if (sortConfig.key === "created_at") {
+          aVal = new Date(a.created_at || "").getTime();
+          bVal = new Date(b.created_at || "").getTime();
+        } else if (sortConfig.key === "amount_total") {
+          aVal = a.metadata?.amount_total || 0;
+          bVal = b.metadata?.amount_total || 0;
+        } else {
+          const key = sortConfig.key as Exclude<keyof Order, "metadata">;
+          aVal = typeof a[key] === "string" || typeof a[key] === "number" ? a[key] : "";
+          bVal = typeof b[key] === "string" || typeof b[key] === "number" ? b[key] : "";
+        }
 
-      if (typeof aVal === "string" && typeof bVal === "string") {
-        aVal = aVal.toLowerCase();
-        bVal = bVal.toLowerCase();
-      }
+        if (typeof aVal === "string" && typeof bVal === "string") {
+          aVal = aVal.toLowerCase();
+          bVal = bVal.toLowerCase();
+        }
 
-      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
+        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      }
     });
   }, [filteredData, sortConfig]);
 
@@ -99,11 +115,16 @@ const PaginatedTable = ({
   };
 
   const handleSort = (sortKey: string) => {
-    let direction: "asc" | "desc" = "asc";
-    if (sortConfig.key === sortKey && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key: sortKey, direction });
+    setSortConfig(prev => {
+      if (prev.key === sortKey && prev.direction === "asc") {
+        return { key: sortKey, direction: "desc" };
+      } else if (prev.key === sortKey && prev.direction === "desc") {
+        return { key: sortKey, direction: "asc" };
+      } else if (sortKey === "status") {
+        return { key: sortKey, direction: prev.direction === "statusPaidFirst" ? "statusOpenFirst" : "statusPaidFirst" };
+      }
+      return { key: sortKey, direction: "asc" };
+    });
     setCurrentPage(1);
   };
 
@@ -176,7 +197,11 @@ const PaginatedTable = ({
                 >
                   {col.name}
                   {col.sortable && sortConfig.key === col.sortKey && (
-                    <span>{sortConfig.direction === "asc" ? " 🔼" : " 🔽"}</span>
+                    <span>
+                      {sortConfig.key === "status" 
+                        ? (sortConfig.direction === "statusPaidFirst" ? " (Pago Primeiro)" : " (Aberto Primeiro)")
+                        : sortConfig.direction === "asc" ? " 🔼" : " 🔽"}
+                    </span>
                   )}
                 </div>
               ))}
@@ -198,8 +223,7 @@ const PaginatedTable = ({
                     </div>
                   ))}
                 </div>
-                ),
-              )}
+              ))}
             </div>
           </div>
         </div>
