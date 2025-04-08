@@ -8,6 +8,7 @@ import { UserType } from "@/src/models/user";
 import Api from "@/src/services/api";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { Button } from "@/src/components/ui/form";
+import { GetStaticPropsContext } from "next";
 
 interface MenuItem {
   title: string;
@@ -16,9 +17,10 @@ interface MenuItem {
   endpoint: string;
 }
 
-export async function getStaticProps(ctx: any) {
+export async function getStaticProps(ctx: GetStaticPropsContext) {
   const api = new Api();
 
+  /* TO DO - TIPAR E ARRANCAR any */
   let request: any = await api.content({method: 'get', url: `dashboard` });
 
   const DataSeo = request?.data?.DataSeo ?? {};
@@ -61,6 +63,7 @@ export const menuDashboard: MenuItem[] = [
   },
 ];
 
+/* TO DO - TIPAR E ARRANCAR any */
 export default function Dashboard({ HeaderFooter, Dashboard }: any) {
   const { UserLogout } = useContext(AuthContext);
 
