@@ -198,9 +198,9 @@ const PaginatedTable = ({
                   {col.name}
                   {col.sortable && sortConfig.key === col.sortKey && (
                     <span>
-                      {sortConfig.key === "status" 
-                        ? (sortConfig.direction === "statusPaidFirst" ? " (Pago Primeiro)" : " (Aberto Primeiro)")
-                        : sortConfig.direction === "asc" ? " 🔼" : " 🔽"}
+                      {col.sortable && sortConfig.key === col.sortKey && (
+                        <span>{sortConfig.direction === "asc" ? " 🔼" : " 🔽"}</span>
+                      )}
                     </span>
                   )}
                 </div>
