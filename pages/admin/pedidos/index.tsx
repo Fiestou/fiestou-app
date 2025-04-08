@@ -6,7 +6,7 @@ import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { moneyFormat } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import PaginatedTable from "./components/PaginatedTable";
+import PaginatedTable from "@/src/components/pages/paginated-table/PaginatedTable";
 import { GetServerSideProps } from "next";
 
 interface Order {
@@ -33,7 +33,14 @@ interface ApiResponse {
   data?: Order[];
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
+interface Column {
+  name: string;
+  width?: string;
+  sortable?: boolean;
+  sortKey?: string;
+  selector: (row: Order) => React.ReactNode;
+}
+
   const api = new Api();
   try {
     const request = await api.bridge({
@@ -115,7 +122,7 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
     router.replace(`/admin/pedidos?t=${Date.now()}`);
   };
 
-  const columns = [
+  const columns: Column[] = [
     {
       name: "Pedido",
       width: "10rem",
@@ -164,9 +171,7 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       width: "30rem",
       sortable: true,
       sortKey: "amount_total",
-      selector: (row: Order) => (
-        moneyFormat(row.metadata?.amount_total || 0)
-      )
+      selector: (row: Order) => moneyFormat(row.metadata?.amount_total || 0),
     },
     {
       name: "Status",
@@ -282,4 +287,28 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       </section>
     </Template>
   );
-} 
+}
+
+export async function getStaticProps() {
+  const api = new Api();
+  try {
+    const request = (await api.bridge({
+      method: "post",
+      url: "orders/list",
+    })) as ApiResponse;
+    return {
+      props: {
+        initialOrders: request?.data || [],
+      },
+      revalidate: 60,
+    };
+  } catch (error) {
+    console.error("Erro ao buscar pedidos no getStaticProps", error);
+    return {
+      props: {
+        initialOrders: [],
+      },
+      revalidate: 60,
+    };
+  }
+}

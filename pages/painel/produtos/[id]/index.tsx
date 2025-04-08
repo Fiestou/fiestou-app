@@ -46,6 +46,7 @@ export async function getServerSideProps(
 
   const request: any = await api.call(
     {
+      method: 'post',
       url: "request/graph",
       data: [
         {
@@ -137,7 +138,7 @@ export default function Form({
           busca: search,
           limit: 10,
         },
-      });
+      }) as RelationType[];
 
       if (request.response && !!request?.data.length) {
         let handle = request?.data?.map((item: any) => {
@@ -146,7 +147,7 @@ export default function Form({
             slug: item.slug,
             image: [],
             title: item.title,
-          } as RelationType;
+          };
         });
 
         setProductsFind(handle);
@@ -157,7 +158,7 @@ export default function Form({
   const [product, setProduct] = useState({} as ProductType);
   const getProduct = async () => {
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "products/form",
       data: { id: id },
     });
@@ -196,7 +197,7 @@ export default function Form({
     setSubimitStatus("register_content");
 
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "products/register",
       data: data,
     });

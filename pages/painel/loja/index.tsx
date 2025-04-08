@@ -25,6 +25,7 @@ export async function getServerSideProps(
 
   request = await api.call(
     {
+      method: 'post',
       url: "request/graph",
       data: [
         {
@@ -113,7 +114,7 @@ export default function Loja({
 
   const getStore = async () => {
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "stores/form",
     });
 
@@ -221,7 +222,7 @@ export default function Loja({
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "stores/register",
       data: handle,
     });
@@ -325,7 +326,7 @@ export default function Loja({
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "stores/register",
       data: handle,
     });

@@ -54,7 +54,7 @@ export default function Completar({ auth }: any) {
     delete data["image"];
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "users/update",
       data: { ...data, origin: "complete" },
     });

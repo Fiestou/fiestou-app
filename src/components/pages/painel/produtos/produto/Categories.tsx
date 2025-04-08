@@ -2,7 +2,7 @@
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import Img from "@/src/components/utils/ImgBase";
 import { getImage } from "@/src/helper";
-import { RelationType } from "@/src/models/relation";
+import { AssociatedElement, RelationType } from "@/src/models/relation";
 import Api from "@/src/services/api";
 import { useEffect, useState } from "react";
 
@@ -47,7 +47,7 @@ export default function Categories({
 
   const getCategories = async () => {
     let request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "categories/list",
     });
 
@@ -69,7 +69,7 @@ export default function Categories({
 
       let handle: any = [];
 
-      if (!!master.metadata.limitSelect) {
+      if (master && master.metadata && master.metadata.limitSelect) {
         handle = !!selected.find((item: any) => item == id)
           ? selected.filter((item: any) => item != id)
           : limit < parseInt(master.metadata.limitSelect)
@@ -88,7 +88,7 @@ export default function Categories({
 
   const renderCategories = (
     master: RelationType,
-    childs?: Array<RelationType>
+    childs?: AssociatedElement[]
   ) => {
     return (
       !!childs?.length && (
@@ -100,7 +100,7 @@ export default function Categories({
                   <div
                     className=""
                     onClick={() => {
-                      handleRelationship(item.id, master);
+                      handleRelationship(Number(item.id) || 0, master)
                     }}
                   >
                     <Checkbox
@@ -128,7 +128,7 @@ export default function Categories({
                 </div>
                 {!!item?.childs?.length && (
                   <div className="pl-4">
-                    {renderCategories(master, item.childs)}
+                    {renderCategories(master, item.childs || [])}
                   </div>
                 )}
               </div>

@@ -92,6 +92,7 @@ export default function FileManager(attr: FileManagerType) {
 
       if (upload.response && !!upload.medias) {
         const request: any = await api.graph({
+          method: 'post',
           url: "files/list-medias",
         });
 
@@ -139,6 +140,7 @@ export default function FileManager(attr: FileManagerType) {
     setModalStatus(true);
 
     const request: any = await api.graph({
+      method: 'post',
       url: "files/list-medias",
     });
 
@@ -169,7 +171,7 @@ export default function FileManager(attr: FileManagerType) {
           className={`block py-3 px-3 w-full ${attr?.className} border-zinc-300`}
         >
           <Icon icon="fa-image" />
-          {attr?.placeholder ?? "Selecionar"}
+          {attr.placeholder && attr.placeholder}
         </Button>
 
         {!!selecteds.medias?.length && (

@@ -1,10 +1,11 @@
-import { createContext, useEffect } from "react";
+import { createContext } from "react";
 import Api, { api } from "@/src/services/api";
 import Router from "next/router";
 import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
 import { signOut } from "next-auth/react";
 import { isCEPInRegion } from "../helper";
+import { CheckMail } from "../models/CheckEmail";
 
 type SignInData = {
   email: string;
@@ -45,7 +46,7 @@ export const AuthCheck = () => {
 
       if (!document.hidden) {
         const data: any = await api.bridge({
-          method: "post",
+          method: 'post',
           url: "me",
         });
 
@@ -74,12 +75,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     Cookies.remove("fiestou.authtoken");
     Cookies.remove("fiestou.user");
 
-    const data: any = await request.bridge({
+    const checkEmail: CheckMail = await request.bridge({
       method: "post",
+      url: "auth/checkin",
+      data: { ref: email },
+    }) as CheckMail;
+
+    if (checkEmail.response && !checkEmail.user){
+      return {
+        status: 422,
+        error: "Ops! O email não foi encontrado.",
+      };
+    }
+
+    const data: any = await request.bridge({
+      method: 'post',
       url: "auth/login",
       data: { email: email, password: password },
     });
-
+    
     if (!!data.token) {
       const user: UserType = data.user;
 
@@ -108,6 +122,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         Cookies.remove("fiestou.redirect");
         Router.push("/checkout");
         return {} as UserType;
+      }
+      
+      if (user?.person == "master") {
+        Router.push("/admin");
+      }else if (user?.person == "partner") {
+        Router.push("/painel");
+      }else if (user.person == "delivery") {
+        Router.push("/delivery");
+      } else if (!Cookies.get("fiestou.cart")) {
+        Router.push("/dashboard");
+      } else {
+        Router.push('/checkout')
       }
 
       return {

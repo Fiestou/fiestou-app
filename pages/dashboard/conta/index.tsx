@@ -65,7 +65,7 @@ export default function Conta({ user }: any) {
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "users/update",
       data: handle,
     });

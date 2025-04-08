@@ -3,6 +3,7 @@ import { getZipCode, justNumber } from "@/src/helper";
 import { AddressType } from "@/src/models/address";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useState } from "react";
+import { formatCep } from "../../utils/FormMasks";
 
 export default function AddressCheckoutForm(attrs: any) {
   const [mounted, setMounted] = useState(false as boolean);
@@ -20,7 +21,7 @@ export default function AddressCheckoutForm(attrs: any) {
   useEffect(() => {
     const handle = {} as AddressType;
 
-    handle["zipCode"] = zipCode;
+    handle["zipCode"] = justNumber(zipCode);
     handle["street"] = street;
     handle["number"] = number;
     handle["neighborhood"] = neighborhood;
@@ -47,7 +48,7 @@ export default function AddressCheckoutForm(attrs: any) {
     if (!mounted) {
       setMounted(true);
 
-      setZipCode(attrs.address?.zipCode ?? "");
+      setZipCode(formatCep(attrs.address?.zipCode ?? ""));
       setStreet(attrs.address?.street ?? "");
       setNumber(attrs.address?.number ?? "");
       setNeighborhood(attrs.address?.neighborhood ?? "");
@@ -60,9 +61,9 @@ export default function AddressCheckoutForm(attrs: any) {
   }, [attrs.address]);
 
   const handleZipCode = async () => {
-    const location = await getZipCode(zipCode);
+    const rawZipCode = justNumber(zipCode);
+    const location = await getZipCode(rawZipCode);
 
-    setZipCode(justNumber(zipCode));
     setCountry("Brasil");
 
     if (!location?.erro) {
@@ -71,28 +72,28 @@ export default function AddressCheckoutForm(attrs: any) {
       setCity(location.localidade);
       setState(location.uf);
       setMain(true);
+      setZipCode(formatCep(rawZipCode));
     }
   };
 
   return (
     <>
       <div className="grid gap-2">
-        <div className="relative">
+        <div className="relative"> 
           <input
             name="cep"
-            onChange={(e: any) => setZipCode(e.target.value)}
+            onChange={(e: any) => setZipCode(formatCep(e.target.value))}
             required
             value={zipCode ?? ""}
             placeholder="CEP"
             className="form-control pr-[3rem]"
+            onBlur={() => setZipCode(formatCep(zipCode))}
           />
           <Button
-            type="button"
-            style="btn-light"
-            onClick={() => handleZipCode()}
             className="absolute top-1/2 -translate-y-1/2 right-0 p-3 mr-1"
+            onClick={() => zipCode ? handleZipCode() : alert("Por favor, informe o CEP antes de buscar!")} 
           >
-            <Icon icon="fa-search" />
+              <Icon icon="fa-search" />
           </Button>
         </div>
         <div className="flex gap-2">

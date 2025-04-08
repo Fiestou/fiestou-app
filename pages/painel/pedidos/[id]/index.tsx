@@ -36,7 +36,7 @@ export async function getServerSideProps(ctx: any) {
 
   let request: any = await api.bridge(
     {
-      method: "post",
+      method: 'post',
       url: "suborders/get",
       data: {
         id: query.id,
@@ -103,7 +103,7 @@ export default function Pedido({
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "suborders/register",
       data: handle,
     });

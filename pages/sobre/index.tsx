@@ -20,7 +20,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.content({ url: `about` });
+  let request: any = await api.content({method: 'get', url: `about` });
 
   const About = request?.data?.About ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};

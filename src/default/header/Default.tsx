@@ -105,7 +105,7 @@ export default function Default({
               </div>
             </div>
 
-            <div className="w-fit order-3 lg:order-4 flex items-center gap-4 md:gap-8">
+            <div className="w-fit order-3 lg:order-4 flex items-center gap-4 md:gap-8"> 
               {!!user?.id ? <User user={user} /> : <Login content={content} />}
             </div>
 

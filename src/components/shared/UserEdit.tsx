@@ -10,6 +10,7 @@ import { UserType } from "@/src/models/user";
 import Img from "@/src/components/utils/ImgBase";
 import FileInput from "@/src/components/ui/form/FileInputUI";
 import { getExtenseData } from "@/src/helper";
+import { formatName, formatPhone } from "src/components/utils/FormMasks";
 
 const formInitial = {
   edit: "",
@@ -118,7 +119,7 @@ export default function UserEdit({ user }: { user: UserType }) {
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "users/update",
       data: handle,
     });
@@ -147,7 +148,7 @@ export default function UserEdit({ user }: { user: UserType }) {
     };
 
     const request: any = await api.bridge({
-      method: "post",
+      method: 'post',
       url: "users/update",
       data: handle,
     });
@@ -218,24 +219,21 @@ export default function UserEdit({ user }: { user: UserType }) {
               Nome completo
             </h4>
           </div>
-          <div className="w-fit text-sm md:text-base">
-            {renderAction("name")}
-          </div>
+          <div className="w-fit text-sm md:text-base">{renderAction("name")}</div>
         </div>
         <div className="w-full text-sm md:text-base">
           {form.edit == "name" ? (
             <input
               className="form-control"
-              onChange={(e: any) => handleContent({ name: e.target.value })}
-              defaultValue={content?.name}
+              value={content?.name ?? ""}
+              onChange={(e: any) => handleContent({ name: formatName(e.target.value) })}
               placeholder="Digite o nome aqui"
             />
           ) : (
-            oldUser?.name ?? "Informe seu nome"
+            oldUser?.name ? formatName(oldUser.name) : "Informe seu nome"
           )}
         </div>
       </form>
-      {/*  */}
       <form
         onSubmit={(e: any) => handleSubmit(e)}
         method="POST"
@@ -356,21 +354,19 @@ export default function UserEdit({ user }: { user: UserType }) {
               Número de telefone
             </h4>
           </div>
-          <div className="w-fit text-sm md:text-base">
-            {renderAction("phone")}
-          </div>
+          <div className="w-fit text-sm md:text-base">{renderAction("phone")}</div>
         </div>
         <div className="w-full text-sm md:text-base">
           {form.edit == "phone" ? (
             <input
               className="form-control"
               name="celular"
-              onChange={(e: any) => handleContent({ phone: e.target.value })}
-              defaultValue={content?.phone}
+              value={content?.phone ?? ""}
+              onChange={(e: any) => handleContent({ phone: formatPhone(e.target.value) })}
               placeholder="Digite o número de celular aqui"
             />
           ) : (
-            oldUser?.phone ?? "Informe seu número de celular"
+            oldUser?.phone ? formatPhone(oldUser.phone) : "Informe seu número de celular"
           )}
         </div>
       </form>
