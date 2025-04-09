@@ -54,9 +54,9 @@ interface Order {
   metadata?: {
     payment_method: string;
     installments: string;
-    amount_total: number;
     items?: { name: string; quantity: number; price: number }[];
   };
+  total: number;
   productsData?: ProductData[];
 }
 
@@ -252,7 +252,7 @@ export default function OrderDetails() {
 
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-3">
-                  Valor: {order?.metadata?.amount_total ? 'R$ ' + moneyFormat(order.metadata?.amount_total) : 'Não informado'}
+                  Valor: {order?.total ? 'R$ ' + moneyFormat(order?.total) : 'Não informado'}
                 </h2>
               </div>
   
