@@ -251,6 +251,7 @@ class OrdersController extends Controller
             'id' => $order->id,
             'user' => $order->userDetail,
             'metadata' => $transformedMetadata,
+            'total' => $order->total,
             'deliveryStatus' => $order->deliveryStatus,
             'deliveryAddress' => $order->deliveryAddress,
             'deliverySchedule' => $order->deliverySchedule,
