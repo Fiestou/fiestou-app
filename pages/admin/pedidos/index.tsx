@@ -16,6 +16,7 @@ interface Order {
   metadata?: {
     amount_total: number;
   };
+  total: number;
   status: string;
   partnerName: string;
   partnerEmail: string;
@@ -97,6 +98,10 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
     router.replace(`/admin/pedidos?t=${Date.now()}`);
   };
 
+  const getFilteredOrders = () => {
+    return [...orders];
+  };
+
   const columns: Column[] = [
     {
       name: "Pedido",
@@ -145,17 +150,17 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       name: "Total (R$)",
       width: "30rem",
       sortable: true,
-      sortKey: "amount_total",
-      selector: (row: Order) => moneyFormat(row.metadata?.amount_total || 0),
+      sortKey: "total",
+      selector: (row: Order) => moneyFormat(row.total || 0),
     },
     {
       name: "Status",
       width: "40rem",
+      sortable: true,
+      sortKey: "status",
       selector: (row: Order) => (
         <div
-          className={`rounded-md text-center py-2 ${
-            row.status === "paid" ? "bg-green-200" : "bg-yellow-200"
-          }`}
+          className={`rounded-md text-center py-2 ${row.status === "paid" ? "bg-green-200" : "bg-yellow-200"}`}
         >
           {row.status === "paid" ? "Pago" : "Em Aberto"}
         </div>
@@ -252,8 +257,8 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
             </div>
           ) : (
             <PaginatedTable 
-              data={orders} 
-              columns={columns} 
+              data={getFilteredOrders()}
+              columns={columns}
               itemsPerPage={6}
               key={`orders-table-${orders.length}-${timestamp}`}
             />
@@ -264,26 +269,27 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
   );
 }
 
-export async function getStaticProps() {
+export const getServerSideProps: GetServerSideProps = async () => {
   const api = new Api();
   try {
     const request = (await api.bridge({
       method: "post",
       url: "orders/list",
     })) as ApiResponse;
+    
     return {
       props: {
         initialOrders: request?.data || [],
+        timestamp: Date.now(),
       },
-      revalidate: 60,
     };
   } catch (error) {
-    console.error("Erro ao buscar pedidos no getStaticProps", error);
+    console.error("Erro ao buscar pedidos no getServerSideProps", error);
     return {
       props: {
         initialOrders: [],
+        timestamp: Date.now(),
       },
-      revalidate: 60,
     };
   }
 }
