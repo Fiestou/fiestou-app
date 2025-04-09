@@ -131,8 +131,10 @@ class OrdersController extends Controller
             $order->deliveryAddress = json_decode($order->deliveryAddress, true);
             $order->listItems = json_decode($order->listItems, true);
             $order->metadata = json_decode($order->metadata, true);
+            $order->status = $order->metadata['payment_status'] ?? 'Não informado';
             $order->userName = $order->userDetail->name ?? 'Usuário não encontrado';
             $order->userEmail = $order->userDetail->email ?? 'Email não encontrado';
+            $order->total = $order->total ?? 'Valor não informado';
         
             $storeIds = [];
         
@@ -249,6 +251,7 @@ class OrdersController extends Controller
             'id' => $order->id,
             'user' => $order->userDetail,
             'metadata' => $transformedMetadata,
+            'total' => $order->total,
             'deliveryStatus' => $order->deliveryStatus,
             'deliveryAddress' => $order->deliveryAddress,
             'deliverySchedule' => $order->deliverySchedule,
