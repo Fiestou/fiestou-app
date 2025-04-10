@@ -965,7 +965,7 @@ export default function Produto({
                     </div>
                   </div>
 
-                  <div className="bg-white drop-shadow-2xl md:drop-shadow-none fixed z-[20] md:-mx-4 md:relative w-full md:w-auto left-0 bottom-0 flex justify-between">
+                  <div className={`bg-white ${layout.isMobile ? 'relative' : 'drop-shadow-2xl fixed z-[20] -mx-4 w-full left-0 bottom-0'} md:drop-shadow-none md:relative md:w-auto flex justify-between`}>
                     {!!productToCart?.total && (
                       <>
                         <div className="leading-tight self-center w-full px-4">
@@ -985,7 +985,7 @@ export default function Produto({
                           </strong><br />{" "}
                           <p>Esse produto é entregue em até <strong>{product?.availability}{" "}</strong>
                           dia
-                          {product?.availability > 1 ? `s` : ""}.</p>
+                          {Number(product?.availability || 0) > 1 ? `s` : ""}.</p>
                         </div><br />
                           <div className="text-xs">
                             {!!productToCart?.details?.dateStart
