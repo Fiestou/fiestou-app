@@ -356,23 +356,36 @@ export default function Filter(params: { store?: string; busca?: string }) {
               <div className={`flex md:flex-wrap gap-2 ${groupIndex === 0 ? "space-x-2" : ""}`}>
                 {group.elements.map((element: Element, index: number) => (
                   <div
-                    key={index}
-                    className={`border cursor-pointer ease relative rounded p-2 ${element.checked ? "border-zinc-800 hover:border-zinc-500" : "hover:border-zinc-300"
-                      } ${groupIndex === 0 ? "flex flex-col items-center p-4 w-[90px]" : ""}`}
-                    onClick={() => {
-                      onClickElementFilter(element.id, element.checked, element.descendants || []);
-                    }}
-                  >
-                    <div className={`flex items-center gap-2 ${groupIndex === 0 ? "flex-col" : ""}`}>
+                  key={index}
+                  className={`
+                    border cursor-pointer ease relative rounded
+                    ${element.checked 
+                      ? "border-zinc-800 hover:border-zinc-500" 
+                      : "hover:border-zinc-300"
+                    }
+                    flex flex-col items-center p-2 w-auto
+                  `}
+                  onClick={() => {
+                    onClickElementFilter(element.id, element.checked, element.descendants || []);
+                  }}
+                >
+                    <div className={`flex items-center gap-2 ${groupIndex === 0 ? "flex-col" : "flex-row whitespace-nowrap"}`}>
                       {element.icon && (
                         <Img
                           src={element.icon}
-                          className={`object-contain ${groupIndex === 0 ? "h-[40px] w-[40px]" : "h-[20px] w-[20px]"}`}
+                          className={`object-contain ${
+                            groupIndex === 0 
+                              ? "h-[40px] w-[40px]" 
+                              : "h-[20px] w-[20px] flex-shrink-0"
+                          }`}
                         />
                       )}
                       <div
-                        className={`whitespace-nowrap text-sm md:text-base ${groupIndex === 0 ? "text-center font-medium" : ""
-                          }`}
+                        className={`text-sm md:text-base ${
+                          groupIndex === 0 
+                            ? "text-center font-medium" 
+                            : "font-normal whitespace-nowrap"
+                        }`}
                       >
                         {element.name}
                       </div>
