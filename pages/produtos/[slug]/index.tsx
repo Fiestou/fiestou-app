@@ -404,8 +404,6 @@ export default function Produto({
       },
     });
 
-    console.log(request, "request");
-
     setMatch(request?.data ?? []);
   };
 
@@ -902,10 +900,9 @@ export default function Produto({
                     </div>
                   </div> 
 
-                  <div className={`bg-white ${layout.isMobile ? 'relative' : 'drop-shadow-2xl fixed z-[20] -mx-4 w-full left-0 bottom-0'} md:drop-shadow-none md:relative md:w-auto flex justify-between`}>
+                  <div className="bg-white relative w-full mb-6">
                     {!!productToCart?.total && (
-                      <>
-                        <div className="leading-tight self-center w-full px-4">
+                      <div className="leading-tight w-full">
                         <div>
                           <strong className="text-zinc-950">
                           {!!product?.availability && (
@@ -923,7 +920,15 @@ export default function Produto({
                           <p>Esse produto é entregue em até <strong>{product?.availability}{" "}</strong>
                           dia
                           {Number(product?.availability || 0) > 1 ? `s` : ""}.</p>
-                        </div><br />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-white drop-shadow-2xl md:drop-shadow-none fixed z-[20] md:-mx-4 md:relative w-full md:w-auto left-0 bottom-0 flex justify-between">
+                    {!!productToCart?.total && (
+                      <>
+                        <div className="leading-tight self-center w-full px-4">
                           <div className="text-xs">
                             {!!productToCart?.details?.dateStart
                               ? dateBRFormat(productToCart?.details?.dateStart)
