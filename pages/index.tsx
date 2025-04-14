@@ -18,12 +18,15 @@ import Product from "@/src/components/common/Product";
 import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
 import Filter from "@/src/components/common/Filter";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { GroupsResponse } from "../src/types/filtros/response";
+import { useGroup } from "@/src/store/filter";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
   let request: any = await api.content({
+    method: 'get',
     url: `home`,
   });
 
@@ -66,6 +69,9 @@ export default function Home({
   DataSeo: any;
   Scripts: any;
 }) {
+  const api = new Api();
+  const { setGroups } = useGroup();
+
   const renderImageSlider = (slide: any) => {
     return getImage(slide?.main_slide_cover, "default") ? (
       <>
@@ -88,6 +94,24 @@ export default function Home({
       <></>
     );
   };
+
+  const getFilters = async () => {
+    const request = await api.request<GroupsResponse>(
+      {
+        method: 'get',
+        url: 'group/list'
+      }
+    )
+
+    if (request.data && request.response) {
+      setGroups(request.data)
+    }
+  }
+  
+  useEffect(()=>{
+    getFilters()
+  }, [])
+
   const [imgLinks] = useState<string[]>([Home?.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)]);
   return (
     <Template
@@ -131,7 +155,7 @@ export default function Home({
                 style={{ backgroundColor: "#2dc3ff" }}
               >
                 {key > 0 && !!slide?.main_slide_redirect?.url && slide ? (
-                  <Link href={slide?.main_slide_redirect?.url }>
+                  <Link href={slide?.main_slide_redirect?.url}>
                     {renderImageSlider(slide)}
                   </Link>
                 ) : (

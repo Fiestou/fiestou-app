@@ -14,6 +14,7 @@ export async function getServerSideProps(ctx: any) {
 
   const request: any = await api.call(
     {
+      method: 'post',
       url: "request/graph",
       data: [
         {
@@ -84,7 +85,7 @@ export default function MeusDados({ page }: { page: any }) {
           </div>
           <div className="grid md:flex gap-4 items-center w-full">
             <div className="w-full flex items-center">
-              <Link passHref href="/painel/meus-dados">
+              <Link passHref href="/painel">
                 <Icon
                   icon="fa-long-arrow-left"
                   className="mr-6 text-2xl text-zinc-900"

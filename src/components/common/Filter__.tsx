@@ -161,7 +161,7 @@ export default function Filter__(params: any) {
                   onClick={() => setFilterModal(true)}
                   className="font-normal px-3 md:pl-8 md:pr-7 h-full hover:bg-zinc-50"
                 >
-                  <span className="hidden md:block">Filtros </span>
+                  <span className="hidden md:block">Filtros</span>
                   {!!count ? (
                     <div className="rounded-full bg-yellow-300 p-3 text-sm font-semibold relative">
                       <div className="text-zinc-900 absolute top-50 left-50 -translate-x-1/2 -translate-y-1/2">

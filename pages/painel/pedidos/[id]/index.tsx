@@ -16,12 +16,27 @@ import { useRouter } from "next/router";
 import { deliveryToName, deliveryTypes } from "@/src/models/delivery";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
+interface OrderItem {
+  quantity: number;
+  product: {
+    title: string;
+    description?: string;
+    sku?: string;
+  };
+  total: number;
+  details?: {
+    dateStart?: string;
+    dateEnd?: string;
+  };
+}
+
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
-  const query = ctx.query;
+  const query = ctx.query;  
 
   let request: any = await api.bridge(
     {
+      method: 'post',
       url: "suborders/get",
       data: {
         id: query.id,
@@ -88,6 +103,7 @@ export default function Pedido({
     };
 
     const request: any = await api.bridge({
+      method: 'post',
       url: "suborders/register",
       data: handle,
     });
@@ -167,52 +183,50 @@ export default function Pedido({
                 </div>
               </div>
               <div className="border rounded-xl p-4 lg:p-8">
-                {!!order.listItems.length &&
-                  order.listItems.map((item: any, key: any) => {
-                    return (
-                      <div key={key}>
-                        <div className="flex">
-                          <div className="w-full grid gap-4">
-                            <h5 className="font-title text-zinc-900 font-bold text-lg">
-                              {item.quantity} x {item.product.title}
-                            </h5>
-                            {!!item.product.description && (
-                              <div>{item.product.description}</div>
-                            )}
-
-                            {!!item.product.sku && (
-                              <div className="text-sm">
-                                SKU: {item.product.sku}
-                              </div>
-                            )}
-                          </div>
-                          <div className="font-title text-zinc-900 font-bold text-lg whitespace-nowrap">
-                            R$ {moneyFormat(item.total)}
-                          </div>
-                        </div>
-                        {!!item.details.dateStart && (
-                          <>
-                            <div className="py-4">
-                              <hr />
-                            </div>
-                            <div className="flex">
-                              <div className="w-full">Pedido para</div>
-                              <div className="whitespace-nowrap">
-                                {dateBRFormat(item.details.dateStart)}
-                                {!!item.details.dateEnd &&
-                                  item.details.dateStart !=
-                                    item.details.dateEnd &&
-                                  ` - ${dateBRFormat(item.details.dateEnd)}`}
-                              </div>
-                            </div>
-                          </>
+              {order && order.listItems && Array.isArray(order.listItems) ? (
+                order.listItems.map((item: OrderItem, key: number) => (
+                  <div key={key}>
+                    <div className="flex">
+                      <div className="w-full grid gap-4">
+                        <h5 className="font-title text-zinc-900 font-bold text-lg">
+                          {item.quantity} x {item.product.title}
+                        </h5>
+                        {item.product.description && (
+                          <div>{item.product.description}</div>
                         )}
+
+                        {item.product.sku && (
+                          <div className="text-sm">SKU: {item.product.sku}</div>
+                        )}
+                      </div>
+                      <div className="font-title text-zinc-900 font-bold text-lg whitespace-nowrap">
+                        R$ {moneyFormat(item.total)}
+                      </div>
+                    </div>
+                    {item.details?.dateStart && (
+                      <>
                         <div className="py-4">
                           <hr />
                         </div>
-                      </div>
-                    );
-                  })}
+                        <div className="flex">
+                          <div className="w-full">Pedido para</div>
+                          <div className="whitespace-nowrap">
+                            {dateBRFormat(item.details.dateStart)}
+                            {item.details.dateEnd &&
+                              item.details.dateStart !== item.details.dateEnd &&
+                              ` - ${dateBRFormat(item.details.dateEnd)}`}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    <div className="py-4">
+                      <hr />
+                    </div>
+                  </div>
+                  ))
+                ) : (
+                  <p className="text-zinc-500">Nenhum item encontrado neste pedido</p>
+                )}
                 <div className="flex text-zinc-900">
                   <div className="w-full text-2xl">Total</div>
                   <div className="w-fit pt-1 font-title font-bold text-2xl whitespace-nowrap">
@@ -346,12 +360,12 @@ export default function Pedido({
                         </div>
                       )}
                     </div>
-                    {/* <Select
+                    <Select
                       name="status_entrega"
                       onChange={(e: any) => setDeliveryStatus(e.target.value)}
                       value={data.deliveryStatus ?? "pending"}
                       options={deliveryTypes}
-                    /> */}
+                    />
                   </div>
                   <div className="text-zinc-900 text-right">
                     {!dropdownDelivery && (
@@ -370,8 +384,6 @@ export default function Pedido({
           </div>
         </div>
       </section>
-
-      {/* <pre className="whitespace-wrap">{print_r(suborder)}</pre> */}
     </Template>
   );
 }

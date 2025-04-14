@@ -24,6 +24,7 @@ export async function getStaticProps(ctx: any) {
 
   let request: any = await api.content(
     {
+      method: 'get',
       url: "products",
     },
     ctx
@@ -59,7 +60,7 @@ export async function getStaticProps(ctx: any) {
     props: {
       page: params?.page ?? 1,
       paginate: pages,
-      products: request?.data ?? [],
+      products: Array.isArray(request?.data) ? request.data : [],
       content: content,
       HeaderFooter: HeaderFooter,
       DataSeo: DataSeo,
@@ -147,12 +148,11 @@ export default function Produtos({
 
       <section className="container-medium md:pt-6">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 py-6">
-          {products &&
-            products.map((item, key) => (
-              <div key={key}>
-                <Product product={item} />
-              </div>
-            ))}
+          {Array.isArray(products) && products.map((item, key) => (
+            <div key={key}>
+              <Product product={item} />
+            </div>
+          ))} 
         </div>
 
         <div className="pt-4 pb-14">

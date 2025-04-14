@@ -33,6 +33,7 @@ export default function Gallery({
     setDeleting([...deleting, media.id]);
 
     let request: any = await api.bridge({
+      method: 'post',
       url: `products/remove-gallery`,
       data: {
         id: product ?? "",
@@ -48,6 +49,7 @@ export default function Gallery({
     setPlaceholders(e.target.files.length);
 
     let request: any = await api.bridge({
+      method: 'post',
       url: `products/upload-gallery`,
       data: {
         product: product ?? "",
@@ -63,7 +65,7 @@ export default function Gallery({
     const handle = request.data;
 
     emitProduct(handle.product);
-    setHandleGallery([...handleGallery, ...handle.medias]);
+    setHandleGallery([...handleGallery, ...(handle.medias || [])]);
     setPlaceholders(0);
   };
 

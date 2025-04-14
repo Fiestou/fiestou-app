@@ -18,6 +18,7 @@ export async function getServerSideProps(ctx: any) {
   const api = new Api();
   let request: any = await api.call(
     {
+      method: 'post',
       url: "request/graph",
       data: [
         {
@@ -99,6 +100,7 @@ export default function Conta({ page }: { page: any }) {
     const handle: UserType = { ...content, id: user.id, bankAccounts: banks };
 
     const request: any = await api.bridge({
+      method: 'post',
       url: "users/update",
       data: handle,
     });

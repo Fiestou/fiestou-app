@@ -52,23 +52,6 @@ import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
 
 export const getStaticPaths = async (ctx: any) => {
-  // const api = new Api();
-  // const request: any = await api.request(
-  //   {
-  //     method: "get",
-  //     url: "request/products",
-  //   },
-  //   ctx
-  // );
-
-  // const products = request?.data ?? [];
-
-  // const paths = products
-  //   .filter((product: any) => !!product?.slug)
-  //   .map((product: any) => {
-  //     return { params: { slug: product?.slug } };
-  //   });
-
   return {
     paths: [],
     fallback: "blocking",
@@ -101,6 +84,7 @@ export async function getStaticProps(ctx: any) {
 
     request = await api.content(
       {
+        method: 'get',
         url: "product",
       },
       ctx
@@ -374,7 +358,6 @@ export default function Produto({
             {comments.map((item: CommentType, key: any) => (
               <div key={key} className="border-t pt-4">
                 <div className="flex gap-2 items-center">
-                  {/* <div className="relative overflow-hidden bg-zinc-200 p-4 rounded-full"></div> */}
                   <div className="w-full">
                     <div className="text-zinc-900 font-bold text-sm">
                       {item.user?.name ?? ""}
@@ -420,8 +403,6 @@ export default function Produto({
         limit: 10,
       },
     });
-
-    console.log(request, "request");
 
     setMatch(request?.data ?? []);
   };
@@ -670,8 +651,8 @@ export default function Produto({
                     modules={[Pagination, Navigation]}
                     centeredSlides={true}
                     navigation={{
-                      prevEl: ".swiper-gallery-prev", // define o botão anterior
-                      nextEl: ".swiper-gallery-next", // define o botão próximo
+                      prevEl: ".swiper-gallery-prev",
+                      nextEl: ".swiper-gallery-next",
                     }}
                     pagination={{
                       el: ".swiper-pagination",
@@ -759,9 +740,6 @@ export default function Produto({
                           </span>
                         </div>
                       )}
-                      {/* {!!product?.sku && (
-                        <Badge style="light">SKU {product?.sku}</Badge>
-                      )} */}
                       {product?.fragility == "yes" && (
                         <Badge style="light">
                           <Icon icon="fa-fragile" type="far" /> Atenção!
@@ -842,7 +820,6 @@ export default function Produto({
                 </div>
 
                 <div className="grid gap-6">
-                  {/* {JSON.stringify(activeVariations)} */}
                   {!!product?.attributes &&
                     (product?.attributes ?? [])?.map((attribute, index) => (
                       <div key={index} className="md:pt-4">
@@ -959,26 +936,6 @@ export default function Produto({
                                       }
                                       className="max-w-[8rem]"
                                     />
-
-                                    {/* <input
-                                      type="number"
-                                      onChange={(e) =>
-                                        updateOrder(
-                                          {
-                                            id: item.id,
-                                            title: item.title ?? "",
-                                            price: item.price,
-                                            quantity: parseInt(
-                                              e.target.value ?? 1
-                                            ),
-                                          },
-                                          attribute
-                                        )
-                                      }
-                                      min={0}
-                                      className="form-control text-center my-[.1rem] p-2 w-[4rem] h-[2rem]"
-                                      name={attribute.title}
-                                    /> */}
                                   </div>
                                 )}
                               </label>
@@ -1004,6 +961,31 @@ export default function Produto({
                         )}
                       </div>
                     </div>
+                  </div> 
+
+                  <div className="bg-white relative w-full mb-6">
+                    {!!productToCart?.total && (
+                      <div className="leading-tight w-full">
+                        <div>
+                          <strong className="text-zinc-950">
+                          {!!product?.availability && (
+                            <div className="flex gap-2 items-center">
+                              <div className="w-[1.25rem] flex justify-center">
+                                <Icon
+                                  icon="fa-truck"
+                                  type="far"
+                                  className="text-yellow-400 text-base"
+                                />
+                              </div>Entrega
+                            </div>
+                          )}
+                          </strong><br />{" "}
+                          <p>Esse produto é entregue em até <strong>{product?.availability}{" "}</strong>
+                          dia
+                          {Number(product?.availability || 0) > 1 ? `s` : ""}.</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-white drop-shadow-2xl md:drop-shadow-none fixed z-[20] md:-mx-4 md:relative w-full md:w-auto left-0 bottom-0 flex justify-between">
@@ -1021,32 +1003,15 @@ export default function Produto({
                           </div>
                         </div>
 
-                        <div className="relative grid w-fit p-3">
+                        <div className="text-center p-4">
                           {!inCart ? (
-                            <Button
-                              type={
-                                !!productToCart?.details?.dateStart
-                                  ? "submit"
-                                  : "button"
-                              }
-                              style={
-                                !!productToCart?.details?.dateStart
-                                  ? "btn-yellow"
-                                  : "btn-light"
-                              }
-                              className={`${
-                                !!productToCart?.details?.dateStart
-                                  ? ""
-                                  : "opacity-50 bg-zinc-200"
-                              } whitespace-nowrap py-2 px-5 md:px-8 md:py-4`}
-                            >
+                            <Button>
                               Adicionar
                             </Button>
                           ) : (
                             <Button
                               href="/carrinho"
-                              style="btn-light"
-                              className={`whitespace-nowrap py-2 px-5 md:px-8 md:py-4`}
+                              className="whitespace-nowrap"
                             >
                               Acessar carrinho
                             </Button>
@@ -1190,27 +1155,7 @@ export default function Produto({
                         </strong>{" "}
                         Garantia do Fiestou da entrega.
                       </div>
-                    </div>
-                    {!!product?.availability && (
-                      <div className="flex gap-2 items-center">
-                        <div className="w-[1.25rem] flex justify-center">
-                          <Icon
-                            icon="fa-clock"
-                            type="far"
-                            className="text-yellow-400 text-base"
-                          />
-                        </div>
-                        <div>
-                          <strong className="text-zinc-950">
-                            Entrega em {product?.availability} dia
-                            {product?.availability > 1 ? `s` : ""}:
-                          </strong>{" "}
-                          Esse produto é entregue em até {product?.availability}{" "}
-                          dia
-                          {product?.availability > 1 ? `s` : ""}.
-                        </div>
-                      </div>
-                    )}
+                    </div>                    
                   </div>
                 </div>
               </form>

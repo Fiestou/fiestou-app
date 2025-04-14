@@ -10,7 +10,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useEffect, useState } from "react";
 
 export async function getServerSideProps(ctx: any) {
-  const api = new Api();
+  const api = new Api(); 
   let request: any = {};
 
   let user = JSON.parse(ctx.req.cookies["fiestou.user"]);
@@ -30,6 +30,7 @@ export async function getServerSideProps(ctx: any) {
   user = request?.data ?? {};
 
   request = await api.content({
+    method: 'get',
     url: "account/user",
   });
 
