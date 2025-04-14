@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { moneyFormat } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import PaginatedTable from "@/src/components/pages/paginated-table/PaginatedTable";
+import { GetServerSideProps } from "next";
 
 interface Order {
   id: number;
@@ -15,6 +16,7 @@ interface Order {
   metadata?: {
     amount_total: number;
   };
+  total: number;
   status: string;
   partnerName: string;
   partnerEmail: string;
@@ -23,9 +25,14 @@ interface Order {
   storeId: number;
 }
 
-type ApiResponse = {
-  data: Order[];
-};
+interface OrderPageProps {
+  initialOrders: Order[];
+  timestamp: number;
+}
+
+interface ApiResponse {
+  data?: Order[];
+}
 
 interface Column {
   name: string;
@@ -35,30 +42,65 @@ interface Column {
   selector: (row: Order) => React.ReactNode;
 }
 
-export default function Order({ initialOrders = [] }: { initialOrders?: Order[] }) {
-  const api = new Api();
+export default function Order({ initialOrders, timestamp }: OrderPageProps) {
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  const getOrders = async () => {
+  const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      const request = (await api.bridge({
+      const api = new Api();
+      const response = await api.bridge({
         method: "post",
         url: "orders/list",
-      })) as ApiResponse;
+        data: { _nonce: Date.now() }
+      }) as ApiResponse;
 
-      if (request?.data) {
-        setOrders(request.data);
+      if (response?.data && Array.isArray(response.data)) {
+        setOrders(response.data);
+        setLoading(false);
+      } else {
+        throw new Error("Formato de dados inválido");
       }
-    } catch (error) {
-      console.error("Erro ao buscar pedidos", error);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setError("Não foi possível carregar os pedidos. Por favor, tente novamente.");
+      setLoading(false);
     }
   };
-
+  
   useEffect(() => {
-    if (initialOrders.length === 0) {
-      getOrders();
+    if (initialOrders && initialOrders.length > 0) {
+      setOrders(initialOrders);
+      setLoading(false);
+      setError(null);
+    } else {
+      fetchOrders();
     }
-  }, [initialOrders]);
+  }, [timestamp]);
+  
+  useEffect(() => {
+    if (retryCount > 0) {
+      fetchOrders();
+    }
+  }, [retryCount]);
+  
+  const handleRetry = () => {
+    setRetryCount(prevCount => prevCount + 1);
+  };
+  
+  const handleHardRefresh = () => {
+    router.replace(`/admin/pedidos?t=${Date.now()}`);
+  };
+
+  const getFilteredOrders = () => {
+    return [...orders];
+  };
 
   const columns: Column[] = [
     {
@@ -108,17 +150,17 @@ export default function Order({ initialOrders = [] }: { initialOrders?: Order[] 
       name: "Total (R$)",
       width: "30rem",
       sortable: true,
-      sortKey: "amount_total",
-      selector: (row: Order) => moneyFormat(row.metadata?.amount_total || 0),
+      sortKey: "total",
+      selector: (row: Order) => moneyFormat(row.total || 0),
     },
     {
       name: "Status",
       width: "40rem",
+      sortable: true,
+      sortKey: "status",
       selector: (row: Order) => (
         <div
-          className={`rounded-md text-center py-2 ${
-            row.status === "paid" ? "bg-green-200" : "bg-yellow-200"
-          }`}
+          className={`rounded-md text-center py-2 ${row.status === "paid" ? "bg-green-200" : "bg-yellow-200"}`}
         >
           {row.status === "paid" ? "Pago" : "Em Aberto"}
         </div>
@@ -176,33 +218,78 @@ export default function Order({ initialOrders = [] }: { initialOrders?: Order[] 
 
       <section className="pt-6">
         <div className="container-medium pb-12" style={{ maxWidth: "100rem" }}>
-          <PaginatedTable data={orders} columns={columns} itemsPerPage={6} />
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              <span className="ml-3 text-gray-600">Carregando pedidos...</span>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md text-center">
+              <p>{error}</p>
+              <div className="mt-4 flex justify-center gap-4">
+                <button 
+                  className="bg-red-100 hover:bg-red-200 text-red-800 py-2 px-4 rounded"
+                  onClick={handleRetry}
+                >
+                  <Icon icon="fa-redo" type="fas" className="mr-2" />
+                  Tentar novamente
+                </button>
+                <button 
+                  className="bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-4 rounded"
+                  onClick={handleHardRefresh}
+                >
+                  <Icon icon="fa-sync-alt" type="fas" className="mr-2" />
+                  Recarregar página
+                </button>
+              </div>
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-md">
+              <Icon icon="fa-inbox" type="far" className="text-4xl text-gray-400 mb-2" />
+              <p className="text-gray-600">Nenhum pedido encontrado</p>
+              <button 
+                className="mt-4 bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-4 rounded"
+                onClick={handleRetry}
+              >
+                <Icon icon="fa-redo" type="fas" className="mr-2" />
+                Verificar novamente
+              </button>
+            </div>
+          ) : (
+            <PaginatedTable 
+              data={getFilteredOrders()}
+              columns={columns}
+              itemsPerPage={6}
+              key={`orders-table-${orders.length}-${timestamp}`}
+            />
+          )}
         </div>
       </section>
     </Template>
   );
 }
 
-export async function getStaticProps() {
+export const getServerSideProps: GetServerSideProps = async () => {
   const api = new Api();
   try {
     const request = (await api.bridge({
       method: "post",
       url: "orders/list",
     })) as ApiResponse;
+    
     return {
       props: {
         initialOrders: request?.data || [],
+        timestamp: Date.now(),
       },
-      revalidate: 60,
     };
   } catch (error) {
-    console.error("Erro ao buscar pedidos no getStaticProps", error);
+    console.error("Erro ao buscar pedidos no getServerSideProps", error);
     return {
       props: {
         initialOrders: [],
+        timestamp: Date.now(),
       },
-      revalidate: 60,
     };
   }
 }

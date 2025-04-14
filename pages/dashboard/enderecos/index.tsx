@@ -14,6 +14,8 @@ import { getExtenseData, getZipCode } from "@/src/helper";
 import { AddressType } from "@/src/models/address";
 import HelpCard from "@/src/components/common/HelpCard";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { formatCep } from "@/src/components/utils/FormMasks";
+import { toast } from "react-toastify";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -36,6 +38,7 @@ export async function getServerSideProps(ctx: any) {
   user = request?.data ?? {};
 
   request = await api.content({
+    method: 'get',
     url: "account/address",
   });
 
@@ -120,6 +123,7 @@ export default function Conta({
     setContent(handle);
 
     const request: any = await api.bridge({
+      method: 'post',
       url: "users/update",
       data: handle,
     });
@@ -132,26 +136,63 @@ export default function Conta({
     handleForm({ edit: -1, loading: false });
   };
 
+  const [cepValue, setCepValue] = useState("");
+  const [rawCepValue, setRawCepValue] = useState("");
+  const key = "cepMask";
+
   const handleZipCode = async (zipCode: string, key: any) => {
-    const location = await getZipCode(zipCode);
-
-    let address = locations.filter(
-      (item: AddressType, find: any) => key == find
-    )[0];
-
-    address["zipCode"] = zipCode;
-    address["country"] = "Brasil";
-
-    if (!location?.erro) {
-      address["street"] = location.logradouro;
-      address["neighborhood"] = location.bairro;
-      address["city"] = location.localidade;
-      address["state"] = location.uf;
+    const toastId = "cep-error";
+  
+    try {
+      const location = await getZipCode(zipCode);
+  
+      interface AddressData {
+        zipCode: string;
+        country: string;
+        street?: string;
+        neighborhood?: string;
+        city?: string;
+        state?: string;
+        number?: string;
+        complement?: string;
+        main?: boolean;
+      }
+  
+      const addressData: AddressData = {
+        zipCode: zipCode,
+        country: "Brasil"
+      };
+  
+      if (!location?.erro) {
+        addressData.street = location.logradouro || "";
+        addressData.neighborhood = location.bairro || "";
+        addressData.city = location.localidade || "";
+        addressData.state = location.uf || "";
+        if (toast.isActive(toastId)) {
+          toast.dismiss(toastId);
+        }
+      } else {
+        throw new Error("CEP não encontrado!");
+      }
+  
+      handleAddress(addressData, key);
+    } catch (error) {
+      if (!toast.isActive(toastId)) {
+        toast.error(error instanceof Error ? error.message : "CEP não encontrado!", {
+          toastId: toastId
+        });
+      }
     }
+  };
 
-    console.log(address);
+  const handleInputChange = (value: string) => {
+    const rawValue = value.replace(/\D/g, "");
+    setRawCepValue(rawValue);
+    setCepValue(formatCep(value));
 
-    handleAddress(address, key);
+    if (rawValue.length == 8) {
+      handleZipCode(rawValue, form.edit);
+    }
   };
 
   const renderAction = (
@@ -173,6 +214,7 @@ export default function Conta({
         <Button
           loading={form.edit == key && form.loading}
           className="py-2 px-4"
+          onClick={() => handleZipCode(rawCepValue, key)}
         >
           {label?.save ? label.save : "Salvar"}
         </Button>
@@ -198,13 +240,9 @@ export default function Conta({
   const removeLocation = (e: any, remove: any) => {
     e.preventDefault();
 
-    console.log(locations, remove);
-
     let handleLocations = (locations ?? []).filter(
       (locate: AddressType, index: any) => locate.zipCode != remove.zipCode
     );
-
-    console.log(handleLocations);
 
     handleForm({ edit: -1 });
 
@@ -273,11 +311,14 @@ export default function Conta({
                             <div className="relative">
                               <Input
                                 name="cep"
-                                onChange={(e: any) =>
-                                  handleZipCode(e.target.value, key)
-                                }
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e.target.value)}
+                                onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                  if (!/[0-9]/.test(e.key)) {
+                                    e.preventDefault();
+                                  }
+                                }}
                                 required
-                                value={locate?.zipCode ?? ""}
+                                value={cepValue}
                                 placeholder="CEP"
                               />
                             </div>
