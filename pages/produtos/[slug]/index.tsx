@@ -905,21 +905,26 @@ export default function Produto({
                       <div className="leading-tight w-full">
                         <div>
                           <strong className="text-zinc-950">
-                          {!!product?.availability && (
-                            <div className="flex gap-2 items-center">
-                              <div className="w-[1.25rem] flex justify-center">
-                                <Icon
-                                  icon="fa-truck"
-                                  type="far"
-                                  className="text-yellow-400 text-base"
-                                />
-                              </div>Entrega
-                            </div>
-                          )}
-                          </strong><br />{" "}
-                          <p>Esse produto é entregue em até <strong>{product?.availability}{" "}</strong>
-                          dia
-                          {Number(product?.availability || 0) > 1 ? `s` : ""}.</p>
+                            {(product?.availability ?? 1) >= 1 && (
+                              <div className="flex gap-2 items-center">
+                                <div className="w-[1.25rem] flex justify-center">
+                                  <Icon
+                                    icon="fa-truck"
+                                    type="far"
+                                    className="text-yellow-400 text-base"
+                                  />
+                                </div>
+                                Entrega
+                              </div>
+                            )}
+                          </strong>
+                          <br />{" "}
+                          <p>
+                            Esse produto é entregue em até{" "}
+                            <strong>{product?.availability ?? 1}{" "}</strong>
+                            dia
+                            {Number(product?.availability ?? 1) > 1 ? "s" : ""}.
+                          </p>
                         </div>
                       </div>
                     )}
