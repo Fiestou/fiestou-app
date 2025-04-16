@@ -22,11 +22,12 @@ export interface ElementChild {
 
 export interface ReturnElementData {
     id?: number,
-    id_group: number,
+    group_id: number,
     icon: string,
     name: string,
     description: string,
-    childElements: number[]
+    active?: boolean,
+    element_related_id: number[]
 }
 
 const ElementModal: React.FC<ElementModalProps> = (props) => {
@@ -38,11 +39,12 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
 
     const onSaveClick = () => {
         let data: ReturnElementData = {
-            id_group: props.groupId,
+            group_id: props.groupId,
             icon: icon,
             name: name,
+            active: true,
             description: description,
-            childElements: selectedList.map((value) => value.id)
+            element_related_id: selectedList.map((value) => value.id)
         }
 
         if (props.data) {
