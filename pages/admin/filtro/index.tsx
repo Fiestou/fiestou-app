@@ -6,7 +6,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import NewGroup from "../../../src/components/pages/admin/filtro/buttons/NewGroup";
 import { CirclePlus } from 'lucide-react';
 import EyeButton from "../../../src/components/pages/admin/filtro/buttons/Eye";
-import Card from "../../../src/components/pages/admin/filtro/section/Card";
+import Card, { ElementsCard } from "../../../src/components/pages/admin/filtro/section/Card";
 import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modals/GroupModal";
 import { Group, GroupResponse, GroupsResponse, ResponseRegister } from "../../../src/types/filtros/response";
 import { RequestRegister } from "../../../src/types/filtros/request";
@@ -23,11 +23,7 @@ export default function Categorias() {
     let dataRequest: RequestRegister = {
       name: data?.name || '',
       description: data?.description || '',
-      isFather: groups.length === 0
-    }
-
-    if (groups.length > 0) {
-      dataRequest.parent_id = groups[groups.length - 1].id
+      active: true,
     }
 
     let request;
@@ -39,7 +35,6 @@ export default function Categorias() {
         data: dataRequest
       });
     }else{
-      console.log(dataRequest)
       request = await api.bridge<ResponseRegister>({
         method: "post",
         url: "group/register",
@@ -57,14 +52,16 @@ export default function Categorias() {
   }
 
   const getGroups = async () => {
-    const request = await api.request<GroupsResponse>({
-      method: "get",
-      url: "group/list",
-    });
-
-    if (request.response) {
-      console.log(request.data)
-      setGroups(request.data);
+    try {
+      const request = await api.request<GroupsResponse>({
+        method: "get",
+        url: "group/list",
+      });
+      if (request) {
+        setGroups(request.data);
+      }
+    } catch (error) {
+      console.error("Error fetching groups:", error);
     }
   };
 
@@ -131,16 +128,23 @@ export default function Categorias() {
         <div
           className=" flex flex-col gap-3 w-full max-w-[1000px] max-h-scree  "
         >
-          {groups.map((value, index) => (
-            <Card
-              key={index}
-              onEditClick={onEditClick}
-              elements={value.elements}
-              title={value.name}
-              description={value.description}
-              id={value.id}
-              onDeleteGroup={() => {setGroups((prev) => prev.filter((group) => group.id !== value.id))}} />
-          ))}
+            {groups && groups.length > 0 ? (
+            groups.map((value, index) => {
+                
+                return (
+                <Card
+                key={index}
+                onEditClick={onEditClick}
+                elements={value.elements as ElementsCard[]}
+                title={value.name}
+                description={value.description}
+                id={value.id}
+                onDeleteGroup={() => {setGroups((prev) => prev.filter((group) => group.id !== value.id))}} />
+                );
+            })
+            ) : (
+            <p>No groups available.</p>
+            )}
 
         </div>
       </section>

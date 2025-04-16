@@ -13,21 +13,22 @@ export interface DataRegister {
     id: number
 }
 
-export interface GroupsResponse {
-    response: boolean
-    data: Group[]
-}
 
 export interface GroupResponse {
     response: boolean
     data: Group
 }
 
+export interface GroupsResponse {
+    response: boolean
+    data: Group[]
+}
+
+
 export interface Group {
     id: number
     name: string
     description: string
-    parent_id: string
     active: number
     created_at: string
     updated_at: string
@@ -42,10 +43,8 @@ export interface Element {
     active: number
     created_at: string
     updated_at: string
-    laravel_through_key: number
-    checked: false,
-    descendents?: Element[],
-    generation_level?: number
+    group_id: number,
+    element_related_id: number[]
 }
 
 export interface ElementsResponse {

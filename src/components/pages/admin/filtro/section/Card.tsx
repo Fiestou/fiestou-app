@@ -32,7 +32,7 @@ const Card: React.FC<CardProps> = (props) => {
     const [hoveredElement, setHoveredElement] = useState<number | null>(null);
     const [localElements, setLocalElements] = useState<ElementsCard[]>([]); 
     const tooltipRef = useRef<HTMLDivElement | null>(null);
-
+    console.log(props.elements, "props.elements")
     const onElementClicked = async (elementId: number) => {
         const request = await api.call<ElementResponse>({
             method: "get",
@@ -80,14 +80,11 @@ const Card: React.FC<CardProps> = (props) => {
         } else {
             request = await api.bridge<GroupResponse>({
                 method: "post",
-                url: "element/register",
+                url: `element/register/${data.group_id}`,
                 data: data
             });
 
-            if (request.response && request.data) {
-                const newElement = { id: request.data.id, name: data.name, icon: data.icon }; 
-                setLocalElements((prev) => [...prev, newElement]);
-            }
+          
         }
 
         if (!request.response) {
@@ -204,10 +201,6 @@ const Card: React.FC<CardProps> = (props) => {
 
             <div className="flex justify-center items-start flex-1 w-full min-h-10">
                 <p>{props.description}</p>
-            </div>
-
-            <div className="flex justify-center items-center flex-1 w-full">
-                <h1 className="font-bold text-xl">Elementos</h1>
             </div>
 
             <div className="flex justify-center items-center flex-1 w-full gap-1 flex-wrap">
