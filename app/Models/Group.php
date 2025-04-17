@@ -14,6 +14,10 @@ class Group extends BaseModel
         'description',
         'parent_id',
         'active',
+        'segment',
+    ];
+    protected $casts = [
+        'segment' => 'boolean'
     ];
 
     public function scopeActive($query)

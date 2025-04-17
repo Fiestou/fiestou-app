@@ -18,11 +18,12 @@ class GroupController extends Controller
     public function Register(Request $request)
     {
         $request->validate([
-            "name"        => "required",
+            "name" => "required",
             "description" => "nullable|string",
-            "isFather"    => "required|boolean",
-            "elements"    => "nullable|array",
-            "elements.*"  => "exists:elements,id"
+            "isFather" => "required|boolean",
+            "elements" => "nullable|array",
+            "elements.*" => "exists:elements,id",
+            "segment" => "nullable|boolean"
         ]);
 
         $group_father = Group::whereNull('parent_id')->where('active', 1)->first();
@@ -30,64 +31,57 @@ class GroupController extends Controller
         if ($group_father && $request->get("isFather")) {
             return response()->json([
                 'response' => false,
-                'message'  => 'Não é possível criar dois grupos gerais.'
+                'message' => 'Não é possível criar dois grupos gerais.'
             ]);
-        }
-
-        $group = new Group();
-        $group->name = $request->get("name");
-        $group->description = null;
-            
-        if ($request->get("description")) {
-            $group->description = $request->get("description");
         }
 
         DB::beginTransaction();
 
         try {
+            $group = new Group();
+            $group->name = $request->name;
+            $group->description = $request->description;
+            $group->segment = $request->segment ?? false;
+            
+            if ($group->segment) {
+                Group::where('segment', true)->update(['segment' => false]);
+            }
+            
+            if (!$request->isFather) {
+                $request->validate(["parent_id" => "required|exists:group,id"]);
+                $group->parent_id = $request->parent_id;
+            }
 
             if ($group->save()) {
-                if (!$request->get("isFather")) {
-                    $request->validate([
-                        "parent_id" => "required|exists:group,id",
-                    ]);
-
-                    $group->parent_id = $request->get('parent_id');
-                    $group->save();
-                }
-
-                if (!empty($request->get("elements"))) {
-                    $elements = Elements::whereIn('id', $request->get('elements'))->get();
-
+                if (!empty($request->elements)) {
+                    $elements = Elements::whereIn('id', $request->elements)->get();
                     foreach ($elements as $element) {
                         GroupElements::create([
-                            'id_group'    => $group->id,
+                            'id_group' => $group->id,
                             'id_elements' => $element->id
                         ]);
                     }
-
                     $group->elements = $elements;
                 }
 
                 DB::commit();
-
                 return response()->json([
                     'response' => true,
-                    'data'     => $group
+                    'data' => $group->load('elements')
                 ]);
             }
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'response' => false,
-                'message'  => 'Erro ao salvar o grupo: ' . $e->getMessage()
+                'message' => 'Erro ao salvar o grupo: ' . $e->getMessage()
             ]);
         }
 
         DB::rollBack();
         return response()->json([
             'response' => false,
-            'message'  => 'Erro ao salvar o grupo.'
+            'message' => 'Erro ao salvar o grupo.'
         ]);
     }
 
@@ -136,64 +130,82 @@ class GroupController extends Controller
 
         try {
             $request->validate([
-                "name"        => "required",
+                "name" => "required",
                 "description" => "nullable|string",
-                "parent_id"   => "nullable|exists:group,id",
-                "elements"    => "nullable|array",
-                "elements.*"  => "exists:elements,id"
+                "parent_id" => "nullable|exists:group,id",
+                "elements" => "nullable|array",
+                "elements.*" => "exists:elements,id",
+                "segment" => "nullable|boolean",
             ]);
 
-            $group = Group::with('elements')->find($GroupId);
+            // Log dos dados recebidos para debug
+            \Log::info('Recebido request completo para Update:', [
+                'all' => $request->all(),
+                'content' => json_decode($request->getContent(), true),
+                'segment_value' => $request->input('segment'),
+                'segment_exists' => $request->has('segment'),
+            ]);
 
-            if ($request->has("parent_id")) {
-                $group->parent_id = $request->get("parent_id");
-            }
-
-            $group->name = $request->get("name");
-            $group->description = null;
+            $group = Group::with('elements')->findOrFail($GroupId);
             
-            if ($request->get("description")) {
-                $group->description = $request->get("description");
+            // Valores indo na requisição
+            $jsonData = json_decode($request->getContent(), true);
+            $segmentValue = false;
+            
+            if (isset($jsonData['segment'])) {
+                // Conversão para booleano
+                $segmentValue = filter_var($jsonData['segment'], FILTER_VALIDATE_BOOLEAN);
+                \Log::info('Segment encontrado no JSON:', ['raw' => $jsonData['segment'], 'converted' => $segmentValue]);
             }
-            $group->save();
-
-            $elements = [];
-
+            
+            if ($segmentValue) {
+                \Log::info('Atualizando outros grupos para segment=false');
+                DB::table('group')
+                    ->where('id', '!=', $GroupId)
+                    ->where('segment', true)
+                    ->update(['segment' => false]);
+            }
+            
+            $updateFields = [
+                'name' => $request->input('name'),
+                'description' => $request->input('description'),
+                'segment' => $segmentValue
+            ];
+            
+            if ($request->has('parent_id')) {
+                $updateFields['parent_id'] = $request->input('parent_id');
+            }
+            
+            // Log antes da atualização
+            \Log::info('Campos a serem atualizados:', $updateFields);
+            
+            $updated = DB::table('group')
+                ->where('id', $GroupId)
+                ->update($updateFields);
+            
+            \Log::info('Resultado da atualização:', ['updated' => $updated]);
+            
+            $group = Group::with('elements')->findOrFail($GroupId);
+            
             if ($request->has("elements")) {
-                $elementsIds = $request->get("elements");
-
-                GroupElements::where('id_group', $GroupId)->delete();
-
-                foreach ($elementsIds as $elementId) {
-                    GroupElements::create([
-                        'id_group'    => $GroupId,
-                        'id_elements' => $elementId
-                    ]);
-
-                    $element = Elements::where('id', $elementId)->first();
-
-                    array_push($elements, $element);
-                }
-
-                $group->elements = $elements;
+                $group->elements()->sync($request->elements);
             }
 
             DB::commit();
 
             return response()->json([
                 'response' => true,
-                'data'     => [
-                    'id'       => $group->id,
-                    'name'     => $group->name,
-                    'parent_id' => $group->parent_id,
-                    'elements' => $elements
-                ]
+                'data' => $group
             ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Erro ao atualizar grupo: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
             return response()->json([
                 'response' => false,
-                'message'  => 'Erro ao atualizar o grupo: ' . $e->getMessage()
+                'message' => 'Erro ao atualizar o grupo: ' . $e->getMessage()
             ]);
         }
     }
