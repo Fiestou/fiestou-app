@@ -135,8 +135,7 @@ export default function Loja({
       preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
     });
   };
-
-  // Handle COVER
+  
   const handleCoverRemove = async (e: any) => {
     setHandleCover({
       preview: "",
@@ -236,9 +235,7 @@ export default function Loja({
 
     handleForm({ edit: "", loading: false });
   };
-  // ---
-
-  // Handle PROFILE
+  
   const handleProfileRemove = async (e: any) => {
     setHandleProfile({
       preview: "",
@@ -340,8 +337,7 @@ export default function Loja({
 
     handleForm({ edit: "", loading: false });
   };
-  // ---
-
+  
   const handleZipCode = async (zipCode: string) => {
     const location = await getZipCode(zipCode);
 
