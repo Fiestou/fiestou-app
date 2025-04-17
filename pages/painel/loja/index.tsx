@@ -108,6 +108,7 @@ export default function Loja({
 
   const [oldStore, setOldStore] = useState({} as StoreType);
   const [store, setStore] = useState({} as StoreType);
+  const [groupOptions, setGroupOptions] = useState([]);
   const handleStore = async (value: Object) => {
     setStore({ ...store, ...value });
   };
@@ -120,12 +121,8 @@ export default function Loja({
 
     const handle = request.data ?? {};
 
-    console.log(handle, "<<--");
-
     setOldStore(handle);
-
     setStore(handle);
-
     setWeek((handle?.openClose ?? []) as Array<DayType>);
 
     setHandleCover({
@@ -921,7 +918,7 @@ export default function Loja({
                         value={store?.segment}
                         placeholder="Selecione seu segmento"
                         name="lojaTipo"
-                        options={storeTypes.map((item: any) => {
+                        options={groupOptions.map((item: any) => {
                           return {
                             name: item.title,
                             value: item.id,
