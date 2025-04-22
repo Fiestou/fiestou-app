@@ -1,3 +1,5 @@
+import React from "react";
+
 export interface ResponseRegister {
     response: boolean
     data: DataRegister
@@ -56,4 +58,8 @@ export interface ElementResponse {
     data: Element
 }
 
-export interface GenericResponse { response: boolean, data?: object, nessage?: string }
+export interface GenericResponse { 
+    response: boolean, 
+    data?: object, 
+    nessage?: string 
+}

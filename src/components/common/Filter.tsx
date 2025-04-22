@@ -244,8 +244,8 @@ export default function Filter(params: { store?: string; busca?: string }) {
                   onClick={() => openModal()}
                   className="font-normal py-2 px-3 md:pl-8 md:pr-7 h-full"
                 >
-                  <span className="hidden md:block">Filtros </span>
-                  {count ? (
+                  <span className="hidden md:block">Filtros</span>
+                  {!!count ? (
                     <div className="relative bg-zinc-950 -mr-1 rounded-full bg-yellow-300 p-[.55rem] text-[.55rem] font-bold">
                       <div className="text-white absolute h-[.65rem] top-50 left-50 -translate-x-1/2 -translate-y-1/2">
                         {count}
@@ -349,27 +349,44 @@ export default function Filter(params: { store?: string; busca?: string }) {
           </div>
         </div>
 
-        {localGroups.map((group, index) => (
-          <div key={index} className="pb-6">
+        {localGroups.map((group, groupIndex) => (
+          <div key={groupIndex} className="pb-6">
             <Label>{group.name}</Label>
             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
-              <div className="flex md:flex-wrap gap-2">
+              <div className={`flex md:flex-wrap gap-2 ${groupIndex === 0 ? "space-x-2" : ""}`}>
                 {group.elements.map((element: Element, index: number) => (
                   <div
-                    key={index}
-                    className={`border cursor-pointer ease relative rounded p-2 ${element.checked
-                      ? "border-zinc-800 hover:border-zinc-500"
+                  key={index}
+                  className={`
+                    border cursor-pointer ease relative rounded
+                    ${element.checked 
+                      ? "border-zinc-800 hover:border-zinc-500" 
                       : "hover:border-zinc-300"
-                      }`}
-                    onClick={() => {
-                      onClickElementFilter(element.id, element.checked, element.descendants || [])
-                    }}
-                  >
-                    <div className="px-3 md:px-1 flex items-center gap-2">
+                    }
+                    flex flex-col items-center p-2 w-auto
+                  `}
+                  onClick={() => {
+                    onClickElementFilter(element.id, element.checked, element.descendants || []);
+                  }}
+                >
+                    <div className={`flex items-center gap-2 ${groupIndex === 0 ? "flex-col" : "flex-row whitespace-nowrap"}`}>
                       {element.icon && (
-                        <Img src={element.icon} className="h-[20px] w-[20px] object-contain" />
+                        <Img
+                          src={element.icon}
+                          className={`object-contain ${
+                            groupIndex === 0 
+                              ? "h-[40px] w-[40px]" 
+                              : "h-[20px] w-[20px] flex-shrink-0"
+                          }`}
+                        />
                       )}
-                      <div className="h-[20px] whitespace-nowrap text-sm md:text-base">
+                      <div
+                        className={`text-sm md:text-base ${
+                          groupIndex === 0 
+                            ? "text-center font-medium" 
+                            : "font-normal whitespace-nowrap"
+                        }`}
+                      >
                         {element.name}
                       </div>
                       {query.categories.includes(element.id) && (
