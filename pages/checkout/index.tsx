@@ -2,7 +2,7 @@ import Template from "@/src/template";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import Payment from "@/src/services/payment";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   dateBRFormat,
   findDates,
@@ -31,7 +31,11 @@ import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
 import { deliveryToName } from "@/src/models/delivery";
 import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
-import { formatCep } from "@/src/components/utils/FormMasks";
+import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
+import { Save } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
+import { ApiResponse } from "@/src/types/response";
+import 'react-toastify/dist/ReactToastify.css';
 
 const FormInitialType = {
   sended: false,
@@ -125,6 +129,8 @@ export default function Checkout({
 
   const [customLocation, setCustomLocation] = useState(false as boolean);
   const [locations, setLocations] = useState([] as Array<AddressType>);
+  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [initialPhone] = useState(formatPhone(user?.phone || ""));
   const [address, setAddress] = useState({
     country: "Brasil",
   } as AddressType);
@@ -133,6 +139,37 @@ export default function Checkout({
       ...prevAddress,
       ...value,
     }));
+  };
+
+  const isPhoneValid = (phone: string): boolean => {
+    const digitsOnly = phone.replace(/\D/g, '');
+    return digitsOnly.length >= 10 && digitsOnly.length <= 11;
+  };
+
+  const hasChanged = useCallback(() => {
+    return phone !== initialPhone;
+  }, [phone, initialPhone]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(formatPhone(e.target.value));
+  };
+  
+  const handleSavePhone = async () => {
+    if (!isPhoneValid(phone)) {
+      toast.error("Telefone inválido!");
+      return;
+    }
+  
+    try {
+      await api.bridge({
+        method: "post",
+        url: "users/update",
+        data: { phone: phone.replace(/\D/g, '') }
+      });
+      toast.success("Salvo com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao salvar!");
+    }
   };
 
   const [deliveryPrice, setDeliveryPrice] = useState(0 as number);
@@ -149,6 +186,12 @@ export default function Checkout({
 
     setDeliveryPrice(!!distance ? (distance / 1000) * deliveryTax : 0);
   };
+
+  useEffect(() => {
+    if (user?.phone) {
+      setPhone(formatPhone(user.phone));
+    }
+  }, [user?.phone]);
 
   useEffect(() => {
     if (!!address?.zipCode && justNumber(address?.zipCode).length >= 8) {
@@ -428,6 +471,42 @@ export default function Checkout({
                     )}
                   </div>
 
+                  <div>
+                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                      Verifique seu número de telefone
+                    </h4>
+                    <p className="whitespace-nowrap text-sm">* O Fiestou utiliza seu número exclusivamente para enviar atualizações sobre o status do seu pedido.</p>
+                  </div>
+
+                  <div className="flex flex-row border-1 gap-2">
+                    <input
+                      name="phone"
+                      onChange={(e) => {
+                        const rawValue = e.target.value;
+                        const formattedValue = formatPhone(rawValue);
+                        setPhone(formattedValue);
+                      }}
+                      required
+                      value={phone}
+                      placeholder="Insira seu telefone aqui"
+                      className={`form-control flex flex-3 w-full ${
+                        phone && !isPhoneValid(phone) 
+                        ? 'border-2 border-red-500' 
+                        : !hasChanged() 
+                          ? 'bg-gray-100' 
+                          : 'border-2 border-green-500'
+                      }`}
+                    />
+                    <Button
+                      onClick={handleSavePhone}
+                      disable={!isPhoneValid(phone) || phone === formatPhone(user?.phone || "")}
+                      style="btn-yellow"
+                    >
+                      <b>Salvar</b>
+                      <ToastContainer />
+                    </Button>
+                  </div>
+
                   <div className="mb-0 relative overflow-hidden">
                     <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
                       Detalhes de entrega
@@ -587,9 +666,7 @@ export default function Checkout({
                         Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
                       </div>
                       <div className="grid text-right">
-                        {/* <s className="text-xs">R$ 24,00</s> */}
                         <div className="whitespace-nowrap font-semibold text-sm">
-                          {/* Gratuito */}
                           {!isCEPInRegion(address?.zipCode)
                             ? "Entrega indisponível"
                             : !!address?.zipCode
@@ -635,7 +712,8 @@ export default function Checkout({
                       !!address?.number &&
                       !!schedule &&
                       !!address?.zipCode &&
-                      !!isCEPInRegion(address?.zipCode) ? (
+                      !!isCEPInRegion(address?.zipCode) &&
+                      isPhoneValid(phone) ? (
                         <Button
                           loading={form.loading}
                           style="btn-success"

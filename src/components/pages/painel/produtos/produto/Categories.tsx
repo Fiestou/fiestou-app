@@ -1,9 +1,15 @@
+/* TO DO - VERIFICAR TIPAGEM E ARRANCAR TODOS OS 'any' */
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import Img from "@/src/components/utils/ImgBase";
 import { getImage } from "@/src/helper";
 import { AssociatedElement, RelationType } from "@/src/models/relation";
 import Api from "@/src/services/api";
 import { useEffect, useState } from "react";
+
+interface TreeNode {
+  childs?: TreeNode[];
+  [key: string]: unknown;
+}
 
 export default function Categories({
   checked,
@@ -18,18 +24,25 @@ export default function Categories({
   const [categories, setCategories] = useState([] as Array<any>);
   const [allCategories, setAllCategories] = useState([] as any);
 
-  const recursiveList = (items: any, recursive: Array<number>) => {
-    items.map((item: any) => {
-      recursive = [...recursive, item];
+  const recursiveList = (items: TreeNode[] = [], recursive: TreeNode[] = []): TreeNode[] => {
+    if (!Array.isArray(items)) {
+      return recursive;
+    }
+  
+    const newRecursive = [...recursive];
+    
+    items.forEach((item) => {
+      if (item) {
+        newRecursive.push(item);
+        
+        if (Array.isArray(item.childs) && item.childs.length > 0) {
+          const nestedItems = recursiveList(item.childs, []);
+          newRecursive.push(...nestedItems);
+        }
+      }
     });
-
-    items
-      .filter((item: any) => !!item.childs.length)
-      .map((item: any) => {
-        recursive = recursiveList(item.childs, recursive);
-      });
-
-    return recursive;
+  
+    return newRecursive;
   };
 
   const getCategories = async () => {
@@ -87,7 +100,7 @@ export default function Categories({
                   <div
                     className=""
                     onClick={() => {
-                      handleRelationship(item.id || 0, master);
+                      handleRelationship(Number(item.id) || 0, master)
                     }}
                   >
                     <Checkbox
