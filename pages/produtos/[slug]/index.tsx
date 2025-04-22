@@ -51,7 +51,7 @@ import SidebarCart from "@/src/components/common/SidebarCart";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
-import FullscreenSwiper from "@/src/components/ui/swiper/swiper";
+import FullscreenSwiper from "@/src/components/ui/swiper/FullscreenSwiper";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
