@@ -50,6 +50,7 @@ import SidebarCart from "@/src/components/common/SidebarCart";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
+import FullscreenSwiper from "@/src/components/ui/swiper/FullscreenSwiper";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -230,20 +231,20 @@ export default function Produto({
               .length
               ? variations.filter((item: any) => item.id != value.id)
               : !limit || variations.length < limit
-              ? [...variations, value]
-              : variations;
+                ? [...variations, value]
+                : variations;
           }
 
           if (attr.selectType == "quantity") {
             variations = !!variations.filter((item: any) => item.id == value.id)
               .length
               ? variations
-                  .map((item: any) =>
-                    item.id == value.id
-                      ? { ...item, quantity: value.quantity }
-                      : item
-                  )
-                  .filter((item: any) => !!item.quantity)
+                .map((item: any) =>
+                  item.id == value.id
+                    ? { ...item, quantity: value.quantity }
+                    : item
+                )
+                .filter((item: any) => !!item.quantity)
               : [...variations, value];
           }
 
@@ -368,11 +369,10 @@ export default function Produto({
                           <Icon
                             icon="fa-star"
                             type="fa"
-                            className={`${
-                              item.rate >= value
-                                ? "text-yellow-500"
-                                : "text-gray-300"
-                            }`}
+                            className={`${item.rate >= value
+                              ? "text-yellow-500"
+                              : "text-gray-300"
+                              }`}
                           />
                         </label>
                       ))}
@@ -645,70 +645,7 @@ export default function Produto({
             <div className="sticky md:relative top-0 left-0 z-[10] w-full md:w-1/2 md:pb-4">
               {!!product?.gallery && (
                 <div className="relative bg-white -mx-4 md:mx-0 md:mb-10">
-                  <Swiper
-                    onSwiper={(swiper) => setSwiperInstance(swiper)}
-                    spaceBetween={0}
-                    modules={[Pagination, Navigation]}
-                    centeredSlides={true}
-                    navigation={{
-                      prevEl: ".swiper-gallery-prev",
-                      nextEl: ".swiper-gallery-next",
-                    }}
-                    pagination={{
-                      el: ".swiper-pagination",
-                    }}
-                    breakpoints={{
-                      0: {
-                        slidesPerView: 2,
-                      },
-                      480: {
-                        slidesPerView: 1,
-                      },
-                    }}
-                    className="border-y md:border md:rounded-md"
-                  >
-                    {!!product?.gallery?.length &&
-                      product?.gallery?.map(
-                        (img, key) =>
-                          !!img?.details?.sizes["lg"] && (
-                            <SwiperSlide key={key}>
-                              <div className="w-full">
-                                <div className="aspect-square flex justify-center items-center px-1 md:px-2">
-                                  {!!getImage(img, "xl") && (
-                                    <Img
-                                      src={getImage(img, "xl")}
-                                      className="w-full rounded-md"
-                                    />
-                                  )}
-                                </div>
-                              </div>
-                            </SwiperSlide>
-                          )
-                      )}
-                  </Swiper>
-                  <div className="absolute top-1/2 left-0 -translate-y-1/2 z-[5] p-2">
-                    <button
-                      type="button"
-                      className="swiper-gallery-prev bg-zinc-900 text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
-                    >
-                      <Icon
-                        icon="fa-chevron-left"
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                      ></Icon>
-                    </button>
-                  </div>
-                  <div className="absolute top-1/2 right-0 -translate-y-1/2 z-[5] p-2">
-                    <button
-                      type="button"
-                      className="swiper-gallery-next bg-zinc-900 text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
-                    >
-                      <Icon
-                        icon="fa-chevron-right"
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                      ></Icon>
-                    </button>
-                  </div>
-                  <div className="swiper-pagination"></div>
+                  <FullscreenSwiper images={product.gallery} />
                 </div>
               )}
               <div className="hidden md:grid gap-3 py-3">
@@ -797,7 +734,7 @@ export default function Produto({
                   <div className="w-fit md:text-right leading-tight pt-4 md:pt-0">
                     <div className="whitespace-nowrap">
                       {getPrice(product).priceFromFor &&
-                      !!getPrice(product).priceLow ? (
+                        !!getPrice(product).priceLow ? (
                         <div className="text-sm">
                           de
                           <span className="line-through mx-1">
@@ -811,7 +748,7 @@ export default function Produto({
                       <h3 className="font-bold text-4xl lg:text-3xl text-zinc-800">
                         R${" "}
                         {!!product?.schedulingTax &&
-                        product?.schedulingTax > getPriceValue(product).price
+                          product?.schedulingTax > getPriceValue(product).price
                           ? moneyFormat(product?.schedulingTax)
                           : moneyFormat(getPriceValue(product).price)}
                       </h3>
@@ -1024,8 +961,8 @@ export default function Produto({
                           <style jsx global>{`
                             html {
                               padding-bottom: ${layout.isMobile
-                                ? "6rem"
-                                : "0rem"};
+                              ? "6rem"
+                              : "0rem"};
                             }
                           `}</style>
                         </div>
@@ -1060,61 +997,61 @@ export default function Produto({
                     !!product?.length ||
                     !!product?.width ||
                     !!product?.height) && (
-                    <div className="border-t pt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      {!!product?.weight && (
-                        <div className="border flex flex-col rounded p-4">
-                          <div className="text-xl text-zinc-900">
-                            <Icon icon="fa-weight" />
+                      <div className="border-t pt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        {!!product?.weight && (
+                          <div className="border flex flex-col rounded p-4">
+                            <div className="text-xl text-zinc-900">
+                              <Icon icon="fa-weight" />
+                            </div>
+                            <div className="pt-4">
+                              Peso:{" "}
+                              <span className="font-bold text-zinc-900">
+                                {product?.weight}kg
+                              </span>
+                            </div>
                           </div>
-                          <div className="pt-4">
-                            Peso:{" "}
-                            <span className="font-bold text-zinc-900">
-                              {product?.weight}kg
-                            </span>
+                        )}
+                        {!!product?.length && (
+                          <div className="border flex flex-col rounded p-4">
+                            <div className="text-xl text-zinc-900">
+                              <Icon icon="fa-ruler" />
+                            </div>
+                            <div className="pt-4">
+                              Comp:{" "}
+                              <span className="font-bold text-zinc-900">
+                                {product?.length}cm
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {!!product?.length && (
-                        <div className="border flex flex-col rounded p-4">
-                          <div className="text-xl text-zinc-900">
-                            <Icon icon="fa-ruler" />
+                        )}
+                        {!!product?.width && (
+                          <div className="border flex flex-col rounded p-4">
+                            <div className="text-xl text-zinc-900">
+                              <Icon icon="fa-ruler-horizontal" />
+                            </div>
+                            <div className="pt-4">
+                              Larg:{" "}
+                              <span className="font-bold text-zinc-900">
+                                {product?.width}cm
+                              </span>
+                            </div>
                           </div>
-                          <div className="pt-4">
-                            Comp:{" "}
-                            <span className="font-bold text-zinc-900">
-                              {product?.length}cm
-                            </span>
+                        )}
+                        {!!product?.height && (
+                          <div className="border flex flex-col rounded p-4">
+                            <div className="text-xl text-zinc-900">
+                              <Icon icon="fa-ruler-vertical" />
+                            </div>
+                            <div className="pt-4">
+                              Alt:{" "}
+                              <span className="font-bold text-zinc-900">
+                                {product?.height}cm
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {!!product?.width && (
-                        <div className="border flex flex-col rounded p-4">
-                          <div className="text-xl text-zinc-900">
-                            <Icon icon="fa-ruler-horizontal" />
-                          </div>
-                          <div className="pt-4">
-                            Larg:{" "}
-                            <span className="font-bold text-zinc-900">
-                              {product?.width}cm
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {!!product?.height && (
-                        <div className="border flex flex-col rounded p-4">
-                          <div className="text-xl text-zinc-900">
-                            <Icon icon="fa-ruler-vertical" />
-                          </div>
-                          <div className="pt-4">
-                            Alt:{" "}
-                            <span className="font-bold text-zinc-900">
-                              {product?.height}cm
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
                   <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none">
                     <div className="flex gap-2 items-center">
                       <div className="w-[1.25rem] flex justify-center">
