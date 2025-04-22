@@ -50,7 +50,7 @@ import SidebarCart from "@/src/components/common/SidebarCart";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
-import FullscreenSwiper from "@/src/components/ui/swiper/swiper";
+import FullscreenSwiper from "@/src/components/ui/swiper/FullscreenSwiper";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -647,73 +647,7 @@ export default function Produto({
             <div className="sticky md:relative top-0 left-0 z-[10] w-full md:w-1/2 md:pb-4">
               {!!product?.gallery && (
                 <div className="relative bg-white -mx-4 md:mx-0 md:mb-10">
-                  {/* <Swiper
-                    onSwiper={(swiper) => setSwiperInstance(swiper)}
-                    spaceBetween={0}
-                    modules={[Pagination, Navigation]}
-                    centeredSlides={true}
-                    navigation={{
-                      prevEl: ".swiper-gallery-prev",
-                      nextEl: ".swiper-gallery-next",
-                    }}
-                    pagination={{
-                      el: ".swiper-pagination",
-                    }}
-                    breakpoints={{
-                      0: {
-                        slidesPerView: 2,
-                      },
-                      480: {
-                        slidesPerView: 1,
-                      },
-                    }}
-                    className="border-y md:border md:rounded-md h-full w-full" // Adicionei h-full e w-full aqui
-                  >
-                    {!!product?.gallery?.length &&
-                      product?.gallery?.map(
-                        (img, key) =>
-                          !!img?.details?.sizes["lg"] && (
-                            <SwiperSlide
-                              key={key}
-                              className="h-full w-full" // Garantir que o slide ocupe toda a altura e largura
-                            >
-                              <div className="w-full h-full flex justify-center items-center px-1 md:px-2">
-                                {!!getImage(img, "xl") && (
-                                  <Img
-                                    src={getImage(img, "xl")}
-                                    className="w-full h-full object-cover rounded-md"
-                                    alt="Imagem do produto"
-                                  />
-                                )}
-                              </div>
-                            </SwiperSlide>
-                          )
-                      )}
-                  </Swiper> */}
                   <FullscreenSwiper images={product.gallery} />
-                  <div className="absolute top-1/2 left-0 -translate-y-1/2 z-[5] p-2">
-                    <button
-                      type="button"
-                      className="swiper-gallery-prev bg-zinc-900 text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
-                    >
-                      <Icon
-                        icon="fa-chevron-left"
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                      ></Icon>
-                    </button>
-                  </div>
-                  <div className="absolute top-1/2 right-0 -translate-y-1/2 z-[5] p-2">
-                    <button
-                      type="button"
-                      className="swiper-gallery-next bg-zinc-900 text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
-                    >
-                      <Icon
-                        icon="fa-chevron-right"
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                      ></Icon>
-                    </button>
-                  </div>
-                  <div className="swiper-pagination"></div>
                 </div>
               )}
               <div className="hidden md:grid gap-3 py-3">
