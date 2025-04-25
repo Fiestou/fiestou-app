@@ -35,10 +35,11 @@ import Newsletter from "@/src/components/common/Newsletter";
 import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
+import { Navigation, Pagination, Zoom } from "swiper";
+import 'swiper/css';
+import 'swiper/css/zoom';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 import Calendar from "@/src/components/ui/form/CalendarUI";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -50,7 +51,6 @@ import SidebarCart from "@/src/components/common/SidebarCart";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
-import FullscreenSwiper from "@/src/components/ui/swiper/FullscreenSwiper";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -645,7 +645,64 @@ export default function Produto({
             <div className="sticky md:relative top-0 left-0 z-[10] w-full md:w-1/2 md:pb-4">
               {!!product?.gallery && (
                 <div className="relative bg-white -mx-4 md:mx-0 md:mb-10">
-                  <FullscreenSwiper images={product.gallery} />
+                  <Swiper
+                    onSwiper={(swiper) => setSwiperInstance(swiper)}
+                    zoom={true}
+                    spaceBetween={0}
+                    modules={[Zoom, Pagination, Navigation]}
+                    navigation={{
+                      prevEl: ".swiper-gallery-prev", // define o botão anterior
+                      nextEl: ".swiper-gallery-next", // define o botão próximo
+                    }}
+                    pagination={{
+                      el: ".swiper-pagination",
+                    }}
+                    className="border-y md:border md:rounded-md"
+                  >
+                    {!!product?.gallery?.length &&
+                      product?.gallery?.map(
+                        (img, key) =>
+                          !!img?.details?.sizes["lg"] && (
+                            <SwiperSlide key={key}>
+                              <div className="w-full">
+                                <div className="aspect-square flex justify-center items-center px-1 md:px-2">
+                                  {!!getImage(img, "xl") && (
+                                    <div className="swiper-zoom-container">
+                                    <Img
+                                      src={getImage(img, "xl")}
+                                      className="w-full rounded-md"
+                                    />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </SwiperSlide>
+                          )
+                      )}
+                  </Swiper>
+                  <div className="absolute top-1/2 left-0 -translate-y-1/2 z-[5] p-2">
+                    <button
+                      type="button"
+                      className="swiper-gallery-prev bg-[#ffc820] text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
+                    >
+                      <Icon
+                        icon="fa-chevron-left"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      ></Icon>
+                    </button>
+                  </div>
+                  <div className="absolute top-1/2 right-0 -translate-y-1/2 z-[5] p-2">
+                    <button
+                      type="button"
+                      className="swiper-gallery-next bg-[#ffc820] text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
+                    >
+                      <Icon
+                        icon="fa-chevron-right"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      ></Icon>
+                    </button>
+                  </div>
+                  <div className="swiper-pagination"></div>
                 </div>
               )}
               <div className="hidden md:grid gap-3 py-3">
