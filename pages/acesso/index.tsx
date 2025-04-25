@@ -20,7 +20,7 @@ export async function getServerSideProps(ctx: any) {
   if (!!session?.user?.email) {
     return {
       redirect: {
-        destination: "/admin",
+        destination: "/auth",
         permanent: false,
       },
     };
