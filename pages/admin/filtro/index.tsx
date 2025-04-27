@@ -39,17 +39,11 @@ export default function Categorias() {
         data: dataRequest
       });
     }else{
-      console.log(dataRequest)
       request = await api.bridge<ResponseRegister>({
         method: "post",
         url: "group/register",
         data: dataRequest
       });
-    }
-
-    if (!request.response) {
-      toast.error('Não foi possível salvar o grupo de filtros.')
-      return;
     }
 
     setOpenGroupModal(false);
@@ -63,7 +57,6 @@ export default function Categorias() {
     });
 
     if (request.response) {
-      console.log(request.data)
       setGroups(request.data);
     }
   };
@@ -113,7 +106,6 @@ export default function Categorias() {
                 Configurar filtro
               </div>
               <div className="flex-[1.2] gap-2 justify-center items-center flex flex-row" >
-                {/* <EyeButton onClick={() => { }} /> */}
                 <NewGroup
                   onClick={() => {
                     setOpenGroupModal(true);
