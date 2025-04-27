@@ -191,7 +191,16 @@ export default function Categorias() {
         </div>
       </section>
 
-      <GroupModal onSaveClick={(data) => { onSaveGroup(data) }} data={updateGroup} open={openGroupModal} onRequestClose={() => { setOpenGroupModal(false) }} />
+      <GroupModal 
+        onSaveClick={(data) => { onSaveGroup(data) }} 
+        data={updateGroup ? {
+          ...updateGroup,
+          parent_id: updateGroup.parent_id ? Number(updateGroup.parent_id) : undefined
+        } : null} 
+        open={openGroupModal} 
+        onRequestClose={() => { setOpenGroupModal(false) }} 
+      />
+      
     </Template>
   )
 }

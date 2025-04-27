@@ -29,6 +29,22 @@ interface FileManagerType {
   rounded?: boolean;
 }
 
+interface MediaUploadResponse {
+  response: boolean;
+  medias?: Array<{
+    id: string | number;
+  }>;
+}
+
+interface MediaListResponse {
+  response: boolean;
+  medias?: Array<{
+    id: string | number;
+  }>;
+}
+
+
+
 export default function FileManager(attr: FileManagerType) {
   const api = new Api();
 
@@ -86,13 +102,13 @@ export default function FileManager(attr: FileManagerType) {
           index: "media",
           method: "upload",
           medias: send,
-        });
+        }) as unknown as MediaUploadResponse;
 
         if (upload?.response && upload?.medias) {
-          const request: any = await api.graph({
+          const request = await api.graph({
             method: "post",
             url: "files/list-medias",
-          });
+          }) as unknown as MediaListResponse;
 
           if (request?.response) {
             setPlaceholder([]);
