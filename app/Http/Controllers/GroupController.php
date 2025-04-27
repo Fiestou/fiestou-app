@@ -129,6 +129,7 @@ class GroupController extends Controller
         DB::beginTransaction();
 
         try {
+            
             $request->validate([
                 "name" => "required",
                 "description" => "nullable|string",
@@ -138,71 +139,40 @@ class GroupController extends Controller
                 "segment" => "nullable|boolean",
             ]);
 
-            // Log dos dados recebidos para debug
-            \Log::info('Recebido request completo para Update:', [
-                'all' => $request->all(),
-                'content' => json_decode($request->getContent(), true),
-                'segment_value' => $request->input('segment'),
-                'segment_exists' => $request->has('segment'),
-            ]);
-
             $group = Group::with('elements')->findOrFail($GroupId);
-            
-            // Valores indo na requisição
-            $jsonData = json_decode($request->getContent(), true);
-            $segmentValue = false;
-            
-            if (isset($jsonData['segment'])) {
-                // Conversão para booleano
-                $segmentValue = filter_var($jsonData['segment'], FILTER_VALIDATE_BOOLEAN);
-                \Log::info('Segment encontrado no JSON:', ['raw' => $jsonData['segment'], 'converted' => $segmentValue]);
+
+            if ($request->segment) {
+                Group::where('id', '!=', $GroupId)
+                     ->where('segment', true)
+                     ->update(['segment' => false]);
             }
-            
-            if ($segmentValue) {
-                \Log::info('Atualizando outros grupos para segment=false');
-                DB::table('group')
-                    ->where('id', '!=', $GroupId)
-                    ->where('segment', true)
-                    ->update(['segment' => false]);
-            }
-            
+
             $updateFields = [
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
-                'segment' => $segmentValue
+                'segment' => $request->segment,
             ];
-            
+
             if ($request->has('parent_id')) {
                 $updateFields['parent_id'] = $request->input('parent_id');
             }
-            
-            // Log antes da atualização
-            \Log::info('Campos a serem atualizados:', $updateFields);
-            
-            $updated = DB::table('group')
-                ->where('id', $GroupId)
-                ->update($updateFields);
-            
-            \Log::info('Resultado da atualização:', ['updated' => $updated]);
-            
-            $group = Group::with('elements')->findOrFail($GroupId);
-            
-            if ($request->has("elements")) {
-                $group->elements()->sync($request->elements);
+
+            $group->update($updateFields);
+
+            if ($request->has('elements')) {
+                $group->elements()->sync($request->input('elements', []));
             }
 
             DB::commit();
 
             return response()->json([
                 'response' => true,
-                'data' => $group
+                'data' => $group->load('elements')
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Erro ao atualizar grupo: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
+
             return response()->json([
                 'response' => false,
                 'message' => 'Erro ao atualizar o grupo: ' . $e->getMessage()
