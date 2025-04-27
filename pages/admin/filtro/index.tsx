@@ -150,7 +150,6 @@ export default function Categorias() {
                 Configurar filtro
               </div>
               <div className="flex-[1.2] gap-2 justify-center items-center flex flex-row" >
-                {/* <EyeButton onClick={() => { }} /> */}
                 <NewGroup
                   onClick={() => {
                     setOpenGroupModal(true);
