@@ -16,7 +16,7 @@ class Element extends BaseModel
         'icon',
         'group_id',
         'active',
-        'element_related_id', // Corrigido para remover o caractere extra
+        'element_related_id',
         'created_at',
         'updated_at',
     ];
@@ -30,7 +30,7 @@ class Element extends BaseModel
     // Relacionamento para elementos relacionados (filhos)
     public function relatedElements()
     {
-        return $this->hasMany(Element::class, 'element_related_id');
+        return $this->belongsToMany(Element::class, 'element_related', 'element_id', 'related_element_id');
     }
 
     // Relacionamento para o elemento pai
@@ -38,6 +38,10 @@ class Element extends BaseModel
     {
         return $this->belongsTo(Element::class, 'element_related_id');
     }
+
+    protected $casts = [
+        'element_related_id' => 'array',
+    ];
 
     // Escopo para filtrar elementos que pertencem a grupos ativos
     public function scopeFromActiveGroups($query)

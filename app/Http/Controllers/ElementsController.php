@@ -4,15 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Element;
 
-// Ensure the Element model exists in the App\Models directory
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 class ElementsController extends Controller
 {
-    // Método para registrar um novo elemento com validação adicional
+
     public function register(Request $request)
     {
-        Log::info('Register method called', ['request' => $request->all()]);
 
         $request->validate([
             'name' => 'required|string|max:255|unique:elements,name',
@@ -20,10 +18,9 @@ class ElementsController extends Controller
             'icon' => 'nullable|string',
             'group_id' => 'required|exists:group,id',
             'active' => 'required|boolean',
-            'element_related_id' => 'nullable|exists:elements,id',
+            'element_related_id' => 'nullable|array',
         ]);
-
-        Log::info('Validation passed', ['validated_data' => $request->all()]);
+        log::info('elemento enviado.',request()->all());
 
         $element = Element::create([
             'name' => $request->name,
@@ -31,12 +28,14 @@ class ElementsController extends Controller
             'icon' => $request->icon,
             'group_id' => $request->group_id,
             'active' => $request->active,
-            'element_related_id' => $request->element_related_id, // Adicionando elemento relacionado
+            'element_related_id' => $request->element_related_id, 
         ]);
 
-        Log::info('Element created successfully', ['element' => $element]);
-
-        return response()->json($element, 201);
+        $response = [
+            'response' => 200,
+            'data' => $element
+        ];
+        return response()->json($response);
     }
     // Método para criar um novo elemento
     public function store(Request $request, $GroupId)
@@ -70,11 +69,17 @@ class ElementsController extends Controller
             'description' => 'nullable|string',
             'icon' => 'nullable|string',
             'active' => 'required|boolean',
+            'element_related_id' => 'nullable|array',	
         ]);
 
         $element->update($validated);
 
-        return response()->json($element);
+        $response = [
+            'response' => true,
+            'data' => $element
+        ];
+
+        return response()->json($response);
     }
 
     // Método para excluir um elemento específico

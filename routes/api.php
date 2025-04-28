@@ -171,7 +171,10 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::group([ 'prefix' => 'element' ], function() {
             // Rota para registrar um novo elemento dentro de um grupo
             Route::post('/register/{GroupId}', [ElementsController::class, 'Register']);
-        
+
+            // Rota para registrar um novo elemento dentro de um grupo
+            Route::post('/ChildGroup/{GroupId}', [ElementsController::class, 'GetElement']);
+
             // Rota para atualizar um elemento específico dentro de um grupo
             Route::put('/update/{GroupId}/{ElementId}', [ElementsController::class, 'Update']);
             
