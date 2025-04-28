@@ -4,21 +4,17 @@ import { X } from "lucide-react";
 import SelectElements from "../selectElements/selectElements";
 import { Element } from "@/src/types/filtros/response";
 import { Trash2 } from "lucide-react";
+import { controllers } from "chart.js";
 interface ElementModalProps {
     open: boolean;
     onRequestClose: () => void;
+    localElementsRelatedDetails: Element[];
     groupId: number;
-    relatedElements: ElementChild[];
+    relatedElements: Element[];
     onSaveClick: (data: ReturnElementData) => void;
     data?: Element | null
 }
 
-export interface ElementChild {
-    name: string;
-    id: number;
-    icon: string;
-    checked: boolean;
-}
 
 export interface ReturnElementData {
     id?: number,
@@ -35,9 +31,21 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
     const [name, setName] = useState<string>('');
     const [description, setDescription] = useState<string>('');
     const [openSelect, setOpenSelect] = useState<boolean>(false);
-    const [selectedList, setSelectedList] = useState<ElementChild[]>([]);
+    const [selectedList, setSelectedList] = useState<Element[]>([]);
+
+    useEffect(() => {
+    },[props.relatedElements])
 
     const onSaveClick = () => {
+
+        if (!icon) {
+            alert('Preencha o campo de ícone');
+            return;
+        } else if (!name) {
+            alert('Preencha o campo de nome');
+            return;
+        }
+
         let data: ReturnElementData = {
             group_id: props.groupId,
             icon: icon,
@@ -63,21 +71,17 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
         if (props.data) {
             setIcon(props.data.icon);
             setName(props.data.name);
-            setDescription(props.data.description);
-            if (props.data.descendents) {
-                setSelectedList(props.data.descendents.filter((desc) => desc.generation_level === 1));
-            }
+            setDescription(props.data.description || '');
+            setSelectedList(props.localElementsRelatedDetails)
         } else {
             setIcon('');
             setName('');
             setDescription('');
             setSelectedList([]);
         }
-    }, [props.data])
+    }, [props.data,props.localElementsRelatedDetails])
 
-    const newRelatedElements = props.relatedElements.filter((element) => element.id !== props.data?.id);
-
-
+    
     return !props.open ? null : (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-[600px] relative gap-5 flex flex-col">
@@ -139,23 +143,24 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
                         onChange={(event) => { setDescription(event.target.value) }}
                         className="flex-1 w-full border-[1px] border-gray-500 min-h-[90px] rounded-md p-2" placeholder="Digite aqui a descrição do elemento" />
                 </div>
-                <div className="flex flex-col w-full justify-start items-start">
-                    <h2 className="text-[20px] font-semibold text-black underline-offset-4">
-                        Selecione os elementos relacionados
-                    </h2>
-                    <p>Categoria</p>
-                </div>
+                {!(props.relatedElements?.[0]?.id !== undefined && props.relatedElements[0].id == -1 ) && (
+                    <div className="flex flex-col w-full justify-start items-start space-y-2">
+                        <h2 className="text-xl font-semibold text-black underline-offset-4">
+                            Selecione os elementos relacionados
+                        </h2>
 
-                <SelectElements
-                    selectedList={selectedList}
-                    onRequestClose={() => {
-                        setOpenSelect(false);
-                    }}
-                    onRequestOpen={() => setOpenSelect(!openSelect)}
-                    open={openSelect}
-                    relatedElements={newRelatedElements}
-                    onChageSelectList={(data) => { setSelectedList(data) }}
-                />
+                        <p className="text-sm text-gray-700">{props.relatedElements[0]?.groupName}</p>
+
+                        <SelectElements
+                            selectedList={selectedList}
+                            onRequestClose={() => setOpenSelect(false)}
+                            onRequestOpen={() => setOpenSelect(!openSelect)}
+                            open={openSelect}
+                            relatedElements={props.relatedElements}
+                            onChageSelectList={(data) => setSelectedList(data)}
+                        />
+                    </div>
+                )}
 
                 <div className="flex w-full justify-end gap-3">
                     <button onClick={props.onRequestClose}
