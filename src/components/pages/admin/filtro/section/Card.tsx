@@ -3,23 +3,20 @@ import { Element, ElementResponse, ElementsResponse, GenericResponse, GroupRespo
 import Api from "@/src/services/api";
 import ElementModal, { ReturnElementData } from "../modals/ElementModal";
 import { toast } from "react-toastify";
-import { X,  Trash2, Pencil, EllipsisVertical, Plus} from "lucide-react";
+import { X, Trash2, Pencil, EllipsisVertical, Plus } from "lucide-react";
 import DeleteModal from "../modals/DeleteModal";
 
 interface CardProps {
     title: string;
     description: string;
+    relatedElements: Element[];
     onEditClick: (id: number) => void;
-    elements: ElementsCard[];
+    elements: Element[];
     id: number;
+    onAddElementClick?: (currentGroupId: number) => void;
     onDeleteGroup: () => void;
 }
 
-export interface ElementsCard {
-    name: string;
-    icon: string;
-    id: number;
-}
 
 const Card: React.FC<CardProps> = (props) => {
     const api = new Api();
@@ -28,40 +25,12 @@ const Card: React.FC<CardProps> = (props) => {
     const [updateElement, setUpdateElement] = useState<Element | null>(null);
     const [openElementModal, setOpenElementModal] = useState(false);
     const [openGroupDeleteModal, setGroupOpenDeleteModal] = useState(false);
-    const [relatedElements, setRelatedElements] = useState<Element[]>([]);
     const [hoveredElement, setHoveredElement] = useState<number | null>(null);
-    const [localElements, setLocalElements] = useState<ElementsCard[]>([]); 
+    const [localElements, setLocalElements] = useState<Element[]>([]);
+    const [elementsRelatedDetails, setElementsRelatedDetail] = useState<Element[]>([]);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
-    console.log(props.elements, "props.elements")
-    const onElementClicked = async (elementId: number) => {
-        const request = await api.call<ElementResponse>({
-            method: "get",
-            url: `element/get/${elementId}`,
-        });
 
-        if (!request.response) {
-            toast.error("Erro ao carregar o elemento.");
-            return;
-        }
 
-        setUpdateElement(request.data);
-        setOpenElementModal(true);
-    };
-
-    const getRelatedElements = async (elementId: number | null) => {
-        const request = await api.bridge<GroupResponse>({
-            method: "get",
-            url: `group/ChildGroup/${props.id}`,
-        });
-
-        if (request.response && request.data) {
-            setRelatedElements(request.data.elements);
-        }
-
-        if (elementId){
-            onElementClicked(elementId);
-        }
-    };
 
     const onSaveElement = async (data: ReturnElementData) => {
         let request;
@@ -69,22 +38,24 @@ const Card: React.FC<CardProps> = (props) => {
         if (data.id) {
             request = await api.bridge<GroupResponse>({
                 method: "put",
-                url: `element/update/${data.id}`,
+                url: `element/update/${data.group_id}/${data.id}`,
                 data: data,
             });
             if (request.response) {
                 setLocalElements((prev) =>
-                    prev.map((el) => (el.id === data.id ? { ...el, name: data.name, icon: data.icon } : el))
+                    prev.map((el) => (el.id === data.id ? { ...el, name: data.name, icon: data.icon , element_related_id: data.element_related_id} : el))
                 );
             }
         } else {
             request = await api.bridge<GroupResponse>({
                 method: "post",
-                url: `element/register/${data.group_id}`,
+                url: `element/update/${data.group_id}/${data.id}`,
                 data: data
             });
 
-          
+            //MELHORAR NO FUTURO
+            window.location.reload();
+
         }
 
         if (!request.response) {
@@ -115,7 +86,7 @@ const Card: React.FC<CardProps> = (props) => {
     const onSaveDeleteElementsGroup = async (elementId: number) => {
         const request = await api.bridge<GenericResponse>({
             method: "delete",
-            url: `group/${props.id}/Element/${elementId}`,
+            url: `group/${props.id}/element/${elementId}`,
         });
 
         if (request.response) {
@@ -127,23 +98,36 @@ const Card: React.FC<CardProps> = (props) => {
     };
 
     useEffect(() => {
-        getRelatedElements(null);
-
-        if (props.elements){
+        if (props.elements) {
             setLocalElements(props.elements);
         }
     }, []);
 
-    useEffect(()=>{
-        console.log(relatedElements)
-    }, [relatedElements])
-
     useEffect(() => {
         if (!openElementModal) {
-
             setUpdateElement(null);
         }
     }, [openElementModal]);
+
+    useEffect(() => {
+        const elementsRelated = props.relatedElements.filter((el) =>
+            updateElement?.element_related_id?.includes(el.id)
+        );
+
+        setElementsRelatedDetail(elementsRelated);
+    }, [updateElement])
+
+    const DetailsElement = async (elementId: number) => {
+
+        props.onAddElementClick && props.onAddElementClick(props.id)
+
+        if (localElements.length <= 0) return;
+
+        const elemento = localElements.find((el) => el.id === elementId) || null;
+
+        setUpdateElement(elemento);
+        setOpenElementModal(true);
+    };
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -214,7 +198,7 @@ const Card: React.FC<CardProps> = (props) => {
                                 onMouseLeave={() => setHoveredElement(null)}
                             >
                                 <button
-                                    onClick={() => { getRelatedElements(element.id)}}
+                                    onClick={() => { { DetailsElement(element.id) } }}
                                     className="flex gap-2 justify-center items-center"
                                     id={`button-element-${element.id}`}
                                 >
@@ -238,7 +222,7 @@ const Card: React.FC<CardProps> = (props) => {
                         ))
                         .concat(
                             <button
-                                onClick={() => setOpenElementModal(true)}
+                                onClick={() => { setOpenElementModal(true), props.onAddElementClick && props.onAddElementClick(props.id) }}
                                 className="flex justify-center items-center p-[6px] rounded-md bg-yellow-300 border-2 border-black active:bg-yellow-300 active:text-white active:border-white"
                             >
                                 <Plus size={20} />
@@ -256,9 +240,10 @@ const Card: React.FC<CardProps> = (props) => {
 
             <ElementModal
                 data={updateElement}
+                localElementsRelatedDetails={elementsRelatedDetails}
                 onSaveClick={onSaveElement}
                 groupId={props.id || 0}
-                relatedElements={relatedElements}
+                relatedElements={props.relatedElements}
                 onRequestClose={() => setOpenElementModal(false)}
                 open={openElementModal}
             />

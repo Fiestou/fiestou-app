@@ -39,12 +39,21 @@ export interface Element {
     id: number
     name: string
     icon: string
-    description: string
-    active: number
-    created_at: string
-    updated_at: string
-    group_id: number,
-    element_related_id: number[]
+    checked?: boolean
+    description?: string
+    groupName?: string
+    active?: number
+    created_at?: string
+    updated_at?: string 
+    group_id?: number,
+    element_related_id?: number[]
+}
+
+export interface relatedElement {
+    id: number
+    name: string
+    icon: string
+    groupName?: string
 }
 
 export interface ElementsResponse {

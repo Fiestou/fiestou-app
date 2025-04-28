@@ -6,18 +6,19 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import NewGroup from "../../../src/components/pages/admin/filtro/buttons/NewGroup";
 import { CirclePlus } from 'lucide-react';
 import EyeButton from "../../../src/components/pages/admin/filtro/buttons/Eye";
-import Card, { ElementsCard } from "../../../src/components/pages/admin/filtro/section/Card";
+import Card from "../../../src/components/pages/admin/filtro/section/Card";
 import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modals/GroupModal";
 import { Group, GroupResponse, GroupsResponse, ResponseRegister } from "../../../src/types/filtros/response";
 import { RequestRegister } from "../../../src/types/filtros/request";
 import { toast } from "react-toastify";
-
+import { Element } from "@/src/types/filtros/response";
 export default function Categorias() {
   const api = new Api();
 
   const [openGroupModal, setOpenGroupModal] = useState<boolean>(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [updateGroup, setUpdateGroup] = useState<Group | null>();
+  const [nextGroupElements, setNextGroupElements] = useState<Element[]>([]);
 
   const onSaveGroup = async (data: GroupData) => {
     let dataRequest: RequestRegister = {
@@ -28,13 +29,13 @@ export default function Categorias() {
 
     let request;
 
-    if (data.id){
+    if (data.id) {
       request = await api.bridge<ResponseRegister>({
         method: "put",
         url: `group/update/${data.id}`,
         data: dataRequest
       });
-    }else{
+    } else {
       request = await api.bridge<ResponseRegister>({
         method: "post",
         url: "group/register",
@@ -42,7 +43,7 @@ export default function Categorias() {
       });
     }
 
-    if (!request.response) {
+    if (!request) {
       toast.error('Não foi possível salvar o grupo de filtros.')
       return;
     }
@@ -50,6 +51,39 @@ export default function Categorias() {
     setOpenGroupModal(false);
     window.location.reload();
   }
+
+  const handleAddElementClick = (groupId: number) => {
+
+    setNextGroupElements([]); // Limpa os elementos do próximo grupo ao adicionar um novo elemento
+    const currentIndex = groups.findIndex(group => group.id === groupId);
+
+    if (currentIndex === -1) {
+      return; // Caso o grupo não exista, não faça nada
+    }
+  
+    const nextGroup = groups[currentIndex + 1];
+  
+    if (currentIndex === groups.length - 1) {
+      // Se for o último grupo, defina um elemento de "último grupo"
+      setNextGroupElements([
+        {
+          name: "é o último grupo",
+          icon: '',
+          id: -1, // Você pode definir isso conforme necessário
+        }
+      ]);
+    } else if (nextGroup && nextGroup.elements) {
+      // Mapeando os elementos de Element[] para ElementsCard[]
+      const mappedElements = nextGroup.elements.map((element) => ({
+        ...element,  // Preserva as propriedades de Element
+        groupName: nextGroup.name, // Adiciona a propriedade groupName
+      }));
+      	
+      setNextGroupElements(mappedElements);
+    } else {
+      setNextGroupElements([]);
+    }
+  };
 
   const getGroups = async () => {
     try {
@@ -65,31 +99,30 @@ export default function Categorias() {
     }
   };
 
-  const onEditClick = async (groupId: number) =>{
-    const request = await api.call<GroupResponse>({
-      method: "get",
-      url: `group/get/${groupId}`,
-    });
+  const onEditClick = async (groupId: number) => {
+    const GroupGet = groups.filter((el) => el.id === groupId); // Corrigir o uso do filter
 
-    if(request.response){
-      setUpdateGroup(request.data);
-      setOpenGroupModal(true);
+    if (GroupGet.length > 0) {  // Verifica se encontrou o grupo
+        setUpdateGroup(GroupGet[0]); // Apenas usa o primeiro grupo encontrado
+        setOpenGroupModal(true);
+    } else {
+        console.error("Grupo não encontrado");
     }
-  }
+};
 
   useEffect(() => {
     getGroups();
   }, [])
 
   useEffect(() => {
-    if (!openGroupModal){
+    if (!openGroupModal) {
       setUpdateGroup(null);
     }
   }, [openGroupModal])
 
   return (
     <Template
-      header={{
+      header={{ 
         template: "admin",
         position: "solid",
       }}
@@ -128,23 +161,26 @@ export default function Categorias() {
         <div
           className=" flex flex-col gap-3 w-full max-w-[1000px] max-h-scree  "
         >
-            {groups && groups.length > 0 ? (
+          {groups && groups.length > 0 ? (
             groups.map((value, index) => {
-                
-                return (
+
+              return (
                 <Card
-                key={index}
-                onEditClick={onEditClick}
-                elements={value.elements as ElementsCard[]}
-                title={value.name}
-                description={value.description}
-                id={value.id}
-                onDeleteGroup={() => {setGroups((prev) => prev.filter((group) => group.id !== value.id))}} />
-                );
+                  key={index}
+                  onEditClick={onEditClick}
+                  elements={value.elements as Element[]}
+                  relatedElements={nextGroupElements}
+                  title={value.name}
+                  description={value.description}
+                  id={value.id}
+                  onDeleteGroup={() => { setGroups((prev) => prev.filter((group) => group.id !== value.id)) }}
+                  onAddElementClick={handleAddElementClick}
+                />
+              );
             })
-            ) : (
+          ) : (
             <p>No groups available.</p>
-            )}
+          )}
 
         </div>
       </section>
