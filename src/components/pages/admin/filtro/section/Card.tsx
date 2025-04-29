@@ -49,7 +49,7 @@ const Card: React.FC<CardProps> = (props) => {
         } else {
             request = await api.bridge<GroupResponse>({
                 method: "post",
-                url: `element/update/${data.group_id}/${data.id}`,
+                url: `element/register/${data.group_id}/`,
                 data: data
             });
 

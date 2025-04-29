@@ -25,32 +25,39 @@ export default function Categorias() {
       name: data?.name || '',
       description: data?.description || '',
       active: true,
+    };
+  
+    try {
+      let request;
+  
+      if (data.id) {
+        request = await api.bridge<ResponseRegister>({
+          method: "put",
+          url: `group/update/${data.id}`,
+          data: dataRequest
+        });
+      } else {
+        request = await api.bridge<ResponseRegister>({
+          method: "post",
+          url: "group/register",
+          data: dataRequest
+        });
+      }
+  
+      if (!request) {
+        toast.error('Não foi possível salvar o grupo de filtros.');
+        return;
+      }
+      setOpenGroupModal(false);
+      window.location.reload();
+
+      toast.success('Grupo de filtros salvo com sucesso!');
+  
+    } catch (error) {
+      console.error('Erro ao salvar o grupo:', error);
+      toast.error('Ocorreu um erro ao salvar o grupo de filtros.');
     }
-
-    let request;
-
-    if (data.id) {
-      request = await api.bridge<ResponseRegister>({
-        method: "put",
-        url: `group/update/${data.id}`,
-        data: dataRequest
-      });
-    } else {
-      request = await api.bridge<ResponseRegister>({
-        method: "post",
-        url: "group/register",
-        data: dataRequest
-      });
-    }
-
-    if (!request) {
-      toast.error('Não foi possível salvar o grupo de filtros.')
-      return;
-    }
-
-    setOpenGroupModal(false);
-    window.location.reload();
-  }
+  };
 
   const handleAddElementClick = (groupId: number) => {
 
