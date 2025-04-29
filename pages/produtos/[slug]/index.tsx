@@ -35,10 +35,11 @@ import Newsletter from "@/src/components/common/Newsletter";
 import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
+import { Navigation, Pagination, Zoom } from "swiper";
+import 'swiper/css';
+import 'swiper/css/zoom';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 import Calendar from "@/src/components/ui/form/CalendarUI";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -230,20 +231,20 @@ export default function Produto({
               .length
               ? variations.filter((item: any) => item.id != value.id)
               : !limit || variations.length < limit
-              ? [...variations, value]
-              : variations;
+                ? [...variations, value]
+                : variations;
           }
 
           if (attr.selectType == "quantity") {
             variations = !!variations.filter((item: any) => item.id == value.id)
               .length
               ? variations
-                  .map((item: any) =>
-                    item.id == value.id
-                      ? { ...item, quantity: value.quantity }
-                      : item
-                  )
-                  .filter((item: any) => !!item.quantity)
+                .map((item: any) =>
+                  item.id == value.id
+                    ? { ...item, quantity: value.quantity }
+                    : item
+                )
+                .filter((item: any) => !!item.quantity)
               : [...variations, value];
           }
 
@@ -368,11 +369,10 @@ export default function Produto({
                           <Icon
                             icon="fa-star"
                             type="fa"
-                            className={`${
-                              item.rate >= value
-                                ? "text-yellow-500"
-                                : "text-gray-300"
-                            }`}
+                            className={`${item.rate >= value
+                              ? "text-yellow-500"
+                              : "text-gray-300"
+                              }`}
                           />
                         </label>
                       ))}
@@ -403,8 +403,6 @@ export default function Produto({
         limit: 10,
       },
     });
-
-    console.log(request, "request");
 
     setMatch(request?.data ?? []);
   };
@@ -649,23 +647,15 @@ export default function Produto({
                 <div className="relative bg-white -mx-4 md:mx-0 md:mb-10">
                   <Swiper
                     onSwiper={(swiper) => setSwiperInstance(swiper)}
+                    zoom={true}
                     spaceBetween={0}
-                    modules={[Pagination, Navigation]}
-                    centeredSlides={true}
+                    modules={[Zoom, Pagination, Navigation]}
                     navigation={{
-                      prevEl: ".swiper-gallery-prev",
-                      nextEl: ".swiper-gallery-next",
+                      prevEl: ".swiper-gallery-prev", // define o botão anterior
+                      nextEl: ".swiper-gallery-next", // define o botão próximo
                     }}
                     pagination={{
                       el: ".swiper-pagination",
-                    }}
-                    breakpoints={{
-                      0: {
-                        slidesPerView: 2,
-                      },
-                      480: {
-                        slidesPerView: 1,
-                      },
                     }}
                     className="border-y md:border md:rounded-md"
                   >
@@ -677,10 +667,12 @@ export default function Produto({
                               <div className="w-full">
                                 <div className="aspect-square flex justify-center items-center px-1 md:px-2">
                                   {!!getImage(img, "xl") && (
+                                    <div className="swiper-zoom-container">
                                     <Img
                                       src={getImage(img, "xl")}
                                       className="w-full rounded-md"
                                     />
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -691,7 +683,7 @@ export default function Produto({
                   <div className="absolute top-1/2 left-0 -translate-y-1/2 z-[5] p-2">
                     <button
                       type="button"
-                      className="swiper-gallery-prev bg-zinc-900 text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
+                      className="swiper-gallery-prev bg-[#ffc820] text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
                     >
                       <Icon
                         icon="fa-chevron-left"
@@ -702,7 +694,7 @@ export default function Produto({
                   <div className="absolute top-1/2 right-0 -translate-y-1/2 z-[5] p-2">
                     <button
                       type="button"
-                      className="swiper-gallery-next bg-zinc-900 text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
+                      className="swiper-gallery-next bg-[#ffc820] text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
                     >
                       <Icon
                         icon="fa-chevron-right"
@@ -799,7 +791,7 @@ export default function Produto({
                   <div className="w-fit md:text-right leading-tight pt-4 md:pt-0">
                     <div className="whitespace-nowrap">
                       {getPrice(product).priceFromFor &&
-                      !!getPrice(product).priceLow ? (
+                        !!getPrice(product).priceLow ? (
                         <div className="text-sm">
                           de
                           <span className="line-through mx-1">
@@ -813,7 +805,7 @@ export default function Produto({
                       <h3 className="font-bold text-4xl lg:text-3xl text-zinc-800">
                         R${" "}
                         {!!product?.schedulingTax &&
-                        product?.schedulingTax > getPriceValue(product).price
+                          product?.schedulingTax > getPriceValue(product).price
                           ? moneyFormat(product?.schedulingTax)
                           : moneyFormat(getPriceValue(product).price)}
                       </h3>
@@ -965,28 +957,40 @@ export default function Produto({
                     </div>
                   </div> 
 
+                  <div className="bg-white relative w-full mb-6">
+                    {!!productToCart?.total && (
+                      <div className="leading-tight w-full">
+                        <div>
+                          <strong className="text-zinc-950">
+                            {(product?.availability ?? 1) >= 1 && (
+                              <div className="flex gap-2 items-center">
+                                <div className="w-[1.25rem] flex justify-center">
+                                  <Icon
+                                    icon="fa-truck"
+                                    type="far"
+                                    className="text-yellow-400 text-base"
+                                  />
+                                </div>
+                                Entrega
+                              </div>
+                            )}
+                          </strong>
+                          <br />{" "}
+                          <p>
+                            Esse produto é entregue em até{" "}
+                            <strong>{product?.availability ?? 1}{" "}</strong>
+                            dia
+                            {Number(product?.availability ?? 1) > 1 ? "s" : ""}.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="bg-white drop-shadow-2xl md:drop-shadow-none fixed z-[20] md:-mx-4 md:relative w-full md:w-auto left-0 bottom-0 flex justify-between">
                     {!!productToCart?.total && (
                       <>
                         <div className="leading-tight self-center w-full px-4">
-                        <div>
-                          <strong className="text-zinc-950">
-                          {!!product?.availability && (
-                            <div className="flex gap-2 items-center">
-                              <div className="w-[1.25rem] flex justify-center">
-                                <Icon
-                                  icon="fa-truck"
-                                  type="far"
-                                  className="text-yellow-400 text-base"
-                                />
-                              </div>Entrega
-                            </div>
-                          )}
-                          </strong><br />{" "}
-                          <p>Esse produto é entregue em até <strong>{product?.availability}{" "}</strong>
-                          dia
-                          {Number(product?.availability || 0) > 1 ? `s` : ""}.</p>
-                        </div><br />
                           <div className="text-xs">
                             {!!productToCart?.details?.dateStart
                               ? dateBRFormat(productToCart?.details?.dateStart)
@@ -1000,8 +1004,7 @@ export default function Produto({
 
                         <div className="text-center p-4">
                           {!inCart ? (
-                            <Button
-                            >
+                            <Button>
                               Adicionar
                             </Button>
                           ) : (
@@ -1015,8 +1018,8 @@ export default function Produto({
                           <style jsx global>{`
                             html {
                               padding-bottom: ${layout.isMobile
-                                ? "6rem"
-                                : "0rem"};
+                              ? "6rem"
+                              : "0rem"};
                             }
                           `}</style>
                         </div>
@@ -1051,61 +1054,61 @@ export default function Produto({
                     !!product?.length ||
                     !!product?.width ||
                     !!product?.height) && (
-                    <div className="border-t pt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      {!!product?.weight && (
-                        <div className="border flex flex-col rounded p-4">
-                          <div className="text-xl text-zinc-900">
-                            <Icon icon="fa-weight" />
+                      <div className="border-t pt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        {!!product?.weight && (
+                          <div className="border flex flex-col rounded p-4">
+                            <div className="text-xl text-zinc-900">
+                              <Icon icon="fa-weight" />
+                            </div>
+                            <div className="pt-4">
+                              Peso:{" "}
+                              <span className="font-bold text-zinc-900">
+                                {product?.weight}kg
+                              </span>
+                            </div>
                           </div>
-                          <div className="pt-4">
-                            Peso:{" "}
-                            <span className="font-bold text-zinc-900">
-                              {product?.weight}kg
-                            </span>
+                        )}
+                        {!!product?.length && (
+                          <div className="border flex flex-col rounded p-4">
+                            <div className="text-xl text-zinc-900">
+                              <Icon icon="fa-ruler" />
+                            </div>
+                            <div className="pt-4">
+                              Comp:{" "}
+                              <span className="font-bold text-zinc-900">
+                                {product?.length}cm
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {!!product?.length && (
-                        <div className="border flex flex-col rounded p-4">
-                          <div className="text-xl text-zinc-900">
-                            <Icon icon="fa-ruler" />
+                        )}
+                        {!!product?.width && (
+                          <div className="border flex flex-col rounded p-4">
+                            <div className="text-xl text-zinc-900">
+                              <Icon icon="fa-ruler-horizontal" />
+                            </div>
+                            <div className="pt-4">
+                              Larg:{" "}
+                              <span className="font-bold text-zinc-900">
+                                {product?.width}cm
+                              </span>
+                            </div>
                           </div>
-                          <div className="pt-4">
-                            Comp:{" "}
-                            <span className="font-bold text-zinc-900">
-                              {product?.length}cm
-                            </span>
+                        )}
+                        {!!product?.height && (
+                          <div className="border flex flex-col rounded p-4">
+                            <div className="text-xl text-zinc-900">
+                              <Icon icon="fa-ruler-vertical" />
+                            </div>
+                            <div className="pt-4">
+                              Alt:{" "}
+                              <span className="font-bold text-zinc-900">
+                                {product?.height}cm
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {!!product?.width && (
-                        <div className="border flex flex-col rounded p-4">
-                          <div className="text-xl text-zinc-900">
-                            <Icon icon="fa-ruler-horizontal" />
-                          </div>
-                          <div className="pt-4">
-                            Larg:{" "}
-                            <span className="font-bold text-zinc-900">
-                              {product?.width}cm
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {!!product?.height && (
-                        <div className="border flex flex-col rounded p-4">
-                          <div className="text-xl text-zinc-900">
-                            <Icon icon="fa-ruler-vertical" />
-                          </div>
-                          <div className="pt-4">
-                            Alt:{" "}
-                            <span className="font-bold text-zinc-900">
-                              {product?.height}cm
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
                   <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none">
                     <div className="flex gap-2 items-center">
                       <div className="w-[1.25rem] flex justify-center">
