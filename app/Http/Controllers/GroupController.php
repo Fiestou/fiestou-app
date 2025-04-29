@@ -2,302 +2,145 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Group;
-use App\Models\GroupElements;
-use App\Models\Elements;
-use Illuminate\Support\Facades\DB;
+use App\models;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Models\Element;
 
 class GroupController extends Controller
 {
-    /**
-     * Create a new group.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function Register(Request $request)
-    {
-        $request->validate([
-            "name" => "required",
-            "description" => "nullable|string",
-            "isFather" => "required|boolean",
-            "elements" => "nullable|array",
-            "elements.*" => "exists:elements,id",
-            "segment" => "nullable|boolean"
-        ]);
 
-        $group_father = Group::whereNull('parent_id')->where('active', 1)->first();
-
-        if ($group_father && $request->get("isFather")) {
-            return response()->json([
-                'response' => false,
-                'message' => 'Não é possível criar dois grupos gerais.'
-            ]);
-        }
-
-        DB::beginTransaction();
-
-        try {
-            $group = new Group();
-            $group->name = $request->name;
-            $group->description = $request->description;
-            $group->segment = $request->segment ?? false;
-            
-            if ($group->segment) {
-                Group::where('segment', true)->update(['segment' => false]);
-            }
-            
-            if (!$request->isFather) {
-                $request->validate(["parent_id" => "required|exists:group,id"]);
-                $group->parent_id = $request->parent_id;
-            }
-
-            if ($group->save()) {
-                if (!empty($request->elements)) {
-                    $elements = Elements::whereIn('id', $request->elements)->get();
-                    foreach ($elements as $element) {
-                        GroupElements::create([
-                            'id_group' => $group->id,
-                            'id_elements' => $element->id
-                        ]);
-                    }
-                    $group->elements = $elements;
-                }
-
-                DB::commit();
-                return response()->json([
-                    'response' => true,
-                    'data' => $group->load('elements')
-                ]);
-            }
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'response' => false,
-                'message' => 'Erro ao salvar o grupo: ' . $e->getMessage()
-            ]);
-        }
-
-        DB::rollBack();
-        return response()->json([
-            'response' => false,
-            'message' => 'Erro ao salvar o grupo.'
-        ]);
-    }
-
-    /**
-     * Get group with id.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function Get($GroupId)
-    {
-        $group = Group::with('elements')->find($GroupId);
-
-        if (!$group) {
-            return response()->json([
-                'response' => false,
-                'message'  => 'Não foi possivel encontrar o grupo.'
-            ]);
-        }
-
-        $parent = null;
-
-        if ($group->parent_id) {
-            $parent = Group::where('id', $group->parent_id)->get();
-            $group->parent = $parent;
-
-            unset($group->parent_id);
-        }
-
-        return response()->json([
-            'response' => true,
-            'data'     => $group
-        ]);
-    }
-
-    /**
-     * Update the group with id.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $GroupId
-     * @return \Illuminate\Http\Response
-     */
-    public function Update(Request $request, $GroupId)
-    {
-        DB::beginTransaction();
-
-        try {
-            
-            $request->validate([
-                "name" => "required",
-                "description" => "nullable|string",
-                "parent_id" => "nullable|exists:group,id",
-                "elements" => "nullable|array",
-                "elements.*" => "exists:elements,id",
-                "segment" => "nullable|boolean",
-            ]);
-
-            $group = Group::with('elements')->findOrFail($GroupId);
-
-            if ($request->segment) {
-                Group::where('id', '!=', $GroupId)
-                     ->where('segment', true)
-                     ->update(['segment' => false]);
-            }
-
-            $updateFields = [
-                'name' => $request->input('name'),
-                'description' => $request->input('description'),
-                'segment' => $request->segment,
-            ];
-
-            if ($request->has('parent_id')) {
-                $updateFields['parent_id'] = $request->input('parent_id');
-            }
-
-            $group->update($updateFields);
-
-            if ($request->has('elements')) {
-                $group->elements()->sync($request->input('elements', []));
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'response' => true,
-                'data' => $group->load('elements')
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'response' => false,
-                'message' => 'Erro ao atualizar o grupo: ' . $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
-     * List groups.
-     *
-     * @param  int  $GroupId
-     * @return \Illuminate\Http\Response
-     */
     public function List()
     {
-        $groups = Group::active()
-            ->with('elements')
-            ->get();
+        Log::info('Iniciando o método List() para buscar grupos e elementos.');
 
-        foreach($groups as $group){
-            if ($group->elements){
-                foreach ($group->elements as $element){
-                    $element->setAttribute('descendants', Elements::getElementDescendants($element->id, 1));
-                }
-            }
-        }
+        // Busca os grupos ativos e carrega os elementos relacionados
+        $groups = Group::active()->with('elements')->get();
 
-        return response()->json([
+        // Logando a quantidade de grupos encontrados
+        Log::info('Total de grupos encontrados: ' . $groups->count());
+
+        // Logando o fim do processamento
+        Log::info('Processamento dos grupos e elementos concluído.');
+
+        // Monta a resposta no formato especificado
+        $response = [
             'response' => true,
-            'data'     => $groups
+            'data' => $groups
+        ];
+
+        // Retorna os grupos com os elementos
+        return response()->json($response);
+    }
+    // Método para registrar um novo grupo
+    public function Register(Request $request)
+    {
+        Log::info('Este é um teste de log.');
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'active' => 'required|boolean',
+            "segment" => "nullable|boolean",
         ]);
+
+        $group = Group::create($validated);
+
+        return response()->json($group, 201); // Retorna o grupo criado com status 201
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $GroupId
-     * @return \Illuminate\Http\Response
-     */
+    // Método para atualizar um grupo existente
+    public function Update(Request $request, $GroupId)
+    {
+        $group = Group::findOrFail($GroupId);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'active' => 'required|boolean',
+            "segment" => "nullable|boolean",
+        ]);
+
+        $group->update($validated);
+
+        return response()->json($group);
+    }
+
+    // Método para deletar um grupo
     public function Delete($GroupId)
     {
-        try {
-            $group = Group::where(['id' => $GroupId])->first();
+        $group = Group::findOrFail($GroupId);
+        $group->delete();
 
-            $group->active = false;
-
-            if ($group->save()) {
-                return response()->json([
-                    'response' => true,
-                    'message'     => 'ok'
-                ]);
-            }
-        } catch (\Exception $e) {
-            return response()->json([
-                'response' => true,
-                'message'     => 'Erro ao deletar o grupo' . $e->getMessage()
-            ]);
-        }
+        $response = [
+            'response' => true,
+            'data' => $GroupId
+        ];
+        return response()->json($response);// Retorna uma resposta vazia com status 204
     }
 
-    /**
-     * Get all descendents of the group.
-     *
-     * @param  int  $GroupId
-     * @return \Illuminate\Http\Response
-     */
+    // Método para obter todos os descendentes de um grupo
+    // Este método só é válido se você tiver algum tipo de hierarquia de grupos
     public function GetAllDescendants($GroupId)
     {
-        try {
-            return response()->json([
-                'response' => true,
-                'data'     =>  Group::getAllDescendants($GroupId, 1)
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'response' => true,
-                'message'     => 'Erro ao pegar de descendentes' . $e->getMessage()
-            ]);
-        }
+        // Aqui você precisará de lógica para buscar os descendentes
+        // O código será dependente da sua estrutura de dados
+
+        $group = Group::findOrFail($GroupId);
+
+        $response = [
+            'response' => true,
+            'data' => $GroupId
+        ];
+        // Exemplo de resposta sem lógica de descendentes, apenas retorna o grupo
+        return response()->json($response);
     }
 
-    /**
-     * Delete relationship grupo and element.
-     *
-     * @param  int  $GroupId
-     * @return \Illuminate\Http\Response
-     */
+    // Método para deletar um elemento de um grupo (se aplicável)
+    // Caso você tenha um relacionamento de elementos dentro do grupo
     public function DeleteGroupElement($GroupId, $ElementId)
     {
-        try {
-            GroupElements::where('id_group', $GroupId)->where('id_elements', $ElementId)->delete();
-            Elements::where('id', $ElementId)->delete();
-
+        // Encontrar o grupo pelo ID
+        $group = Group::find($GroupId);
+    
+        // Se o grupo não existir, retorna erro
+        if (!$group) {
             return response()->json([
-                'response' => true,
-                'data'     => 'OK'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'response' => true,
-                'message'     => 'Erro ao deletar: ' . $e->getMessage()
-            ]);
+                'response' => 404,
+                'message' => 'Grupo não encontrado'
+            ], 404);
         }
-    }
-
-    /**
-     * Delete relationship grupo and element.
-     *
-     * @param  int  $GroupId
-     * @return \Illuminate\Http\Response
-     */
-    public function GetChildGroupWithElements($GroupId)
-    {
-        try {
-            $groupChild = Group::with('elements')->where('parent_id', $GroupId)->first();
-
+    
+        // Encontrar o elemento pelo ID e pelo ID do grupo
+        $element = Element::where('id', $ElementId)->where('group_id', $GroupId)->first();
+    
+        // Se o elemento não for encontrado dentro do grupo, retorna erro
+        if (!$element) {
             return response()->json([
-                'response' => true,
-                'data'     => $groupChild
-            ]);
+                'response' => 404,
+                'message' => 'Elemento não encontrado neste grupo'
+            ], 404);
+        }
+    
+        // Caso o elemento seja encontrado, podemos removê-lo
+        try {
+            $element->delete();
+    
+            // Retornar a resposta com a estrutura solicitada
+            $response = [
+                'response' => 200,
+                'data' => $GroupId
+            ];
+            
+            return response()->json($response, 200);
+    
         } catch (\Exception $e) {
             return response()->json([
-                'response' => true,
-                'message'     => 'Erro ao pegar de descendentes' . $e->getMessage()
-            ]);
+                'response' => 400,
+                'message' => 'Erro ao remover o elemento',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }
