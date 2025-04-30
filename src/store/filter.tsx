@@ -17,7 +17,6 @@ export interface Element {
   icon: string
   checked?: boolean
   description?: string
-  groupName?: string
   active?: number
   created_at?: string
   updated_at?: string 
