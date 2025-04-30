@@ -222,12 +222,16 @@ const Card: React.FC<CardProps> = (props) => {
                         ))
                         .concat(
                             <button
-                                onClick={() => { setOpenElementModal(true), props.onAddElementClick && props.onAddElementClick(props.id) }}
-                                className="flex justify-center items-center p-[6px] rounded-md bg-yellow-300 border-2 border-black active:bg-yellow-300 active:text-white active:border-white"
+                              key="add-element-button"
+                              onClick={() => {
+                                setOpenElementModal(true);
+                                props.onAddElementClick && props.onAddElementClick(props.id);
+                              }}
+                              className="flex justify-center items-center p-[6px] rounded-md bg-yellow-300 border-2 border-black active:bg-yellow-300 active:text-white active:border-white"
                             >
-                                <Plus size={20} />
+                              <Plus size={20} />
                             </button>
-                        )
+                          )                          
                 ) : (
                     <button
                         onClick={() => setOpenElementModal(true)}
