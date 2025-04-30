@@ -4,4 +4,5 @@ export interface RequestRegister {
   name: string
   description: string
   active: boolean
+  segment?: boolean
 }
