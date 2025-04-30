@@ -29,12 +29,17 @@ class GroupController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'active' => 'required|boolean',
-            "segment" => "nullable|boolean",
+            'segment' => 'boolean',
         ]);
 
-        $group = Group::create($validated);
+        if ($request->input('segment') == 1) {
+            Group::where('segment', 1)
+                ->update(['segment' => 0]);
+        }
 
-        return response()->json($group, 201);
+        $group = Group::create($validated);
+    
+        return response()->json($group);
     }
 
     public function Update(Request $request, $GroupId)
