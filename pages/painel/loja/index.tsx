@@ -108,6 +108,7 @@ export default function Loja({
 
   const [oldStore, setOldStore] = useState({} as StoreType);
   const [store, setStore] = useState({} as StoreType);
+  const [groupOptions, setGroupOptions] = useState([]);
   const handleStore = async (value: Object) => {
     setStore({ ...store, ...value });
   };
@@ -120,12 +121,8 @@ export default function Loja({
 
     const handle = request.data ?? {};
 
-    console.log(handle, "<<--");
-
     setOldStore(handle);
-
     setStore(handle);
-
     setWeek((handle?.openClose ?? []) as Array<DayType>);
 
     setHandleCover({
@@ -138,8 +135,7 @@ export default function Loja({
       preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
     });
   };
-
-  // Handle COVER
+  
   const handleCoverRemove = async (e: any) => {
     setHandleCover({
       preview: "",
@@ -239,9 +235,7 @@ export default function Loja({
 
     handleForm({ edit: "", loading: false });
   };
-  // ---
-
-  // Handle PROFILE
+  
   const handleProfileRemove = async (e: any) => {
     setHandleProfile({
       preview: "",
@@ -343,8 +337,7 @@ export default function Loja({
 
     handleForm({ edit: "", loading: false });
   };
-  // ---
-
+  
   const handleZipCode = async (zipCode: string) => {
     const location = await getZipCode(zipCode);
 
@@ -921,7 +914,7 @@ export default function Loja({
                         value={store?.segment}
                         placeholder="Selecione seu segmento"
                         name="lojaTipo"
-                        options={storeTypes.map((item: any) => {
+                        options={groupOptions.map((item: any) => {
                           return {
                             name: item.title,
                             value: item.id,

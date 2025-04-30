@@ -4,7 +4,6 @@ export interface Group {
   id: number;
   name: string;
   description: string;
-  parent_id: string;
   active: number;
   created_at: string;
   updated_at: string;
@@ -12,16 +11,16 @@ export interface Group {
 }
 
 export interface Element {
-  id: number;
-  name: string;
-  icon: string;
-  description: string;
-  active: number;
-  created_at: string;
-  updated_at: string;
-  laravel_through_key: number;
-  checked: boolean; 
-  descendants?: Element[]; 
+  id: number
+  name: string
+  icon: string
+  checked?: boolean
+  description?: string
+  active?: number
+  created_at?: string
+  updated_at?: string 
+  group_id?: number,
+  element_related_id?: number[]
 }
 
 interface GroupStore {
