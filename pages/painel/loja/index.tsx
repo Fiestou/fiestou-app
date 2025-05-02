@@ -38,6 +38,34 @@ export async function getServerSideProps(
             },
           ],
         },
+        {
+          model: "storeType",
+        },
+        {
+          model: "elements",
+          filter: [
+            {
+              key: "active",
+              value: "1",
+              compare: "=",
+            },
+            {
+              relation: "group",
+              where: [
+                {
+                  key: "segment",
+                  value: "1",
+                  compare: "=",
+                },
+                {
+                  key: "active",
+                  value: "1",
+                  compare: "=",
+                },
+              ],
+            },
+          ],
+        },
       ],
     },
     req
@@ -45,11 +73,13 @@ export async function getServerSideProps(
 
   const page = request?.data?.query?.page ?? [];
   const storeTypes = request?.data?.query.storeType ?? [];
+  const elements = request?.data?.query.elements ?? [];
 
   return {
     props: {
       page: page[0] ?? {},
       storeTypes: storeTypes,
+      elements: elements, // Agora enviamos os elementos diretamente
     },
   };
 }
@@ -70,12 +100,14 @@ const days = [
   { value: "Holiday", name: "Feriados" },
 ];
 
-export default function Loja({
+export default function Store({
   page,
   storeTypes,
+  elements,
 }: {
   page: any;
   storeTypes: Array<RelationType>;
+  elements: Array<Element>;
 }) {
   const api = new Api();
   const router = useRouter();
@@ -85,7 +117,7 @@ export default function Loja({
     setForm({ ...form, ...value });
   };
 
-  const [week, setWeek] = useState([] as Array<DayType>);
+  const [week, setWeek] = useState<DayType[]>([]);
   const handleWeek = (value: Object, day: string) => {
     let handle = store?.openClose ?? ([] as Array<DayType>);
 
@@ -114,16 +146,21 @@ export default function Loja({
   };
 
   const getStore = async () => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "stores/form",
-    });
+    try {
+      let request: any = await api.bridge({
+        method: 'post',
+        url: "stores/form",
+      });
+  
+      const handle = request.data ?? {};
 
-    const handle = request.data ?? {};
+      const openClose = Array.isArray(handle?.openClose) 
+      ? handle.openClose 
+      : [];
 
-    setOldStore(handle);
-    setStore(handle);
-    setWeek((handle?.openClose ?? []) as Array<DayType>);
+      setOldStore(handle);
+      setStore(handle);
+      setWeek(openClose);
 
     setHandleCover({
       remove: 0,
@@ -134,6 +171,10 @@ export default function Loja({
       remove: 0,
       preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
     });
+    } catch (error) {
+      console.error("Error fetching store data:", error);
+      setWeek([]);
+    }
   };
   
   const handleCoverRemove = async (e: any) => {
@@ -909,25 +950,34 @@ export default function Loja({
                     {form.edit == "segment" ? (
                       <Select
                         onChange={(e: any) =>
-                          handleStore({ segment: e.target.value })
+                          handleStore({ segment: parseInt(e.target.value) })
                         }
-                        value={store?.segment}
+                        value={store?.segment?.toString()}
                         placeholder="Selecione seu segmento"
                         name="lojaTipo"
-                        options={groupOptions.map((item: any) => {
-                          return {
-                            name: item.title,
-                            value: item.id,
-                          };
-                        })}
+                        options={elements.map((element: Element) => ({
+                          name: (
+                            <div className="flex items-center gap-2">
+                              {element.icon && (
+                                <img 
+                                  src={element.icon} 
+                                  alt={element.name}
+                                  className="w-5 h-5"
+                                />
+                              )}
+                              <span>{element.name}</span>
+                            </div>
+                          ),
+                          value: element.id.toString(),
+                        }))}
                       />
                     ) : (
-                      storeTypes.filter((item) => item.id == store?.segment)[0]
-                        ?.title ?? "Informe o segmento da sua loja"
-                    )}
-                  </div>
-                </form>
-                {/*  */}
+                      elements.find((e: Element) => e.id === store?.segment)?.name ??
+                      "Informe o segmento da sua loja"
+                  )}
+                </div>
+              </form>
+              {/*  */}
               </div>
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
                 <HelpCard list={page.help_list} />
