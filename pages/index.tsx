@@ -30,6 +30,8 @@ export async function getStaticProps(ctx: any) {
     url: `home`,
   });
 
+  console.log("Home data:", request);
+
   const Categories = request?.data?.Categories ?? [];
   const Home = request?.data?.Home ?? {};
   const Products = request?.data?.Products ?? [];
@@ -71,6 +73,8 @@ export default function Home({
 }) {
   const api = new Api();
   const { setGroups } = useGroup();
+
+  console.log("Home component props:", Home);
 
   const renderImageSlider = (slide: any) => {
     return getImage(slide?.main_slide_cover, "default") ? (
