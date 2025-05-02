@@ -1,14 +1,14 @@
 import React, { useRef, useEffect } from "react";
-import { ElementChild } from "../modals/ElementModal";
 import { X } from "lucide-react";
+import { Element } from "@/src/types/filtros/response";
 
 interface SelectElementsProps {
-    relatedElements: ElementChild[];
+    relatedElements:    Element[];
     open: boolean;
     onRequestOpen: () => void;
     onRequestClose: () => void;
-    selectedList: ElementChild[];
-    onChageSelectList: (data: ElementChild[]) => void;
+    selectedList:Element[];
+    onChageSelectList: (data: Element[]) => void;
 }
 
 const SelectElements: React.FC<SelectElementsProps> = (props) => {
@@ -27,22 +27,23 @@ const SelectElements: React.FC<SelectElementsProps> = (props) => {
         };
     }, []);
 
-    const onCheckClick = (checked: boolean, value: ElementChild) => {
+    const onCheckClick = (checked: boolean, value: Element) => {
         props.onChageSelectList(
-            checked
-                ? [...props.selectedList, { ...value, checked: true }]
-                : props.selectedList.filter((item) => item.id !== value.id)
+          checked
+            ? [...props.selectedList, { ...value, checked: true }] 
+            : props.selectedList.filter((item) => item.id !== value.id)
         );
-    };
-
-    const onCheckAllClick = (checked: boolean) => {
+      };
+      
+      const onCheckAllClick = (checked: boolean) => {
         props.onChageSelectList(
-            checked ? props.relatedElements.map((item) => ({ ...item, checked: true })) : []
+          checked
+            ? props.relatedElements.map((item) => ({ ...item, checked: true })) 
+            : []
         );
-        props.onRequestClose();
-    };
+      };
 
-    // Verifica se todos os itens de relatedElements estão em selectedList
+
     const isAllSelected =
         props.relatedElements.length > 0 &&
         props.relatedElements.every((item) =>
@@ -87,7 +88,7 @@ const SelectElements: React.FC<SelectElementsProps> = (props) => {
                             type="checkbox"
                             id="check-all-box"
                             onChange={(event) => onCheckAllClick(event.target.checked)}
-                            checked={isAllSelected} // Controla o estado do checkbox
+                            checked={isAllSelected}
                             className="w-5 h-5 accent-yellow-500"
                         />
                         <label htmlFor="check-all-box">Selecionar todos</label>
