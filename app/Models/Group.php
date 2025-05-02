@@ -14,6 +14,10 @@ class Group extends BaseModel
         'name',
         'description',
         'active',
+        'segment',
+    ];
+    protected $casts = [
+        'segment' => 'boolean'
     ];
 
     // Escopo para filtrar grupos ativos
