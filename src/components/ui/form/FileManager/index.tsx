@@ -29,6 +29,22 @@ interface FileManagerType {
   rounded?: boolean;
 }
 
+interface MediaUploadResponse {
+  response: boolean;
+  medias?: Array<{
+    id: string | number;
+  }>;
+}
+
+interface MediaListResponse {
+  response: boolean;
+  medias?: Array<{
+    id: string | number;
+  }>;
+}
+
+
+
 export default function FileManager(attr: FileManagerType) {
   const api = new Api();
 
@@ -36,7 +52,6 @@ export default function FileManager(attr: FileManagerType) {
   let user = JSON.parse(cookie);
 
   const [removeActive, setRemoveActive] = useState(false as boolean);
-
   const [placeholder, setPlaceholder] = useState([] as any);
   const [selecteds, setSelecteds] = useState({ medias: [] } as any);
 
@@ -80,26 +95,33 @@ export default function FileManager(attr: FileManagerType) {
     }
 
     if (!!uploadFiles.length) {
-      const upload = await api
-        .media({
+      try {
+        const upload = await api.media({
           app: user.person == "master" ? -1 : !!user?.store ? user?.store : -1,
           dir: attr.options.dir,
           index: "media",
           method: "upload",
           medias: send,
-        })
-        .then((data: any) => data);
+        }) as unknown as MediaUploadResponse;
 
-      if (upload.response && !!upload.medias) {
-        const request: any = await api.graph({
-          method: 'post',
-          url: "files/list-medias",
-        });
+        if (upload?.response && upload?.medias) {
+          const request = await api.graph({
+            method: "post",
+            url: "files/list-medias",
+          }) as unknown as MediaListResponse;
 
-        if (!!request.response) {
-          setPlaceholder([]);
-          setMediaList(request.medias);
+          if (request?.response) {
+            setPlaceholder([]);
+            setMediaList(request.medias || []);
+          } else {
+            console.error("Erro ao listar mídias: resposta inválida", request);
+          }
+        } else {
+          console.error("Erro no upload: resposta inválida", upload);
         }
+      } catch (error) {
+        console.error("Erro ao fazer upload:", error);
+        setPlaceholder([]);
       }
     }
   };
@@ -122,15 +144,17 @@ export default function FileManager(attr: FileManagerType) {
       mediaList.filter((item: any) => !removeFiles.includes(item.id))
     );
 
-    const remove = await api
-      .media({
+    try {
+      const remove = await api.media({
         app: user.person == "master" ? -1 : !!user?.store ? user?.store : -1,
         dir: attr.options.dir,
         index: "media",
         method: "remove",
         medias: removeFiles,
-      })
-      .then((res: any) => res);
+      });
+    } catch (error) {
+      console.error("Erro ao remover mídias:", error);
+    }
 
     setRemoveActive(false);
     setSelecteds({ medias: [] });
@@ -139,20 +163,26 @@ export default function FileManager(attr: FileManagerType) {
   const openModal = async () => {
     setModalStatus(true);
 
-    const request: any = await api.graph({
-      method: 'post',
-      url: "files/list-medias",
-    });
+    try {
+      const request: any = await api.graph({
+        method: "post",
+        url: "files/list-medias",
+      });
 
-    if (!!request.response) {
-      setMediaList(request.medias);
+      if (request?.response) {
+        setMediaList(request.medias || []);
+      } else {
+        console.error("Erro ao abrir modal: resposta inválida", request);
+      }
+    } catch (error) {
+      console.error("Erro ao abrir modal:", error);
     }
   };
 
   const closeModal = async () => {
     setModalStatus(false);
     setMediaList([]);
-    setSelecteds(attr?.value);
+    setSelecteds(attr?.value || { medias: [] });
   };
 
   return (
