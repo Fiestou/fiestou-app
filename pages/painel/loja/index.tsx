@@ -25,7 +25,7 @@ export async function getServerSideProps(
 
   request = await api.call(
     {
-      method: 'post',
+      method: "post",
       url: "request/graph",
       data: [
         {
@@ -115,7 +115,7 @@ export default function Loja({
 
   const getStore = async () => {
     let request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/form",
     });
 
@@ -135,7 +135,7 @@ export default function Loja({
       preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
     });
   };
-  
+
   const handleCoverRemove = async (e: any) => {
     setHandleCover({
       preview: "",
@@ -218,7 +218,7 @@ export default function Loja({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -235,7 +235,7 @@ export default function Loja({
 
     handleForm({ edit: "", loading: false });
   };
-  
+
   const handleProfileRemove = async (e: any) => {
     setHandleProfile({
       preview: "",
@@ -320,7 +320,7 @@ export default function Loja({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -337,7 +337,7 @@ export default function Loja({
 
     handleForm({ edit: "", loading: false });
   };
-  
+
   const handleZipCode = async (zipCode: string) => {
     const location = await getZipCode(zipCode);
 
@@ -928,6 +928,105 @@ export default function Loja({
                   </div>
                 </form>
                 {/*  */}
+
+                <form
+                  onSubmit={(e: any) => handleSubmit(e)}
+                  method="POST"
+                  className="grid gap-4 border-b pb-8 mb-0"
+                >
+                  <div className="flex items-center">
+                    <div className="w-full">
+                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                        Valores de entrega
+                      </h4>
+                    </div>
+                    <div className="w-fit">{renderAction("frete")}</div>
+                  </div>
+                  <div className="w-full">
+                    {form.edit == "frete" ? (
+                      <div className="grid gap-4">
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Você possui serviço de entrega?
+                          </label>
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="hasDelivery"
+                                value="yes"
+                                checked={store?.hasDelivery === "yes"}
+                                onChange={(e) =>
+                                  handleStore({ hasDelivery: e.target.value })
+                                }
+                              />
+                              <span>Sim</span>
+                            </label>
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="hasDelivery"
+                                value="no"
+                                checked={store?.hasDelivery === "no"}
+                                onChange={(e) =>
+                                  handleStore({ hasDelivery: e.target.value })
+                                }
+                              />
+                              <span>Não</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Valor do KM rodado
+                          </label>
+                          <div className="relative">
+                            <Input
+                              type="text"
+                              className="w-full"
+                              value={store?.kmValue}
+                              onChange={(e) =>
+                                handleStore({ kmValue: e.target.value })
+                              }
+                            />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-help group">
+                              <Icon
+                                icon="fa-info-circle"
+                                className="text-zinc-400"
+                              />
+                              <div className="absolute hidden group-hover:block right-0 bg-zinc-800 text-white p-2 rounded text-sm w-48">
+                                Valor cobrado por quilômetro rodado na entrega
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Região de atendimento
+                          </label>
+                          <Select
+                            isMulti
+                            placeholder="Selecione as regiões"
+                            value={store?.deliveryRegions}
+                            onChange={(values) =>
+                              handleStore({ deliveryRegions: values })
+                            }
+                            options={[
+                              { value: "aguaFria", name: "Água Fria" },
+                              { value: "altoDoCeu", name: "Alto do Céu" },
+                              { value: "aeroclube", name: "Aeroclube" },
+                              { value: "bessa", name: "Bessa" },
+                            ]}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>Informe as regras do frete</>
+                    )}
+                  </div>
+                </form>
               </div>
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
                 <HelpCard list={page.help_list} />
