@@ -18,21 +18,18 @@ export interface FilterQueryType {
 }
 
 export interface Element {
-  id: number;
-  name: string;
-  icon: string;
-  description: string;
-  active: number;
-  created_at: string;
-  updated_at: string;
-  laravel_through_key: number;
-  checked: boolean;
-  descendants?: Element[];
-  slug?: string;
-  parent_group_id?: number;
-  generation_level?: number;
+  id: number
+  name: string
+  icon: string
+  checked?: boolean
+  description?: string
+  groupName?: string
+  active?: number
+  created_at?: string
+  updated_at?: string
+  group_id?: number,
+  element_related_id?: number[]
 }
-
 export default function Filter(params: { store?: string; busca?: string }) {
   const router = useRouter();
 
@@ -42,7 +39,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
     range: 1000,
     order: "desc",
   });
-
   const handleQueryValues = (value: Partial<FilterQueryType>) => {
     setQuery({ ...query, ...value });
   };
@@ -94,115 +90,106 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const filterArea = useRef<HTMLDivElement>(null);
   const [stick, setStick] = useState<boolean>(false);
   const { groups } = useGroup();
-  const [localGroups, setLocalGroups] = useState<Group[]>(groups);
-  const [lastElements, setLastElements] = useState<Element[]>([]);
+  const [localGroups, setLocalGroups] = useState<Group[]>([]);
 
-  const onClickElementFilter = (elementId: number, checked: boolean, descendants: Element[]) => {
-    let checkedGroupElements: Group[] = [];
-    let updateLocalGroups = localGroups
-      .map((group) => ({
-        ...group,
-        elements: group.elements
-          .map((element) => {
-            if (element.id === elementId) {
-              if (!element.checked === true) {
-                checkedGroupElements.push(group);
-              }
-              return { ...element, checked: !element.checked };
-            }
-            return element;
-          })
-      })
-      );
+  const handleElementClick = (element: Element) => {
+    const isSelected = query.categories.includes(element.id);
 
-    let finalGroups: Group[] = updateLocalGroups;
+    const updatedCategories = isSelected
+      ? query.categories.filter((id) => id !== element.id)
+      : [...query.categories, element.id];
 
-    if (!checked === true) {
-      let positionGroup = 0;
-      let lastGroup: Group;
+    handleQueryValues({ categories: updatedCategories });
 
-      for (let i = 0; i < updateLocalGroups.length; i++) {
-        const localGroup = updateLocalGroups[i];
+    if (isSelected) {
+      removeRelatedElements(element);
+    } else {
+      filterTree(element);
+    }
+  };
 
-        if (localGroup.elements.some(element => element.id === elementId)) {
-          lastGroup = updateLocalGroups[i + 1];
-          positionGroup = i;
-        }
-      }
-
-      if (updateLocalGroups.length + 1 > positionGroup + 1) {
-        finalGroups.map((group, index) => {
-          let groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
-          let elements: Element[] = [];
-
-          if (index === positionGroup + 1) {
-            groupGlobal?.elements.map((element) => {
-              if (descendants.some((descendant) => descendant.id === element.id) && !elements.includes(element)) {
-                elements.push(element);
-              }
-            });
-
-            if (lastElements) {
-              lastElements.map((element: Element) => {
-                if (!elements.includes(element) && lastGroup && lastGroup.id === group.id && groupGlobal?.elements.includes(element)) {
-                  elements.push(element);
-                }
-              });
-            }
-
-            setLastElements(elements);
-            group.elements = elements;
-          }
-        });
-      }
-    } else if (!checked === false) {
-      let positionGroup = 0;
-      let lastGroup: Group;
-
-      for (let i = 0; i < updateLocalGroups.length; i++) {
-        const localGroup = updateLocalGroups[i];
-        if (localGroup.elements.some(element => element.id === elementId)) {
-          lastGroup = updateLocalGroups[i + 1];
-          positionGroup = i;
-        }
-      }
-
-      if (updateLocalGroups.length + 1 > positionGroup + 1) {
-        finalGroups = finalGroups.map((group, index) => {
-          if (index === positionGroup + 1) {
-            const groupGlobal = groups.find((groupGlobal) => group.id === groupGlobal.id);
-
-            const filteredElements = group.elements.filter((element) =>
-              !descendants.some((descendant) => descendant.id === element.id)
-            );
-
-            if (filteredElements.length > 0) {
-              return {
-                ...group,
-                elements: filteredElements
-              };
-            }
-            return {
-              ...group,
-              elements: groupGlobal?.elements || []
-            };
-          }
-          return group;
-        });
-
-        setLastElements(prevElements =>
-          prevElements.filter((element) =>
-            !descendants.some((descendant) => descendant.id === element.id)
-          )
-        );
-      }
+  const filterTree = (clickedElement: Element) => {
+    if (!clickedElement.element_related_id || clickedElement.element_related_id.length === 0) {
+      return;
     }
 
-    setLocalGroups(finalGroups);
+    const relatedElement = groups
+      .flatMap(group => group.elements)
+      .find(el => clickedElement.element_related_id?.includes(el.id));
+
+    const relatedGroup = groups.find(group => group.id === relatedElement?.group_id);
+    if (!relatedGroup) return;
+
+    const filteredElements = relatedGroup.elements.filter(el =>
+      clickedElement.element_related_id?.includes(el.id)
+    );
+
+    const filteredGroup: Group = {
+      ...relatedGroup,
+      elements: filteredElements,
+    };
+
+    setLocalGroups(prev => {
+      const indexInPrev = prev.findIndex(group => group.id === relatedGroup.id);
+
+      if (indexInPrev !== -1) {
+        const updated = [...prev];
+        updated[indexInPrev].elements = [
+          ...updated[indexInPrev].elements,
+          ...filteredGroup.elements.filter(
+            el => !updated[indexInPrev].elements.some(existingEl => existingEl.id === el.id)
+          ),
+        ];
+        return updated;
+      }
+
+      const updated = [...prev];
+      const indexInGroups = groups.findIndex(g => g.id === relatedGroup.id);
+
+      let insertIndex = updated.length;
+      for (let i = 0; i < updated.length; i++) {
+        const groupIndex = groups.findIndex(g => g.id === updated[i].id);
+        if (groupIndex > indexInGroups) {
+          insertIndex = i;
+          break;
+        }
+      }
+
+      updated.splice(insertIndex, 0, filteredGroup);
+      return updated;
+    });
+
+  };
+
+  const removeRelatedElements = (clickedElement: Element) => {
+    if (!clickedElement.element_related_id || clickedElement.element_related_id.length === 0) {
+      return;
+    }
+
+    const otherSelectedElements = query.categories.filter(id => id !== clickedElement.id);
+    const otherRelatedIds = groups
+      .flatMap(group => group.elements)
+      .filter(el => otherSelectedElements.includes(el.id))
+      .flatMap(el => el.element_related_id || []);
+
+    setLocalGroups(prev =>
+      prev.map(group => ({
+        ...group,
+        elements: group.elements.filter(
+          el =>
+            !clickedElement.element_related_id?.includes(el.id) ||
+            otherRelatedIds.includes(el.id)
+        ),
+      })).filter(group => group.elements.length > 0)
+    );
+
+   
   };
 
   useEffect(() => {
-    setLocalGroups(groups);
+    if (groups.length > 0) {
+      setLocalGroups([groups[0]]);
+    }
   }, [groups]);
 
   const openModal = () => {
@@ -218,6 +205,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
     }
   };
 
+  
   useEffect(() => {
     if (typeof window !== "undefined") {
       handleStick();
@@ -349,58 +337,57 @@ export default function Filter(params: { store?: string; busca?: string }) {
           </div>
         </div>
 
-        {localGroups.map((group, groupIndex) => (
-          <div key={groupIndex} className="pb-6">
+        {localGroups.map((group) => (
+          <div key={group.id} className="pb-6">
             <Label>{group.name}</Label>
+
             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
-              <div className={`flex md:flex-wrap gap-2 ${groupIndex === 0 ? "space-x-2" : ""}`}>
-                {group.elements.map((element: Element, index: number) => (
-                  <div
-                  key={index}
-                  className={`
-                    border cursor-pointer ease relative rounded
-                    ${element.checked 
-                      ? "border-zinc-800 hover:border-zinc-500" 
-                      : "hover:border-zinc-300"
-                    }
-                    flex flex-col items-center p-2 w-auto
-                  `}
-                  onClick={() => {
-                    onClickElementFilter(element.id, element.checked, element.descendants || []);
-                  }}
+              <div className={`flex md:flex-wrap gap-2 ${group.id === localGroups[0]?.id ? "space-x-2" : ""}`}>
+          {group.elements.map((element) => (
+            <div
+              key={element.id}
+              className={`
+              border cursor-pointer ease relative rounded
+              ${query.categories.includes(element.id)
+            ? "border-zinc-800 hover:border-zinc-500"
+            : "hover:border-zinc-300"
+                }
+              flex flex-col items-center p-2 w-auto
+            `}
+              onClick={() => {handleElementClick(element)}}
+            >
+              <div className={`flex items-center gap-2 ${group.id === localGroups[0]?.id ? "flex-col" : "flex-row whitespace-nowrap"}`}>
+                {element.icon && (
+            <Img
+              src={element.icon}
+              className={`object-contain ${group.id === localGroups[0]?.id
+                  ? "h-[40px] w-[40px]"
+                  : "h-[20px] w-[20px] flex-shrink-0"
+                }`}
+            />
+                )}
+
+                <div
+            className={`text-sm md:text-base ${group.id === localGroups[0]?.id
+                ? "text-center font-medium"
+                : "font-normal whitespace-nowrap"
+              }`}
                 >
-                    <div className={`flex items-center gap-2 ${groupIndex === 0 ? "flex-col" : "flex-row whitespace-nowrap"}`}>
-                      {element.icon && (
-                        <Img
-                          src={element.icon}
-                          className={`object-contain ${
-                            groupIndex === 0 
-                              ? "h-[40px] w-[40px]" 
-                              : "h-[20px] w-[20px] flex-shrink-0"
-                          }`}
-                        />
-                      )}
-                      <div
-                        className={`text-sm md:text-base ${
-                          groupIndex === 0 
-                            ? "text-center font-medium" 
-                            : "font-normal whitespace-nowrap"
-                        }`}
-                      >
-                        {element.name}
-                      </div>
-                      {query.categories.includes(element.id) && (
-                        <input
-                          type="checkbox"
-                          name="categoria[]"
-                          value={element.slug || element.name}
-                          defaultChecked={true}
-                          className="absolute opacity-0 z-[-1]"
-                        />
-                      )}
-                    </div>
-                  </div>
-                ))}
+            {element.name}
+                </div>
+
+                {query.categories.includes(element.id) && (
+            <input
+              type="checkbox"
+              name="categoria[]"
+              value={element.name}
+              defaultChecked
+              className="absolute opacity-0 z-[-1]"
+            />
+                )}
+              </div>
+            </div>
+          ))}
               </div>
             </div>
           </div>

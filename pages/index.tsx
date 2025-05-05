@@ -106,8 +106,8 @@ export default function Home({
         url: 'group/list'
       }
     )
-
-    if (request.data && request.response) {
+    console.log(request.data)
+    if (request.data) {
       setGroups(request.data)
     }
   }
