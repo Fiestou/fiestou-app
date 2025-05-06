@@ -144,11 +144,11 @@ export default function Categorias() {
             />
           </div>
           <div className="flex mt-6 pb-6">
-            <div className="w-full">
+            <div className="w-full flex justify-between ">
               <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
                 Configurar filtro
               </div>
-              <div className="flex-[1.2] gap-2 justify-center items-center flex flex-row" >
+              <div className="flex-[1.2] gap-2 justify-end items-center flex flex-row w-" >
                 <NewGroup
                   onClick={() => {
                     setOpenGroupModal(true);
