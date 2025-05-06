@@ -23,12 +23,12 @@ const NewGroup: React.FC<NewGroupProps> = (props) => {
     return (
         <button
             onClick={props.onClick}
-            className={`flex border-2 border-solid border-black text-black rounded-lg justify-center items-center w-full 
+            className={`flex border-2 border-solid gap-4  border-black text-black rounded-lg justify-end  items-center p-4
                 ${isMobile ? "h-8" : "h-10"} 
                 active:bg-yellow-300 active:text-white active:border-white`}
         >
             {!isMobile && (
-                <label className="flex-[5] w-full font-bold cursor-pointer">
+                <label className="w-full font-bold cursor-pointer flex  flex-row">
                     {props.text}
                 </label>
             )}
