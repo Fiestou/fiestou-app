@@ -1,24 +1,22 @@
-import Api from "@/src/services/api";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import Modal from "../utils/Modal";
-import { Button, Label, Select } from "../ui/form";
+import { Button, Label } from "../ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { RelationType } from "@/src/models/relation";
-import { filterRepeatRemove, getImage, moneyFormat } from "@/src/helper";
+import { moneyFormat } from "@/src/helper";
 import Img from "../utils/ImgBase";
 import React from "react";
 import Check from "../ui/form/CheckUI";
 import Colors from "../ui/form/ColorsUI";
 import { Group, useGroup } from "@/src/store/filter";
- 
+
 export interface FilterQueryType {
-  categories: Array<string>;
-  colors: Array<string>;
+  categories: number[];
+  colors: string[];
   range: number;
   order: string;
 }
- 
+
 export interface Element {
   id: number
   name: string
@@ -34,7 +32,7 @@ export interface Element {
 }
 export default function Filter(params: { store?: string; busca?: string }) {
   const router = useRouter();
- 
+
   const [query, setQuery] = useState<FilterQueryType>({
     categories: [],
     colors: [],
@@ -44,7 +42,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const handleQueryValues = (value: Partial<FilterQueryType>) => {
     setQuery({ ...query, ...value });
   };
- 
+
   const startQueryHandle = () => {
     const routerQuery = router.query as {
       categorias?: string | string[];
@@ -53,41 +51,41 @@ export default function Filter(params: { store?: string; busca?: string }) {
       range?: string;
       ordem?: string;
     };
- 
+
     const handleQuery: Partial<FilterQueryType> = {
       categories: [],
     };
- 
+
     if (routerQuery?.cores?.length) {
       handleQuery["colors"] =
-        typeof routerQuery?.cores == "string"
-          ? [routerQuery?.cores]
-          : routerQuery?.cores;
+        typeof routerQuery.cores === "string"
+          ? [routerQuery.cores]
+          : routerQuery.cores;
     }
- 
+
     if (routerQuery?.range) {
       handleQuery["range"] = parseInt(routerQuery.range, 10);
     }
- 
+
     if (routerQuery?.ordem) {
       handleQuery["order"] = routerQuery.ordem;
     }
- 
+
     setQuery({ ...query, ...handleQuery });
   };
- 
+
   const [count, setCount] = useState<number>(0);
- 
+
   useEffect(() => {
     let handle = 0;
-    handle += query.categories?.length;
-    handle += query.colors?.length;
+    handle += query.categories.length;
+    handle += query.colors.length;
     handle += query.range < 1000 ? 1 : 0;
     handle += query.order !== "desc" ? 1 : 0;
- 
+
     setCount(handle);
   }, [query]);
- 
+
   const [filterModal, setFilterModal] = useState<boolean>(false);
   const filterArea = useRef<HTMLDivElement>(null);
   const [stick, setStick] = useState<boolean>(false);
@@ -187,16 +185,17 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
    
   };
+
   useEffect(() => {
     if (groups.length > 0) {
       setLocalGroups([groups[0]]);
     }
   }, [groups]);
- 
+
   const openModal = () => {
     setFilterModal(true);
   };
- 
+
   const handleStick = () => {
     const element = filterArea.current;
     if (element) {
@@ -208,25 +207,23 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
   
   useEffect(() => {
-    if (!!window) {
+    if (typeof window !== "undefined") {
       handleStick();
       startQueryHandle();
     }
   }, [router.query]);
- 
+
   return (
     <form action="/produtos/listagem" method="GET">
       {params?.store && <input type="hidden" value={params.store} name="store" />}
- 
+
       <section ref={filterArea} className="w-full relative">
         <div className="h-[56px]"></div>
         <div
-          className={`w-full z-[20] top-0 left-0 ${
-            stick ? "fixed mt-[62px] md:mt-[70px]" : "absolute"
-          }`}
+          className={`w-full z-[20] top-0 left-0 ${stick ? "fixed mt-[62px] md:mt-[70px]" : "absolute"}`}
         >
           <div className={`bg-cyan-500 ${stick ? "h-1/2" : "h-0"} w-full absolute top-0 left-0`}></div>
- 
+
           <div className="container-medium">
             <div className="flex border rounded-lg bg-white overflow-hidden relative">
               <div className="w-fit relative p-1">
@@ -235,7 +232,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
                   onClick={() => openModal()}
                   className="font-normal py-2 px-3 md:pl-8 md:pr-7 h-full"
                 >
-                  <span className="hidden md:block">Filtros </span>
+                  <span className="hidden md:block">Filtros</span>
                   {!!count ? (
                     <div className="relative bg-zinc-950 -mr-1 rounded-full bg-yellow-300 p-[.55rem] text-[.55rem] font-bold">
                       <div className="text-white absolute h-[.65rem] top-50 left-50 -translate-x-1/2 -translate-y-1/2">
@@ -243,10 +240,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
                       </div>
                     </div>
                   ) : (
-                    <Icon
-                      icon="fa-sliders-h"
-                      className="text-zinc-900 text-xl md:text-base"
-                    />
+                    <Icon icon="fa-sliders-h" className="text-zinc-900 text-xl md:text-base" />
                   )}
                 </Button>
               </div>
@@ -259,18 +253,14 @@ export default function Filter(params: { store?: string; busca?: string }) {
               />
               <div className="p-1">
                 <Button className="px-3 py-2 h-full">
-                  <Icon
-                    icon="fa-search"
-                    type="far"
-                    className="md:text-lg rounded-none"
-                  />
+                  <Icon icon="fa-search" type="far" className="md:text-lg rounded-none" />
                 </Button>
               </div>
             </div>
           </div>
         </div>
       </section>
- 
+
       <Modal title="Filtros" status={filterModal} close={() => setFilterModal(false)}>
         <div className="pb-6">
           <Label>Ordenar por</Label>
@@ -281,35 +271,25 @@ export default function Filter(params: { store?: string; busca?: string }) {
               className="font-normal w-full justify-start flex px-3 md:px-5 h-full"
             >
               <Icon
-                icon={
-                  query.order == "desc"
-                    ? "fa-sort-amount-down"
-                    : "fa-sort-amount-up"
-                }
+                icon={query.order === "desc" ? "fa-sort-amount-down" : "fa-sort-amount-up"}
                 className="text-zinc-900 text-xl md:text-base"
               />
               <div className="hidden md:block whitespace-nowrap">
-                {query.order == "desc" ? "Mais recente" : "Mais antigo"}
+                {query.order === "desc" ? "Mais recente" : "Mais antigo"}
               </div>
             </Button>
             <select
               name="ordem"
               value={query.order ?? "desc"}
               className="opacity-0 absolute h-full w-full top-0 left-0"
-              onChange={(e: any) =>
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 handleQueryValues({ order: e.target.value })
               }
             >
               {[
-                {
-                  name: "Mais recente",
-                  value: "desc",
-                },
-                {
-                  name: "Mais antigo",
-                  value: "asc",
-                },
-              ].map((item: any, key: any) => (
+                { name: "Mais recente", value: "desc" },
+                { name: "Mais antigo", value: "asc" },
+              ].map((item, key) => (
                 <option value={item.value} key={key}>
                   {item.name}
                 </option>
@@ -317,13 +297,11 @@ export default function Filter(params: { store?: string; busca?: string }) {
             </select>
           </div>
         </div>
- 
+
         <div className="pb-6">
           <Label>Faixa de preço</Label>
           <div className="grid gap-2 py-1">
-            <div className="text-sm">
-              Exibir produtos até R$ {moneyFormat(query.range)}
-            </div>
+            <div className="text-sm">Exibir produtos até R$ {moneyFormat(query.range)}</div>
             <div className="">
               <div className="flex text-sm justify-between">
                 <span>R$ {moneyFormat(10)}</span>
@@ -338,27 +316,23 @@ export default function Filter(params: { store?: string; busca?: string }) {
                   type="range"
                   name="range"
                   className="w-full"
-                  onChange={(e: any) =>
-                    handleQueryValues({ range: e.target.value })
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleQueryValues({ range: parseInt(e.target.value, 10) })
                   }
                 />
-                <span
-                  style={{
-                    width: `${(100 * query.range) / 1000}%`,
-                  }}
-                ></span>
+                <span style={{ width: `${(100 * query.range) / 1000}%` }}></span>
               </div>
             </div>
           </div>
         </div>
- 
+
         <div className="pb-6">
           <Label>Cores</Label>
           <div className="flex gap-1 pt-1 pb-2">
             <Colors
               name="cores"
               value={query.colors}
-              onChange={(value: any) => handleQueryValues({ colors: value })}
+              onChange={(value: string[]) => handleQueryValues({ colors: value })}
             />
           </div>
         </div>
@@ -418,21 +392,14 @@ export default function Filter(params: { store?: string; busca?: string }) {
             </div>
           </div>
         ))}
- 
+
         <div className="flex justify-between items-center pt-4 w-full bg-white">
-          <Button
-            type="button"
-            className="text-sm"
-            style="btn-link"
-            href="/produtos/listagem/"
-          >
+          <Button type="button" className="text-sm" style="btn-link" href="/produtos/listagem/">
             Limpar filtro
           </Button>
-
           <Button>Ver resultados</Button>
         </div>
       </Modal>
     </form>
   );
 }
- 

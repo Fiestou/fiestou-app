@@ -192,7 +192,5 @@ export default function Categorias() {
  
       <GroupModal onSaveClick={(data) => { onSaveGroup(data) }} data={updateGroup} open={openGroupModal} onRequestClose={() => { setOpenGroupModal(false) }} />
     </Template>
-  ) : (
-    <></>
   );
 }
