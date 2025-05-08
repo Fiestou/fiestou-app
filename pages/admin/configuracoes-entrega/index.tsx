@@ -3,9 +3,9 @@ import Input from "@/src/components/ui/form/InputUI";
 import Button from "@/src/components/ui/form/ButtonUI";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import axios from "axios";
 import Api from "../../../src/services/api";
 import InputMask from "react-input-mask";
+import Pagination from "@/src/components/ui/Pagination";
 
 const PAGE_SIZE = 10;
 
@@ -25,17 +25,21 @@ export default function ConfiguracoesEntrega() {
   const [regions, setRegions] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [lastPage, setLastPage] = useState(1);
+  const [links, setLinks] = useState<any[]>([]);
 
   // Fetch paginado
   const fetchRegions = async (pageNum = 1) => {
     const response = await api.request<any>({
       method: "get",
-      url: "zipcode-cities-range",
+      url: `zipcode-cities-range?page=${pageNum}`,
     });
-    const allRegions = response?.data?.data || [];
-    setTotal(allRegions.length);
-    const startIdx = (pageNum - 1) * PAGE_SIZE;
-    setRegions(allRegions.slice(startIdx, startIdx + PAGE_SIZE));
+    const data = response?.data;
+    setRegions(data.data || []);
+    setPage(data.current_page);
+    setTotal(data.total);
+    setLastPage(data.last_page);
+    setLinks(data.links);
   };
 
   useEffect(() => {
@@ -185,26 +189,8 @@ export default function ConfiguracoesEntrega() {
               ))}
             </div>
             {/* Paginação */}
-            {totalPages > 1 && (
-              <div className="flex gap-2 mt-6 justify-center">
-                <Button
-                  type="button"
-                  disable={page === 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Anterior
-                </Button>
-                <span className="px-2 py-1">
-                  Página {page} de {totalPages}
-                </span>
-                <Button
-                  type="button"
-                  disable={page === totalPages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Próxima
-                </Button>
-              </div>
+            {links.length > 0 && (
+              <Pagination links={links} onPageChange={setPage} />
             )}
           </div>
         </div>
