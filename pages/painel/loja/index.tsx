@@ -15,6 +15,8 @@ import HelpCard from "@/src/components/common/HelpCard";
 import { RelationType } from "@/src/models/relation";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import SelectDropdown from "../../../src/components/ui/form/SelectDropdown";
+import MultiSelect from "../../../src/components/ui/form/MultiSelectUi";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -1006,19 +1008,37 @@ export default function Loja({
                           <label className="font-medium">
                             Região de atendimento
                           </label>
-                          <Select
-                            isMulti
+                          <MultiSelect
+                            name="deliveryRegions"
                             placeholder="Selecione as regiões"
                             value={store?.deliveryRegions}
-                            onChange={(values) =>
-                              handleStore({ deliveryRegions: values })
-                            }
+                            onChange={(values) => {
+                              console.log(values)
+                              // handleStore({ deliveryRegions: values })
+                            }}
                             options={[
                               { value: "aguaFria", name: "Água Fria" },
                               { value: "altoDoCeu", name: "Alto do Céu" },
-                              { value: "aeroclube", name: "Aeroclube" },
+                              { value: "aeroclube", name: "Aeroclube" }, 
                               { value: "bessa", name: "Bessa" },
                             ]}
+                            className="min-h-[46px] relative"
+                            isMulti={true}
+                            // selectedValues={store?.deliveryRegions?.map(region => (
+                            //   <div key={region.value} className="inline-flex items-center gap-1 bg-theme-yellow-300 rounded px-2 py-1 m-1">
+                            //     <span className="text-sm">{region.name}</span>
+                            //     <button
+                            //       type="button"
+                            //       onClick={() => {
+                            //         const newValues = store.deliveryRegions.filter(r => r.value !== region.value);
+                            //         handleStore({ deliveryRegions: newValues });
+                            //       }}
+                            //       className="text-xs hover:text-zinc-600"
+                            //     >
+                            //       <Icon icon="fa-times" />
+                            //     </button>
+                            //   </div>
+                            // ))}
                           />
                         </div>
                       </div>

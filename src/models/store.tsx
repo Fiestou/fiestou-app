@@ -4,6 +4,7 @@ export interface StoreType {
   title: string
   slug: string
   companyName: string
+  deliveryRegions: any[]
   document: any
   description: string
   cover: Cover
