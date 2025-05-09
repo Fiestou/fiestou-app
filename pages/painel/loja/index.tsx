@@ -15,6 +15,7 @@ import HelpCard from "@/src/components/common/HelpCard";
 import { RelationType } from "@/src/models/relation";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { Element } from "@/src/types/filtros/response";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -103,15 +104,16 @@ const days = [
 export default function Store({
   page,
   storeTypes,
-  elements,
+  elements: initialElements,
 }: {
   page: any;
   storeTypes: Array<RelationType>;
-  elements: Array<Element>;
+  elements: Element[];
 }) {
   const api = new Api();
   const router = useRouter();
 
+  const [elements, setElements] = useState<Element[]>(initialElements || []);
   const [form, setForm] = useState(formInitial);
   const handleForm = (value: Object) => {
     setForm({ ...form, ...value });
@@ -153,27 +155,28 @@ export default function Store({
       });
   
       const handle = request.data ?? {};
-
-      const openClose = Array.isArray(handle?.openClose) 
-      ? handle.openClose 
-      : [];
-
+      const elementsFromApi = request.elements ?? [];
+      const openClose = Array.isArray(handle?.openClose) ? handle.openClose : [];
+  
+      setElements(elementsFromApi);
       setOldStore(handle);
       setStore(handle);
       setWeek(openClose);
-
-    setHandleCover({
-      remove: 0,
-      preview: !!handle?.cover ? getImage(handle?.cover, "xl") : "",
-    });
-
-    setHandleProfile({
-      remove: 0,
-      preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
-    });
+  
+      setHandleCover({
+        remove: 0,
+        preview: !!handle?.cover ? getImage(handle?.cover, "xl") : "",
+      });
+  
+      setHandleProfile({
+        remove: 0,
+        preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
+      });
+  
     } catch (error) {
       console.error("Error fetching store data:", error);
       setWeek([]);
+      setElements([]);
     }
   };
   
@@ -468,6 +471,25 @@ export default function Store({
       getStore();
     }
   }, []);
+
+  useEffect(() => {
+    if (form.edit === "segment") {
+      console.log('Elementos encontrados:', elements); // Debug
+      const options = document.querySelectorAll('select[name="segment"] option');
+      console.log('Options encontradas:', options);
+
+      options.forEach(option => {
+        console.log('Option:', option, 'Data-icon:', option.dataset.icon);
+        const icon = option.dataset.icon;
+        if (icon) {
+          option.style.backgroundImage = `url(${icon})`;
+          option.style.backgroundRepeat = 'no-repeat';
+          option.style.backgroundPosition = 'left center';
+          option.style.paddingLeft = '30px';
+        }
+      });
+    }
+  }, [form.edit]);
 
   return (
     !router.isFallback && (
@@ -932,7 +954,7 @@ export default function Store({
                     )}
                   </div>
                 </form>
-                {/*  */}
+                {/* Segmento */}
                 <form
                   onSubmit={(e: any) => handleSubmit(e)}
                   method="POST"
@@ -947,33 +969,42 @@ export default function Store({
                     <div className="w-fit">{renderAction("segment")}</div>
                   </div>
                   <div className="w-full">
-                    {form.edit == "segment" ? (
-                      <Select
-                        onChange={(e: any) =>
-                          handleStore({ segment: parseInt(e.target.value) })
-                        }
-                        value={store?.segment?.toString()}
-                        placeholder="Selecione seu segmento"
-                        name="lojaTipo"
-                        options={elements.map((element: Element) => ({
-                          name: (
-                            <div className="flex items-center gap-2">
-                              {element.icon && (
-                                <img 
-                                  src={element.icon} 
-                                  alt={element.name}
-                                  className="w-5 h-5"
-                                />
-                              )}
-                              <span>{element.name}</span>
-                            </div>
-                          ),
-                          value: element.id.toString(),
-                        }))}
-                      />
-                    ) : (
-                      elements.find((e: Element) => e.id === store?.segment)?.name ??
-                      "Informe o segmento da sua loja"
+                  {form.edit == "segment" ? (
+                    <Select
+                    onChange={(e: any) => {
+                      if (!e.target.value) return; // Bloqueia seleção vazia
+                      const selected = elements.find(el => el.id.toString() === e.target.value);
+                      handleStore({ segment: selected?.name });
+                    }}
+                    value={elements.find(el => el.name === store?.segment)?.id?.toString() || ""}
+                    placeholder={!store?.segment ? "Selecione seu segmento" : ""}
+                    name="segment"
+                    options={elements.map((element) => ({
+                      name: (
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src={element.icon} 
+                            alt="" 
+                            className="w-5 h-5 object-contain"
+                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                          />
+                          {element.name}
+                        </div>
+                      ),
+                      value: element.id.toString()
+                    }))}
+                  />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {store?.segment && elements.find(el => el.name === store.segment)?.icon && (
+                        <img 
+                          src={elements.find(el => el.name === store.segment)?.icon} 
+                          alt={store.segment}
+                          className="w-5 h-5"
+                        />
+                      )}
+                      <span>{store?.segment ?? "Informe o segmento da sua loja"}</span>
+                    </div>
                   )}
                 </div>
               </form>
