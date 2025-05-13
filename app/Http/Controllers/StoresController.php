@@ -55,30 +55,32 @@ class StoresController extends Controller
         $user = auth()->user();
         $store = Store::where(["user" => $user->id])
                       ->first();
-
+                      
+        $groups = Group::where('active', 1)->get();
+    
         if(isset($store->id)){
-
             $cover = !!$store->cover ? Media::where(['id' => $store->cover])->first() : [];
             if(isset($cover->id)){
                 $cover->details = json_decode($cover->details);
                 $store->cover   = $cover;
             }
-
+    
             $profile = !!$store->profile ? Media::where(['id' => $store->profile])->first() : [];
             if(isset($profile->id)){
                 $profile->details = json_decode($profile->details);
                 $store->profile   = $profile;
             }
-
+    
             $store->openClose   = json_decode($store->openClose);
             $store->metadata    = json_decode($store->metadata);
-
+    
             return response()->json([
                 'response'  => true,
-                'data'      => $store
+                'data'      => $store,
+                'groups'    => $groups
             ]);
         }
-
+    
         return response()->json([
             'response'  => false
         ], 500);

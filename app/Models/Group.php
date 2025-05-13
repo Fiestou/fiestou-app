@@ -7,37 +7,31 @@ use Illuminate\Support\Facades\DB;
 
 class Group extends BaseModel
 {
-    protected $table = 'group';
+    protected $table = 'group'; // A tabela foi renomeada para 'groups'
+    
     protected $fillable = [
         'id',
         'name',
         'description',
-        'parent_id',
         'active',
+        'segment',
+    ];
+    protected $casts = [
+        'segment' => 'boolean'
     ];
 
+    // Escopo para filtrar grupos ativos
     public function scopeActive($query)
     {
         return $query->where('active', 1);
     }
-    
+
+    // Relacionamento 1:N com a tabela elements
     public function elements()
     {
-        return $this->hasManyThrough(
-            Elements::class,
-            GroupElements::class,
-            'id_group',
-            'id',
-            'id',
-            'id_elements'
-        );
+        return $this->hasMany(Element::class, 'group_id');
     }
-
-    public function getElementsAttribute()
-    {
-        return $this->directElements;
-    }
-
+    // Método estático para buscar todos os descendentes de um grupo
     public static function getAllDescendants($groupId, $isActive = null)
     {
         $query = "CALL GetAllGroupDescendants(:group_id, :is_active)";

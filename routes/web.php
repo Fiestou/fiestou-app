@@ -15,11 +15,11 @@ use App\Http\Controllers\FormCustomController;
 |
 */
 
-Route::get('/dashboard', [DashboardController::class, 'Dashboard']);
+// Route::get('/dashboard', [DashboardController::class, 'Dashboard']);
 
-Route::group([ 'prefix' => 'form-custom' ], function(){
+// Route::group([ 'prefix' => 'form-custom' ], function(){
 
-	Route::get('/list-filds/{content_area_id}', [FormCustomController::class, 'ListFields']);
+// 	Route::get('/list-filds/{content_area_id}', [FormCustomController::class, 'ListFields']);
 
-	Route::post('/register-filds', [FormCustomController::class, 'RegisterFields']);
-});
+// 	Route::post('/register-filds', [FormCustomController::class, 'RegisterFields']);
+// });

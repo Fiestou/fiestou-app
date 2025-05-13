@@ -11,6 +11,7 @@ use App\Http\Controllers\CronController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\HooksController;
+use App\Http\Controllers\CategoriesController;
 
 use App\Http\Controllers\WithdrawController;
 use App\Http\Controllers\OrdersController;
@@ -18,7 +19,6 @@ use App\Http\Controllers\SubordersController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\StoresController;
 use App\Http\Controllers\CommentsController;
-use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GroupController;
@@ -79,12 +79,6 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/suborders/register', [SubordersController::class, 'Register']);
 
         // CATEGORIES
-        Route::post('/categories/list', [CategoriesController::class, 'List']);
-        Route::post('/categories/get', [CategoriesController::class, 'Get']);
-        Route::post('/categories/reorder', [CategoriesController::class, 'Reorder']);
-        Route::post('/categories/register', [CategoriesController::class, 'Register']);
-        Route::post('/categories/remove', [CategoriesController::class, 'Remove']);
-
         // COMMENTS
         Route::post('/comments/list', [CommentsController::class, 'List']);
         Route::post('/comments/register', [CommentsController::class, 'Register']);
@@ -155,18 +149,38 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
             Route::post('/upload-base64', [FileController::class, 'UploadBase64']);
         });
 
-        Route::group([ 'prefix' => 'group' ], function(){
-            Route::post('/register', [GroupController::class, 'Register']);
-            Route::put('/update/{GroupId}', [GroupController::class, 'Update']);
-            Route::delete('/delete/{GroupId}', [GroupController::class, 'Delete']);
-            Route::get('/{GroupId}/descendants', [GroupController::class, 'GetAllDescendants']);
-            Route::delete('/{GroupId}/Element/{ElementId}', [GroupController::class, 'DeleteGroupElement']);
-            Route::get('/ChildGroup/{GroupId}', [GroupController::class, 'GetChildGroupWithElements']);
-        });
+        Route::group([ 'prefix' => 'group' ], function() {
+            //Rota para listar todos os grupos com seus elementos
+            Route::get('/list', [GroupController::class, 'List']);
 
-        Route::group([ 'prefix' => 'element' ], function(){
-            Route::post('/register', [ElementsController::class, 'Register']);
-            Route::put('/update/{ElementId}', [ElementsController::class, 'Update']);
+            // Rota para registrar um novo grupo
+            Route::post('/register', [GroupController::class, 'Register']);
+        
+            // Rota para atualizar um grupo existente
+            Route::put('/update/{GroupId}', [GroupController::class, 'Update']);
+        
+            // Rota para deletar um grupo
+            Route::delete('/delete/{GroupId}', [GroupController::class, 'Delete']);
+        
+            // Rota para obter todos os descendentes de um grupo
+            Route::get('/descendants/{GroupId}', [GroupController::class, 'GetAllDescendants']);
+        
+            // Rota para deletar um elemento de um grupo
+            Route::delete('/{GroupId}/element/{ElementId}', [GroupController::class, 'DeleteGroupElement']);
+        });
+        
+        Route::group([ 'prefix' => 'element' ], function() {
+            // Rota para registrar um novo elemento dentro de um grupo
+            Route::post('/register/{GroupId}', [ElementsController::class, 'Register']);
+
+            // Rota para registrar um novo elemento dentro de um grupo
+            Route::post('/ChildGroup/{GroupId}', [ElementsController::class, 'GetElement']);
+
+            // Rota para atualizar um elemento específico dentro de um grupo
+            Route::put('/update/{GroupId}/{ElementId}', [ElementsController::class, 'Update']);
+            
+            // Rota para listar todos os descendentes de um elemento específico
+            Route::get('/descendants/{ElementId}', [ElementsController::class, 'Descendants']);
         });
     });
 
