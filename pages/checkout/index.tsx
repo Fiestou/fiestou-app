@@ -45,6 +45,16 @@ const FormInitialType = {
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
+  const token = ctx.req.cookies["fiestou.authtoken"];
+  if (!token) {
+    return {
+      redirect: {
+        destination: "/acesso",
+        permanent: false,
+      },
+    };
+  }
+
   const parseCart = ctx.req.cookies["fiestou.cart"] ?? "";
   const cart = !!parseCart ? JSON.parse(parseCart) : [];
 
@@ -80,7 +90,7 @@ export async function getServerSideProps(ctx: any) {
     props: {
       cart: cart,
       user: user,
-      token: !!ctx.req.cookies["fiestou.authtoken"],
+      token: !!token,
       products: products,
       Roles: Roles,
       CheckoutPageContent: CheckoutPageContent,
