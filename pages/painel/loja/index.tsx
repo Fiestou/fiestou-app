@@ -153,11 +153,16 @@ export default function Store({
         method: 'post',
         url: "stores/form",
       });
+
+      console.log(request, 'request');
+      
   
       const handle = request.data ?? {};
       const elementsFromApi = request.elements ?? [];
+      console.log(request.elements, 'request.element');
       const openClose = Array.isArray(handle?.openClose) ? handle.openClose : [];
   
+      console.log('Elementos da API: ' + elementsFromApi);    
       setElements(elementsFromApi);
       setOldStore(handle);
       setStore(handle);
@@ -490,6 +495,8 @@ export default function Store({
       });
     }
   }, [form.edit]);
+
+  console.log('elements: ' + elements);
 
   return (
     !router.isFallback && (
