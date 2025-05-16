@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Element;
+use App\Models\Group;
 use DB;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
@@ -15,6 +17,7 @@ use App\Models\Customer;
 use App\Models\Withdraw;
 use App\Models\Category;
 use App\Models\CategoryRel;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class StoresController extends Controller
@@ -54,35 +57,61 @@ class StoresController extends Controller
 
         $user = auth()->user();
         $store = Store::where(["user" => $user->id])
-                      ->first();
-                      
+            ->first();
+
         $groups = Group::where('active', 1)->get();
-    
-        if(isset($store->id)){
+
+        $segmentGroup = Group::where('segment', 1)
+                             ->first();
+        $segmentGroupId = null;
+
+        if ($segmentGroup) {
+            $segmentGroupId = $segmentGroup->id;
+
+            $elements = Element::where('group_id', $segmentGroupId)->get();
+
+            $elementsForSelect = [];
+            
+            foreach ($elements as $element) {
+                $elementsForSelect[] = [
+                    'id' => $element->id,
+                    'name' => $element->name,
+                    'icon' => $element->icon,
+                ];
+            }
+            
+            \Log::info('Elementos do Grupo com Segmento 1:', $elementsForSelect);
+        } else {
+            $elementsForSelect = [];
+            \Log::warning('Nenhum grupo com segmento 1 encontrado.');
+        }
+
+        if (isset($store->id)) {
             $cover = !!$store->cover ? Media::where(['id' => $store->cover])->first() : [];
-            if(isset($cover->id)){
+            if (isset($cover->id)) {
                 $cover->details = json_decode($cover->details);
-                $store->cover   = $cover;
+                $store->cover = $cover;
             }
-    
+
             $profile = !!$store->profile ? Media::where(['id' => $store->profile])->first() : [];
-            if(isset($profile->id)){
+            if (isset($profile->id)) {
                 $profile->details = json_decode($profile->details);
-                $store->profile   = $profile;
+                $store->profile = $profile;
             }
-    
-            $store->openClose   = json_decode($store->openClose);
-            $store->metadata    = json_decode($store->metadata);
-    
+
+            $store->openClose = json_decode($store->openClose);
+            $store->metadata = json_decode($store->metadata);
+            
             return response()->json([
-                'response'  => true,
-                'data'      => $store,
-                'groups'    => $groups
+                'response' => true,
+                'data' => $store,
+                'groups' => $groups,
+                'elements' => $elementsForSelect,
             ]);
         }
-    
+
         return response()->json([
-            'response'  => false
+            'response' => false
         ], 500);
     }
 
@@ -245,45 +274,111 @@ class StoresController extends Controller
 
     public function CompleteRegister(Request $request){
 
+        Log::info('Inicio do método CompleteRegister. Dados da requisição:', $request->all());
+    
         $request->validate([
             'email' => 'required'
         ]);
-
-        $user  = User::where(["email" => $request->get("email")])
-                     ->first();
-
-        $store  = Store::where(["user" => $user->id])->first();
-
+    
+        $user = User::where(["email" => $request->get("email")])
+                    ->first();
+    
+        Log::info('Usuário encontrado:', ['user' => $user]);
+    
+        $store = Store::where(["user" => $user->id])->first();
+    
+        Log::info('Loja encontrada:', ['store' => $store]);
+    
         if(!$store){
             $store = new Store;
+            Log::info('Nova loja criada para o usuário ID:', ['user_id' => $user->id]);
         }
-
+    
         if($request->has("document")){
             $store->document = $request->get("document");
+            Log::info('Documento da loja atualizado:', ['document' => $store->document]);
         }
-
+    
         if($request->has("companyName")){
             $store->title       = $request->get("companyName");
             $store->slug        = Str::slug(strip_tags($request->get("companyName")));
             $store->companyName = $request->get("companyName");
+            Log::info('Dados da empresa atualizados:', ['title' => $store->title, 'slug' => $store->slug, 'companyName' => $store->companyName]);
         }
-
+    
         $user->RequestToThis($request);
-
+        Log::info('Dados do usuário atualizados via RequestToThis:', ['user_data' => $user->toArray()]);
+    
         $user->person = "partner";
         $user->save();
-
+        Log::info('Tipo de pessoa do usuário atualizado para "partner".');
+    
         $store->RequestToThis($request);
-
+        Log::info('Dados da loja atualizados via RequestToThis:', ['store_data' => $store->toArray()]);
+    
         $store->user        = $user->id;
         $store->hasDelivery = $request->get("hasDelivery", false);
         $store->status      = 0;
         $store->save();
-
+        Log::info('Dados finais da loja salvos:', ['store_id' => $store->id, 'hasDelivery' => $store->hasDelivery, 'status' => $store->status, 'user_id' => $store->user]);
+    
+        $groups = Group::where('active', 1)->get();
+        Log::info('Grupos ativos obtidos:', ['groups_count' => $groups->count()]);
+    
+        $segmentGroup = Group::where('segment', 1)
+                              ->first();
+        
+        $segmentGroupId = null;
+        $elementsForSelect = [];
+    
+        if ($segmentGroup) {
+            $segmentGroupId = $segmentGroup->id;
+            $elements = Element::where('group_id', $segmentGroupId)->get();
+            Log::info('Elementos encontrados para o grupo de segmento:', ['elements_count' => $elements->count()]);
+    
+            foreach ($elements as $element) {
+                $elementsForSelect[] = [
+                    'id' => $element->id,
+                    'name' => $element->name,
+                    'icon' => $element->icon,
+                ];
+            }
+            Log::info('Elementos formatados para o select:', ['elementsForSelect_count' => count($elementsForSelect)]);
+        } else {
+            Log::warning('Nenhum grupo com segmento 1 encontrado.');
+        }
+        
+        if (isset($store->id)) {
+            $cover = !!$store->cover ? Media::where(['id' => $store->cover])->first() : [];
+            if (isset($cover->id)) {
+                $cover->details = json_decode($cover->details);
+                $store->cover = $cover;
+                Log::info('Cover da loja processado:', ['cover_id' => $cover->id]);
+            }
+    
+            $profile = !!$store->profile ? Media::where(['id' => $store->profile])->first() : [];
+            if (isset($profile->id)) {
+                $profile->details = json_decode($profile->details);
+                $store->profile = $profile;
+                Log::info('Profile da loja processado:', ['profile_id' => $profile->id]);
+            }
+    
+            $store->openClose = isset($store->openClose) ? json_decode($store->openClose) : null;
+            $store->metadata = isset($store->metadata) ? json_decode($store->metadata) : null;
+            
+            Log::info('Enviando resposta com sucesso');
+            return response()->json([
+                'response' => true,
+                'data' => $store,
+                'groups' => $groups,
+                'elements' => $elementsForSelect,
+            ]);
+        }
+        
+        Log::error('Erro ao processar a loja - store->id não está definido');
         return response()->json([
-            'response'  => true,
-            'data'      => $request->all()
-        ]);
+            'response' => false
+        ], 500);
     }
 
     public function Products(Request $request){

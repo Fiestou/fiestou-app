@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Element;
+use App\Models\Group;
 use DB;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ContentRel;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\RegisterUser;
 use App\Models\User;

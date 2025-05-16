@@ -1,7 +1,10 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Element;
+use App\Models\Group;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ValidateUser;
 use App\Mail\RegisterUser;
@@ -157,6 +160,36 @@ class AuthController extends Controller
         return response()->json([
             'response'  => false,
             'message'   => 'email_or_password_invalid'
+        ]);
+    }
+    
+    public function GetPreRegisterData(string $hash) {
+        $user = User::where('hash', $hash)->first();
+    
+        if (!$user) {
+            return response()->json(['response' => false, 'message' => 'Hash inválido'], 404);
+        }
+    
+        $segmentGroup = Group::where('segment', 1)->first();
+        $elementsForSelect = [];
+    
+        if ($segmentGroup) {
+            $elements = Element::where('group_id', $segmentGroup->id)->get();
+            foreach ($elements as $element) {
+                $elementsForSelect[] = [
+                    'id' => $element->id,
+                    'name' => $element->name,
+                    'icon' => $element->icon,
+                ];
+            }
+        } else {
+            Log::warning('Nenhum grupo com segmento 1 encontrado.');
+        }
+    
+        return response()->json([
+            'response' => true,
+            'preUser' => $user->only(['email', 'person', 'name']), // Renomeei para preUser para clareza
+            'elements' => $elementsForSelect,
         ]);
     }
 
