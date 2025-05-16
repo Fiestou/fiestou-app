@@ -1,7 +1,7 @@
 import Api from "@/src/services/api";
 import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { UserType } from "@/src/models/user";
@@ -10,32 +10,32 @@ import { getZipCode, justNumber } from "@/src/helper";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import { Element } from "@/src/store/filter";
 
-type SelectOption = {
-    name: string | React.ReactNode;
-    value: string;
-    disabled?: boolean;
+interface PreUserData {
+    preUser: {
+        email: string;
+        person: string;
+        name: string | null;
+        document?: string | null;
+    } | null;
+    elements: Element[];
+}
+
+type ApiResponse<T = any> = {
+    response: boolean;
+    data: T;
+    elements?: Element[];
+    preUser?: {
+        email: string;
+        person: string;
+        name: string;
+    };
 };
 
-const formatOptions = (elements: Element[]): SelectOption[] => {
-    return [
-        { name: 'Selecione um segmento', value: '' },
-        ...elements.map(element => ({
-            name: (
-                <div className="flex items-center gap-2">
-                    {element.icon && (
-                        <img
-                            src={element.icon}
-                            alt={element.name}
-                            className="w-5 h-5 object-contain"
-                            onError={(e) => (e.currentTarget.style.display = 'none')}
-                        />
-                    )}
-                    {element.name}
-                </div>
-            ),
-            value: element.id.toString()
-        }))
-    ];
+type SelectOption = {
+    value: string;
+    name: string | React.ReactNode;
+    disabled?: boolean;
+    icon?: string;
 };
 
 const FormInitialType = {
@@ -44,77 +44,123 @@ const FormInitialType = {
     redirect: "acesso",
 };
 
-export default function Cadastro({ preUser }: { preUser: UserType }) {
+export default function Cadastro() {
     const api = new Api();
     const router = useRouter();
+    const { ref } = router.query;
 
     const [step, setStep] = useState(1);
     const [form, setForm] = useState(FormInitialType);
-    const [user, setUser] = useState(preUser);
-    const [store, setStore] = useState({} as StoreType);
+    const [store, setStore] = useState<StoreType>({} as StoreType);
     const [elements, setElements] = useState<Element[]>([]);
-
-    type ApiResponse<T = any> = {
-        response: boolean;
-        data: T;
-        elements?: {
-            id: number;
-            name: string;
-            icon: string;
-        }[];
-    };
+    const [preUserData, setPreUserData] = useState<PreUserData | null>(null);
+    const [preUserError, setPreUserError] = useState<string | null>(null);
+    const [loadingPreUser, setLoadingPreUser] = useState<UserType | null>(null);
 
     useEffect(() => {
-        const fetchElements = async () => {
-            try {
-                const response = await api.call<ApiResponse>({
-                    method: 'post',
-                    url: 'stores/complete-register', // Mantém o endpoint correto
-                    data: { email: user.email }
-                });
-                console.log("Resposta da API:", response); // Adicionado console.log
-
-                if (response.data?.elements) {
-                    setElements(response.data.elements);
-                    console.log("Elementos recebidos:", response.data.elements); // Adicionado console.log
-                } else {
-                  console.warn("Elementos não recebidos. Data:", response.data)
+        const fetchPreUserData = async () => {
+            if (ref && typeof ref === 'string') {
+                console.log("Hash recebido:", ref);
+                try {
+                    const response = await api.bridge<ApiResponse<UserType>>({
+                        method: 'get',
+                        url: `auth/pre-register/${ref}`,
+                    });
+                    if (response?.data) {
+                        console.log("Dados do preUser recebidos:", response.data);
+                        setLoadingPreUser(response.data);
+                    } else {
+                        console.warn("Erro ao buscar dados do preUser com o hash.");                       
+                    }
+                } catch (error) {
+                    console.error("Erro na chamada da API para buscar dados do preUser:", error);                   
+                } finally {
+                    setLoadingPreUser(null);
                 }
-            } catch (error) {
-                console.error('Erro ao buscar segmentos:', error);
+            } else {
+                console.warn("Hash não encontrado na query string.");
+                setLoadingPreUser(null);
             }
         };
 
-        if (user?.email) {
-            fetchElements();
-        }
-    }, [user?.email]);
+        fetchPreUserData();
+    }, [ref, api]);
+
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            if (loadingPreUser?.email) {
+                console.log("Email de usuário disponível:", loadingPreUser.email);
+                try {
+                    console.log("Chama API para stores/complete-register com email:", loadingPreUser.email);
+                    const response = await api.call<ApiResponse>({
+                        method: 'post',
+                        url: 'stores/complete-register',
+                        data: { email: loadingPreUser.email }
+                    });
+                    console.log("Resposta da API (dados iniciais/segmentos):", response);
+
+                    if (response.data) {
+                        console.log("Dados recebidos na resposta:", response.data);
+                        if (response.data.document) {
+                            setStore(prevStore => ({ ...prevStore, ...response.data }));
+                            console.log("Dados da loja atualizados:", { ...store, ...response.data });
+                        }
+                    } else {
+                        console.warn("Resposta da API sem dados.");
+                    }
+
+                    if (response.elements) {
+                        setElements(response.elements);
+                        console.log("Elementos (segmentos) recebidos diretamente:", response.elements);
+                    } else if (response.data?.elements) {
+                        setElements(response.data.elements);
+                        console.log("Elementos (segmentos) recebidos via data:", response.data.elements);
+                    } else {
+                        console.warn("Elementos (segmentos) não recebidos ou vazios.");
+                    }
+
+                } catch (error) {
+                    console.error('Erro ao buscar dados iniciais/segmentos:', error);
+                }
+            } else if (!loadingPreUser) {
+                console.warn("Email do usuário não disponível para buscar dados iniciais.");
+            }
+        };
+
+        fetchInitialData();
+    }, [loadingPreUser, api]);
 
     const handleUser = (value: Object) => {
-        setUser({ ...user, ...value });
+        setLoadingPreUser(prevUser => ({ ...prevUser, ...value } as UserType));
     };
 
     const handleStore = (value: Object) => {
-        setStore({ ...store, ...value });
+        setStore(prevStore => ({ ...prevStore, ...value }));
     };
 
     const submitStep = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log("submitStep chamado para a etapa:", step);
         setForm({ ...form, loading: true });
 
         try {
+            const dataToSend = { ...store, ...loadingPreUser };
+            console.log("Enviando dados para stores/complete-register:", dataToSend);
             const request = await api.bridge<ApiResponse>({
                 method: 'post',
-                url: "stores/complete-register", // Mantém o endpoint correto
-                data: { ...store, ...user }
+                url: "stores/complete-register",
+                data: dataToSend
             });
-            console.log("Resposta do submitStep:", request); // Adicionado console.log
+            console.log("Resposta de API pra stores/complete-register:", request);
 
             if (request.response) {
-                setStep(step + 1);
+                console.log("Requisição bem-sucedida, avançando para a próxima etapa.");
+                setStep(prevStep => prevStep + 1);
+            } else {
+                console.warn("Resposta da API indica falha:", request);
             }
         } catch (error) {
-            console.error('Erro no cadastro:', error);
+            console.error('Erro na requisição de cadastro:', error);
         } finally {
             setForm({ ...form, loading: false });
         }
@@ -122,9 +168,10 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
 
     const handleZipCode = async (zipCode: string) => {
         const location = await getZipCode(zipCode);
+        console.log("Resultado da busca de CEP:", location);
 
         if (!!location) {
-            let address = store;
+            let address = { ...store };
             address["zipCode"] = zipCode;
             address["street"] = location.logradouro;
             address["neighborhood"] = location.bairro;
@@ -132,6 +179,8 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
             address["state"] = location.uf;
             address["country"] = "Brasil";
             handleStore(address);
+        } else {
+            console.warn("CEP inválido ou não encontrado.");
         }
     };
 
@@ -140,9 +189,48 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
         if (step == 1) {
             router.push({ pathname: "/parceiros/seja-parceiro" });
         } else {
-            setStep(step - 1);
+            setStep(prevStep => prevStep - 1);
         }
     };
+
+    const segmentOptions = useMemo(() => {
+        const options: any[] = [
+            { value: "", name: "Selecione um segmento", disabled: true },
+            ...elements.map(element => ({
+                value: element.id.toString(),
+                name: element.name,
+                disabled: false,
+                metadata: {
+                    icon: element.icon,
+                    render: (
+                        <div className="flex items-center gap-2">
+                            {element.icon && (
+                                <img
+                                    src={element.icon}
+                                    alt={element.name}
+                                    className="w-5 h-5 object-contain"
+                                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                                />
+                            )}
+                            <span>{element.name}</span>
+                        </div>
+                    )
+                }
+            }))
+        ];
+        console.log("segmentOptions:", options);
+        return options;
+    }, [elements]);
+
+    if (loadingPreUser) {
+        return (
+            <Template header={{ template: "clean", position: "solid" }}>
+                <div className="container-medium py-20 text-center">
+                    Carregando informações...
+                </div>
+            </Template>
+        );
+    }
 
     return (
         <Template
@@ -165,7 +253,6 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                     </div>
                     <div className="col-span-4 md:col-span-2">
                         <div className="max-w-md mx-auto">
-                            {/* STEP1 */}
                             <div
                                 className={step == 1 ? "block" : "absolute overflow-hidden h-0"}
                             >
@@ -187,27 +274,30 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                                     <div className="form-group">
                                         <Label>CPF/CNPJ</Label>
                                         <Input
-                                            onChange={(e: any) =>
-                                                handleStore({ document: e.target.value })
-                                            }
+                                            onChange={(e: any) => {
+                                                handleStore({ document: e.target.value });
+                                            }}
                                             name="documento"
                                             placeholder="00000000000"
                                             required
+                                            value={store?.document || ""}
                                         />
                                     </div>
 
                                     <div className="form-group">
                                         <Label>Nome fantasia</Label>
                                         <Input
-                                            onChange={(e: any) =>
+                                            onChange={(e: any) => {
+                                                const value = e.target.value;
                                                 handleStore({
-                                                    title: e.target.value,
-                                                    companyName: e.target.value,
-                                                })
-                                            }
+                                                    title: value,
+                                                    companyName: value,
+                                                });
+                                            }}
                                             name="nome-fantasia"
                                             placeholder="O nome pelo qual a sua empresa é conhecida"
                                             required
+                                            value={store?.title || ""}
                                         />
                                     </div>
 
@@ -215,17 +305,22 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                                         <Label>Segmento</Label>
                                         <Select
                                             onChange={(e: any) => {
+                                                if (!e.target.value) return;
                                                 const selected = elements.find(el => el.id.toString() === e.target.value);
-                                                handleStore({
-                                                    segment: selected?.name || '',
-                                                    segmentId: selected?.id,
-                                                });
-                                            }}
-                                            value={store?.segment ? elements.find(el => el.name === store.segment)?.id?.toString() : ""}
-                                            name="segment"
-                                            options={formatOptions(elements)}
-                                            required
+                                                handleStore({ segment: selected?.id });
+                                              }}
+                                              value={store?.segment?.toString() || ""}
+                                              placeholder={!store?.segment ? "Selecione seu segmento" : ""}
+                                              name="segment"
+                                              options={elements.map((element) => ({
+                                                label: element.name,
+                                                value: element.id.toString(),
+                                                icon: element.icon,
+                                              }))}
                                         />
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Segmento selecionado: {store?.segment || "Nenhum"}
+                                        </div>
                                     </div>
 
                                     <div className="form-group">
@@ -233,11 +328,11 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                                         <div className="flex mt-1 gap-4">
                                             <Label className="block w-full border p-3 rounded-md">
                                                 <input
-                                                    onChange={(e: any) =>
-                                                        handleStore({ hasDelivery: true })
-                                                    }
+                                                    onChange={(e: any) => {
+                                                        handleStore({ hasDelivery: true });
+                                                    }}
                                                     name="entrega"
-                                                    checked={store?.hasDelivery}
+                                                    checked={store?.hasDelivery === true}
                                                     className="mr-2"
                                                     type="radio"
                                                 />
@@ -245,11 +340,11 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                                             </Label>
                                             <Label className="block w-full border p-3 rounded-md">
                                                 <input
-                                                    onChange={(e: any) =>
-                                                        handleStore({ hasDelivery: false })
-                                                    }
+                                                    onChange={(e: any) => {
+                                                        handleStore({ hasDelivery: false });
+                                                    }}
                                                     name="entrega"
-                                                    checked={!store?.hasDelivery}
+                                                    checked={store?.hasDelivery === false}
                                                     className="mr-2"
                                                     type="radio"
                                                 />
@@ -264,8 +359,6 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                                 </form>
                                 <div className="text-center pt-4 text-sm">Etapa 1 de 3</div>
                             </div>
-
-                            {/* STEP2 */}
                             <div
                                 className={step == 2 ? "block" : "absolute overflow-hidden h-0"}
                             >
@@ -273,90 +366,125 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                                     onSubmit={(e: any) => {
                                         submitStep(e);
                                     }}
+                                    method="POST"
                                 >
                                     <div className="text-center mb-4 md:mb-10">
                                         <h3 className="font-title text-zinc-900 font-bold text-4xl text-center">
-                                            Endereço da sua empresa
+                                            Informações de contato
                                         </h3>
-                                        <div className="pt-2">Endereço da sua empresa</div>
+                                        <div className="pt-2">
+                                            Precisamos de algumas informações para entrarmos em contato com você.
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <Label>Telefone</Label>
+                                        <Input
+                                            onChange={(e: any) => {
+                                                handleStore({ phone: e.target.value });
+                                            }}
+                                            name="telefone"
+                                            placeholder="(XX) XXXXX-XXXX"
+                                            required
+                                            value={store?.phone || ""}
+                                        />
                                     </div>
 
                                     <div className="form-group">
                                         <Label>CEP</Label>
                                         <Input
-                                            required
-                                            onChange={(e: any) => handleZipCode(e.target.value)}
+                                            onBlur={(e: any) => {
+                                                const zip = justNumber(e.target.value);
+                                                handleZipCode(zip);
+                                            }}
+                                            onChange={(e: any) => {
+                                                const value = justNumber(e.target.value);
+                                                handleStore({ zipCode: value });
+                                            }}
                                             name="cep"
                                             placeholder="00000-000"
+                                            required
+                                            value={store?.zipCode || ""}
                                         />
                                     </div>
 
-                                    <div className="flex gap-8">
-                                        <div className="w-full form-group">
-                                            <Label>Endereço</Label>
-                                            <Input
-                                                readonly
-                                                name="endereco"
-                                                value={store?.street}
-                                                placeholder="Ex: Avenida Brasil"
-                                            />
-                                        </div>
-                                        <div className="w-[10rem] form-group">
+                                    <div className="form-group">
+                                        <Label>Rua</Label>
+                                        <Input
+                                            onChange={(e: any) => {
+                                                handleStore({ street: e.target.value });
+                                            }}
+                                            name="rua"
+                                            placeholder="Rua, Avenida..."
+                                            required
+                                            value={store?.street || ""}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="form-group">
                                             <Label>Número</Label>
                                             <Input
-                                                onChange={(e: any) =>
-                                                    handleStore({ number: justNumber(e.target.value) })
-                                                }
-                                                required
+                                                onChange={(e: any) => {
+                                                    handleStore({ number: e.target.value });
+                                                }}
                                                 name="numero"
-                                                value={store?.number}
-                                                placeholder="Ex: 123"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-8">
-                                        <div className="form-group">
-                                            <Label>Bairro</Label>
-                                            <Input
-                                                readonly
-                                                name="bairro"
-                                                value={store?.neighborhood}
-                                                placeholder="Ex: Centro"
+                                                placeholder="Número"
+                                                required
+                                                value={store?.number || ""}
                                             />
                                         </div>
 
                                         <div className="form-group">
-                                            <Label>Complemento (Opcional)</Label>
+                                            <Label>Complemento</Label>
                                             <Input
-                                                onChange={(e: any) =>
-                                                    handleStore({ complement: e.target.value })
-                                                }
-                                                value={store?.complement}
+                                                onChange={(e: any) => {
+                                                    handleStore({ complement: e.target.value });
+                                                }}
                                                 name="complemento"
-                                                placeholder="Ex: Sala 1"
+                                                placeholder="Apto, Sala..."
+                                                value={store?.complement || ""}
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-8">
-                                        <div className="form-group">
-                                            <Label>Estado</Label>
-                                            <Input
-                                                readonly
-                                                name="estado"
-                                                value={store?.state}
-                                                placeholder="UF"
-                                            />
-                                        </div>
+                                    <div className="form-group">
+                                        <Label>Bairro</Label>
+                                        <Input
+                                            onChange={(e: any) => {
+                                                handleStore({ neighborhood: e.target.value });
+                                            }}
+                                            name="bairro"
+                                            placeholder="Bairro"
+                                            required
+                                            value={store?.neighborhood || ""}
+                                        />
+                                    </div>
 
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div className="form-group">
                                             <Label>Cidade</Label>
                                             <Input
-                                                readonly
+                                                onChange={(e: any) => {
+                                                    handleStore({ city: e.target.value });
+                                                }}
                                                 name="cidade"
-                                                value={store?.city}
-                                                placeholder="Cidade do seu negócio"
+                                                placeholder="Cidade"
+                                                required
+                                                value={store?.city || ""}
+                                            />
+                                        </div>
+
+                                        <div className="form-group">
+                                            <Label>Estado</Label>
+                                            <Input
+                                                onChange={(e: any) => {
+                                                    handleStore({ state: e.target.value });
+                                                }}
+                                                name="estado"
+                                                placeholder="Estado"
+                                                required
+                                                value={store?.state || ""}
                                             />
                                         </div>
                                     </div>
@@ -365,168 +493,55 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                                         <Button loading={form.loading}>Avançar</Button>
                                     </div>
                                 </form>
-
                                 <div className="text-center pt-4 text-sm">Etapa 2 de 3</div>
                             </div>
-
-                            {/* STEP3 */}
                             <div
                                 className={step == 3 ? "block" : "absolute overflow-hidden h-0"}
                             >
-                                <form
-                                    onSubmit={(e: any) => {
-                                        submitStep(e);
-                                    }}
-                                >
-                                    <div className="text-center mb-4 md:mb-10">
-                                        <h3 className="font-title text-zinc-900 font-bold text-4xl text-center">
-                                            Sobre o dono
-                                        </h3>
-                                        <div className="pt-2">
-                                            Preencha as informações de cadastro da sua loja.
-                                        </div>
+                                <div className="text-center mb-4 md:mb-10">
+                                    <h3 className="font-title text-zinc-900 font-bold text-4xl text-center">
+                                        Quase lá!
+                                    </h3>
+                                    <div className="pt-2">
+                                        Revise os seus dados antes de finalizar o cadastro.
                                     </div>
+                                </div>
 
-                                    <div className="form-group">
-                                        <Label>Nome completo</Label>
-                                        <Input
-                                            required
-                                            onChange={(e: any) =>
-                                                handleUser({ name: e.target.value })
-                                            }
-                                            value={user.name ?? ""}
-                                            name="nome"
-                                        />
-                                    </div>
+                                <div className="py-4">
+                                    <h5 className="font-bold text-lg text-zinc-900 mb-2">Dados da Empresa:</h5>
+                                    <p><strong>CPF/CNPJ:</strong> {store?.document}</p>
+                                    <p><strong>Nome Fantasia:</strong> {store?.title}</p>
+                                    <p><strong>Segmento:</strong> {store?.segment}</p>
+                                    <p><strong>Possui Entrega:</strong> {store?.hasDelivery ? 'Sim' : 'Não'}</p>
+                                </div>
 
-                                    <div className="form-group">
-                                        <Label>E-mail</Label>
-                                        <Input
-                                            readonly
-                                            name="email"
-                                            type="email"
-                                            value={user.email ?? ""}
-                                        />
-                                    </div>
+                                <div className="py-4">
+                                    <h5 className="font-bold text-lg text-zinc-900 mb-2">Informações de Contato:</h5>
+                                    <p><strong>Telefone:</strong> {store?.phone}</p>
+                                    <p><strong>Endereço:</strong> {store?.street}, {store?.number} {store?.complement && ` - ${store?.complement}`} - {store?.neighborhood}, {store?.city} - {store?.state}, {store?.zipCode} - {store?.country}</p>
+                                </div>
 
-                                    <div className="form-group">
-                                        <Label>Celular (com DDD)</Label>
-                                        <Input readonly name="celular" value={user?.phone ?? ""} />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <Label>CPF</Label>
-                                        <Input
-                                            required
-                                            onChange={(e: any) =>
-                                                handleUser({ cpf: justNumber(e.target.value) })
-                                            }
-                                            name="cpf"
-                                            value={user?.cpf ?? ""}
-                                        />
-                                    </div>
-
-                                    <div className="grid mt-8">
-                                        <Button loading={form.loading}>Avançar</Button>
-                                    </div>
-                                </form>
+                                <div className="grid mt-8">
+                                    <Button loading={form.loading} onClick={submitStep}>
+                                        Finalizar Cadastro
+                                    </Button>
+                                </div>
                                 <div className="text-center pt-4 text-sm">Etapa 3 de 3</div>
                             </div>
-
-                            {/* STEP4 */}
                             <div
                                 className={step == 4 ? "block" : "absolute overflow-hidden h-0"}
                             >
-                                <div className="text-center mb-4 md:mb-10">
-                                    <div className="relative text-6xl mb-6 text-yellow-300">
-                                        <Icon icon="fa-thumbs-up" />
-                                        <Icon
-                                            icon="fa-thumbs-up"
-                                            type="fa"
-                                            className="text-yellow-300 text-5xl absolute bottom-0 left-1/2 -translate-x-1/2 mb-1 opacity-50"
-                                        />
-                                    </div>
-                                    <h3 className="font-title text-zinc-900 font-bold text-4xl text-center">
-                                        Cadastro realizado :)
+                                <div className="text-center py-12">
+                                    <Icon icon="fa-check-circle" />
+                                    <h3 className="font-title text-zinc-900 font-bold text-3xl mt-4">
+                                        Cadastro realizado com sucesso!
                                     </h3>
-                                    <div className="pt-2 text-xl font-bold text-zinc-900">
-                                        Confira os próximos passos.
-                                    </div>
-
-                                    <div className="grid gap-6 my-8">
-                                        <div className="flex text-left gap-4">
-                                            <div>
-                                                <Icon
-                                                    icon="fa-check"
-                                                    type="fa"
-                                                    className="text-yellow-400"
-                                                />
-                                            </div>
-                                            <div className="w-full">
-                                                Analisaremos o seu cadastro. Normalmente respondemos em
-                                                até 1 dia.
-                                            </div>
-                                        </div>
-
-                                        <div className="flex text-left gap-4">
-                                            <div>
-                                                <Icon
-                                                    icon="fa-check"
-                                                    type="fa"
-                                                    className="text-yellow-400"
-                                                />
-                                            </div>
-                                            <div className="w-full">
-                                                Você receberá confirmação por e-mail junto com o
-                                                contrato.
-                                            </div>
-                                        </div>
-                                        <div className="flex text-left gap-4">
-                                            <div>
-                                                <Icon
-                                                    icon="fa-check"
-                                                    type="fa"
-                                                    className="text-yellow-400"
-                                                />
-                                            </div>
-                                            <div className="w-full">
-                                                Depois de assinar o contrato, iremos te ajudar a
-                                                configurar a sua loja
-                                            </div>
-                                        </div>
-                                        <div className="flex text-left gap-4">
-                                            <div>
-                                                <Icon
-                                                    icon="fa-check"
-                                                    type="fa"
-                                                    className="text-yellow-400"
-                                                />
-                                            </div>
-                                            <div className="w-full">
-                                                Para usar a loja você precisará escolher um dos planos.
-                                            </div>
-                                        </div>
-                                        <div className="flex text-left gap-4">
-                                            <div>
-                                                <Icon
-                                                    icon="fa-check"
-                                                    type="fa"
-                                                    className="text-yellow-400"
-                                                />
-                                            </div>
-                                            <div className="w-full">
-                                                Fique tranquilo, não possuímos fidelidade. Cancele o
-                                                plano quando desejar.
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid">
-                                        <Link
-                                            href="/"
-                                            className="btn bg-yellow-300 relative text-zinc-900"
-                                        >
-                                            Confirmar
+                                    <p className="mt-2">
+                                        Em breve, nossa equipe entrará em contato para validar suas informações.
+                                    </p>
+                                    <div className="mt-6">
+                                        <Link href="/acesso">
+                                            <Button>Ir para a página de acesso</Button>
                                         </Link>
                                     </div>
                                 </div>
@@ -536,5 +551,5 @@ export default function Cadastro({ preUser }: { preUser: UserType }) {
                 </div>
             </div>
         </Template>
-  );
+    );
 }
