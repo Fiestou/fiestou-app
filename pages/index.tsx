@@ -115,8 +115,9 @@ export default function Home({
   useEffect(()=>{
     getFilters()
   }, [])
-
+//se der erro aqui ao rodar o projeto não rodou o backend da forma correta
   const [imgLinks] = useState<string[]>([Home?.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)]);
+
   return (
     <Template
       scripts={Scripts}

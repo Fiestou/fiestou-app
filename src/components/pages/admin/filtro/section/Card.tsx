@@ -5,6 +5,7 @@ import ElementModal, { ReturnElementData } from "../modals/ElementModal";
 import { toast } from "react-toastify";
 import { X, Trash2, Pencil, EllipsisVertical, Plus } from "lucide-react";
 import DeleteModal from "../modals/DeleteModal";
+import { elements } from "chart.js";
 
 interface CardProps {
     title: string;
@@ -33,10 +34,10 @@ const Card: React.FC<CardProps> = (props) => {
 
 
     const onSaveElement = async (data: ReturnElementData) => {
-        let request;
+        let request: ElementsResponse;
         setUpdateElement(null);
         if (data.id) {
-            request = await api.bridge<GroupResponse>({
+            request = await api.bridge<ElementsResponse>({
                 method: "put",
                 url: `element/update/${data.group_id}/${data.id}`,
                 data: data,
@@ -47,14 +48,29 @@ const Card: React.FC<CardProps> = (props) => {
                 );
             }
         } else {
-            request = await api.bridge<GroupResponse>({
+            request = await api.bridge<ElementsResponse>({
                 method: "post",
-                url: `element/register/${data.group_id}/`,
+                url: `element/register/${data.group_id}`,
                 data: data
             });
 
             //MELHORAR NO FUTURO
-            window.location.reload();
+            if (request.response && request.data instanceof Object) {
+                const newElement = request.data as unknown as Element;
+                setLocalElements((prev) => [
+                    ...prev,
+                    {
+                        id: newElement.id,
+                        name: newElement.name,
+                        icon: newElement.icon,
+                        element_related_id: newElement.element_related_id,
+                        group_id: newElement.group_id,
+                    },
+                ]);
+                toast.success("Elemento adicionado com sucesso");
+            } else {
+                toast.error("Não foi possível salvar o elemento.");
+            }
 
         }
 
