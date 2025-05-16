@@ -22,9 +22,8 @@ interface PreUserData {
 
 type ApiResponse<T = any> = {
     response: boolean;
-    data: T;
     elements?: Element[];
-    preUser?: {
+    preUser: {
         email: string;
         person: string;
         name: string;
@@ -60,15 +59,14 @@ export default function Cadastro() {
     useEffect(() => {
         const fetchPreUserData = async () => {
             if (ref && typeof ref === 'string') {
-                console.log("Hash recebido:", ref);
                 try {
                     const response = await api.bridge<ApiResponse<UserType>>({
                         method: 'get',
                         url: `auth/pre-register/${ref}`,
-                    });
-                    if (response?.data) {
-                        console.log("Dados do preUser recebidos:", response.data);
-                        setLoadingPreUser(response.data);
+                    });                    
+                    if (response) {                        
+                        setElements(response.elements || []);
+                        setLoadingPreUser(response?.preUser);
                     } else {
                         console.warn("Erro ao buscar dados do preUser com o hash.");                       
                     }
@@ -89,21 +87,16 @@ export default function Cadastro() {
     useEffect(() => {
         const fetchInitialData = async () => {
             if (loadingPreUser?.email) {
-                console.log("Email de usuário disponível:", loadingPreUser.email);
                 try {
-                    console.log("Chama API para stores/complete-register com email:", loadingPreUser.email);
                     const response = await api.call<ApiResponse>({
                         method: 'post',
                         url: 'stores/complete-register',
                         data: { email: loadingPreUser.email }
                     });
-                    console.log("Resposta da API (dados iniciais/segmentos):", response);
 
-                    if (response.data) {
-                        console.log("Dados recebidos na resposta:", response.data);
-                        if (response.data.document) {
-                            setStore(prevStore => ({ ...prevStore, ...response.data }));
-                            console.log("Dados da loja atualizados:", { ...store, ...response.data });
+                    if (response.preUser) {
+                        if (response.preUser) {
+                            setStore(prevStore => ({ ...prevStore, ...response.preUser }));
                         }
                     } else {
                         console.warn("Resposta da API sem dados.");
@@ -111,10 +104,8 @@ export default function Cadastro() {
 
                     if (response.elements) {
                         setElements(response.elements);
-                        console.log("Elementos (segmentos) recebidos diretamente:", response.elements);
-                    } else if (response.data?.elements) {
-                        setElements(response.data.elements);
-                        console.log("Elementos (segmentos) recebidos via data:", response.data.elements);
+                    } else if (response.elements) {
+                        setElements(response.elements);
                     } else {
                         console.warn("Elementos (segmentos) não recebidos ou vazios.");
                     }
@@ -140,21 +131,17 @@ export default function Cadastro() {
 
     const submitStep = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("submitStep chamado para a etapa:", step);
         setForm({ ...form, loading: true });
 
         try {
             const dataToSend = { ...store, ...loadingPreUser };
-            console.log("Enviando dados para stores/complete-register:", dataToSend);
             const request = await api.bridge<ApiResponse>({
                 method: 'post',
                 url: "stores/complete-register",
                 data: dataToSend
             });
-            console.log("Resposta de API pra stores/complete-register:", request);
 
             if (request.response) {
-                console.log("Requisição bem-sucedida, avançando para a próxima etapa.");
                 setStep(prevStep => prevStep + 1);
             } else {
                 console.warn("Resposta da API indica falha:", request);
@@ -168,7 +155,6 @@ export default function Cadastro() {
 
     const handleZipCode = async (zipCode: string) => {
         const location = await getZipCode(zipCode);
-        console.log("Resultado da busca de CEP:", location);
 
         if (!!location) {
             let address = { ...store };
@@ -218,9 +204,10 @@ export default function Cadastro() {
                 }
             }))
         ];
-        console.log("segmentOptions:", options);
         return options;
     }, [elements]);
+
+    useEffect(() => {},[elements]);
 
     if (loadingPreUser) {
         return (
@@ -313,7 +300,7 @@ export default function Cadastro() {
                                               placeholder={!store?.segment ? "Selecione seu segmento" : ""}
                                               name="segment"
                                               options={elements.map((element) => ({
-                                                label: element.name,
+                                                name: element.name,
                                                 value: element.id.toString(),
                                                 icon: element.icon,
                                               }))}
