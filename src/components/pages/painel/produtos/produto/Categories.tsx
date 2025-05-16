@@ -6,6 +6,16 @@ import { AssociatedElement, RelationType } from "@/src/models/relation";
 import Api from "@/src/services/api";
 import { useEffect, useState } from "react";
 
+interface Category {
+  id: number;
+  title: string;
+  image?: string;
+  childs?: Category[];
+  metadata?: {
+    limitSelect?: string;
+  };
+}
+
 interface TreeNode {
   childs?: TreeNode[];
   [key: string]: unknown;
@@ -20,46 +30,59 @@ export default function Categories({
 }) {
   const api = new Api();
 
-  const [selected, setSelected] = useState([] as Array<number>);
-  const [categories, setCategories] = useState([] as Array<any>);
-  const [allCategories, setAllCategories] = useState([] as any);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] = useState<{ [key: number]: Category[] }>({});
 
-  const recursiveList = (items: TreeNode[] = [], recursive: TreeNode[] = []): TreeNode[] => {
+  const recursiveList = (items: Category[] = [], recursive: Category[] = []): Category[] => {
     if (!Array.isArray(items)) {
       return recursive;
     }
-  
+
     const newRecursive = [...recursive];
-    
+
     items.forEach((item) => {
       if (item) {
         newRecursive.push(item);
-        
+
         if (Array.isArray(item.childs) && item.childs.length > 0) {
           const nestedItems = recursiveList(item.childs, []);
           newRecursive.push(...nestedItems);
         }
       }
     });
-  
+
     return newRecursive;
   };
 
   const getCategories = async () => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "categories/list",
-    });
+    try {
+      const request = await api.bridge<{ data: Category[] }>({
+        method: 'post',
+        url: "categories/list",
+      });
 
-    const handle = request.data;
+      const handle = request.data;
 
-    let childs: any = {};
-    handle.map((item: any) => {
-      childs[item.id] = recursiveList(item.childs ?? [], []);
-    });
+      if (!Array.isArray(handle)) {
+        console.error("Erro: handle não é um array", handle);
+        setCategories([]);
+        setAllCategories({});
+        return;
+      }
 
-    setAllCategories(childs);
-    setCategories(handle);
+      const childs: { [key: number]: Category[] } = {};
+      handle.forEach((item: Category) => {
+        childs[item.id] = recursiveList(item.childs ?? [], []);
+      });
+
+      setAllCategories(childs);
+      setCategories(handle);
+    } catch (error) {
+      console.error("Erro ao buscar categorias:", error);
+      setCategories([]);
+      setAllCategories({});
+    }
   };
 
   const handleRelationship = (id: number, master: RelationType) => {
@@ -110,7 +133,6 @@ export default function Categories({
                       type={"checkbox"}
                     />
                   </div>
-                  {/* <div>{JSON.stringify(selected)}</div> */}
                   <div className="aspect-[1/1] max-w-[1.5rem]">
                     {!!getImage(item.image) && (
                       <Img

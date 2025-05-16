@@ -196,10 +196,10 @@ export default function Acesso({
                   <div>OU</div>
                   <div className="border-t w-full"></div>
                 </div>
-
+{/* 
                 <div className="form-group">
                   <NextAuth />
-                </div>
+                </div> */}
 
                 <div className="hidden form-group text-center text-sm pt-4">
                   Quer se cadastrar como parceiro?{" "}
