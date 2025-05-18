@@ -74,8 +74,6 @@ export default function Home({
   const api = new Api();
   const { setGroups } = useGroup();
 
-  console.log("Home component props:", Home);
-
   const renderImageSlider = (slide: any) => {
     return getImage(slide?.main_slide_cover, "default") ? (
       <>
