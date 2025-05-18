@@ -22,19 +22,22 @@ export async function getServerSideProps(ctx: any) {
 }
 
 export default function Logout() {
-  const Logout = async () => {
+
+  const handleLogout = async () => {
     Cookies.remove("fiestou.authtoken");
     Cookies.remove("fiestou.user");
     Cookies.remove("fiestou.store");
 
     api.defaults.headers["Authorization"] = ``;
 
+    await signOut({ redirect: false });
+
     window.location.href = "/acesso";
   };
 
   useEffect(() => {
-    if (!!window) {
-      Logout();
+    if (typeof window !== "undefined") {
+      handleLogout();
     }
   }, []);
 
