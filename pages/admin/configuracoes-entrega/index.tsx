@@ -32,7 +32,7 @@ export default function ConfiguracoesEntrega() {
   const fetchRegions = async (pageNum = 1) => {
     const response = await api.request<any>({
       method: "get",
-      url: `zipcode-cities-range?page=${pageNum}`,
+      url: `app/zipcode-cities-range?page=${pageNum}`,
     });
     const data = response?.data;
     setRegions(data.data || []);
@@ -64,7 +64,7 @@ export default function ConfiguracoesEntrega() {
       };
       await api.request<any>({
         method: "post",
-        url: "zipcode-cities-range",
+        url: "app/zipcode-cities-range",
         data: payload,
       });
       setSuccess(true);
@@ -77,8 +77,18 @@ export default function ConfiguracoesEntrega() {
     setLoading(false);
   };
 
-  // Paginação
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const handleDelete = async (id: number) => {
+    try {
+      await api.request<any>({
+        method: "delete",
+        url: `app/zipcode-cities-range/${id}`,
+      });
+      fetchRegions(1);
+      setPage(1);
+    } catch (err: any) {
+      setError("Erro ao deletar. Tente novamente.");
+    }
+  };
 
   return (
     <Template
@@ -184,12 +194,18 @@ export default function ConfiguracoesEntrega() {
                     <span className="bg-zinc-200 rounded px-2 py-1">
                       {region.finish}
                     </span>
+                    <Button
+                      type="button"
+                      onClick={() => handleDelete(region.id)}
+                    >
+                      <Icon icon="fa-trash" className="text-zinc-500" />
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
             {/* Paginação */}
-            {links.length > 0 && (
+            {links?.length > 0 && (
               <Pagination links={links} onPageChange={setPage} />
             )}
           </div>
