@@ -5,6 +5,11 @@ export interface StoreType {
   slug: string
   companyName: string
   deliveryRegions: any[]
+  // Km Value
+  default_delivery_fee: number
+  // If the store has a delivery fee
+  
+  is_delivery_fee_active: boolean
   document: any
   description: string
   cover: Cover

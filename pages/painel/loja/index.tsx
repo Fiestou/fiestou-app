@@ -122,6 +122,10 @@ export default function Loja({
     });
 
     const handle = request.data ?? {};
+    handle.deliveryRegions = handle.zipcode_cities_ranges?.map(
+      (item: { zipcode_cities_range_id: number }) =>
+        item.zipcode_cities_range_id
+    );
 
     setOldStore(handle);
     setStore(handle);
@@ -271,8 +275,6 @@ export default function Loja({
 
     let profileValue: any = store?.profile;
 
-    console.log(profileValue);
-
     if (!!handleProfile.remove) {
       const request = await api
         .media({
@@ -362,8 +364,6 @@ export default function Loja({
 
     handleForm({ loading: true });
 
-    console.log(store);
-
     /* TO DO - TIPAR E ARRANCAR any */
     const request: any = await api.bridge({
       method: "post",
@@ -377,6 +377,14 @@ export default function Loja({
     }
 
     handleForm({ edit: "", loading: false });
+
+    await api.request({
+      method: "PUT",
+      url: `app/zipcode-cities-range-stores/${store?.id}`,
+      data: {
+        ids: store?.deliveryRegions,
+      },
+    });
   };
 
   const renderAction = (
@@ -423,6 +431,28 @@ export default function Loja({
       </button>
     );
   };
+
+  const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
+
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const response = await api.request({
+          method: "get",
+          url: "app/zipcode-cities-range",
+        });
+        setDeliveryRegionsOptions(
+          (response?.data?.data || []).map((region) => ({
+            value: region.id,
+            name: `${region.name} (${region.start} - ${region.finish})`,
+          }))
+        );
+      } catch (e) {
+        setDeliveryRegionsOptions([]);
+      }
+    };
+    fetchRegions();
+  }, []);
 
   useEffect(() => {
     if (!!window) {
@@ -955,11 +985,15 @@ export default function Loja({
                             <label className="flex items-center gap-2">
                               <input
                                 type="radio"
-                                name="hasDelivery"
-                                value="yes"
-                                checked={store?.hasDelivery === "yes"}
+                                name="is_delivery_fee_active"
+                                value="1"
+                                checked={!!store?.is_delivery_fee_active}
                                 onChange={(e) =>
-                                  handleStore({ hasDelivery: e.target.value })
+                                  handleStore({
+                                    is_delivery_fee_active: Number(
+                                      e.target.value
+                                    ),
+                                  })
                                 }
                               />
                               <span>Sim</span>
@@ -967,11 +1001,15 @@ export default function Loja({
                             <label className="flex items-center gap-2">
                               <input
                                 type="radio"
-                                name="hasDelivery"
-                                value="no"
-                                checked={store?.hasDelivery === "no"}
+                                name="is_delivery_fee_active"
+                                value="0"
+                                checked={!store?.is_delivery_fee_active}
                                 onChange={(e) =>
-                                  handleStore({ hasDelivery: e.target.value })
+                                  handleStore({
+                                    is_delivery_fee_active: Number(
+                                      e.target.value
+                                    ),
+                                  })
                                 }
                               />
                               <span>Não</span>
@@ -987,9 +1025,11 @@ export default function Loja({
                             <Input
                               type="text"
                               className="w-full"
-                              value={store?.kmValue}
+                              value={store?.default_delivery_fee}
                               onChange={(e) =>
-                                handleStore({ kmValue: e.target.value })
+                                handleStore({
+                                  default_delivery_fee: e.target.value,
+                                })
                               }
                             />
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-help group">
@@ -1012,33 +1052,12 @@ export default function Loja({
                             name="deliveryRegions"
                             placeholder="Selecione as regiões"
                             value={store?.deliveryRegions}
-                            onChange={(values) => {
-                              console.log(values)
-                              // handleStore({ deliveryRegions: values })
-                            }}
-                            options={[
-                              { value: "aguaFria", name: "Água Fria" },
-                              { value: "altoDoCeu", name: "Alto do Céu" },
-                              { value: "aeroclube", name: "Aeroclube" }, 
-                              { value: "bessa", name: "Bessa" },
-                            ]}
+                            onChange={(values) =>
+                              handleStore({ deliveryRegions: values })
+                            }
+                            options={deliveryRegionsOptions}
                             className="min-h-[46px] relative"
                             isMulti={true}
-                            // selectedValues={store?.deliveryRegions?.map(region => (
-                            //   <div key={region.value} className="inline-flex items-center gap-1 bg-theme-yellow-300 rounded px-2 py-1 m-1">
-                            //     <span className="text-sm">{region.name}</span>
-                            //     <button
-                            //       type="button"
-                            //       onClick={() => {
-                            //         const newValues = store.deliveryRegions.filter(r => r.value !== region.value);
-                            //         handleStore({ deliveryRegions: newValues });
-                            //       }}
-                            //       className="text-xs hover:text-zinc-600"
-                            //     >
-                            //       <Icon icon="fa-times" />
-                            //     </button>
-                            //   </div>
-                            // ))}
                           />
                         </div>
                       </div>

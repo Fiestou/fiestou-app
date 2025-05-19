@@ -36,10 +36,10 @@ import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Zoom } from "swiper";
-import 'swiper/css';
-import 'swiper/css/zoom';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
+import "swiper/css";
+import "swiper/css/zoom";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
 
 import Calendar from "@/src/components/ui/form/CalendarUI";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -51,6 +51,7 @@ import SidebarCart from "@/src/components/common/SidebarCart";
 import FDobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
+import { formatCep } from "../../../src/components/utils/FormMasks";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -85,7 +86,7 @@ export async function getStaticProps(ctx: any) {
 
     request = await api.content(
       {
-        method: 'get',
+        method: "get",
         url: "product",
       },
       ctx
@@ -152,6 +153,10 @@ export default function Produto({
   });
 
   const [days, setDays] = useState(1);
+  const [cep, setCep] = useState("");
+  const [cepError, setCepError] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
 
   const handleQuantity = (q: any) => {
     const qtd = Number(q);
@@ -231,20 +236,20 @@ export default function Produto({
               .length
               ? variations.filter((item: any) => item.id != value.id)
               : !limit || variations.length < limit
-                ? [...variations, value]
-                : variations;
+              ? [...variations, value]
+              : variations;
           }
 
           if (attr.selectType == "quantity") {
             variations = !!variations.filter((item: any) => item.id == value.id)
               .length
               ? variations
-                .map((item: any) =>
-                  item.id == value.id
-                    ? { ...item, quantity: value.quantity }
-                    : item
-                )
-                .filter((item: any) => !!item.quantity)
+                  .map((item: any) =>
+                    item.id == value.id
+                      ? { ...item, quantity: value.quantity }
+                      : item
+                  )
+                  .filter((item: any) => !!item.quantity)
               : [...variations, value];
           }
 
@@ -369,10 +374,11 @@ export default function Produto({
                           <Icon
                             icon="fa-star"
                             type="fa"
-                            className={`${item.rate >= value
-                              ? "text-yellow-500"
-                              : "text-gray-300"
-                              }`}
+                            className={`${
+                              item.rate >= value
+                                ? "text-yellow-500"
+                                : "text-gray-300"
+                            }`}
                           />
                         </label>
                       ))}
@@ -387,6 +393,25 @@ export default function Produto({
       )}
     </>
   );
+
+  const handleCheckCep = async () => {
+    setCepError(false);
+    setLoadingCep(true);
+    const api = new Api();
+    try {
+      // Consulta as regiões de entrega paginadas (pode ajustar o endpoint se necessário)
+      const response = await api.request<any>({
+        method: "get",
+        url: `delivery-zipcode/${product?.id}/${cep.replace(/\D/g, "")}`,
+      });
+      const priceValue = response?.data?.price ?? null;
+      setDeliveryFee(priceValue);
+      setCepError(!priceValue);
+    } catch (e) {
+      setCepError(true);
+    }
+    setLoadingCep(false);
+  };
 
   const [match, setMatch] = useState([] as Array<any>);
   const renderMatch = async () => {
@@ -668,10 +693,10 @@ export default function Produto({
                                 <div className="aspect-square flex justify-center items-center px-1 md:px-2">
                                   {!!getImage(img, "xl") && (
                                     <div className="swiper-zoom-container">
-                                    <Img
-                                      src={getImage(img, "xl")}
-                                      className="w-full rounded-md"
-                                    />
+                                      <Img
+                                        src={getImage(img, "xl")}
+                                        className="w-full rounded-md"
+                                      />
                                     </div>
                                   )}
                                 </div>
@@ -791,7 +816,7 @@ export default function Produto({
                   <div className="w-fit md:text-right leading-tight pt-4 md:pt-0">
                     <div className="whitespace-nowrap">
                       {getPrice(product).priceFromFor &&
-                        !!getPrice(product).priceLow ? (
+                      !!getPrice(product).priceLow ? (
                         <div className="text-sm">
                           de
                           <span className="line-through mx-1">
@@ -805,7 +830,7 @@ export default function Produto({
                       <h3 className="font-bold text-4xl lg:text-3xl text-zinc-800">
                         R${" "}
                         {!!product?.schedulingTax &&
-                          product?.schedulingTax > getPriceValue(product).price
+                        product?.schedulingTax > getPriceValue(product).price
                           ? moneyFormat(product?.schedulingTax)
                           : moneyFormat(getPriceValue(product).price)}
                       </h3>
@@ -938,6 +963,91 @@ export default function Produto({
                       </div>
                     ))}
 
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon
+                        type="far"
+                        icon="fa-box"
+                        className="text-yellow-600"
+                      />
+                      <span className="font-bold text-zinc-900">
+                        Consulte o frete
+                      </span>
+                    </div>
+                    <div className="relative w-full">
+                      <input
+                        type="text"
+                        className="border rounded px-3 py-2 w-full pr-12"
+                        placeholder="Digite seu CEP"
+                        value={cep}
+                        onChange={(e) => setCep(formatCep(e.target.value))}
+                        maxLength={9}
+                        required
+                        disabled={loadingCep}
+                      />
+                      <Button
+                        type="button"
+                        loading={loadingCep}
+                        className="absolute top-1/2 right-2 -translate-y-1/2 bg-zinc-200 border rounded flex items-center justify-center px-3 py-1 hover:bg-zinc-300 transition-all"
+                        disable={loadingCep}
+                        onClick={handleCheckCep}
+                        style="height: 80%; width: 2.5rem;"
+                        aria-label="Buscar CEP"
+                      >
+                        {loadingCep ? (
+                          <svg
+                            className="animate-spin h-5 w-5 text-zinc-600"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            ></path>
+                          </svg>
+                        ) : (
+                          <span className="flex items-center justify-center w-full h-full">
+                            <Icon
+                              icon="fa-search"
+                              className="text-zinc-600 text-base"
+                            />
+                          </span>
+                        )}
+                      </Button>
+                    </div>
+                    {cepError && (
+                      <div className="text-red-500 text-sm mt-2">
+                        Infelizmente, a entrega deste produto não está
+                        disponível para sua região.
+                      </div>
+                    )}
+                    {deliveryFee && (
+                      <div className="flex gap-2 flex-col text-sm mt-2">
+                        <div>
+                          <Icon
+                            icon="fa-truck"
+                            type="far"
+                            className="text-yellow-400 text-base"
+                          />{" "}
+                          <span className="font-bold">Normal</span>
+                        </div>
+
+                        <span className="text-zinc-600 text-sm">
+                          Frete: R$ {moneyFormat(deliveryFee)}.
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   <div className="md:flex justify-between items-end gap-2">
                     <div className="w-full">
                       <h4 className="font-title text-zinc-900 font-bold py-4 text-sm md:text-lg">
@@ -955,7 +1065,7 @@ export default function Produto({
                         )}
                       </div>
                     </div>
-                  </div> 
+                  </div>
 
                   <div className="bg-white relative w-full mb-6">
                     {!!productToCart?.total && (
@@ -978,7 +1088,7 @@ export default function Produto({
                           <br />{" "}
                           <p>
                             Esse produto é entregue em até{" "}
-                            <strong>{product?.availability ?? 1}{" "}</strong>
+                            <strong>{product?.availability ?? 1} </strong>
                             dia
                             {Number(product?.availability ?? 1) > 1 ? "s" : ""}.
                           </p>
@@ -1004,9 +1114,7 @@ export default function Produto({
 
                         <div className="text-center p-4">
                           {!inCart ? (
-                            <Button>
-                              Adicionar
-                            </Button>
+                            <Button>Adicionar</Button>
                           ) : (
                             <Button
                               href="/carrinho"
@@ -1018,8 +1126,8 @@ export default function Produto({
                           <style jsx global>{`
                             html {
                               padding-bottom: ${layout.isMobile
-                              ? "6rem"
-                              : "0rem"};
+                                ? "6rem"
+                                : "0rem"};
                             }
                           `}</style>
                         </div>
@@ -1054,61 +1162,61 @@ export default function Produto({
                     !!product?.length ||
                     !!product?.width ||
                     !!product?.height) && (
-                      <div className="border-t pt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        {!!product?.weight && (
-                          <div className="border flex flex-col rounded p-4">
-                            <div className="text-xl text-zinc-900">
-                              <Icon icon="fa-weight" />
-                            </div>
-                            <div className="pt-4">
-                              Peso:{" "}
-                              <span className="font-bold text-zinc-900">
-                                {product?.weight}kg
-                              </span>
-                            </div>
+                    <div className="border-t pt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      {!!product?.weight && (
+                        <div className="border flex flex-col rounded p-4">
+                          <div className="text-xl text-zinc-900">
+                            <Icon icon="fa-weight" />
                           </div>
-                        )}
-                        {!!product?.length && (
-                          <div className="border flex flex-col rounded p-4">
-                            <div className="text-xl text-zinc-900">
-                              <Icon icon="fa-ruler" />
-                            </div>
-                            <div className="pt-4">
-                              Comp:{" "}
-                              <span className="font-bold text-zinc-900">
-                                {product?.length}cm
-                              </span>
-                            </div>
+                          <div className="pt-4">
+                            Peso:{" "}
+                            <span className="font-bold text-zinc-900">
+                              {product?.weight}kg
+                            </span>
                           </div>
-                        )}
-                        {!!product?.width && (
-                          <div className="border flex flex-col rounded p-4">
-                            <div className="text-xl text-zinc-900">
-                              <Icon icon="fa-ruler-horizontal" />
-                            </div>
-                            <div className="pt-4">
-                              Larg:{" "}
-                              <span className="font-bold text-zinc-900">
-                                {product?.width}cm
-                              </span>
-                            </div>
+                        </div>
+                      )}
+                      {!!product?.length && (
+                        <div className="border flex flex-col rounded p-4">
+                          <div className="text-xl text-zinc-900">
+                            <Icon icon="fa-ruler" />
                           </div>
-                        )}
-                        {!!product?.height && (
-                          <div className="border flex flex-col rounded p-4">
-                            <div className="text-xl text-zinc-900">
-                              <Icon icon="fa-ruler-vertical" />
-                            </div>
-                            <div className="pt-4">
-                              Alt:{" "}
-                              <span className="font-bold text-zinc-900">
-                                {product?.height}cm
-                              </span>
-                            </div>
+                          <div className="pt-4">
+                            Comp:{" "}
+                            <span className="font-bold text-zinc-900">
+                              {product?.length}cm
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      )}
+                      {!!product?.width && (
+                        <div className="border flex flex-col rounded p-4">
+                          <div className="text-xl text-zinc-900">
+                            <Icon icon="fa-ruler-horizontal" />
+                          </div>
+                          <div className="pt-4">
+                            Larg:{" "}
+                            <span className="font-bold text-zinc-900">
+                              {product?.width}cm
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {!!product?.height && (
+                        <div className="border flex flex-col rounded p-4">
+                          <div className="text-xl text-zinc-900">
+                            <Icon icon="fa-ruler-vertical" />
+                          </div>
+                          <div className="pt-4">
+                            Alt:{" "}
+                            <span className="font-bold text-zinc-900">
+                              {product?.height}cm
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none">
                     <div className="flex gap-2 items-center">
                       <div className="w-[1.25rem] flex justify-center">
@@ -1154,7 +1262,7 @@ export default function Produto({
                         </strong>{" "}
                         Garantia do Fiestou da entrega.
                       </div>
-                    </div>                    
+                    </div>
                   </div>
                 </div>
               </form>
