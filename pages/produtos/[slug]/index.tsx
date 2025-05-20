@@ -982,7 +982,6 @@ export default function Produto({
                         value={cep}
                         onChange={(e) => setCep(formatCep(e.target.value))}
                         maxLength={9}
-                        required
                         disabled={loadingCep}
                       />
                       <Button
