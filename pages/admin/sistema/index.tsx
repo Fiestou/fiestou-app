@@ -154,26 +154,6 @@ export default function Sistema() {
                               required
                             />
                           </div>
-                          <div className="">
-                            <div className="flex gap-2 items-end">
-                              <label className="text-zinc-900 font-bold">
-                                Região de atendimento
-                              </label>
-                              <span className="text-xs pb-[3px]">
-                                (separe os intrvalos de cep por vírgula)
-                              </span>
-                            </div>
-                            <Input
-                              placeholder="58000001...58999999"
-                              type="text"
-                              name="areas"
-                              onChange={(e: any) =>
-                                handleRoles({ areas: e.target.value })
-                              }
-                              value={roles.areas}
-                              required
-                            />
-                          </div>
                         </div>
                       </div>
                       <div className="border-t pt-4 pb-2">

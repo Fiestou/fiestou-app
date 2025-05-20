@@ -15,6 +15,8 @@ import HelpCard from "@/src/components/common/HelpCard";
 import { RelationType } from "@/src/models/relation";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import SelectDropdown from "../../../src/components/ui/form/SelectDropdown";
+import MultiSelect from "../../../src/components/ui/form/MultiSelectUi";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -25,7 +27,7 @@ export async function getServerSideProps(
 
   request = await api.call(
     {
-      method: 'post',
+      method: "post",
       url: "request/graph",
       data: [
         {
@@ -115,11 +117,15 @@ export default function Loja({
 
   const getStore = async () => {
     let request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/form",
     });
 
     const handle = request.data ?? {};
+    handle.deliveryRegions = handle.zipcode_cities_ranges?.map(
+      (item: { zipcode_cities_range_id: number }) =>
+        item.zipcode_cities_range_id
+    );
 
     setOldStore(handle);
     setStore(handle);
@@ -135,7 +141,7 @@ export default function Loja({
       preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
     });
   };
-  
+
   const handleCoverRemove = async (e: any) => {
     setHandleCover({
       preview: "",
@@ -218,7 +224,7 @@ export default function Loja({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -235,7 +241,7 @@ export default function Loja({
 
     handleForm({ edit: "", loading: false });
   };
-  
+
   const handleProfileRemove = async (e: any) => {
     setHandleProfile({
       preview: "",
@@ -268,8 +274,6 @@ export default function Loja({
     handleForm({ loading: true });
 
     let profileValue: any = store?.profile;
-
-    console.log(profileValue);
 
     if (!!handleProfile.remove) {
       const request = await api
@@ -320,7 +324,7 @@ export default function Loja({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -337,7 +341,7 @@ export default function Loja({
 
     handleForm({ edit: "", loading: false });
   };
-  
+
   const handleZipCode = async (zipCode: string) => {
     const location = await getZipCode(zipCode);
 
@@ -360,8 +364,6 @@ export default function Loja({
 
     handleForm({ loading: true });
 
-    console.log(store);
-
     /* TO DO - TIPAR E ARRANCAR any */
     const request: any = await api.bridge({
       method: "post",
@@ -375,6 +377,14 @@ export default function Loja({
     }
 
     handleForm({ edit: "", loading: false });
+
+    await api.request({
+      method: "PUT",
+      url: `app/zipcode-cities-range-stores/${store?.id}`,
+      data: {
+        ids: store?.deliveryRegions,
+      },
+    });
   };
 
   const renderAction = (
@@ -421,6 +431,28 @@ export default function Loja({
       </button>
     );
   };
+
+  const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
+
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const response = await api.request({
+          method: "get",
+          url: "app/zipcode-cities-range",
+        });
+        setDeliveryRegionsOptions(
+          (response?.data?.data || []).map((region) => ({
+            value: region.id,
+            name: `${region.name} (${region.start} - ${region.finish})`,
+          }))
+        );
+      } catch (e) {
+        setDeliveryRegionsOptions([]);
+      }
+    };
+    fetchRegions();
+  }, []);
 
   useEffect(() => {
     if (!!window) {
@@ -928,6 +960,112 @@ export default function Loja({
                   </div>
                 </form>
                 {/*  */}
+
+                <form
+                  onSubmit={(e: any) => handleSubmit(e)}
+                  method="POST"
+                  className="grid gap-4 border-b pb-8 mb-0"
+                >
+                  <div className="flex items-center">
+                    <div className="w-full">
+                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                        Valores de entrega
+                      </h4>
+                    </div>
+                    <div className="w-fit">{renderAction("frete")}</div>
+                  </div>
+                  <div className="w-full">
+                    {form.edit == "frete" ? (
+                      <div className="grid gap-4">
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Você possui serviço de entrega?
+                          </label>
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="is_delivery_fee_active"
+                                value="1"
+                                checked={!!store?.is_delivery_fee_active}
+                                onChange={(e) =>
+                                  handleStore({
+                                    is_delivery_fee_active: Number(
+                                      e.target.value
+                                    ),
+                                  })
+                                }
+                              />
+                              <span>Sim</span>
+                            </label>
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="is_delivery_fee_active"
+                                value="0"
+                                checked={!store?.is_delivery_fee_active}
+                                onChange={(e) =>
+                                  handleStore({
+                                    is_delivery_fee_active: Number(
+                                      e.target.value
+                                    ),
+                                  })
+                                }
+                              />
+                              <span>Não</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Valor do KM rodado
+                          </label>
+                          <div className="relative">
+                            <Input
+                              type="text"
+                              className="w-full"
+                              value={store?.default_delivery_fee}
+                              onChange={(e) =>
+                                handleStore({
+                                  default_delivery_fee: e.target.value,
+                                })
+                              }
+                            />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-help group">
+                              <Icon
+                                icon="fa-info-circle"
+                                className="text-zinc-400"
+                              />
+                              <div className="absolute hidden group-hover:block right-0 bg-zinc-800 text-white p-2 rounded text-sm w-48">
+                                Valor cobrado por quilômetro rodado na entrega
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Região de atendimento
+                          </label>
+                          <MultiSelect
+                            name="deliveryRegions"
+                            placeholder="Selecione as regiões"
+                            value={store?.deliveryRegions}
+                            onChange={(values) =>
+                              handleStore({ deliveryRegions: values })
+                            }
+                            options={deliveryRegionsOptions}
+                            className="min-h-[46px] relative"
+                            isMulti={true}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>Informe as regras do frete</>
+                    )}
+                  </div>
+                </form>
               </div>
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
                 <HelpCard list={page.help_list} />
