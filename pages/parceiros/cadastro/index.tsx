@@ -10,7 +10,8 @@ import { getZipCode, justNumber } from "@/src/helper";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import { Element } from "@/src/store/filter";
 
-interface PreUserData {
+interface PreUserDataResponse {
+    response: boolean;
     preUser: {
         email: string;
         person: string;
@@ -18,16 +19,15 @@ interface PreUserData {
         document?: string | null;
     } | null;
     elements: Element[];
+    message?: string;
 }
 
-type ApiResponse<T = any> = {
+type CompleteRegisterApiResponse = {
     response: boolean;
+    data?: StoreType;
+    groups?: any[];
     elements?: Element[];
-    preUser: {
-        email: string;
-        person: string;
-        name: string;
-    };
+    error?: string;
 };
 
 type SelectOption = {
@@ -52,77 +52,73 @@ export default function Cadastro() {
     const [form, setForm] = useState(FormInitialType);
     const [store, setStore] = useState<StoreType>({} as StoreType);
     const [elements, setElements] = useState<Element[]>([]);
-    const [preUserData, setPreUserData] = useState<PreUserData | null>(null);
+    const [preUser, setPreUser] = useState<{
+        email: string;
+        person: string;
+        name: string | null;
+        document?: string | null;
+    } | null>(null);
+    const [loadingPreUser, setLoadingPreUser] = useState(true);
     const [preUserError, setPreUserError] = useState<string | null>(null);
-    const [loadingPreUser, setLoadingPreUser] = useState<UserType | null>(null);
-
+   
     useEffect(() => {
         const fetchPreUserData = async () => {
             if (ref && typeof ref === 'string') {
                 try {
-                    const response = await api.bridge<ApiResponse<UserType>>({
+                    setLoadingPreUser(true);
+                    const response = await api.bridge<PreUserDataResponse>({
                         method: 'get',
                         url: `auth/pre-register/${ref}`,
-                    });                    
-                    if (response) {                        
-                        setElements(response.elements || []);
-                        setLoadingPreUser(response?.preUser);
+                    });
+                    
+                    if (response.response && response.preUser) {
+                        setPreUser(response.preUser);
+                        setElements(response.elements || []);                       
+                        setStore(prevStore => ({
+                            ...prevStore,
+                            email: response.preUser?.email || '',
+                        }));
+                        setPreUserError(null);
                     } else {
-                        console.warn("Erro ao buscar dados do preUser com o hash.");                       
+                        console.warn("Erro ao buscar dados do preUser ou hash inválido:", response.message);
+                        setPreUserError(response.message || "Hash inválido ou dados de pré-registro não encontrados.");
+                        setPreUser(null);
                     }
                 } catch (error) {
-                    console.error("Erro na chamada da API para buscar dados do preUser:", error);                   
+                    console.error("Erro na chamada da API para buscar dados do preUser:", error);
+                    setPreUserError("Erro ao carregar dados de pré-registro. Verifique o link e tente novamente.");
+                    setPreUser(null);
                 } finally {
-                    setLoadingPreUser(null);
+                    setLoadingPreUser(false);
                 }
             } else {
                 console.warn("Hash não encontrado na query string.");
-                setLoadingPreUser(null);
+                setPreUserError("Link de registro inválido ou ausente. Verifique o URL.");
+                setPreUser(null);
+                setLoadingPreUser(false);
             }
         };
+        
+        if (ref && preUser === null && preUserError === null) {
+            fetchPreUserData();
+        }
+    }, [ref, api, preUser, preUserError]);
 
-        fetchPreUserData();
-    }, [ref, api]);
-
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            if (loadingPreUser?.email) {
-                try {
-                    const response = await api.call<ApiResponse>({
-                        method: 'post',
-                        url: 'stores/complete-register',
-                        data: { email: loadingPreUser.email }
-                    });
-
-                    if (response.preUser) {
-                        if (response.preUser) {
-                            setStore(prevStore => ({ ...prevStore, ...response.preUser }));
-                        }
-                    } else {
-                        console.warn("Resposta da API sem dados.");
-                    }
-
-                    if (response.elements) {
-                        setElements(response.elements);
-                    } else if (response.elements) {
-                        setElements(response.elements);
-                    } else {
-                        console.warn("Elementos (segmentos) não recebidos ou vazios.");
-                    }
-
-                } catch (error) {
-                    console.error('Erro ao buscar dados iniciais/segmentos:', error);
-                }
-            } else if (!loadingPreUser) {
-                console.warn("Email do usuário não disponível para buscar dados iniciais.");
-            }
-        };
-
-        fetchInitialData();
-    }, [loadingPreUser, api]);
-
-    const handleUser = (value: Object) => {
-        setLoadingPreUser(prevUser => ({ ...prevUser, ...value } as UserType));
+    const handleUser = (value: Partial<{
+        email: string;
+        person: string;
+        name: string | null;
+        document?: string | null;
+    }>) => {
+        setPreUser(prevUser => {
+            const currentPreUser = prevUser || {};
+            return { ...currentPreUser, ...value } as {
+                email: string;
+                person: string;
+                name: string | null;
+                document?: string | null;
+            };
+        });
     };
 
     const handleStore = (value: Object) => {
@@ -132,10 +128,32 @@ export default function Cadastro() {
     const submitStep = async (e: React.FormEvent) => {
         e.preventDefault();
         setForm({ ...form, loading: true });
+        
+        if (!preUser?.email) {
+            console.error("Email do usuário não disponível para cadastro completo.");
+            setForm({ ...form, loading: false });
+            return;
+        }
 
         try {
-            const dataToSend = { ...store, ...loadingPreUser };
-            const request = await api.bridge<ApiResponse>({
+            const dataToSend = {
+                email: preUser.email,
+                document: store.document,
+                companyName: store.companyName || store.title,
+                hasDelivery: store.hasDelivery,               
+                phone: store.phone,
+                zipCode: store.zipCode,
+                street: store.street,
+                number: store.number,
+                complement: store.complement,
+                neighborhood: store.neighborhood,
+                city: store.city,
+                state: store.state,
+                country: store.country,
+                segment: store.segment,
+            };
+            
+            const request = await api.bridge<CompleteRegisterApiResponse>({
                 method: 'post',
                 url: "stores/complete-register",
                 data: dataToSend
@@ -144,10 +162,12 @@ export default function Cadastro() {
             if (request.response) {
                 setStep(prevStep => prevStep + 1);
             } else {
-                console.warn("Resposta da API indica falha:", request);
+                console.warn("Resposta da API indica falha no cadastro:", request.error);
+                alert(`Erro no cadastro: ${request.error || "Ocorreu um erro desconhecido."}`);
             }
         } catch (error) {
             console.error('Erro na requisição de cadastro:', error);
+            alert("Ocorreu um erro ao tentar finalizar o cadastro. Tente novamente mais tarde.");
         } finally {
             setForm({ ...form, loading: false });
         }
@@ -178,42 +198,64 @@ export default function Cadastro() {
             setStep(prevStep => prevStep - 1);
         }
     };
-
+    
     const segmentOptions = useMemo(() => {
-        const options: any[] = [
+        const options: SelectOption[] = [
             { value: "", name: "Selecione um segmento", disabled: true },
             ...elements.map(element => ({
                 value: element.id.toString(),
-                name: element.name,
+                name: (
+                    <div className="flex items-center gap-2">
+                        {element.icon && (
+                            <img
+                                src={element.icon}
+                                alt={element.name}
+                                className="w-5 h-5 object-contain"
+                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                            />
+                        )}
+                        <span>{element.name}</span>
+                    </div>
+                ),
                 disabled: false,
-                metadata: {
-                    icon: element.icon,
-                    render: (
-                        <div className="flex items-center gap-2">
-                            {element.icon && (
-                                <img
-                                    src={element.icon}
-                                    alt={element.name}
-                                    className="w-5 h-5 object-contain"
-                                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                                />
-                            )}
-                            <span>{element.name}</span>
-                        </div>
-                    )
-                }
             }))
         ];
         return options;
     }, [elements]);
-
-    useEffect(() => {},[elements]);
-
+    
+    useEffect(() => { }, [elements]);
+    
     if (loadingPreUser) {
         return (
             <Template header={{ template: "clean", position: "solid" }}>
                 <div className="container-medium py-20 text-center">
-                    Carregando informações...
+                    Carregando informações de pré-registro...
+                </div>
+            </Template>
+        );
+    }
+
+    if (preUserError) {
+        return (
+            <Template header={{ template: "clean", position: "solid" }}>
+                <div className="container-medium py-20 text-center text-red-600">
+                    <p>{preUserError}</p>
+                    <Link href="/parceiros/seja-parceiro">
+                        <Button className="mt-4">Voltar para página de parceria</Button>
+                    </Link>
+                </div>
+            </Template>
+        );
+    }
+    
+    if (!preUser) {
+        return (
+            <Template header={{ template: "clean", position: "solid" }}>
+                <div className="container-medium py-20 text-center text-red-600">
+                    <p>Não foi possível carregar os dados do usuário. O link pode ser inválido ou já foi utilizado.</p>
+                    <Link href="/parceiros/seja-parceiro">
+                        <Button className="mt-4">Voltar para página de parceria</Button>
+                    </Link>
                 </div>
             </Template>
         );
@@ -262,7 +304,7 @@ export default function Cadastro() {
                                         <Label>CPF/CNPJ</Label>
                                         <Input
                                             onChange={(e: any) => {
-                                                handleStore({ document: e.target.value });
+                                                handleStore({ document: justNumber(e.target.value) });
                                             }}
                                             name="documento"
                                             placeholder="00000000000"
@@ -295,18 +337,18 @@ export default function Cadastro() {
                                                 if (!e.target.value) return;
                                                 const selected = elements.find(el => el.id.toString() === e.target.value);
                                                 handleStore({ segment: selected?.id });
-                                              }}
-                                              value={store?.segment?.toString() || ""}
-                                              placeholder={!store?.segment ? "Selecione seu segmento" : ""}
-                                              name="segment"
-                                              options={elements.map((element) => ({
+                                            }}
+                                            value={store?.segment?.toString() || ""}
+                                            placeholder={!store?.segment ? "Selecione seu segmento" : ""}
+                                            name="segment"
+                                            options={elements.map((element) => ({
                                                 name: element.name,
                                                 value: element.id.toString(),
                                                 icon: element.icon,
-                                              }))}
+                                            }))}
                                         />
                                         <div className="text-xs text-gray-500 mt-1">
-                                            Segmento selecionado: {store?.segment || "Nenhum"}
+                                            Segmento selecionado: {elements.find(el => el.id === Number(store?.segment))?.name || "Nenhum"}
                                         </div>
                                     </div>
 
@@ -368,7 +410,7 @@ export default function Cadastro() {
                                         <Label>Telefone</Label>
                                         <Input
                                             onChange={(e: any) => {
-                                                handleStore({ phone: e.target.value });
+                                                handleStore({ phone: justNumber(e.target.value) });
                                             }}
                                             name="telefone"
                                             placeholder="(XX) XXXXX-XXXX"
@@ -498,7 +540,7 @@ export default function Cadastro() {
                                     <h5 className="font-bold text-lg text-zinc-900 mb-2">Dados da Empresa:</h5>
                                     <p><strong>CPF/CNPJ:</strong> {store?.document}</p>
                                     <p><strong>Nome Fantasia:</strong> {store?.title}</p>
-                                    <p><strong>Segmento:</strong> {store?.segment}</p>
+                                    <p><strong>Segmento:</strong> {elements.find(el => el.id === Number(store?.segment))?.name || "Não informado"}</p>
                                     <p><strong>Possui Entrega:</strong> {store?.hasDelivery ? 'Sim' : 'Não'}</p>
                                 </div>
 
