@@ -5,7 +5,7 @@ import { UserType } from "@/src/models/user";
 import Template from "@/src/template";
 import { AuthContext } from "@/src/contexts/AuthContext";
 import { useContext, useEffect, useState } from "react";
-import { getExtenseData, moneyFormat, toNumber } from "@/src/helper";
+import { getExtenseData, moneyFormat } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { Chart } from "@/src/components/utils/Chart";
 import DobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
@@ -13,121 +13,82 @@ import Api from "@/src/services/api";
 import { BalanceType } from "@/src/models/order";
 import { PARTNER_MENU } from "@/src/default/header/Painel";
 
-interface GraphQueryResponse {
-  query?: {
-    page?: Array<{
-      main_text?: string
-    }>
-  }
-}
-
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
-  try {
-    const response = await api.call<GraphQueryResponse>({
+  let request: any = await api.call(
+    {
       method: 'post',
       url: "request/graph",
-      data: [{
-        model: "page",
-        filter: [{ key: "slug", value: "home-partner", compare: "=" }],
-      }],
-    }, ctx);
+      data: [
+        {
+          model: "page",
+          filter: [
+            {
+              key: "slug",
+              value: "home-partner",
+              compare: "=",
+            },
+          ],
+        },
+      ],
+    },
+    ctx
+  );
 
-    return {
-      props: {
-        content: response.data?.query?.page?.[0] || { main_text: '' },
-      },
-    };
-  } catch (error) {
-    return { props: { content: { main_text: '' } } };
-  }
+  let content = request?.data?.query?.page ?? {};
+
+  return {
+    props: {
+      content: content[0] ?? {},
+    },
+  };
 }
 
-interface PageProps {
-  content: {
-    main_text?: string
-  }
-}
-
-export default function Parceiro({ content }: PageProps) {
+export default function Parceiro({ content }: { content: any }) {
   const { UserLogout } = useContext(AuthContext);
+
   const api = new Api();
 
-  const [balance, setBalance] = useState<BalanceType>({
-    cash: 0,
-    payments: 0,
-    promises: 0,
-    orders: 0
-  });
-
+  const [balance, setBalance] = useState({} as BalanceType);
   const getBalance = async () => {
-    try {
-      const response = await api.bridge<{
-        cash?: number | string;
-        payments?: number | string;
-        promises?: number | string;
-        orders?: number | string;
-      }>({
-        method: "post",
-        url: "stores/balance",
-      });
+    let request: any = await api.bridge({
+      method: "post",
+      url: "stores/balance",
+    });
 
-      setBalance({
-        cash: toNumber(response.data?.cash),
-        payments: toNumber(response.data?.payments),
-        promises: toNumber(response.data?.promises),
-        orders: toNumber(response.data?.orders)
-      });
-    } catch (error) {
-      console.error("Erro ao buscar saldo:", error);
-    }
+    const handle = request.data;
+
+    setBalance({
+      cash: handle?.cash || 0,
+      payments: handle?.payments || 0,
+      promises: handle?.promises || 0,
+      orders: handle?.orders || 0,
+    });
   };
 
-  interface Suborder {
-    id: number;
-    total: number;
-    created_at: string;
-    user: {
-      name: string;
-    };
-    order: {
-      id: number;
-      metadata?: {
-        payment_status?: string;
-      };
-    };
-  }
-
-  const [orders, setOrders] = useState<Suborder[]>([]);
-
+  const [orders, setOrders] = useState([] as Array<any>);
   const getOrders = async () => {
-    try {
-      const response = await api.bridge<Suborder[]>({
-        method: "post",
-        url: "suborders/list",
-        data: { limit: 10 },
-      });
+    let request: any = await api.bridge({
+      method: "post",
+      url: "suborders/list",
+      data: { limit: 10 },
+    });
 
-      setOrders(response.data || []);
-    } catch (error) {
-      console.error("Erro ao buscar pedidos:", error);
-      setOrders([]);
-    }
+    setOrders(request.data);
   };
 
-  const [period, setPeriod] = useState("month");
-  const [user, setUser] = useState<UserType>({} as UserType);
+  const [period, setPeriod] = useState("month" as string);
+
+  const [user, setUser] = useState({} as UserType);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (!!window) {
       getOrders();
       getBalance();
-      setUser(getUser() || {} as UserType);
+      setUser(getUser);
     }
   }, []);
-
-  const safeHtml = { __html: content.main_text || '' };
 
   return (
     <Template
@@ -146,7 +107,9 @@ export default function Parceiro({ content }: PageProps) {
               <div className="font-title max-w-[38rem] font-bold text-2xl md:text-5xl flex gap-4 items-center mb-2 text-zinc-900">
                 Olá, {user.name}
               </div>
-              <div dangerouslySetInnerHTML={safeHtml}></div>
+              <div
+                dangerouslySetInnerHTML={{ __html: content.main_text }}
+              ></div>
             </div>
             <div className="w-fit">
               <div className="flex gap-4 items-center justify-center">

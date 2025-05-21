@@ -73,8 +73,8 @@ export async function getServerSideProps(
   );
 
   const page = request?.data?.query?.page ?? [];
-  const storeTypes = request?.data?.query.storeType ?? [];
-  const elements = request?.data?.query.elements ?? [];
+  const storeTypes = request?.data?.query?.storeType ?? [];
+  const elements = request?.data?.query?.elements ?? [];
 
   return {
     props: {
