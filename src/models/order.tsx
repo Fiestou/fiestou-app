@@ -3,10 +3,10 @@ import { AttributeType, ProductOrderType } from "./product";
 import { UserType } from "./user";
 
 export interface BalanceType {
-  cash: number;
-  payments: number;
-  promises: number;
-  orders: number;
+  cash: 0;
+  payments: 0;
+  promises: 0;
+  orders: 0;
 }
 
 export interface ItemOrderType {

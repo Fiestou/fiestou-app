@@ -19,12 +19,6 @@ export function getSummary(text: string, maxLength: number) {
   }
 }
 
-export const toNumber = (value: unknown, fallback = 0): number => {
-  if (typeof value === 'number') return value;
-  const num = Number(value);
-  return isNaN(num) ? fallback : num;
-};
-
 export function tagfy(str: string) {
   const words = str.trim().split(" ");
   const mainWords = words.slice(0, 2);

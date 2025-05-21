@@ -4,30 +4,6 @@ import { serializeParam } from "../helper";
 
 const token = Cookies.get("fiestou.authtoken");
 
-export interface ApiResponse<T = unknown> {
-  data?: T;
-  error?: string;
-  status?: number;
-}
-
-export interface BalanceResponse {
-  cash?: number;
-  payments?: number;
-  promises?: number;
-  orders?: number;
-}
-
-export interface OrderResponse {
-  id: number;
-  total: number;
-  created_at: string;
-  user: { name: string };
-  order: { 
-    id: number; 
-    metadata?: { payment_status?: string }; 
-  };
-}
-
 export const api = axios.create({
   baseURL: process.env.BASE_URL,
   headers: {
@@ -135,17 +111,17 @@ class Api {
     return await this.connect({ method, url }, ctx);
   }
 
-  async call<T>({ method = "post", url, data, opts }: ApiRequestType, ctx?: any): Promise<ApiResponse<T>> {
+  async call<T>({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) : Promise<T> {
     url = `${process.env.BASE_URL}/api/${url}`;
     data = { graphs: data };
-    const response = await this.connect({ method, url, data, opts }, ctx);
-    return { data: response as T };
+    return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
-  async bridge<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<ApiResponse<T>> {
+  async bridge<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
     url = `${process.env.API_REST}${url}`;
-    const response = await this.connect({ method, url, data, opts }, ctx);
-    return { data: response as T };
+
+    console.log(url)
+    return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
   async graph({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
