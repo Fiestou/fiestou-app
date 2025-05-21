@@ -80,7 +80,7 @@ export async function getServerSideProps(
     props: {
       page: page[0] ?? {},
       storeTypes: storeTypes,
-      elements: elements, // Agora enviamos os elementos diretamente
+      elements: elements,
     },
   };
 }
@@ -152,17 +152,12 @@ export default function Store({
       let request: any = await api.bridge({
         method: 'post',
         url: "stores/form",
-      });
-
-      console.log(request, 'request');
-      
+      });      
   
       const handle = request.data ?? {};
       const elementsFromApi = request.elements ?? [];
-      console.log(request.elements, 'request.element');
       const openClose = Array.isArray(handle?.openClose) ? handle.openClose : [];
-  
-      console.log('Elementos da API: ' + elementsFromApi);    
+      
       setElements(elementsFromApi);
       setOldStore(handle);
       setStore(handle);
@@ -318,8 +313,6 @@ export default function Store({
 
     let profileValue: any = store?.profile;
 
-    console.log(profileValue);
-
     if (!!handleProfile.remove) {
       const request = await api
         .media({
@@ -409,8 +402,6 @@ export default function Store({
 
     handleForm({ loading: true });
 
-    console.log(store);
-
     /* TO DO - TIPAR E ARRANCAR any */
     const request: any = await api.bridge({
       method: "post",
@@ -479,12 +470,9 @@ export default function Store({
 
   useEffect(() => {
     if (form.edit === "segment") {
-      console.log('Elementos encontrados:', elements); // Debug
       const options = document.querySelectorAll('select[name="segment"] option');
-      console.log('Options encontradas:', options);
 
       options.forEach(option => {
-        console.log('Option:', option, 'Data-icon:', option.dataset.icon);
         const icon = option.dataset.icon;
         if (icon) {
           option.style.backgroundImage = `url(${icon})`;
@@ -495,8 +483,6 @@ export default function Store({
       });
     }
   }, [form.edit]);
-
-  console.log('elements: ' + elements);
 
   return (
     !router.isFallback && (
@@ -961,7 +947,7 @@ export default function Store({
                     )}
                   </div>
                 </form>
-                {/* Segmento */}
+                {/* SEGMENTO */}
                 <form
                   onSubmit={(e: any) => handleSubmit(e)}
                   method="POST"
@@ -979,7 +965,7 @@ export default function Store({
                   {form.edit == "segment" ? (
                     <Select
                     onChange={(e: any) => {
-                      if (!e.target.value) return; // Bloqueia seleção vazia
+                      if (!e.target.value) return;
                       const selected = elements.find(el => el.id.toString() === e.target.value);
                       handleStore({ segment: selected?.name });
                     }}
@@ -1010,12 +996,11 @@ export default function Store({
                           className="w-5 h-5"
                         />
                       )}
-                      <span>{store?.segment ?? "Informe o segmento da sua loja"}</span>
+                      <span>{store?.segment || "Informe o segmento da sua loja"}</span>
                     </div>
                   )}
                 </div>
               </form>
-              {/*  */}
               </div>
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
                 <HelpCard list={page.help_list} />
