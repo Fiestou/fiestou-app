@@ -336,7 +336,7 @@ export default function Cadastro() {
                                             onChange={(e: any) => {
                                                 if (!e.target.value) return;
                                                 const selected = elements.find(el => el.id.toString() === e.target.value);
-                                                handleStore({ segment: selected?.id });
+                                                handleStore({ segment: selected?.name });
                                             }}
                                             value={store?.segment?.toString() || ""}
                                             placeholder={!store?.segment ? "Selecione seu segmento" : ""}
