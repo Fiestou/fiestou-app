@@ -14,6 +14,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { clean, getImage, moneyFormat } from "@/src/helper";
+import { formatPhone } from "@/pages/cadastre-se/components/FormMasks";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -192,11 +193,12 @@ export default function SejaParceiro({
                       <div className="form-group">
                         <Label style="light">Celular (com DDD)</Label>
                         <Input
-                          onChange={(e: any) => {
-                            setPhone(e.target.value);
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            setPhone(formatPhone(e.target.value));
                           }}
                           name="phone"
                           placeholder="(00) 00000-0000"
+                          value={phone}
                         />
                       </div>
                       <div
