@@ -15,6 +15,7 @@ import HelpCard from "@/src/components/common/HelpCard";
 import { RelationType } from "@/src/models/relation";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { Element } from "@/src/types/filtros/response";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -38,18 +39,48 @@ export async function getServerSideProps(
             },
           ],
         },
+        {
+          model: "storeType",
+        },
+        {
+          model: "elements",
+          filter: [
+            {
+              key: "active",
+              value: "1",
+              compare: "=",
+            },
+            {
+              relation: "group",
+              where: [
+                {
+                  key: "segment",
+                  value: "1",
+                  compare: "=",
+                },
+                {
+                  key: "active",
+                  value: "1",
+                  compare: "=",
+                },
+              ],
+            },
+          ],
+        },
       ],
     },
     req
   );
 
   const page = request?.data?.query?.page ?? [];
-  const storeTypes = request?.data?.query.storeType ?? [];
+  const storeTypes = request?.data?.query?.storeType ?? [];
+  const elements = request?.data?.query?.elements ?? [];
 
   return {
     props: {
       page: page[0] ?? {},
       storeTypes: storeTypes,
+      elements: elements,
     },
   };
 }
@@ -70,22 +101,25 @@ const days = [
   { value: "Holiday", name: "Feriados" },
 ];
 
-export default function Loja({
+export default function Store({
   page,
   storeTypes,
+  elements: initialElements,
 }: {
   page: any;
   storeTypes: Array<RelationType>;
+  elements: Element[];
 }) {
   const api = new Api();
   const router = useRouter();
 
+  const [elements, setElements] = useState<Element[]>(initialElements || []);
   const [form, setForm] = useState(formInitial);
   const handleForm = (value: Object) => {
     setForm({ ...form, ...value });
   };
 
-  const [week, setWeek] = useState([] as Array<DayType>);
+  const [week, setWeek] = useState<DayType[]>([]);
   const handleWeek = (value: Object, day: string) => {
     let handle = store?.openClose ?? ([] as Array<DayType>);
 
@@ -114,26 +148,36 @@ export default function Loja({
   };
 
   const getStore = async () => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "stores/form",
-    });
-
-    const handle = request.data ?? {};
-
-    setOldStore(handle);
-    setStore(handle);
-    setWeek((handle?.openClose ?? []) as Array<DayType>);
-
-    setHandleCover({
-      remove: 0,
-      preview: !!handle?.cover ? getImage(handle?.cover, "xl") : "",
-    });
-
-    setHandleProfile({
-      remove: 0,
-      preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
-    });
+    try {
+      let request: any = await api.bridge({
+        method: 'post',
+        url: "stores/form",
+      });      
+  
+      const handle = request.data ?? {};
+      const elementsFromApi = request.elements ?? [];
+      const openClose = Array.isArray(handle?.openClose) ? handle.openClose : [];
+      
+      setElements(elementsFromApi);
+      setOldStore(handle);
+      setStore(handle);
+      setWeek(openClose);
+  
+      setHandleCover({
+        remove: 0,
+        preview: !!handle?.cover ? getImage(handle?.cover, "xl") : "",
+      });
+  
+      setHandleProfile({
+        remove: 0,
+        preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
+      });
+  
+    } catch (error) {
+      console.error("Error fetching store data:", error);
+      setWeek([]);
+      setElements([]);
+    }
   };
   
   const handleCoverRemove = async (e: any) => {
@@ -269,8 +313,6 @@ export default function Loja({
 
     let profileValue: any = store?.profile;
 
-    console.log(profileValue);
-
     if (!!handleProfile.remove) {
       const request = await api
         .media({
@@ -360,8 +402,6 @@ export default function Loja({
 
     handleForm({ loading: true });
 
-    console.log(store);
-
     /* TO DO - TIPAR E ARRANCAR any */
     const request: any = await api.bridge({
       method: "post",
@@ -427,6 +467,22 @@ export default function Loja({
       getStore();
     }
   }, []);
+
+  useEffect(() => {
+    if (form.edit === "segment") {
+      const options = document.querySelectorAll('select[name="segment"] option');
+
+      options.forEach(option => {
+        const icon = option.dataset.icon;
+        if (icon) {
+          option.style.backgroundImage = `url(${icon})`;
+          option.style.backgroundRepeat = 'no-repeat';
+          option.style.backgroundPosition = 'left center';
+          option.style.paddingLeft = '30px';
+        }
+      });
+    }
+  }, [form.edit]);
 
   return (
     !router.isFallback && (
@@ -891,7 +947,7 @@ export default function Loja({
                     )}
                   </div>
                 </form>
-                {/*  */}
+                {/* SEGMENTO */}
                 <form
                   onSubmit={(e: any) => handleSubmit(e)}
                   method="POST"
@@ -906,28 +962,45 @@ export default function Loja({
                     <div className="w-fit">{renderAction("segment")}</div>
                   </div>
                   <div className="w-full">
-                    {form.edit == "segment" ? (
-                      <Select
-                        onChange={(e: any) =>
-                          handleStore({ segment: e.target.value })
-                        }
-                        value={store?.segment}
-                        placeholder="Selecione seu segmento"
-                        name="lojaTipo"
-                        options={groupOptions.map((item: any) => {
-                          return {
-                            name: item.title,
-                            value: item.id,
-                          };
-                        })}
-                      />
-                    ) : (
-                      storeTypes.filter((item) => item.id == store?.segment)[0]
-                        ?.title ?? "Informe o segmento da sua loja"
-                    )}
-                  </div>
-                </form>
-                {/*  */}
+                  {form.edit == "segment" ? (
+                    <Select
+                    onChange={(e: any) => {
+                      if (!e.target.value) return;
+                      const selected = elements.find(el => el.id.toString() === e.target.value);
+                      handleStore({ segment: selected?.name });
+                    }}
+                    value={elements.find(el => el.name === store?.segment)?.id?.toString() || ""}
+                    placeholder={!store?.segment ? "Selecione seu segmento" : ""}
+                    name="segment"
+                    options={elements.map((element) => ({
+                      name: (
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src={element.icon} 
+                            alt="" 
+                            className="w-5 h-5 object-contain"
+                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                          />
+                          {element.name}
+                        </div>
+                      ),
+                      value: element.id.toString()
+                    }))}
+                  />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {store?.segment && elements.find(el => el.name === store.segment)?.icon && (
+                        <img 
+                          src={elements.find(el => el.name === store.segment)?.icon} 
+                          alt={store.segment}
+                          className="w-5 h-5"
+                        />
+                      )}
+                      <span>{store?.segment || "Informe o segmento da sua loja"}</span>
+                    </div>
+                  )}
+                </div>
+              </form>
               </div>
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
                 <HelpCard list={page.help_list} />
