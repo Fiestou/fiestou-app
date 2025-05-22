@@ -12,6 +12,7 @@ use App\Mail\RegisterUser;
 use App\Models\User;
 use Illuminate\Support\Str;
 use App\Models\Message;
+use App\Services\MessageService;
 
 class UsersController extends Controller
 {
@@ -182,40 +183,47 @@ class UsersController extends Controller
             'password'      => 'min:6|required_with:re_password|same:re_password',
             're_password'   => 'min:6'
         ]);
+
+        $data = $request->all();
+        $request_data = json_decode(json_encode($data));
+
+        unset($request_data->re_password);
+
+        $m_user = User::where([ 'email' => $request_data->email ])->first();
         
-        $request = json_decode(json_encode($request->all()));
-
-        unset($request->re_password);
-
-        $m_user = User::where([ 'email' => $request->email ])->first();
-
-        if(!$m_user){
-            $user = new User;
-
-            $user->name = $request->name;
-            $user->hash = md5($request->email);
-            $user->email = $request->email;
-            $user->login = $request->email;
-            $user->type = "user";
-            $user->person = $request->person;
-            $user->password = bcrypt( $request->password );
-            $user->remember = bcrypt( $request->password );
-            $user->status   = 1;
+        if($m_user){
+            return response()->json([
+                'response'  => false,
+                'message'   => 'O email já está vinculado a um usuário.',
+                'errors'    => ['email' => ['O email já está cadastrado.']]
+            ], 409);
         }
+        
+        $user = new User;
+
+        $user->name = $request_data->name;
+        $user->hash = md5($request_data->email);
+        $user->email = $request_data->email;
+        $user->login = $request_data->email;
+        $user->type = "user";
+        $user->person = $request_data->person;
+        $user->password = bcrypt( $request_data->password );
+        $user->remember = bcrypt( $request_data->password );
+        $user->status   = 1;
 
         try{
             if($user->save()){
                 Message::RegisterUser( $user);
             }
-         }
-         catch(\Exception $e){
+        }
+        catch(\Exception $e){
             return response()->json([
                 'response'  => false,
                 'message'   => 'Erro ao salvar usuário',
                 'errors'    => $e->getMessage()
             ], 500);
         }
-
+        
         return response()->json([
             'response'  => true,
             'user' => $user
