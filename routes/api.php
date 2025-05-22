@@ -53,6 +53,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         Route::post('/external-auth', [AuthController::class, 'ExternalAuth']);
         Route::post('/register', [UsersController::class, 'Register']);
         Route::post('/pre-register', [UsersController::class, 'PreRegister']);
+        Route::get('/pre-register/{ref}', [AuthController::class, 'GetPreRegisterData']);
         Route::post('/recovery', [AuthController::class, 'Recovery']);
         Route::post('/redefine', [AuthController::class, 'Redefine']);
     });
