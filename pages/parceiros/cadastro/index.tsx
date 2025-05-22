@@ -9,6 +9,7 @@ import { StoreType } from "@/src/models/store";
 import { getZipCode, justNumber } from "@/src/helper";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import { Element } from "@/src/store/filter";
+import { formatCpfCnpj } from "../../cadastre-se/components/FormMasks";
 
 interface PreUserDataResponse {
     response: boolean;
@@ -60,6 +61,14 @@ export default function Cadastro() {
     } | null>(null);
     const [loadingPreUser, setLoadingPreUser] = useState(true);
     const [preUserError, setPreUserError] = useState<string | null>(null);
+    const [maskedDocument, setMaskedDocument] = useState('');
+
+    useEffect(() => {
+        if (preUser?.document) {
+            setMaskedDocument(formatCpfCnpj(preUser.document));
+            handleStore({ document: preUser.document });
+        }
+    }, [preUser?.document]);
    
     useEffect(() => {
         const fetchPreUserData = async () => {
@@ -301,15 +310,20 @@ export default function Cadastro() {
                                     </div>
 
                                     <div className="form-group">
-                                        <Label>CPF/CNPJ</Label>
+                                        <Label>CPF ou CNPJ</Label>
                                         <Input
-                                            onChange={(e: any) => {
-                                                handleStore({ document: justNumber(e.target.value) });
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                const unmaskedValue = justNumber(e.target.value);
+                                                if (unmaskedValue.length > 14)
+                                                    return;                                                    
+                                                const formattedValue = formatCpfCnpj(unmaskedValue);
+                                                setMaskedDocument(formattedValue);
+                                                handleStore({ document: unmaskedValue });
                                             }}
                                             name="documento"
-                                            placeholder="00000000000"
+                                            placeholder="Informe o documento"
                                             required
-                                            value={store?.document || ""}
+                                            value={maskedDocument}
                                         />
                                     </div>
 
@@ -538,7 +552,7 @@ export default function Cadastro() {
 
                                 <div className="py-4">
                                     <h5 className="font-bold text-lg text-zinc-900 mb-2">Dados da Empresa:</h5>
-                                    <p><strong>CPF/CNPJ:</strong> {store?.document}</p>
+                                    <p><strong>CPF ou CNPJ:</strong> {store?.document}</p>
                                     <p><strong>Nome Fantasia:</strong> {store?.title}</p>
                                     <p><strong>Segmento:</strong> {elements.find(el => el.id === Number(store?.segment))?.name || "Não informado"}</p>
                                     <p><strong>Possui Entrega:</strong> {store?.hasDelivery ? 'Sim' : 'Não'}</p>
