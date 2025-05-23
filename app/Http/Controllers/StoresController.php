@@ -22,26 +22,38 @@ class StoresController extends Controller
     public function Balance(Request $request){
 
         $user = auth()->user();
-        $store = Store::where(["user" => $user->id])
-                      ->first();
+        $store = Store::where(["user" => $user->id])->first();
 
-        $payments   = Suborder::where(['store' => $store->id, 'status' => 1])->sum('paying');
-        $withdraw   = Withdraw::where(['store' => $store->id, 'status' => 1])->sum('value');
+        // Se não encontrar a loja, retorna valores zerados
+        if (!$store) {
+            $balance = [
+                'cash' => 0,
+                'payments' => 0,
+                'promises' => 0,
+                'orders' => 0
+            ];
+            return response()->json([
+                'response'  => true,
+                'data'      => $balance
+            ]);
+        }
+
+        $payments   = Suborder::where(['store' => $store->id, 'status' => 1])->sum('paying') ?? 0;
+        $withdraw   = Withdraw::where(['store' => $store->id, 'status' => 1])->sum('value') ?? 0;
 
         $cash       = $payments - $withdraw;
-        $payments   = $payments;
-        $orders     = Suborder::where(['store' => $store->id])->count();
+        $orders     = Suborder::where(['store' => $store->id])->count() ?? 0;
         $promises   = Suborder::where(['store' => $store->id])
                             ->where(function($query){
                                 $query->where('status', 0)
                                       ->orWhere('status', 2);
-                            })->sum('paying');
+                            })->sum('paying') ?? 0;
 
         $balance = [
-            'cash' => $cash,
-            'payments' => $payments,
-            'promises' => $promises,
-            'orders' => $orders
+            'cash' => $cash ?? 0,
+            'payments' => $payments ?? 0,
+            'promises' => $promises ?? 0,
+            'orders' => $orders ?? 0
         ];
 
         return response()->json([

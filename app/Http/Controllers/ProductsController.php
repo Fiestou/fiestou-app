@@ -14,6 +14,7 @@ use App\Models\Category;
 use App\Models\CategoryRel;
 use App\Models\Comment;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class ProductsController extends Controller
 {
@@ -150,16 +151,15 @@ class ProductsController extends Controller
     }
 
     public function Get(Request $request){
+ 
+      Log::info('log aqui no content', ['request' => $request->all()]);
 
+       
         $product = Product::with(["store", "comments.user"])
                           ->where('status', 1);
 
         if($request->has('id')){
             $product  = $product->where('id', $request->get('id'));
-        }
-
-        if($request->has('slug')){
-            $product  = $product->where('slug', $request->get('slug'));
         }
 
         $product = $product->first();
