@@ -15,7 +15,7 @@ export default function Product({ product }: { product: ProductType | any }) {
   return (
     <div className="group w-full h-full flex flex-col relative rounded-xl overflow-hidden">
       <div>
-        <Link passHref href={`/produtos/${product?.slug}`}>
+        <Link passHref href={`/produtos/${product?.id}`}>
           <div className="aspect-[4.3/3] bg-zinc-100 relative overflow-hidden">
             {!!getImage(imageCover) && (
               <Img
@@ -31,7 +31,7 @@ export default function Product({ product }: { product: ProductType | any }) {
         <div className="flex flex-col w-full h-full">
           <div className="h-full">
             <div className="">
-              <Link passHref href={`/produtos/${product?.slug}`}>
+              <Link passHref href={`/produtos/${product?.id}`}>
                 <h4 className="font-title font-bold text-[1.1rem] text-zinc-900 leading-tight">
                   {product?.title}
                 </h4>
