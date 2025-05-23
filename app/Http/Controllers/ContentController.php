@@ -13,7 +13,8 @@ use App\Models\Store;
 use App\Models\Media;
 use App\Models\ContentRel;
 use Illuminate\Support\Str;
-use Log;
+
+use Illuminate\Support\Facades\Log;
 
 class ContentController extends Controller
 {
@@ -339,7 +340,8 @@ class ContentController extends Controller
     }
 
     public function Product(Request $request){
-
+        Log::info($request->all(),"aqui o log");
+        
         $content = Content::where(["slug" => "produtos", "type" => "page"])
                           ->first();
 
