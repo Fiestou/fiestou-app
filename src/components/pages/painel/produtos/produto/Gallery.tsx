@@ -75,8 +75,6 @@ export default function Gallery({
       url: `products/gallery/${product}`,
     });
 
-    console.log(request.data);
-
     setHandleGallery(request.data);
   };
 

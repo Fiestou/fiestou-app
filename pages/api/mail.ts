@@ -11,7 +11,6 @@ export default async function handler(
     axios
       .post(process.env.BASE_URL + "/api/mail-send", post)
       .then(({ data }) => {
-        console.log(">>", data);
         if (data.response) {
           res.status(200).json({
             response: data.response,
