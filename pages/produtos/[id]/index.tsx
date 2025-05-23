@@ -61,14 +61,15 @@ export const getStaticPaths = async (ctx: any) => {
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  const { slug } = ctx.params;
+  const { id } = ctx.params;
+
 
   let request: any = await api.request(
     {
       method: "get",
       url: "request/product",
       data: {
-        slug: slug,
+        id: id,
       },
     },
     ctx
@@ -138,7 +139,7 @@ export default function Produto({
     !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
 
   const [share, setShare] = useState(false as boolean);
-  const baseUrl = `https://fiestou.com.br/produtos/${product?.slug}`;
+  const baseUrl = `https://fiestou.com.br/produtos/${product?.id}`;
 
   const [loadCart, setLoadCart] = useState(false as boolean);
   const [resume, setResume] = useState(false as boolean);
