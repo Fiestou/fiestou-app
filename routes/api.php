@@ -11,6 +11,7 @@ use App\Http\Controllers\CronController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\HooksController;
+use App\Http\Controllers\CategoriesController;
 
 use App\Http\Controllers\WithdrawController;
 use App\Http\Controllers\OrdersController;

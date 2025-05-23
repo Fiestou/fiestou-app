@@ -30,6 +30,7 @@ class ElementsController extends Controller
             'active' => $request->active,
             'element_related_id' => $request->element_related_id, 
         ]);
+        Log::info('deu certo !.', $element->toArray());
 
         $response = [
             'response' => 200,
