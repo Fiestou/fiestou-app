@@ -981,6 +981,7 @@ export default function Produto({
                         placeholder="Digite seu CEP"
                         value={cep}
                         onChange={(e) => setCep(formatCep(e.target.value))}
+                        onBlur={handleCheckCep}
                         maxLength={9}
                         disabled={loadingCep}
                       />

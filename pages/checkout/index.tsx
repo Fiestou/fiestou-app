@@ -180,6 +180,7 @@ export default function Checkout({
   const [deliveryPrice, setDeliveryPrice] = useState<
     { price: number; store_id: number }[]
   >([]);
+  const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(false as boolean);
 
   useEffect(() => {
     if (user?.phone) {
@@ -189,8 +190,8 @@ export default function Checkout({
 
   useEffect(() => {
     if (!!address?.zipCode && justNumber(address?.zipCode).length >= 8) {
-      console.log("Products", products);
       const getShippingPrice = async () => {
+        setLoadingDeliveryPrice(true);
         const data: any = await api.request({
           method: "get",
           url: `delivery-zipcodes/${address?.zipCode}`,
@@ -198,7 +199,7 @@ export default function Checkout({
             ids: products.map((product: ProductType) => product.id),
           },
         });
-
+        setLoadingDeliveryPrice(false);
         console.log("Data", data);
         if (data.data) {
           setDeliveryPrice(data.data as { price: number; store_id: number }[]);
@@ -304,6 +305,10 @@ export default function Checkout({
       deliveryPrice: deliveryPrice.reduce((acc, item) => acc + item.price, 0),
       deliveryStatus: "pending",
       status: -1,
+      freights: {
+        zipcode: address?.zipCode,
+        productsIds: listItems.map((item: any) => item.product.id),
+      },
     };
 
     const registerOrder: any = await api.bridge({
@@ -338,7 +343,11 @@ export default function Checkout({
           <span className="font-bold">
             Frete - {(product?.store as unknown as StoreType)?.companyName}
           </span>
-          <span className="ml-2">R$ {moneyFormat(item?.price)}</span>
+          {loadingDeliveryPrice ? (
+            <span>Carregando...</span>
+          ) : (
+            <span className="ml-2">R$ {moneyFormat(item?.price)}</span>
+          )}
         </div>
       );
     };
@@ -357,7 +366,11 @@ export default function Checkout({
           <span className="font-bold">
             Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
           </span>
-          <span>Entrega indisponível</span>
+          {loadingDeliveryPrice ? (
+            <span>Carregando...</span>
+          ) : (
+            <span>Entrega indisponível</span>
+          )}
         </div>
       );
     return (
