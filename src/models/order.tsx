@@ -54,4 +54,8 @@ export interface OrderType {
   metadata?: any;
   status: number; // -2: canceled | -1: processing | 0: open | 1: paid
   created_at?: string;
+  freights: {
+    zipcode: string;
+    productsIds: number[];
+  };
 }

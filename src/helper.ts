@@ -444,6 +444,7 @@ export async function getZipCode(zipCode: string) {
   var validacep = /^[0-9]{8}$/;
 
   if (validacep.test(justNumber(zipCode))) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return await fetch(`https://viacep.com.br/ws/${justNumber(zipCode)}/json/`)
       .then((data) => data.json())
       .then((data) => data);
