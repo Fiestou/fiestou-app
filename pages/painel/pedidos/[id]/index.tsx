@@ -3,7 +3,7 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
-import { OrderType } from "@/src/models/order";
+import { OrderType, OrderTypeResponse } from "@/src/models/order";
 import {
   dateBRFormat,
   getExtenseData,
@@ -11,7 +11,7 @@ import {
   print_r,
 } from "@/src/helper";
 import { Button, Label, Select } from "@/src/components/ui/form";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/router";
 import { deliveryToName, deliveryTypes } from "@/src/models/delivery";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -32,11 +32,11 @@ interface OrderItem {
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
-  const query = ctx.query;  
+  const query = ctx.query;
 
   let request: any = await api.bridge(
     {
-      method: 'post',
+      method: "post",
       url: "suborders/get",
       data: {
         id: query.id,
@@ -74,10 +74,25 @@ export default function Pedido({
   order,
 }: {
   suborder: OrderType;
-  order: OrderType;
+  order: OrderTypeResponse;
 }) {
   const api = new Api();
   const router = useRouter();
+
+  const orderByStore = useCallback(() => {
+    let orderByStore = new Map<number, any>();
+
+    order.products.forEach((productItem: any) => {
+      if (orderByStore.has(productItem.store.id)) {
+        return orderByStore.get(productItem.store.id).push(productItem);
+      }
+      return orderByStore.set(productItem.store.id, [productItem]);
+    });
+
+    console.log("orderByStore", orderByStore);
+
+    return orderByStore;
+  }, [order]);
 
   const [form, setForm] = useState(FormInitialType);
   const [dropdownDelivery, setDropdownDelivery] = useState(false as boolean);
@@ -103,7 +118,7 @@ export default function Pedido({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "suborders/register",
       data: handle,
     });
@@ -183,54 +198,49 @@ export default function Pedido({
                 </div>
               </div>
               <div className="border rounded-xl p-4 lg:p-8">
-              {order && order.listItems && Array.isArray(order.listItems) ? (
-                order.listItems.map((item: OrderItem, key: number) => (
-                  <div key={key}>
-                    <div className="flex">
-                      <div className="w-full grid gap-4">
-                        <h5 className="font-title text-zinc-900 font-bold text-lg">
-                          {item.quantity} x {item.product.title}
-                        </h5>
-                        {item.product.description && (
-                          <div>{item.product.description}</div>
-                        )}
+                {order && order.products && Array.isArray(order.products) ? (
+                  Array.from(orderByStore().entries()).map(([storeId, items]: [number, any[]]) => {
+                    
+                    const subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+                    const frete: string | number = order.freights_orders_price.find((freight) => freight.store_id == storeId)?.price || 0;
 
-                        {item.product.sku && (
-                          <div className="text-sm">SKU: {item.product.sku}</div>
-                        )}
-                      </div>
-                      <div className="font-title text-zinc-900 font-bold text-lg whitespace-nowrap">
-                        R$ {moneyFormat(item.total)}
-                      </div>
-                    </div>
-                    {item.details?.dateStart && (
-                      <>
-                        <div className="py-4">
-                          <hr />
+                    return (
+                      <div key={storeId} className="mb-8">
+                        <div className="font-title text-zinc-900 font-bold text-xl mb-2">
+                          {items[0]?.store?.companyName}
                         </div>
-                        <div className="flex">
-                          <div className="w-full">Pedido para</div>
-                          <div className="whitespace-nowrap">
-                            {dateBRFormat(item.details.dateStart)}
-                            {item.details.dateEnd &&
-                              item.details.dateStart !== item.details.dateEnd &&
-                              ` - ${dateBRFormat(item.details.dateEnd)}`}
+                        {items.map((item) => (
+                          <div key={item.id} className="flex justify-between items-center border-b py-2">
+                            <div className="w-full grid gap-4">
+                              <h5 className="font-title text-zinc-900 font-medium text-lg">
+                                {item.quantity} x {item.title}
+                              </h5>
+                            </div>
+                            <div className="font-title text-zinc-900 font-medium text-lg whitespace-nowrap">
+                              R$ {moneyFormat(item.price * item.quantity)}
+                            </div>
                           </div>
+                        ))}
+                        <div className="flex justify-between items-center mt-2">
+                          <span>Frete</span>
+                          <span>R$ {moneyFormat(frete)}</span>
                         </div>
-                      </>
-                    )}
-                    <div className="py-4">
-                      <hr />
-                    </div>
-                  </div>
-                  ))
+                        <div className="flex justify-between items-center mt-2 font-semibold">
+                          <span>Subtotal</span>
+                          <span>R$ {moneyFormat(subtotal + Number(frete))}</span>
+                        </div>
+                      </div>
+                    );
+                  })
                 ) : (
-                  <p className="text-zinc-500">Nenhum item encontrado neste pedido</p>
+                  <p className="text-zinc-500">
+                    Nenhum item encontrado neste pedido
+                  </p>
                 )}
                 <div className="flex text-zinc-900">
                   <div className="w-full text-2xl">Total</div>
                   <div className="w-fit pt-1 font-title font-bold text-2xl whitespace-nowrap">
-                    R$ {moneyFormat(suborder.total)}
+                    R$ {moneyFormat(order.total)}
                   </div>
                 </div>
               </div>
