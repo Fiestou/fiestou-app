@@ -82,14 +82,34 @@ export default function Pedido({
   const orderByStore = useCallback(() => {
     let orderByStore = new Map<number, any>();
 
-    order.products.forEach((productItem: any) => {
-      if (orderByStore.has(productItem.store.id)) {
-        return orderByStore.get(productItem.store.id).push(productItem);
+    order.products?.forEach((productItem: any) => {
+      const listItem = order.listItems?.find((item: any) => item.product.id === productItem.id);
+      const productItemWithAttributes = order.products?.find((item: any) => item.id === productItem.id);
+      const additionalExtras: any[] = [];
+      
+      if (listItem?.attributes) {
+        listItem.attributes.forEach((attribute: any) => {
+          const attributeTitle = JSON.parse(productItemWithAttributes?.attributes ?? "[]");
+          
+          attribute.variations.forEach((variation: any) => {
+            additionalExtras.push({
+              title: attributeTitle.find((item: any) => item.id === attribute.id)?.title,
+              quantity: variation.quantity,
+              price: parseFloat(variation.price.replace(',', '.'))
+            });
+          });
+        });
       }
-      return orderByStore.set(productItem.store.id, [productItem]);
-    });
 
-    console.log("orderByStore", orderByStore);
+      if (orderByStore.has(productItem.store.id)) {
+        return orderByStore.get(productItem.store.id).push({...productItem, additionalExtra: additionalExtras});
+      }
+
+      return orderByStore.set(productItem.store.id, [{
+        ...productItem,
+        additionalExtra: additionalExtras,
+      }]);
+    });
 
     return orderByStore;
   }, [order]);
@@ -200,8 +220,8 @@ export default function Pedido({
               <div className="border rounded-xl p-4 lg:p-8">
                 {order && order.products && Array.isArray(order.products) ? (
                   Array.from(orderByStore().entries()).map(([storeId, items]: [number, any[]]) => {
-                    
-                    const subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+
+                    const subtotal = items.reduce((sum: number, item: any) => sum + Number(item.price) + item.additionalExtra.reduce((sum: number, extra: any) => sum + Number(extra.price), 0), 0);
                     const frete: string | number = order.freights_orders_price.find((freight) => freight.store_id == storeId)?.price || 0;
 
                     return (
@@ -210,15 +230,31 @@ export default function Pedido({
                           {items[0]?.store?.companyName}
                         </div>
                         {items.map((item) => (
-                          <div key={item.id} className="flex justify-between items-center border-b py-2">
-                            <div className="w-full grid gap-4">
-                              <h5 className="font-title text-zinc-900 font-medium text-lg">
-                                {item.quantity} x {item.title}
-                              </h5>
+                          <div key={item.id} className="border-b py-2">
+                            <div className="flex justify-between items-center">
+                              <div className="w-full grid gap-4">
+                                <h5 className="font-title text-zinc-900 font-medium text-lg">
+                                  {/* @TODO: Não é possível exibir a quantidade de itens, pois a API não retorna a quantidade */}
+                                  1 x {item.title}
+                                </h5>
+                              </div>
+                              <div className="font-title text-zinc-900 font-medium text-lg whitespace-nowrap">
+                                R$ {moneyFormat(item.price)}
+                              </div>
                             </div>
-                            <div className="font-title text-zinc-900 font-medium text-lg whitespace-nowrap">
-                              R$ {moneyFormat(item.price * item.quantity)}
-                            </div>
+                            {item.additionalExtra && Array.isArray(item.additionalExtra) && item.additionalExtra.map((extra: any) => (
+                              <div key={extra.id} className="flex justify-between items-center mt-2 px-6">
+                                <div key={extra.id} className="w-full grid gap-4 mt-2">
+                                  <h5 className="font-title text-zinc-500 font-medium text-sm">
+                                    {/* @TODO: Não é possível exibir a quantidade de itens, pois a API não retorna a quantidade */}
+                                    {extra.quantity} x {extra.title}
+                                  </h5>
+                                </div>
+                                <div className="font-title text-zinc-500 font-medium text-sm whitespace-nowrap">
+                                  R$ {moneyFormat(extra.price)}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         ))}
                         <div className="flex justify-between items-center mt-2">

@@ -58,7 +58,7 @@ export interface OrderType {
     zipcode: string;
     productsIds: number[];
   };
-  products: Array<{
+  products?: Array<{
     id: number;
     store: {
       id: number;
