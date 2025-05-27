@@ -406,7 +406,9 @@ export default function Produto({
       });
       const priceValue = response?.data?.price ?? null;
       setDeliveryFee(priceValue);
-      setCepError(!priceValue);
+      if(priceValue != 0){
+        setCepError(!priceValue);
+      }
     } catch (e) {
       setCepError(true);
     }
@@ -1031,7 +1033,7 @@ export default function Produto({
                         disponível para sua região.
                       </div>
                     )}
-                    {deliveryFee && (
+                    {!cepError && !!deliveryFee && (
                       <div className="flex gap-2 flex-col text-sm mt-2">
                         <div>
                           <Icon
@@ -1045,6 +1047,20 @@ export default function Produto({
                         <span className="text-zinc-600 text-sm">
                           Frete: R$ {moneyFormat(deliveryFee)}.
                         </span>
+                      </div>
+                    )}
+                    {!cepError && deliveryFee == 0 && (
+                      <div className="flex gap-2 flex-col text-sm mt-2">
+                        <div>
+                          <Icon
+                            icon="fa-truck"
+                            type="far"
+                            className="text-yellow-400 text-base"
+                          />
+                          <span className="text-green-600 text-sm ml-2 font-bold">
+                            Frete Grátis
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
