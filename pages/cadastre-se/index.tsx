@@ -95,7 +95,6 @@ export default function CadastreSe({
   }, [debouncedEmail]);
 
   const checkEmail = async (email: string) => {
-    // Validar formato do email antes de fazer a requisição
     if (!validateEmail(email)) {
       setEmailValid(false);
       return false;
@@ -166,8 +165,7 @@ export default function CadastreSe({
     }
     
     setForm({ ...form, loading: true });
-
-    // Remover formatação dos campos antes de enviar para a API
+    
     const phoneClean = phone.replace(/\D/g, "");
 
     const data: any = await api.bridge({
@@ -175,9 +173,8 @@ export default function CadastreSe({
       url: "auth/register",
       data: {
         name: name,
-        // date: date,
         email: email,
-        phone: phoneClean, // Envia o telefone sem formatação
+        phone: phoneClean,
         person: "client",
         password: password,
         re_password: repeat,
@@ -244,16 +241,6 @@ export default function CadastreSe({
                     required
                   />
                 </div>
-
-                {/* <div className="form-group">
-                  <Label>Data de nascimento</Label>
-                  <Input
-                    onChange={(e: any) => setDate(e.target.value)}
-                    type="date"
-                    name="nascimento"
-                    required
-                  />
-                </div> */}
 
                 <div className="form-group">
                   <Label>E-mail</Label>
