@@ -16,7 +16,7 @@ import "swiper/css/pagination";
 import { clean, getImage, moneyFormat } from "@/src/helper";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import { formatPhone } from "@/pages/cadastre-se/components/FormMasks";
+import { formatPhone, formatName } from "@/pages/cadastre-se/components/FormMasks";
 
 
 export async function getStaticProps(ctx: any) {
@@ -190,7 +190,7 @@ export default function SejaParceiro({
                         <Label style="light">Nome</Label>
                         <Input
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            setName(e.target.value);
+                            setName(formatName(e.target.value));
                           }}
                           name="nome"
                           placeholder="Digite o nome completo"
@@ -204,7 +204,7 @@ export default function SejaParceiro({
                             setEmail(e.target.value);
                           }}
                           name="email"
-                          placeholder="email@email.com.br"
+                          placeholder="exemplo@email.com"
                           value={email}
                         />
                       </div>
