@@ -14,6 +14,10 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { clean, getImage, moneyFormat } from "@/src/helper";
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+import { formatPhone, formatName } from "@/pages/cadastre-se/components/FormMasks";
+
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -66,29 +70,44 @@ export default function SejaParceiro({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setForm({ ...form, loading: true });
 
-    const data: any = await api.bridge({
-      method: 'post',
-      url: "auth/pre-register",
-      data: {
-        name: name,
-        email: email,
-        phone: phone,
-        person: "partner",
-      },
-    });
-
-    if (data.response) {
-      router.push({
-        pathname: form.redirect,
-        query: { ref: data.hash },
+    try {
+      const data: any = await api.bridge({
+        method: 'post',
+        url: "auth/pre-register",
+        data: {
+          name: name,
+          email: email,
+          phone: phone,
+          person: "partner",
+        },
       });
-    } else {
-      setForm({ ...form, sended: data.response });
+
+      if (data.response) {
+        router.push({
+          pathname: form.redirect,
+          query: { ref: data.hash },
+        });
+      } else {
+        if (data.code === 'email_already_registered') {
+          toast.error("Endereço de e-mail já cadastrado. Tente um outro!");
+        } else {
+          toast.error(data.message || "Ocorreu um erro. Tente novamente.");
+        }
+        setForm({ ...form, sended: false, loading: false });
+      }
+    } catch (error: any) {
+      console.error("Erro na requisição de pré-cadastro:", error);
+      if (error.response && error.response.data && error.response.data.code === 'email_already_registered') {
+        toast.error("Endereço de e-mail já cadastrado. Tente um outro!");
+      } else {
+        toast.error("Ocorreu um erro inesperado. Tente novamente mais tarde.");
+      }
+      setForm({ ...form, sended: false, loading: false });
     }
   };
 
@@ -154,9 +173,7 @@ export default function SejaParceiro({
               </div>
               <div className="w-full md:max-w-[26rem] mb-32 md:mb-10">
                 <form
-                  onSubmit={(e) => {
-                    handleSubmit(e);
-                  }}
+                  onSubmit={handleSubmit}
                   name="seja-parceiro"
                   id="seja-parceiro"
                   method="POST"
@@ -172,31 +189,39 @@ export default function SejaParceiro({
                       <div className="form-group">
                         <Label style="light">Nome</Label>
                         <Input
-                          onChange={(e: any) => {
-                            setName(e.target.value);
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            setName(formatName(e.target.value));
                           }}
                           name="nome"
                           placeholder="Digite o nome completo"
+                          value={name}
                         />
                       </div>
                       <div className="form-group">
                         <Label style="light">E-mail</Label>
                         <Input
-                          onChange={(e: any) => {
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             setEmail(e.target.value);
                           }}
                           name="email"
-                          placeholder="email@email.com.br"
+                          placeholder="exemplo@email.com"
+                          value={email}
                         />
                       </div>
                       <div className="form-group">
                         <Label style="light">Celular (com DDD)</Label>
                         <Input
-                          onChange={(e: any) => {
-                            setPhone(e.target.value);
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const unmaskedValue = e.target.value.replace(/\D/g, "");
+                            
+                            if (unmaskedValue.length > 11)
+                                return;
+                                
+                            setPhone(formatPhone(e.target.value));
                           }}
                           name="phone"
                           placeholder="(00) 00000-0000"
+                          value={phone}
                         />
                       </div>
                       <div
