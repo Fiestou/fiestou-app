@@ -13,6 +13,7 @@ interface CardProps {
     relatedElements: Element[];
     onEditClick: (id: number) => void;
     elements: Element[];
+    grouptargeadc?: boolean;
     id: number;
     onAddElementClick?: (currentGroupId: number) => void;
     onDeleteGroup: () => void;
@@ -161,6 +162,8 @@ const Card: React.FC<CardProps> = (props) => {
         };
     }, [isTooltipVisible]);
 
+    console.log("props.relatedElementsasdasdasdasdx", props.grouptargeadc);
+
     return (
         <div className="flex flex-col justify-center items-center relative border-2 border-black rounded-md h-15 w-full p-4 text-black gap-3">
             <button
@@ -183,15 +186,18 @@ const Card: React.FC<CardProps> = (props) => {
                         </div>
                         <label className="flex-2 w-full flex justify-start items-start cursor-pointer">Editar</label>
                     </button>
-                    <button
-                        onClick={() => setGroupOpenDeleteModal(true)}
-                        className="flex p-1 gap-2 justify-start items-start text-black hover:bg-gray-200 rounded-md"
-                    >
-                        <div className="flex-1 w-full flex justify-start items-center cursor-pointer">
-                            <Trash2 size={20} />
-                        </div>
-                        <label className="flex-2 w-full flex justify-center items-center cursor-pointer">Excluir</label>
-                    </button>
+                    {!props.grouptargeadc && (
+                        <button
+                            onClick={() => setGroupOpenDeleteModal(true)}
+                            className="flex p-1 gap-2 justify-start items-start text-black hover:bg-gray-200 rounded-md"
+                        >
+                            <div className="flex-1 w-full flex justify-start items-center cursor-pointer">
+                                <Trash2 size={20} />
+                            </div>
+                            <label className="flex-2 w-full flex justify-center items-center cursor-pointer">Excluir</label>
+                        </button>
+                    )}
+                    
                 </div>
             )}
 
@@ -262,6 +268,7 @@ const Card: React.FC<CardProps> = (props) => {
                 data={updateElement}
                 localElementsRelatedDetails={elementsRelatedDetails}
                 onSaveClick={onSaveElement}
+                grouptargeadc={props.grouptargeadc}
                 groupId={props.id || 0}
                 relatedElements={props.relatedElements}
                 onRequestClose={() => setOpenElementModal(false)}
