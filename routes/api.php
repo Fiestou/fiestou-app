@@ -165,6 +165,8 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
         
             // Rota para obter todos os descendentes de um grupo
             Route::get('/descendants/{GroupId}', [GroupController::class, 'GetAllDescendants']);
+
+            Route::get('/targetadc', [GroupController::class, 'ListTargetAdc']);
         
             // Rota para deletar um elemento de um grupo
             Route::delete('/{GroupId}/element/{ElementId}', [GroupController::class, 'DeleteGroupElement']);
@@ -192,6 +194,7 @@ Route::group([ 'prefix' => 'group' ], function(){
     Route::get('/get/{GroupId}', [GroupController::class, 'Get']);
     Route::get('/list', [GroupController::class, 'List']);
     Route::get('/{GroupId}/descendants', [GroupController::class, 'GetAllDescendants']);
+    Route::get('/targetadc', [GroupController::class, 'ListTargetAdc']);
 });
 
 Route::group([ 'prefix' => 'element' ], function(){

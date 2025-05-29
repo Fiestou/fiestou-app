@@ -14,6 +14,7 @@ class Group extends BaseModel
         'name',
         'description',
         'active',
+        'target_adc', 
         'segment',
     ];
     protected $casts = [
