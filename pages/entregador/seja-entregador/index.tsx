@@ -114,7 +114,7 @@ export default function SejaEntregador() {
                         type="text"
                         name="nome"
                         className="form-control"
-                        placeholder="email@email.com.br"
+                        placeholder="exemplo@email.com"
                       />
                     </div>
                     <div className="form-group">
