@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\models;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+
 use App\Models\Element;
+use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
 {
 
     public function List()
     {
-        $groups = Group::active()->with('elements')->get();
+        $groups = Group::active()->with('elements')->where('target_adc', '!=', true)->get();
         
         $response = [
             'response' => true,
@@ -22,6 +23,23 @@ class GroupController extends Controller
         
         return response()->json($response);
     }
+
+    public function ListTargetAdc()
+    {
+        Log::info('List_target_adc');
+        $groups = Group::active()
+            ->where('target_adc', true)
+            ->with('elements')
+            ->get();
+
+        Log::info('tropa',$groups->toArray());
+
+        return response()->json([
+            'response' => true,
+            'data' => $groups
+        ]);
+    }
+    
     
     public function Register(Request $request)
     {
