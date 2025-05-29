@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Modal from "../utils/Modal";
 import { Button, Label } from "../ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
@@ -9,6 +9,8 @@ import React from "react";
 import Check from "../ui/form/CheckUI";
 import Colors from "../ui/form/ColorsUI";
 import { Group, useGroup } from "@/src/store/filter";
+import { GroupsResponse } from "@/src/types/filtros/response";
+import Api from "@/src/services/api";
 
 export interface FilterQueryType {
   categories: number[];
@@ -91,9 +93,11 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const [stick, setStick] = useState<boolean>(false);
   const { groups } = useGroup();
   const [localGroups, setLocalGroups] = useState<Group[]>([]);
+  const [pblcAlvo, setPblcAlvo] = useState<Group[]>([]);
 
   const handleElementClick = (element: Element) => {
     const isSelected = query.categories.includes(element.id);
+    const api = new Api();
 
     const updatedCategories = isSelected
       ? query.categories.filter((id) => id !== element.id)
@@ -183,13 +187,29 @@ export default function Filter(params: { store?: string; busca?: string }) {
       })).filter(group => group.elements.length > 0)
     );
 
-   
+
+  };
+  // Fetch groups from API and set to local state
+  const getGrouptargetadc = async () => {
+    const api = new Api();
+    try {
+      const request = await api.request<GroupsResponse>({
+        method: "get",
+        url: "app/group/targetadc",
+      });
+      if (request) {
+        setPblcAlvo(request.data);
+      }
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+    }
   };
 
   useEffect(() => {
     if (groups.length > 0) {
       setLocalGroups([groups[0]]);
     }
+    getGrouptargetadc();
   }, [groups]);
 
   const openModal = () => {
@@ -205,7 +225,8 @@ export default function Filter(params: { store?: string; busca?: string }) {
     }
   };
 
-  
+  useEffect(() => {console.log(pblcAlvo, "AQUII NA PAGINA DO USUER ")}, [pblcAlvo]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       handleStick();
@@ -337,57 +358,88 @@ export default function Filter(params: { store?: string; busca?: string }) {
           </div>
         </div>
 
+          <div className="pb-6">
+            <Label>Público-Alvo</Label>
+            <div className="flex gap-2 pt-1 pb-2">
+              {(pblcAlvo[0]?.elements ?? []).map((element) => (
+          <div
+            key={element.id}
+            className={`
+          border cursor-pointer ease relative rounded
+              ${query.categories.includes(element.id)
+                        ? "border-zinc-800 hover:border-zinc-500"
+                        : "hover:border-zinc-300"
+                      }
+              flex flex-col items-center p-2 w-auto
+        `}
+          onClick={() => { handleElementClick(element) }}
+            
+          >
+            {element.icon && (
+              <Img
+                src={element.icon}
+                className="object-contain h-[40px] w-[40px]"
+              />
+            )}
+            <div className="text-sm md:text-base text-center font-medium">
+              {element.name}
+            </div>
+          </div>
+              ))}
+            </div>
+          </div>
+
         {localGroups.map((group) => (
           <div key={group.id} className="pb-6">
             <Label>{group.name}</Label>
 
             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
               <div className={`flex md:flex-wrap gap-2 ${group.id === localGroups[0]?.id ? "space-x-2" : ""}`}>
-          {group.elements.map((element) => (
-            <div
-              key={element.id}
-              className={`
+                {group.elements.map((element) => (
+                  <div
+                    key={element.id}
+                    className={`
               border cursor-pointer ease relative rounded
               ${query.categories.includes(element.id)
-            ? "border-zinc-800 hover:border-zinc-500"
-            : "hover:border-zinc-300"
-                }
+                        ? "border-zinc-800 hover:border-zinc-500"
+                        : "hover:border-zinc-300"
+                      }
               flex flex-col items-center p-2 w-auto
             `}
-              onClick={() => {handleElementClick(element)}}
-            >
-              <div className={`flex items-center gap-2 ${group.id === localGroups[0]?.id ? "flex-col" : "flex-row whitespace-nowrap"}`}>
-                {element.icon && (
-            <Img
-              src={element.icon}
-              className={`object-contain ${group.id === localGroups[0]?.id
-                  ? "h-[40px] w-[40px]"
-                  : "h-[20px] w-[20px] flex-shrink-0"
-                }`}
-            />
-                )}
+                    onClick={() => { handleElementClick(element) }}
+                  >
+                    <div className={`flex items-center gap-2 ${group.id === localGroups[0]?.id ? "flex-col" : "flex-row whitespace-nowrap"}`}>
+                      {element.icon && (
+                        <Img
+                          src={element.icon}
+                          className={`object-contain ${group.id === localGroups[0]?.id
+                            ? "h-[40px] w-[40px]"
+                            : "h-[20px] w-[20px] flex-shrink-0"
+                            }`}
+                        />
+                      )}
 
-                <div
-            className={`text-sm md:text-base ${group.id === localGroups[0]?.id
-                ? "text-center font-medium"
-                : "font-normal whitespace-nowrap"
-              }`}
-                >
-            {element.name}
-                </div>
+                      <div
+                        className={`text-sm md:text-base ${group.id === localGroups[0]?.id
+                          ? "text-center font-medium"
+                          : "font-normal whitespace-nowrap"
+                          }`}
+                      >
+                        {element.name}
+                      </div>
 
-                {query.categories.includes(element.id) && (
-            <input
-              type="checkbox"
-              name="categoria[]"
-              value={element.name}
-              defaultChecked
-              className="absolute opacity-0 z-[-1]"
-            />
-                )}
-              </div>
-            </div>
-          ))}
+                      {query.categories.includes(element.id) && (
+                        <input
+                          type="checkbox"
+                          name="categoria[]"
+                          value={element.name}
+                          defaultChecked
+                          className="absolute opacity-0 z-[-1]"
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
