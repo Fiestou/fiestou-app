@@ -55,6 +55,13 @@ class Element extends BaseModel
     {
         return self::getElementDescendants($this->id, 1);
     }
+    
+    public function scopeFromTargetAdcGroups($query)
+    {
+        return $query->whereHas('group', function ($q) {
+            $q->where('target_adc', true);
+        });
+    }
 
     /**
      * Obtém todos os descendentes de um elemento.
