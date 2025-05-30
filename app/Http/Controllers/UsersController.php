@@ -140,11 +140,10 @@ class UsersController extends Controller
          $request->validate([
             'email'  => "required|email",
             'person' => "required"
-        ]);
+        ]);    
         
         $userByEmail = User::where('email', $request->get('email'))
                            ->first();
-
         if ($userByEmail) {
             return response()->json([
                 'response' => false,
