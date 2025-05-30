@@ -10,6 +10,7 @@ import { getZipCode, justNumber } from "@/src/helper";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import { Element } from "@/src/store/filter";
 import { formatCpfCnpj } from "../../cadastre-se/components/FormMasks";
+import { formatName } from "@/src/components/utils/FormMasks";
 
 interface PreUserDataResponse {
     response: boolean;
@@ -52,7 +53,7 @@ export default function Cadastro() {
     const [step, setStep] = useState(1);
     const [form, setForm] = useState(FormInitialType);
     const [store, setStore] = useState<StoreType>({} as StoreType);
-    const [elements, setElements] = useState<Element[]>([]);
+    const [elements, setElements] = useState<Element[]>([]);    
     const [preUser, setPreUser] = useState<{
         email: string;
         person: string;
@@ -314,11 +315,15 @@ export default function Cadastro() {
                                         <Input
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                 const unmaskedValue = justNumber(e.target.value);
-                                                if (unmaskedValue.length > 14)
-                                                    return;                                                    
+                                                if (unmaskedValue.length > 14) return;
                                                 const formattedValue = formatCpfCnpj(unmaskedValue);
                                                 setMaskedDocument(formattedValue);
                                                 handleStore({ document: unmaskedValue });
+                                            }}
+                                            onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                                if (!/[0-9]/.test(e.key)) {
+                                                    e.preventDefault();
+                                                }
                                             }}
                                             name="documento"
                                             placeholder="Informe o documento"
@@ -331,7 +336,7 @@ export default function Cadastro() {
                                         <Label>Nome fantasia</Label>
                                         <Input
                                             onChange={(e: any) => {
-                                                const value = e.target.value;
+                                                const value = formatName(e.target.value);
                                                 handleStore({
                                                     title: value,
                                                     companyName: value,
