@@ -76,27 +76,44 @@ export default function SejaParceiro({
     const [isFormValid, setIsFormValid] = useState(false);
     const [errorMail, setErrorMail] = useState<string | null>(null);
     
-    const validateAndSetPasswordErrors = (currentPassword: string, currentRepeat: string): boolean => {
+    const validatePassword = (pwd: string): string[] => {
         const errors: string[] = [];
         
-        if (currentPassword !== currentRepeat) {
+        if (pwd.length < 8) {
+            errors.push("Mínimo de 8 caracteres");
+        }
+        if (!/[A-Z]/.test(pwd)) {
+            errors.push("Pelo menos uma letra maiúscula");
+        }
+        if (!/[0-9]/.test(pwd)) {
+            errors.push("Pelo menos um número");
+        }
+        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/.test(pwd)) {
+            errors.push("Pelo menos um caractere especial");
+        }
+        
+        return errors;
+    };
+
+    const validateAndSetPasswordErrors = (currentPassword: string, currentRepeat: string): boolean => {
+        const errors = validatePassword(currentPassword);
+        
+        if (currentPassword !== currentRepeat && currentRepeat.length > 0) {
             errors.push("As senhas devem ser iguais!");
         }
 
         setPasswordErrors(errors);
         return errors.length === 0;
     };
-   
+
     const checkFormValidity = () => {
         const arePasswordsValid = validateAndSetPasswordErrors(password, repeat);
-        const areOtherFieldsValid = name.trim() !== "" && email.trim() !== "" && phone.replace(/\D/g, '').length >= 10;        
+        const isNameValid = name.trim() !== "";
+        const isEmailValid = email.trim() !== "" && validateEmail(email);
+        const isPhoneValid = phone.replace(/\D/g, '').length >= 11;
         
-        setIsFormValid(arePasswordsValid && areOtherFieldsValid);
+        setIsFormValid(arePasswordsValid && isNameValid && isEmailValid && isPhoneValid);
     };
-    
-    useEffect(() => {
-        checkFormValidity();
-    }, [name, email, phone, password, repeat]);
 
     useEffect(()=>{
         if (errorMail){
@@ -117,13 +134,20 @@ export default function SejaParceiro({
         setErrorMail(null);
 
         try {
+            const cleanedPhone = phone.replace(/\D/g, '');
+            
+            if (cleanedPhone.length < 11) {
+                toast.error("Número de telefone inválido");
+                return;
+            }
+
             const data: any = await api.bridge({
                 method: 'post',
                 url: "auth/pre-register",
                 data: {
                     name: name,
                     email: email,
-                    phone: clean(phone),
+                    phone: cleanedPhone,
                     password: password,
                     remember: repeat,
                     person: "partner",
@@ -291,6 +315,7 @@ export default function SejaParceiro({
                                                 <Input
                                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                         setPhone(formatPhone(e.target.value));
+                                                        checkFormValidity();
                                                     }}
                                                     name="phone"
                                                     placeholder="(00) 00000-0000"
@@ -304,6 +329,7 @@ export default function SejaParceiro({
                                                     onChange={(e: any) => {
                                                         setPassword(e.target.value);
                                                         validateAndSetPasswordErrors(e.target.value, repeat);
+                                                        checkFormValidity();
                                                     }}
                                                     type="password"
                                                     name="senha"
@@ -311,21 +337,15 @@ export default function SejaParceiro({
                                                     required
                                                     value={password}
                                                 />
-                                                
-                                                {passwordErrors.length > 0 && passwordErrors.some(e => e.includes('8 caracteres') || e.includes('letra maiúscula') || e.includes('número') || e.includes('caractere especial')) && (
-                                                    <ul className="text-red-500 text-sm mt-1 list-disc list-inside">
-                                                        {passwordErrors.filter(e => e.includes('8 caracteres') || e.includes('letra maiúscula') || e.includes('número') || e.includes('caractere especial')).map((error, index) => (
-                                                            <li key={index}>{error}</li>
-                                                        ))}
-                                                    </ul>
-                                                )}                                                
                                             </div>
+
                                             <div className="form-group">
                                                 <Label style="light">Repita a senha</Label>
                                                 <Input
                                                     onChange={(e: any) => {
                                                         setRepeat(e.target.value);
                                                         validateAndSetPasswordErrors(password, e.target.value);
+                                                        checkFormValidity();
                                                     }}
                                                     type="password"
                                                     name="confirm_senha"
