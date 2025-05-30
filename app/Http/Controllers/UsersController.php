@@ -137,31 +137,38 @@ class UsersController extends Controller
 
     public function PreRegister(Request $request){
 
-        $request->validate([
-            'email'     => "required|email",
-            'person'    => "required"
+         $request->validate([
+            'email'  => "required|email",
+            'person' => "required"
         ]);
+        
+        $userByEmail = User::where('email', $request->get('email'))
+                           ->first();
+
+        if ($userByEmail) {
+            return response()->json([
+                'response' => false,
+                'message'  => 'Endereço de e-mail já cadastrado. Tente um outro!',
+                'code'     => 'email_already_registered'
+            ], 200);
+        }
 
         $hash = $request->has('hash') ? $request->get('hash') : md5($request->get('email'));
 
-        $user = User::where([ 'email' => $request->get('email') ])
-                    ->orWhere(['hash' =>  $hash])
-                    ->first();
-
-        if(!isset($user->id)){
-            $user = new User();
-            $user->hash = $hash;
-        }
-
+        $user = new User();
+        $user->hash = $hash;
         $user->RequestToThis($request->all());
         $user->RequestToDetails($request->all());
 
-        $user->email    = $request->get('email');
-        $user->name     = $request->has('name') ? $request->get('name') : $user->name ?? "";
-        $user->login    = $request->has('email') ? $request->get('email') : $user->email ?? "";
-        $user->type     = "user";
-        $user->person   = $request->get('person');
-        $user->status   = 0;
+        $user->email  = $request->get('email');
+        $user->name   = $request->has('name') ? $request->get('name') : "";
+        $user->login  = $request->get('email');
+        $user->password = bcrypt( $request->password );
+        $user->remember = bcrypt( $request->password );
+        $user->type   = "user";
+        $user->details = json_encode(['phone' => $request->get('phone')]);
+        $user->person = $request->get('person');
+        $user->status = 0;
 
         if(!$user->save()){
             return response()->json([
@@ -173,7 +180,7 @@ class UsersController extends Controller
         return response()->json([
             'response'  => true,
             'hash' => $user->hash,
-        ]);
+        ]);        
     }
 
     public function Register(Request $request)
