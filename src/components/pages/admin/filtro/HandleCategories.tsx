@@ -71,7 +71,6 @@ export default function HandleCategories({
       data: handle,
     });
 
-    console.log(request, "rel");
 
     if (request.response) {
       const data = request.data;

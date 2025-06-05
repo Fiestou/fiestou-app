@@ -29,6 +29,7 @@ export interface Group {
     id: number
     name: string
     description: string
+    target_adc?: boolean
     active: number
     created_at: string
     updated_at: string

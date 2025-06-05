@@ -10,6 +10,7 @@ import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
 import { AuthContext } from "@/src/contexts/AuthContext";
 import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
+import { CheckMail } from "@/src/models/CheckEmail";
 
 export async function getServerSideProps(ctx: any) {
   const session: any = await getSession(ctx);
@@ -45,18 +46,23 @@ export default function Completar({ auth }: any) {
   const handleData = (value: any) => {
     setData({ ...data, ...value });
   };
-
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
     setLoading(true);
+
+    const checkmail: CheckMail = await api.bridge({
+      method: "post",
+      url: "auth/checkin",
+      data: { ref: data.email},
+    }) as CheckMail;
 
     delete data["image"];
 
     const request: any = await api.bridge({
       method: 'post',
       url: "users/update",
-      data: { ...data, origin: "complete" },
+      data: { ...data, origin: "complete", person:checkmail.user.person },
     });
 
     if (!!request.response) {
