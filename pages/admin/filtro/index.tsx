@@ -1,7 +1,7 @@
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { useEffect, useState } from "react";
- 
+
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import NewGroup from "../../../src/components/pages/admin/filtro/buttons/NewGroup";
 import { CirclePlus } from 'lucide-react';
@@ -14,12 +14,13 @@ import { toast } from "react-toastify";
 import { Element } from "@/src/types/filtros/response";
 export default function Categorias() {
   const api = new Api();
- 
+
   const [openGroupModal, setOpenGroupModal] = useState<boolean>(false);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [group_target_adc, setGroup_Target_Adc] = useState<Group[]>([]);
   const [updateGroup, setUpdateGroup] = useState<Group | null>();
   const [nextGroupElements, setNextGroupElements] = useState<Element[]>([]);
- 
+
   const onSaveGroup = async (data: GroupData) => {
     let dataRequest: RequestRegister = {
       name: data?.name || '',
@@ -27,10 +28,10 @@ export default function Categorias() {
       active: true,
       segment: data?.segment ?? false
     };
- 
+
     try {
       let request;
- 
+
       if (data.id) {
         request = await api.bridge<ResponseRegister>({
           method: "put",
@@ -44,33 +45,33 @@ export default function Categorias() {
           data: dataRequest
         });
       }
- 
+
       if (!request) {
         toast.error('Não foi possível salvar o grupo de filtros.');
         return;
       }
       setOpenGroupModal(false);
       window.location.reload();
- 
+
       toast.success('Grupo de filtros salvo com sucesso!');
- 
+
     } catch (error) {
       console.error('Erro ao salvar o grupo:', error);
       toast.error('Ocorreu um erro ao salvar o grupo de filtros.');
     }
   };
- 
+
   const handleAddElementClick = (groupId: number) => {
- 
+
     setNextGroupElements([]);
     const currentIndex = groups.findIndex(group => group.id === groupId);
- 
+
     if (currentIndex === -1) {
       return;
     }
- 
+
     const nextGroup = groups[currentIndex + 1];
- 
+
     if (currentIndex === groups.length - 1) {
       setNextGroupElements([
         {
@@ -84,13 +85,13 @@ export default function Categorias() {
         ...element,
         groupName: nextGroup.name,
       }));
-       
+
       setNextGroupElements(mappedElements);
     } else {
       setNextGroupElements([]);
     }
   };
- 
+
   const getGroups = async () => {
     try {
       const request = await api.request<GroupsResponse>({
@@ -103,29 +104,43 @@ export default function Categorias() {
     } catch (error) {
       console.error("Error fetching groups:", error);
     }
+
+    try {
+      const request = await api.request<GroupsResponse>({
+        method: "get",
+        url: "app/group/targetadc",
+      });
+      if (request) {
+        setGroup_Target_Adc(request.data);
+      }
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+    }
   };
- 
+
   const onEditClick = async (groupId: number) => {
     const GroupGet = groups.filter((el) => el.id === groupId); // Corrigir o uso do filter
- 
+
     if (GroupGet.length > 0) {
-        setUpdateGroup(GroupGet[0]);
-        setOpenGroupModal(true);
+      setUpdateGroup(GroupGet[0]);
+      setOpenGroupModal(true);
     } else {
-        console.error("Grupo não encontrado");
+      console.error("Grupo não encontrado");
     }
-};
- 
+  };
+
   useEffect(() => {
     getGroups();
   }, [])
- 
+
+
+
   useEffect(() => {
     if (!openGroupModal) {
       setUpdateGroup(null);
     }
   }, [openGroupModal])
- 
+
   return (
     <Template
       header={{
@@ -143,10 +158,54 @@ export default function Categorias() {
               ]}
             />
           </div>
+
+        </div>
+      </section>
+
+
+      <section className=" flex flex-col gap-3 w-full w-full  m-5  justify-center  items-center mx-auto">
+
+        <div
+          className=" flex flex-col gap-3 w-full max-w-[1000px]  "
+        >
           <div className="flex mt-6 pb-6">
             <div className="w-full flex justify-between ">
               <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
-                Configurar filtro
+                Configurar público-alvo
+              </div>
+            </div>
+          </div>
+          {group_target_adc && group_target_adc.length > 0 ? (
+            group_target_adc.map((value, index) => {
+              return (
+                <Card
+                  key={index}
+                  onEditClick={onEditClick}
+                  elements={value.elements as Element[]}
+                  grouptargeadc={value.target_adc ? true : false}
+                  relatedElements={nextGroupElements}
+                  title={value.name}
+                  description={value.description}
+                  id={value.id}
+                  onDeleteGroup={() => { setGroups((prev) => prev.filter((group) => group.id !== value.id)) }}
+                  onAddElementClick={handleAddElementClick}
+                />
+              );
+            })
+          ) : (
+            <p>No groups available.</p>
+          )}
+
+        </div>
+
+
+        <div
+          className=" flex flex-col gap-3 w-full max-w-[1000px] "
+        >
+          <div className="flex mt-6 pb-6">
+            <div className="w-full flex justify-between ">
+              <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
+                Configurar Filtro Dinâmico
               </div>
               <div className="flex-[1.2] gap-2 justify-end items-center flex flex-row w-" >
                 <NewGroup
@@ -159,16 +218,10 @@ export default function Categorias() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
- 
-      <section className="max-h-[77vh] max-w-[100%] flex justify-center overflow-y-auto">
-        <div
-          className=" flex flex-col gap-3 w-full max-w-[1000px] max-h-scree  "
-        >
+
           {groups && groups.length > 0 ? (
             groups.map((value, index) => {
- 
+
               return (
                 <Card
                   key={index}
@@ -186,10 +239,11 @@ export default function Categorias() {
           ) : (
             <p>No groups available.</p>
           )}
- 
+
         </div>
+
       </section>
- 
+
       <GroupModal onSaveClick={(data) => { onSaveGroup(data) }} data={updateGroup} open={openGroupModal} onRequestClose={() => { setOpenGroupModal(false) }} />
     </Template>
   )
