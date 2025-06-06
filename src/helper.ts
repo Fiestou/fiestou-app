@@ -199,8 +199,9 @@ export function phoneJustNumber(str?: string) {
   return number;
 }
 
-export function justNumber(str: any) {
-  if (!str) return;
+export function justNumber(str: any): string {
+  if (!str) 
+    return "";
 
   return str.toString().replace(/\D/g, "");
 }

@@ -1065,10 +1065,8 @@ export default function Pagamento({
                                   <select
                                     required
                                     className="form-control appearance-none"
-                                    onChange={(e: any) =>
-                                      setInstallments(
-                                        justNumber(e.target.value)
-                                      )
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                      setInstallments(parseInt(justNumber(e.target.value), 10))
                                     }
                                   >
                                     <option value={1}>1x</option>
