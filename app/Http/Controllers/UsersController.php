@@ -138,14 +138,13 @@ class UsersController extends Controller
 
     public function PreRegister(Request $request){
 
-        $request->validate([
+         $request->validate([
             'email'  => "required|email",
             'person' => "required"
-        ]);
+        ]);    
         
         $userByEmail = User::where('email', $request->get('email'))
                            ->first();
-
         if ($userByEmail) {
             return response()->json([
                 'response' => false,
@@ -153,9 +152,9 @@ class UsersController extends Controller
                 'code'     => 'email_already_registered'
             ], 200);
         }
-        
+
         $hash = $request->has('hash') ? $request->get('hash') : md5($request->get('email'));
-        
+
         $user = new User();
         $user->hash = $hash;
         $user->RequestToThis($request->all());
@@ -164,7 +163,10 @@ class UsersController extends Controller
         $user->email  = $request->get('email');
         $user->name   = $request->has('name') ? $request->get('name') : "";
         $user->login  = $request->get('email');
+        $user->password = bcrypt( $request->password );
+        $user->remember = bcrypt( $request->password );
         $user->type   = "user";
+        $user->details = json_encode(['phone' => $request->get('phone')]);
         $user->person = $request->get('person');
         $user->status = 0;
 
@@ -178,7 +180,7 @@ class UsersController extends Controller
         return response()->json([
             'response'  => true,
             'hash' => $user->hash,
-        ]);
+        ]);        
     }
 
     public function Register(Request $request)
