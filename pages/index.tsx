@@ -243,28 +243,12 @@ export default function Home({
             ></h2>
           </div>
           <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6">
-            {/* <div className="hidden md:block order-1 w-1/2 text-right md:text-center md:w-fit p-2">
-              <Button className="swiper-Products-prev p-5 rounded-full">
-                <Icon
-                  icon="fa-arrow-left"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
-              </Button>
-            </div> */}
             <div className="order-3 md:order-2 grid md:grid-cols-2 lg:grid-cols-4 gap-4 w-full relative overflow-hidden">
               {!!Products.length &&
                 Products.map((item: any, key: any) => (
                   <Product key={key} product={item} />
                 ))}
             </div>
-            {/* <div className="hidden md:block order-2 md:order-3 w-1/2 text-left md:text-center md:w-fit p-2">
-              <Button className="swiper-Products-next p-5 rounded-full">
-                <Icon
-                  icon="fa-arrow-right"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
-              </Button>
-            </div> */}
           </div>
           <div className="text-center mt-10">
             <Button href="/produtos">
