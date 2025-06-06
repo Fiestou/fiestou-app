@@ -199,7 +199,7 @@ export default function Carrinho({
                           <div className="flex gap-10 items-start">
                             <div className="w-full">
                               <h5 className="font-title font-bold text-zinc-900 text-xl">
-                                <Link href={`/produtos/${item.product?.slug}`}>
+                                <Link href={`/produtos/${item.product?.id}`}>
                                   {item.product.title}
                                 </Link>
                               </h5>
