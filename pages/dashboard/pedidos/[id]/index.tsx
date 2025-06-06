@@ -330,7 +330,7 @@ export default function Pedido({
                             </div>
                             <div className="grid gap-1 w-full">
                               <div className="font-title text-lg font-bold text-zinc-900">
-                              <Link href={`/produtos/${product?.slug}`}>
+                              <Link href={`/produtos/${product?.id}`}>
                                 {product.title}
                               </Link>
                             </div>
