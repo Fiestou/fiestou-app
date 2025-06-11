@@ -103,7 +103,7 @@ export default function Home({
       }
     )
 
-    if (request.data && request.response) {
+    if (request?.data && request.response) {
       setGroups(request.data)
     }
   }
