@@ -26,8 +26,7 @@ class StoresController extends Controller
 
         $user = auth()->user();
         $store = Store::where(["user" => $user->id])->first();
-
-        // Se não encontrar a loja, retorna valores zerados
+        
         if (!$store) {
             $balance = [
                 'cash' => 0,
@@ -308,16 +307,14 @@ class StoresController extends Controller
             }
 
             $store = Store::where(["user" => $user->id])->first();
-
-            // Criação da loja se não existir (PARTE CORRIGIDA)
+            
             if(!$store){
                 $store = new Store();
-                $store->user = $user->id; // Garante a associação
-                $store->status = 0; // Valor padrão
+                $store->user = $user->id;
+                $store->status = 0;
                 Log::info('Nova loja criada');
             }
-
-            // Atualiza campos (mantendo sua lógica original)
+            
             if($request->has("document")){
                 $store->document = $request->get("document");
             }
@@ -327,21 +324,18 @@ class StoresController extends Controller
                 $store->slug = Str::slug(strip_tags($request->get("companyName")));
                 $store->companyName = $request->get("companyName");
             }
-
-            // Sua lógica original para RequestToThis
+            
             $user->RequestToThis($request);
             $user->person = "partner";
             $user->save();
 
             $store->RequestToThis($request);
             $store->hasDelivery = $request->get("hasDelivery", false);
-            
-            // SALVAMENTO CORRIGIDO (agora verifica o sucesso)
+
             if(!$store->save()) {
                 throw new \Exception("Falha ao salvar a loja");
             }
-
-            // MANTENDO SUA LÓGICA DE ELEMENTOS (EXATAMENTE COMO ESTAVA)
+            
             $groups = Group::where('active', 1)->get();
             $segmentGroup = Group::where('segment', 1)->first();
             $elementsForSelect = [];
