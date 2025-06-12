@@ -199,7 +199,9 @@ export default function Carrinho({
                           <div className="flex gap-10 items-start">
                             <div className="w-full">
                               <h5 className="font-title font-bold text-zinc-900 text-xl">
-                                {item.product.title}
+                                <Link href={`/produtos/${item.product?.id}`}>
+                                  {item.product.title}
+                                </Link>
                               </h5>
                               <div className="mt-2 text-sm flex flex-wrap gap-1">
                                 {!!item.product?.subtitle && (
@@ -215,9 +217,6 @@ export default function Carrinho({
                               </div>
                             </div>
                             <div className="w-fit text-right flex items-center gap-4">
-                              {/* <b className="pt-[2px] text-zinc-900">
-                                {item.quantity}x
-                              </b> */}
                               <h3 className="font-bold text-xl whitespace-nowrap leading-tight text-zinc-900">
                                 R$ {moneyFormat(item.total)}
                               </h3>

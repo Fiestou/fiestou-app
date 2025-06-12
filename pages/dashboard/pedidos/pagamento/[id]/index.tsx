@@ -282,9 +282,6 @@ export default function Pagamento({
 
     const handle: OrderType = request?.data;
 
-    //if (handle && handle.status != 0) {
-      //window.location.href = `/dashboard/pedidos/${handle.id}`;
-
       let dates: any = [];
       let products: any = [];
 
@@ -303,7 +300,6 @@ export default function Pagamento({
 
       if (!!handle?.user) setUser(handle.user);
       setPlaceholder(false);
-    //}
   };
 
   useEffect(() => {
@@ -344,7 +340,6 @@ export default function Pagamento({
         installments: installments,
         statement_descriptor: "FIESTOU",
       };
-
     }
 
     if (handlePayment.payment_method == "pix") {
@@ -594,7 +589,9 @@ export default function Pagamento({
                               </div>
                               <div className="grid gap-1 w-full">
                                 <div className="font-title text-lg font-bold text-zinc-900">
-                                  {product.title}
+                                  <Link href={`/produtos/${product?.id}`}>
+                                    {product.title}
+                                  </Link>
                                 </div>
                                 <div className="text-sm">
                                   {!!product.sku && (
@@ -939,8 +936,6 @@ export default function Pagamento({
                                 </div>
                               )}
 
-                              {/* {JSON.stringify(address)} */}
-
                               <div className="flex gap-1 text-xs mt-2">
                                 <input
                                   type="checkbox"
@@ -1064,10 +1059,8 @@ export default function Pagamento({
                                   <select
                                     required
                                     className="form-control appearance-none"
-                                    onChange={(e: any) =>
-                                      setInstallments(
-                                        justNumber(e.target.value)
-                                      )
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                      setInstallments(parseInt(justNumber(e.target.value), 10))
                                     }
                                   >
                                     <option value={1}>1x</option>
