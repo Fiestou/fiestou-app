@@ -273,7 +273,7 @@ export default function Filter(attrs: FilterPainelType) {
                 <div className="pb-6">
                     <Label>Público-Alvo</Label>
                     <div className="flex gap-2 pt-1 pb-2">
-                        {(pblcAlvo[0]?.elements ?? []).map((element) => {
+                        {(pblcAlvo[0]?.categories ?? []).map((element) => {
                             const isSelected = activeElements.includes(element.id);
                             return (
                                 <div
