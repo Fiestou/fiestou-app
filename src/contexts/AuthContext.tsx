@@ -33,6 +33,7 @@ export function getUser() {
 
 export function getStore() {
   if (!!Cookies.get("fiestou.authtoken")) {
+    const teste= Cookies.get("fiestou.store") ?? "";
     return Cookies.get("fiestou.store");
   }
 }
@@ -95,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     
     if (!!data.token) {
+      console.log("data", data);
       const user: UserType = data.user;
 
       Cookies.set("fiestou.authtoken", data.token, expires);
