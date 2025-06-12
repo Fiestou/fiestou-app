@@ -19,7 +19,7 @@ export interface FilterQueryType {
   order: string;
 }
 
-export interface Element {
+export interface categories {
   id: number
   name: string
   icon: string
@@ -103,7 +103,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
     getGrouptargetadc();
   }, [groups]);
 
-  const handleElementClick = (element: Element) => {
+  const handleElementClick = (element: categories) => {
     const isSelected = query.categories.includes(element.id);
     const api = new Api();
 
@@ -120,7 +120,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
     }
   };
 
-  const filterTree = (clickedElement: Element) => {
+  const filterTree = (clickedElement: categories) => {
     if (!clickedElement.element_related_id || clickedElement.element_related_id.length === 0) {
       return;
     }
@@ -173,7 +173,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
   };
 
-  const removeRelatedElements = (clickedElement: Element) => {
+  const removeRelatedElements = (clickedElement: categories) => {
     if (!clickedElement.element_related_id || clickedElement.element_related_id.length === 0) {
       return;
     }

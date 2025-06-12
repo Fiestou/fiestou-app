@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Element, ElementResponse, ElementsResponse, GenericResponse, GroupResponse, GroupsResponse } from "@/src/types/filtros/response";
+import { categorie, ElementResponse, ElementsResponse, GenericResponse, GroupResponse, GroupsResponse } from "@/src/types/filtros/response";
 import Api from "@/src/services/api";
 import ElementModal, { ReturnElementData } from "../modals/ElementModal";
 import { toast } from "react-toastify";
@@ -10,9 +10,9 @@ import { elements } from "chart.js";
 interface CardProps {
     title: string;
     description: string;
-    relatedElements: Element[];
+    relatedElements: categorie[];
     onEditClick: (id: number) => void;
-    elements: Element[];
+    elements: categorie[];
     grouptargeadc?: boolean;
     id: number;
     onAddElementClick?: (currentGroupId: number) => void;
@@ -24,12 +24,12 @@ const Card: React.FC<CardProps> = (props) => {
     const api = new Api();
 
     const [isTooltipVisible, setTooltipVisible] = useState(false);
-    const [updateElement, setUpdateElement] = useState<Element | null>(null);
+    const [updateElement, setUpdateElement] = useState<categorie | null>(null);
     const [openElementModal, setOpenElementModal] = useState(false);
     const [openGroupDeleteModal, setGroupOpenDeleteModal] = useState(false);
     const [hoveredElement, setHoveredElement] = useState<number | null>(null);
-    const [localElements, setLocalElements] = useState<Element[]>([]);
-    const [elementsRelatedDetails, setElementsRelatedDetail] = useState<Element[]>([]);
+    const [localElements, setLocalElements] = useState<categorie[]>([]);
+    const [elementsRelatedDetails, setElementsRelatedDetail] = useState<categorie[]>([]);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
 
 
@@ -57,7 +57,7 @@ const Card: React.FC<CardProps> = (props) => {
 
             //MELHORAR NO FUTURO
             if (request.response && request.data instanceof Object) {
-                const newElement = request.data as unknown as Element;
+                const newElement = request.data as unknown as categorie;
                 setLocalElements((prev) => [
                     ...prev,
                     {

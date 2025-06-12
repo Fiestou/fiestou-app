@@ -8,7 +8,7 @@ import { controllers } from "chart.js";
 interface ElementModalProps {
     open: boolean;
     onRequestClose: () => void;
-    localElementsRelatedDetails: Element[];
+    localElementsRelatedDetails: categorie[];
     groupId: number;
     grouptargeadc?: boolean;
     relatedElements: categorie[];
@@ -32,7 +32,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
     const [name, setName] = useState<string>('');
     const [description, setDescription] = useState<string>('');
     const [openSelect, setOpenSelect] = useState<boolean>(false);
-    const [selectedList, setSelectedList] = useState<Element[]>([]);
+    const [selectedList, setSelectedList] = useState<categorie[]>([]);
 
     useEffect(() => {
     }, [props.relatedElements])
