@@ -6,7 +6,7 @@ use App\Models\Group;
 use App\models;
 use Illuminate\Http\Request;
 
-use App\Models\Element;
+use App\Models\Category;
 use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
@@ -14,8 +14,9 @@ class GroupController extends Controller
 
     public function List()
     {
-        $groups = Group::active()->with('elements')->where('target_adc', '!=', true)->get();
-        
+         Log::info('List_groups_teste');
+        $groups = Group::active()->with('categories')->where('target_adc', '!=', true)->get();
+        Log::info('List_groups', $groups->toArray());
         $response = [
             'response' => true,
             'data' => $groups
@@ -29,7 +30,7 @@ class GroupController extends Controller
         Log::info('List_target_adc');
         $groups = Group::active()
             ->where('target_adc', true)
-            ->with('elements')
+            ->with('categories')
             ->get();
 
         Log::info('tropa',$groups->toArray());
@@ -117,7 +118,7 @@ class GroupController extends Controller
             ], 404);
         }
         
-        $element = Element::where('id', $ElementId)->where('group_id', $GroupId)->first();
+        $element = Category::where('id', $ElementId)->where('group_id', $GroupId)->first();
         
         if (!$element) {
             return response()->json([

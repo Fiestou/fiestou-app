@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use DB;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
@@ -18,67 +18,69 @@ use Illuminate\Support\Facades\Log;
 
 class ProductsController extends Controller
 {
-    public function Form(Request $request){
+    public function Form(Request $request)
+    {
 
-        if($request->has('id')){
+        if ($request->has('id')) {
 
             $user = auth()->user();
             $store = Store::where(["user" => $user->id])
-                          ->first();
+                ->first();
 
-            if(!isset($store->id)){
+            if (!isset($store->id)) {
                 return response()->json([
                     'response'  => false
                 ], 500);
             }
 
             $product = Product::where('id', (int) $request->get('id'))
-                              ->where('store', $store->id)
-                              ->first();
+                ->where('store', $store->id)
+                ->first();
 
-            if(isset($product->id)){
+            if (isset($product->id)) {
                 return response()->json([
                     'response'  => true,
                     'data'      => Product::normalize([$product])[0]
                 ]);
             }
         }
-
+        Log::info('Form request without ID', ['request' => $request->all()]);
         return response()->json([
             'response'  => true,
             'data'      => []
         ]);
     }
 
-    public function List(Request $request){
+    public function List(Request $request)
+    {
 
-        $log = []; 
+        $log = [];
         $metadata = [];
-        $products = Product::where(['status' => 1]) 
-                           ->with(["store"]);
+        $products = Product::where(['status' => 1])
+            ->with(["store"]);
 
-        if($request->has('store') && $request->get('store')){
+        if ($request->has('store') && $request->get('store')) {
             $store = Store::where(["id" => $request->get('store')])->first();
             $products = isset($store->id) ? $products->where('store', $store->id) : $products;
         }
 
-        if($request->has('whereIn')){
+        if ($request->has('whereIn')) {
             $whereIn = $request->get('whereIn');
             $products = $products->where(function ($query) use ($whereIn) {
                 $query->whereIn('id', $whereIn);
             });
         }
 
-        if($request->has('ignore')){
+        if ($request->has('ignore')) {
             $slugs      = (is_array($request->get('ignore'))) ? $request->get('ignore') : [$request->get('ignore')];
             $products   = $products->whereNotIn('slug', $slugs);
         }
 
-        if($request->has('cores') && $request->get('cores')){
+        if ($request->has('cores') && $request->get('cores')) {
             $colors = (is_array($request->get('cores'))) ? $request->get('cores') : [$request->get('cores')];
             $products = $products->where(function ($query) use ($colors) {
                 foreach ($colors as $key => $color) {
-                    $query->where('color', "like", '%'.$color.'%');
+                    $query->where('color', "like", '%' . $color . '%');
                 }
             });
         }
@@ -101,48 +103,40 @@ class ProductsController extends Controller
             });
         }
 
-        if($request->has('tags') && $request->get('tags')){
+        if ($request->has('tags') && $request->get('tags')) {
             $tags = (is_array($request->get('tags'))) ? $request->get('tags') : [$request->get('tags')];
             $products = $products->where(function ($query) use ($tags) {
                 foreach ($tags as $key => $tag) {
-                    $query->orWhere('tags', "like", '%'.$tag.'%');
+                    $query->orWhere('tags', "like", '%' . $tag . '%');
                 }
             });
         }
 
-        if($request->has('range') && $request->get('range')){
+        if ($request->has('range') && $request->get('range')) {
             $products = $products->where('price', '<=', $request->get('range'));
         }
 
-        if($request->has('categorias') && $request->input('categorias')){
-            $categories = (is_array($request->input('categorias'))) ? $request->input('categorias') : [$request->input('categorias')];
-            $categories = Category::whereIn('slug', $categories)->pluck('id')->toArray();
-
-            $whereIn    = CategoryRel::whereIn('category', $categories)->pluck('product')->toArray();
-            $products   = $products->whereIn('id', $whereIn);
-        }
 
         $count = $products;
         $metadata['count'] = $count->count();
 
-        if($request->has('limit') && $request->get('limit')){
+        if ($request->has('limit') && $request->get('limit')) {
             $products = $products->limit($request->get('limit'));
         }
 
-        if($request->has('offset') && $request->get('offset')){
+        if ($request->has('offset') && $request->get('offset')) {
             $products = $products->offset($request->get('offset'));
         }
 
-        if($request->has('ordem') && !!$request->get('ordem')){
+        if ($request->has('ordem') && !!$request->get('ordem')) {
             $products = $products->orderBy('created_at', $request->get('ordem') == "asc" ? "asc" : "desc");
-        }
-        else{
+        } else {
             $products = $products->orderBy('title', 'asc')
-                                ->orderBy('description', 'asc')
-                                ->orderBy('tags', 'asc');
+                ->orderBy('description', 'asc')
+                ->orderBy('tags', 'asc');
         }
 
-        return response()->json([ 
+        return response()->json([
             'response'  => true,
             'data'      => Product::normalize($products->get(), false),
             'metadata'  => $metadata,
@@ -150,21 +144,22 @@ class ProductsController extends Controller
         ]);
     }
 
-    public function Get(Request $request){
- 
-      Log::info('log aqui no content', ['request' => $request->all()]);
+    public function Get(Request $request)
+    {
 
-       
+        Log::info('log aqui no content', ['request' => $request->all()]);
+
+
         $product = Product::with(["store", "comments.user"])
-                          ->where('status', 1);
+            ->where('status', 1);
 
-        if($request->has('id')){
+        if ($request->has('id')) {
             $product  = $product->where('id', $request->get('id'));
         }
 
         $product = $product->first();
 
-        if(isset($product->id)){
+        if (isset($product->id)) {
             return response()->json([
                 'response'  => true,
                 'data'      => Product::normalize([$product])[0]
@@ -177,7 +172,8 @@ class ProductsController extends Controller
         ]);
     }
 
-    public function Remove(Request $request){
+    public function Remove(Request $request)
+    {
 
         $request->validate([
             "id" => "required"
@@ -185,13 +181,13 @@ class ProductsController extends Controller
 
         $product = Product::where(['status' => 1]);
 
-        if($request->has('id')){
+        if ($request->has('id')) {
             $product  = $product->where('id', $request->get('id'));
         }
 
         $product = $product->first();
 
-        if(isset($product->id)){
+        if (isset($product->id)) {
             $product->status = 0;
             $product->save();
 
@@ -207,27 +203,29 @@ class ProductsController extends Controller
         ]);
     }
 
-    public function Register(Request $request){
+    public function Register(Request $request)
+    {
+        Log::info('Registering product', ['request' => $request->all()]);
 
         $user = auth()->user();
         $store = Store::where(["user" => $user->id])
-                       ->first();
+            ->first();
 
         $product = new Product;
 
-        if($request->has('id') && isset($store->id)){
+        if ($request->has('id') && isset($store->id)) {
             $product = Product::where('id', (int) $request->get('id'))
-                              ->where('store', $store->id)
-                              ->first();
+                ->where('store', $store->id)
+                ->first();
         }
 
         foreach ($request->all() as $key => $value) {
-            if(!in_array($key, ['gallery', 'attributes', 'combinations', 'category'])){
+            if (!in_array($key, ['gallery', 'attributes', 'combinations', 'category'])) {
                 $product->{$key} = $request->get($key);
             }
         }
 
-        if($request->has('title')){
+        if ($request->has('title')) {
             $product->slug = Str::slug($request->get('title'));
         }
 
@@ -235,26 +233,26 @@ class ProductsController extends Controller
         //     $product->gallery = json_encode($request->get('gallery'));
         // }
 
-        if($request->has('attributes')){
+        if ($request->has('attributes')) {
             $product->attributes = json_encode($request->get('attributes') ?? []);
         }
 
-        if($request->has('combinations') && !empty($request->get('combinations'))){
+        if ($request->has('combinations') && !empty($request->get('combinations'))) {
             $combinations = array_map(function ($item) {
-                                return $item['id'];
-                            }, $request->get('combinations'));
+                return $item['id'];
+            }, $request->get('combinations'));
             $product->combinations = json_encode(array_values($combinations));
         }
 
-        if($request->has('freeTax')){
+        if ($request->has('freeTax')) {
             $product->freeTax = floatFormat($request->get('freeTax'));
         }
 
-        if($request->has('price')){
+        if ($request->has('price')) {
             $product->price = floatFormat($request->get('price'));
         }
 
-        if($request->has('priceSale')){
+        if ($request->has('priceSale')) {
             $product->priceSale = floatFormat($request->get('priceSale'));
         }
 
@@ -264,48 +262,19 @@ class ProductsController extends Controller
 
         DB::beginTransaction();
 
-        if($product->save()){
 
-            if($request->has('category')){
-                $relationship = [];
-                CategoryRel::where(["product" => $product->id])->delete();
-
-                $categories = $request->get('category');
-                $categories = Category::whereIn("id", $categories)->get();
-
-                foreach ($categories as $key => $category) {
-                    $relationship[] = $category->id;
-                    $handle = [$category->id];
-
-                    if($category->parent){
-                        $handle = Category::parents($category->parent, $handle);
-                    }
-
-                    foreach ($handle as $key => $id) {
-                        $rel = new CategoryRel;
-
-                        $exist = CategoryRel::where(["product" => $product->id])
-                                            ->where(["category" => $id])
-                                            ->first();
-
-                        if(isset($exist->id)) $rel = $exist;
-
-                        $rel->category = $id;
-                        $rel->product = $product->id;
-                        $rel->status = 1;
-                        $rel->save();
-
-                        $relationship[] = $id;
-                    }
-                }
-
-                $product->category = json_encode(array_values(array_unique($relationship)));
-                $product->save();
-            }
+        // Salva o campo category como JSON, se for array
+        if ($request->has('category')) {
+            $product->category = (array) $request->category;
+        } else {
+            $product->category = [];
         }
-        else{
-            DB::rollback();
-        }
+
+        $product->store = $store->id;
+        $product->status = 1;
+
+        Log::info('Product data before save', ['product' => $product->toArray()]);
+        $product->save();
 
         DB::commit();
 
@@ -315,22 +284,23 @@ class ProductsController extends Controller
         ]);
     }
 
-    public function GetGallery(Request $request, $id){
+    public function GetGallery(Request $request, $id)
+    {
 
         $user = auth()->user();
 
         $store = Store::where(["user" => $user->id])
-                       ->first();
+            ->first();
 
         $product = Product::with(["store", "comments.user"])
-                          ->where(['id' => $id, "store" => $store->id])
-                          ->first();
+            ->where(['id' => $id, "store" => $store->id])
+            ->first();
 
         $gallery = [];
 
-        if(isset($product->id)){
+        if (isset($product->id)) {
 
-            if(isset($product->gallery) && !!$product->gallery){
+            if (isset($product->gallery) && !!$product->gallery) {
                 $medias = Media::whereIn('id', json_decode($product->gallery, TRUE))->get();
 
                 foreach ($medias as $key => $item) {
@@ -348,7 +318,8 @@ class ProductsController extends Controller
         ]);
     }
 
-    public function RemoveGallery(Request $request){
+    public function RemoveGallery(Request $request)
+    {
 
         $request->validate([
             "id"        => "required",
@@ -357,41 +328,41 @@ class ProductsController extends Controller
 
         $user   = auth()->user();
         $store  = Store::where(["user" => $user->id])
-                       ->first();
+            ->first();
 
         $feedback   = [];
         $removed    = [];
 
         $medias = Media::whereIn('id', $request->get('medias'))
-                       ->where('user_id', $user->id)
-                       ->get();
+            ->where('user_id', $user->id)
+            ->get();
 
-        foreach($medias as $media){
+        foreach ($medias as $media) {
 
             $has_error = false;
 
-            foreach($media->RemoveMedia() as $md){
-                if($md != true){
+            foreach ($media->RemoveMedia() as $md) {
+                if ($md != true) {
                     $has_error = true;
                     array_merge($feedback, $md);
                 }
             }
 
-            if(!$has_error){
+            if (!$has_error) {
                 $removed[] = $media->id;
             }
         }
 
         Media::whereIn('id', $removed)
-             ->delete();
+            ->delete();
 
         $product = Product::where('id', $request->get('id'))
-                        ->where('store', $store->id)
-                        ->first();
+            ->where('store', $store->id)
+            ->first();
 
         $gallery = json_decode($product->gallery, TRUE);
 
-        $filteredGallery = array_values(array_filter($gallery, function($id) use ($removed) {
+        $filteredGallery = array_values(array_filter($gallery, function ($id) use ($removed) {
             return !in_array($id, $removed);
         }));
 
@@ -406,7 +377,8 @@ class ProductsController extends Controller
         ]);
     }
 
-    public function UploadGallery(Request $request) {
+    public function UploadGallery(Request $request)
+    {
 
         $request->validate([
             'medias'    => 'required|array',
@@ -415,20 +387,19 @@ class ProductsController extends Controller
 
         $user   = auth()->user();
         $store  = Store::where(["user" => $user->id])
-                       ->first();
+            ->first();
 
         $files  = $request->file('medias');
 
-        $medias = Media::MakeUpload($files, "/products/".$store->id."/".date('d-m-Y'), $store->id);
+        $medias = Media::MakeUpload($files, "/products/" . $store->id . "/" . date('d-m-Y'), $store->id);
 
-        if($request->has('product') && !!$request->get('product')){
+        if ($request->has('product') && !!$request->get('product')) {
             $product = Product::where('id', $request->get('product'))
-                            ->where('store', $store->id)
-                            ->first();
-        }
-        else{
+                ->where('store', $store->id)
+                ->first();
+        } else {
             $product = new Product;
-            $product->title     = "Rascunho #".rand(0, 3000);
+            $product->title     = "Rascunho #" . rand(0, 3000);
             $product->slug      = Str::slug($product->title);
             $product->store     = $store->id;
             $product->status    = -1;

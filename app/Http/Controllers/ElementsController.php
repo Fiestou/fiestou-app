@@ -6,6 +6,7 @@ use App\Models\Element;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+
 class ElementsController extends Controller
 {
 
@@ -22,7 +23,7 @@ class ElementsController extends Controller
         ]);
         log::info('elemento enviado.',request()->all());
 
-        $element = Element::create([
+        $element = Categorie::create([
             'name' => $request->name,
             'description' => $request->description,
             'icon' => $request->icon,
@@ -49,7 +50,7 @@ class ElementsController extends Controller
         ]);
 
         // Criando o elemento e associando ao grupo
-        $element = Element::create([
+        $element = Category::create([
             'name' => $request->name,
             'description' => $request->description,
             'icon' => $request->icon,
@@ -63,7 +64,7 @@ class ElementsController extends Controller
     // Método para atualizar um elemento específico
     public function update(Request $request, $GroupId, $ElementId)
     {
-        $element = Element::where('group_id', $GroupId)->findOrFail($ElementId);
+        $element = Category::where('group_id', $GroupId)->findOrFail($ElementId);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -86,7 +87,7 @@ class ElementsController extends Controller
     // Método para excluir um elemento específico
     public function destroy($GroupId, $ElementId)
     {
-        $element = Element::where('group_id', $GroupId)->findOrFail($ElementId);
+        $element = Category::where('group_id', $GroupId)->findOrFail($ElementId);
 
         $element->delete();
 
@@ -96,7 +97,7 @@ class ElementsController extends Controller
     // Método para listar todos os elementos de um grupo
     public function index($GroupId)
     {
-        $element = Element::where('group_id', $GroupId)->get();
+        $element = Category::where('group_id', $GroupId)->get();
 
         return response()->json($element);
     }
@@ -104,7 +105,7 @@ class ElementsController extends Controller
     // Método para listar todos os descendentes de um elemento
     public function descendants($ElementId)
     {
-        $element = Element::findOrFail($ElementId);
+        $element = Category::findOrFail($ElementId);
         $descendants = $element->descendants;
 
         return response()->json($descendants);

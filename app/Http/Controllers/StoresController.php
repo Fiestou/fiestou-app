@@ -11,11 +11,11 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\Suborder;
+use App\Models\Category;
 use App\Models\User;
 use App\Models\Media;
 use App\Models\Customer;
 use App\Models\Withdraw;
-use App\Models\Category;
 use App\Models\CategoryRel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -26,8 +26,7 @@ class StoresController extends Controller
 
         $user = auth()->user();
         $store = Store::where(["user" => $user->id])->first();
-
-        // Se não encontrar a loja, retorna valores zerados
+        
         if (!$store) {
             $balance = [
                 'cash' => 0,
@@ -80,7 +79,7 @@ class StoresController extends Controller
         if ($segmentGroup) {
             $segmentGroupId = $segmentGroup->id;
 
-            $elements = Element::where('group_id', $segmentGroupId)->get();
+            $elements = Category::where('group_id', $segmentGroupId)->get();
 
             $elementsForSelect = [];
             
@@ -132,6 +131,7 @@ class StoresController extends Controller
         $request->validate([
             'slug' => 'required'
         ]);
+        
 
         $store = Store::where("slug", $request->get('slug'))
                       ->where("status", 1)
@@ -308,16 +308,14 @@ class StoresController extends Controller
             }
 
             $store = Store::where(["user" => $user->id])->first();
-
-            // Criação da loja se não existir (PARTE CORRIGIDA)
+            
             if(!$store){
                 $store = new Store();
-                $store->user = $user->id; // Garante a associação
-                $store->status = 0; // Valor padrão
+                $store->user = $user->id;
+                $store->status = 0;
                 Log::info('Nova loja criada');
             }
-
-            // Atualiza campos (mantendo sua lógica original)
+            
             if($request->has("document")){
                 $store->document = $request->get("document");
             }
@@ -327,27 +325,24 @@ class StoresController extends Controller
                 $store->slug = Str::slug(strip_tags($request->get("companyName")));
                 $store->companyName = $request->get("companyName");
             }
-
-            // Sua lógica original para RequestToThis
+            
             $user->RequestToThis($request);
             $user->person = "partner";
             $user->save();
 
             $store->RequestToThis($request);
             $store->hasDelivery = $request->get("hasDelivery", false);
-            
-            // SALVAMENTO CORRIGIDO (agora verifica o sucesso)
+
             if(!$store->save()) {
                 throw new \Exception("Falha ao salvar a loja");
             }
-
-            // MANTENDO SUA LÓGICA DE ELEMENTOS (EXATAMENTE COMO ESTAVA)
+            
             $groups = Group::where('active', 1)->get();
             $segmentGroup = Group::where('segment', 1)->first();
             $elementsForSelect = [];
 
             if ($segmentGroup) {
-                $elements = Element::where('group_id', $segmentGroup->id)->get();
+                $elements = Category::where('group_id', $segmentGroup->id)->get();
                 
                 foreach ($elements as $element) {
                     $elementsForSelect[] = [
@@ -419,13 +414,7 @@ class StoresController extends Controller
             $products = $products->where('price', '<=', $request->get('range'));
         }
 
-        if($request->has('categories') && $request->input('categories')){
-            $categories = (is_array($request->input('categories'))) ? $request->input('categories') : [$request->input('categories')];
-            $categories = Category::whereIn('slug', $categories)->pluck('id')->toArray();
-
-            $whereIn    = CategoryRel::whereIn('category', $categories)->pluck('product')->toArray();
-            $products   = $products->whereIn('id', $whereIn);
-        }
+      
 
         if($request->has('order') && !!$request->get('order')){
             $products = $products->orderBy('created_at', $request->get('order') == "asc" ? "asc" : "desc");

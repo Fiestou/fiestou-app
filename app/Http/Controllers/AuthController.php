@@ -43,8 +43,15 @@ class AuthController extends Controller
 
         if(isset($user->id))
         {
-            $store = Store::where("user", $user->id)
-                          ->first();
+            
+        $store = Store::where("user", $user->id)->first();
+
+        if (!$store) {
+            return response()->json([
+                'response' => false,
+                'message' => 'loja não encontrada'
+            ], 404);
+        }
 
             $credentials = request(['email', 'password']);
 
