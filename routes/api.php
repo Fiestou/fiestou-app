@@ -11,8 +11,6 @@ use App\Http\Controllers\CronController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\HooksController;
-use App\Http\Controllers\CategoriesController;
-
 use App\Http\Controllers\WithdrawController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\SubordersController;
@@ -246,9 +244,6 @@ Route::group([ 'prefix' => 'request' ], function(){
     Route::get('/product', [ProductsController::class, 'Get']);
     Route::get('/stores', [StoresController::class, 'List']);
     Route::get('/store', [StoresController::class, 'Get']);
-    Route::get('/categories', [CategoriesController::class, 'List']);
-    Route::get('/categories-paths', [CategoriesController::class, 'Paths']);
-    Route::get('/category', [CategoriesController::class, 'Get']);
 
     Route::get('/blog', [ProductsController::class, 'List']);
 });

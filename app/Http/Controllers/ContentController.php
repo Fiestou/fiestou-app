@@ -25,17 +25,15 @@ class ContentController extends Controller
 
         if(isset($content->id)){
 
-            $categories = Category::with(["childs"])
-                                  ->where("parent", ">",  0)
-                                  ->get();
+        $products = Product::with(["store"])
+            ->where('status', 1)
+            ->whereHas('store', function ($query) {
+                $query->where('status', 1);
+            })
+            ->limit(12)
+            ->orderBy("id", "desc")
+            ->get();
 
-            $categories = Category::normalize($categories);
-
-            $products = Product::with(["store"])
-                               ->where(['status' => 1])
-                               ->limit(12)
-                               ->orderBy("id", "desc")
-                               ->get();
 
             $posts = Content::where(["type" => "blog", "status" => 1])
                             ->limit(3)
@@ -53,7 +51,6 @@ class ContentController extends Controller
                                     Content::getDefault(),
                                     [
                                         "Home"          => $content->setCustomContent(),
-                                        "Categories"    => $categories,
                                         "Products"      => $products,
                                         "Blog"          => $posts
                                     ]
