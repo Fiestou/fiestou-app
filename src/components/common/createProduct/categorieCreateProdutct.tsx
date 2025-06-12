@@ -5,7 +5,7 @@ import FilterTags from "./FilterTags";
 import Img from "@/src/components/utils/ImgBase";
 
 // Defina o tipo Element se não existir
-interface Element {
+interface categorie {
   id: number;
   name: string;
   onChange?: (elements: number[]) => void;
@@ -14,7 +14,7 @@ interface Element {
 }
 
 export default function CategorieCreateProdutct({ onChange }: { onChange?: (ids: number[]) => void }) {
-  const [selectedElements, setSelectedElements] = useState<Element[]>([]);
+  const [selectedElements, setSelectedElements] = useState<categorie[]>([]);
   const [filterActive, setFilterActive] = useState(false);
 
   // Sempre que selectedElements mudar, dispara o onChange com os IDs
@@ -80,7 +80,7 @@ export default function CategorieCreateProdutct({ onChange }: { onChange?: (ids:
       <FilterTags
         status={filterActive}
         onClose={() => setFilterActive(false)}
-        onFilter={(elements: Element[]) => {
+        onFilter={(elements: categorie[]) => {
           setSelectedElements(elements.slice(0, 6));
           setFilterActive(false);
         }}
