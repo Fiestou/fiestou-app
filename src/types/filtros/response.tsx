@@ -59,12 +59,12 @@ export interface relatedElement {
 
 export interface ElementsResponse {
     response: boolean
-    data: Element[]
+    data: categorie[]
 }
 
 export interface ElementResponse {
     response: boolean
-    data: Element
+    data: categorie
 }
 
 export interface GenericResponse { 
