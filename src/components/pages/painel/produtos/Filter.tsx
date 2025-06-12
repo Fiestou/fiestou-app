@@ -8,6 +8,7 @@ import { Button, Label } from "@/src/components/ui/form";
 import Colors from "@/src/components/ui/form/ColorsUI";
 import Img from "@/src/components/utils/ImgBase";
 import { FilterQueryType } from "@/src/components/common/Filter";
+import { GroupsResponse } from "@/src/types/filtros/response";
 
 interface FilterPainelType {
     status: boolean;
@@ -48,7 +49,7 @@ const initQuery: FilterQueryType = {
 export default function Filter(attrs: FilterPainelType) {
     const api = new Api();
     const router = useRouter();
-
+    const [pblcAlvo, setPblcAlvo] = useState<Group[]>([]);
     const [query, setQuery] = useState<FilterQueryType>(initQuery);
     const [allGroups, setAllGroups] = useState<Group[]>([]);
     const [displayedGroups, setDisplayedGroups] = useState<Group[]>([]);
@@ -56,6 +57,26 @@ export default function Filter(attrs: FilterPainelType) {
 
     const handleQueryValues = (value: any) => {
         setQuery({ ...query, ...value });
+    };
+    
+    const getGrouptargetadc = async () => {
+        const api = new Api();
+        try {
+            const request = await api.request<GroupsResponse>({
+                method: "get",
+                url: "app/group/targetadc",
+            });
+            if (request) {
+                setPblcAlvo(
+                    request.data.map((group: any) => ({
+                        segment: 0, // or provide a suitable default or mapping
+                        ...group,
+                    }))
+                );
+            }
+        } catch (error) {
+            console.error("Error fetching groups:", error);
+        }
     };
 
     const emitSearch = () => {
@@ -107,14 +128,14 @@ export default function Filter(attrs: FilterPainelType) {
           const isRelatedToDeselected = group.categories.some(el => relatedElementIds?.includes(el.id));
           const isCurrentlyRelatedToActive = allGroups.some(g => g.id === group.id && g.categories.some(e => activeElements.includes(e.id) && e.element_related_id?.includes(clickedElement.id)));
 
-          return hasActiveElementInGroup || isOriginalFirstGroup || !isRelatedToDeselected || isCurrentlyRelatedToActive;
-      });
+            return hasActiveElementInGroup || isOriginalFirstGroup || !isRelatedToDeselected || isCurrentlyRelatedToActive;
+        });
 
-      setDisplayedGroups(updatedDisplayedGroups);
+        setDisplayedGroups(updatedDisplayedGroups);
 
-      if (activeElements.length === 0) {
-          setDisplayedGroups([allGroups[0]]);
-      }
+        if (activeElements.length === 0) {
+            setDisplayedGroups([allGroups[0]]);
+        }
     };
 
     const getFilterData = async () => {
@@ -131,6 +152,7 @@ export default function Filter(attrs: FilterPainelType) {
 
     useEffect(() => {
         getFilterData();
+        getGrouptargetadc();
     }, []);
 
     return attrs.status ? (
@@ -248,7 +270,38 @@ export default function Filter(attrs: FilterPainelType) {
                         </div>
                     </div>
                 </div>
-
+                <div className="pb-6">
+                    <Label>Público-Alvo</Label>
+                    <div className="flex gap-2 pt-1 pb-2">
+                        {(pblcAlvo[0]?.elements ?? []).map((element) => {
+                            const isSelected = activeElements.includes(element.id);
+                            return (
+                                <div
+                                    key={element.id}
+                                    className={`
+                                        border cursor-pointer ease relative rounded
+                                        ${isSelected
+                                            ? "border-black"
+                                            : "border-zinc-300 hover:border-zinc-500"
+                                        }
+                                        flex flex-col items-center p-2 w-auto
+                                    `}
+                                    onClick={() => { handleElementClick(element) }}
+                                >
+                                    {element.icon && (
+                                        <Img
+                                            src={element.icon}
+                                            className="object-contain h-[40px] w-[40px]"
+                                        />
+                                    )}
+                                    <div className="text-sm md:text-base text-center font-medium">
+                                        {element.name}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
                 <div>
                     {displayedGroups.map((group) => (
                         <div key={group.id} className="pb-6">
