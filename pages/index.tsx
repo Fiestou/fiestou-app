@@ -103,7 +103,7 @@ export default function Home({
       }
     )
 
-    if (request.data && request.response) {
+    if (request?.data && request.response) {
       setGroups(request.data)
     }
   }
@@ -111,7 +111,7 @@ export default function Home({
   useEffect(()=>{
     getFilters()
   }, [])
-//se der erro aqui ao rodar o projeto não rodou o backend da forma correta
+
 const [imgLinks] = useState<string[]>(
   Array.isArray(Home?.main_slide)
     ? Home.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)
@@ -194,8 +194,7 @@ const [imgLinks] = useState<string[]>(
                             <Button
                               href={`${process.env.APP_URL}/acesso`}
                               className="md:text-lg px-4 py-2 md:py-4 md:px-8"
-                            >
-                              {/* <Icon icon="fa-user-plus" type="far" /> */}
+                            >                              
                               {slide?.main_slide_redirect?.label}
                             </Button>
                           </div>
