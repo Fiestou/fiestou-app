@@ -28,9 +28,9 @@ class Group extends BaseModel
     }
 
     // Relacionamento 1:N com a tabela elements
-    public function elements()
+    public function categories()
     {
-        return $this->hasMany(Element::class, 'group_id');
+        return $this->hasMany(Category::class, 'group_id');
     }
     // Método estático para buscar todos os descendentes de um grupo
     public static function getAllDescendants($groupId, $isActive = null)
