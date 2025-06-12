@@ -52,8 +52,10 @@ export default function Variable({
   };
 
   useEffect(() => {
-    setAttributes(product?.attributes ?? []);
-  }, [product]);
+    if (JSON.stringify(attributes) !== JSON.stringify(product?.attributes ?? [])) {
+      setAttributes(product?.attributes ?? []);
+    }
+  }, [product?.attributes]);
 
   return (
     <div className="border-t pt-4 pb-2">
