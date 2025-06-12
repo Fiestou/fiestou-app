@@ -56,10 +56,12 @@ export async function getStaticProps(ctx: any) {
       slug: slug,
     },
   });
-
-  if (!store?.data) {
+  if (!store?.data || store.data === false || store.data?.response === false) {
     return {
-      notFound: true,
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
     };
   } else {
     store = store.data;
@@ -122,7 +124,7 @@ export default function Store({
       method: "get",
       url: "request/products",
       data: {
-        store: store?.id, 
+        store: store?.id,
         user: store?.user,
         limit: limit,
         offset: offset,
@@ -154,8 +156,8 @@ export default function Store({
         image: !!getImage(store?.cover, "default")
           ? getImage(store?.cover)
           : !!getImage(DataSeo?.site_image)
-          ? getImage(DataSeo?.site_image)
-          : "",
+            ? getImage(DataSeo?.site_image)
+            : "",
         description: !!store?.description
           ? store?.description
           : DataSeo?.site_description,

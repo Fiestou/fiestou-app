@@ -33,10 +33,10 @@ export interface Group {
     active: number
     created_at: string
     updated_at: string
-    elements: Element[]
+    categories: categorie[]
 }
 
-export interface Element {
+export interface categorie {
     id: number
     name: string
     icon: string
