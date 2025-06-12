@@ -1,3 +1,4 @@
+/* Titar 'request' */
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/Filter";
 import Newsletter from "@/src/components/common/Newsletter";
@@ -18,14 +19,19 @@ let limit = 15;
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-
-  let request: any = await api.content(
-    {
-      method: 'get',
-      url: "default",
-    },
-    ctx
-  );
+  let request: any; 
+  
+  try {
+    request = await api.content(
+      {
+        method: 'get',
+        url: "default",
+      },
+      ctx
+    );    
+  } catch (error) {
+    request = { data: {} };
+  }
 
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
@@ -103,7 +109,7 @@ export default function Listagem({
     <Template
       scripts={Scripts}
       metaPage={{
-        title: `Produtos | ${DataSeo?.site_text}`,
+        title: `Produtos | ${DataSeo?.site_text ?? 'Fiestou'}`,
         image: !!getImage(DataSeo?.site_image)
           ? getImage(DataSeo?.site_image)
           : "",
