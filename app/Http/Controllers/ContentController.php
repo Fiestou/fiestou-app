@@ -25,11 +25,15 @@ class ContentController extends Controller
 
         if(isset($content->id)){
 
-            $products = Product::with(["store"])
-                               ->where(['status' => 1])
-                               ->limit(12)
-                               ->orderBy("id", "desc")
-                               ->get();
+        $products = Product::with(["store"])
+            ->where('status', 1)
+            ->whereHas('store', function ($query) {
+                $query->where('status', 1);
+            })
+            ->limit(12)
+            ->orderBy("id", "desc")
+            ->get();
+
 
             $posts = Content::where(["type" => "blog", "status" => 1])
                             ->limit(3)
