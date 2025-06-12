@@ -345,7 +345,6 @@ export default function Pagamento({
         statement_descriptor: "FIESTOU",
       };
 
-      console.log(handlePayment);
     }
 
     if (handlePayment.payment_method == "pix") {

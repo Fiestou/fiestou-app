@@ -5,8 +5,6 @@ export default function Stripe() {
   const submitOrder = async (e: any) => {
     e.preventDefault();
 
-    console.log("submitOrder");
-
     const payment = new Payment();
     const stripe = await loadStripe(
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -32,7 +30,6 @@ export default function Stripe() {
       deliveryPrice: 0,
     });
 
-    console.log(checkoutSession);
 
     return true;
 

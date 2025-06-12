@@ -55,35 +55,6 @@ export default function Categories({
     return newRecursive;
   };
 
-  const getCategories = async () => {
-    try {
-      const request = await api.bridge<{ data: Category[] }>({
-        method: 'post',
-        url: "categories/list",
-      });
-
-      const handle = request.data;
-
-      if (!Array.isArray(handle)) {
-        console.error("Erro: handle não é um array", handle);
-        setCategories([]);
-        setAllCategories({});
-        return;
-      }
-
-      const childs: { [key: number]: Category[] } = {};
-      handle.forEach((item: Category) => {
-        childs[item.id] = recursiveList(item.childs ?? [], []);
-      });
-
-      setAllCategories(childs);
-      setCategories(handle);
-    } catch (error) {
-      console.error("Erro ao buscar categorias:", error);
-      setCategories([]);
-      setAllCategories({});
-    }
-  };
 
   const handleRelationship = (id: number, master: RelationType) => {
     if (!!window) {
@@ -163,9 +134,6 @@ export default function Categories({
 
   useEffect(() => {
     if (!!window) {
-      if (!categories.length) {
-        getCategories();
-      }
 
       const handleSelected = checked.map((item: any) => item.id);
       setSelected(handleSelected);
