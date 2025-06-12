@@ -31,8 +31,6 @@ export default function Partner({ id }: any) {
 
   const submitUser = (e: any) => {
     e.preventDefault();
-
-    // console.log(partner);
   };
 
   const getPartner = async () => {

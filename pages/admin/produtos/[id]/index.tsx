@@ -61,7 +61,6 @@ export default function Form({
 
   const handleGallery = product?.gallery ?? [];
 
-  // console.log(handleGallery);
 
   return (
     !router.isFallback && (
@@ -329,7 +328,7 @@ export default function Form({
 
                       <div className="form-group">
                         <label className="text-zinc-900 font-bold">
-                          Adicionar Tag
+                      
                         </label>
                         <Input readonly value={data.tags} />
                       </div>

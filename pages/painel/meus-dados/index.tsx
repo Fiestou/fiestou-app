@@ -52,7 +52,6 @@ export default function MeusDados({ page }: { page: any }) {
       url: "users/get",
     });
 
-    console.log(request);
 
     if (request.response) {
       setUser(request.data);

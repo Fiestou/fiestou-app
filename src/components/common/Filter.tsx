@@ -95,6 +95,14 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const [localGroups, setLocalGroups] = useState<Group[]>([]);
   const [pblcAlvo, setPblcAlvo] = useState<Group[]>([]);
 
+  useEffect(() => {
+
+    if (groups.length > 0) {
+      setLocalGroups([groups[0]]);
+    }
+    getGrouptargetadc();
+  }, [groups]);
+
   const handleElementClick = (element: Element) => {
     const isSelected = query.categories.includes(element.id);
     const api = new Api();
@@ -118,19 +126,19 @@ export default function Filter(params: { store?: string; busca?: string }) {
     }
 
     const relatedElement = groups
-      .flatMap(group => group.elements)
+      .flatMap(group => group.categories)
       .find(el => clickedElement.element_related_id?.includes(el.id));
 
     const relatedGroup = groups.find(group => group.id === relatedElement?.group_id);
     if (!relatedGroup) return;
 
-    const filteredElements = relatedGroup.elements.filter(el =>
+    const filteredElements = relatedGroup.categories.filter(el =>
       clickedElement.element_related_id?.includes(el.id)
     );
 
     const filteredGroup: Group = {
       ...relatedGroup,
-      elements: filteredElements,
+      categories: filteredElements,
     };
 
     setLocalGroups(prev => {
@@ -138,10 +146,10 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
       if (indexInPrev !== -1) {
         const updated = [...prev];
-        updated[indexInPrev].elements = [
-          ...updated[indexInPrev].elements,
-          ...filteredGroup.elements.filter(
-            el => !updated[indexInPrev].elements.some(existingEl => existingEl.id === el.id)
+        updated[indexInPrev].categories = [
+          ...updated[indexInPrev].categories,
+          ...filteredGroup.categories.filter(
+            el => !updated[indexInPrev].categories.some(existingEl => existingEl.id === el.id)
           ),
         ];
         return updated;
@@ -172,14 +180,14 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
     const otherSelectedElements = query.categories.filter(id => id !== clickedElement.id);
     const otherRelatedIds = groups
-      .flatMap(group => group.elements)
+      .flatMap(group => group.categories)
       .filter(el => otherSelectedElements.includes(el.id))
       .flatMap(el => el.element_related_id || []);
 
     setLocalGroups(prev =>
       prev.map(group => ({
         ...group,
-        elements: group.elements.filter(
+        elements: group.categories.filter(
           el =>
             !clickedElement.element_related_id?.includes(el.id) ||
             otherRelatedIds.includes(el.id)
@@ -205,12 +213,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
     }
   };
 
-  useEffect(() => {
-    if (groups.length > 0) {
-      setLocalGroups([groups[0]]);
-    }
-    getGrouptargetadc();
-  }, [groups]);
 
   const openModal = () => {
     setFilterModal(true);
@@ -224,9 +226,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
       );
     }
   };
-
-  useEffect(() => {console.log(pblcAlvo, "AQUII NA PAGINA DO USUER ")}, [pblcAlvo]);
-
   useEffect(() => {
     if (typeof window !== "undefined") {
       handleStick();
@@ -358,44 +357,44 @@ export default function Filter(params: { store?: string; busca?: string }) {
           </div>
         </div>
 
-          <div className="pb-6">
-            <Label>Público-Alvo</Label>
-            <div className="flex gap-2 pt-1 pb-2">
-              {(pblcAlvo[0]?.elements ?? []).map((element) => (
-          <div
-            key={element.id}
-            className={`
+        <div className="pb-6">
+          <Label>Público-Alvo</Label>
+          <div className="flex gap-2 pt-1 pb-2">
+            {(pblcAlvo[0]?.categories ?? []).map((categorie) => (
+              <div
+                key={categorie.id}
+                className={`
           border cursor-pointer ease relative rounded
-              ${query.categories.includes(element.id)
-                        ? "border-zinc-800 hover:border-zinc-500"
-                        : "hover:border-zinc-300"
-                      }
+              ${query.categories.includes(categorie.id)
+                    ? "border-zinc-800 hover:border-zinc-500"
+                    : "hover:border-zinc-300"
+                  }
               flex flex-col items-center p-2 w-auto
         `}
-          onClick={() => { handleElementClick(element) }}
-            
-          >
-            {element.icon && (
-              <Img
-                src={element.icon}
-                className="object-contain h-[40px] w-[40px]"
-              />
-            )}
-            <div className="text-sm md:text-base text-center font-medium">
-              {element.name}
-            </div>
-          </div>
-              ))}
-            </div>
-          </div>
+                onClick={() => { handleElementClick(categorie) }}
 
-        {localGroups.map((group) => (
+              >
+                {categorie.icon && (
+                  <Img
+                    src={categorie.icon}
+                    className="object-contain h-[40px] w-[40px]"
+                  />
+                )}
+                <div className="text-sm md:text-base text-center font-medium">
+                  {categorie.name}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {(localGroups ?? []).map((group) => (
           <div key={group.id} className="pb-6">
             <Label>{group.name}</Label>
 
             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
               <div className={`flex md:flex-wrap gap-2 ${group.id === localGroups[0]?.id ? "space-x-2" : ""}`}>
-                {group.elements.map((element) => (
+                {group.categories.map((element) => (
                   <div
                     key={element.id}
                     className={`
