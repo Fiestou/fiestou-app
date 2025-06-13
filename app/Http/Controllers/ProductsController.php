@@ -209,6 +209,11 @@ class ProductsController extends Controller
 
     public function Register(Request $request){
 
+        $request->validate([
+            'unavailableDates'   => 'nullable|array',
+            'unavailableDates.*' => 'nullable|date_format:Y-m-d',
+        ]);
+        
         $user = auth()->user();
         $store = Store::where(["user" => $user->id])
                        ->first();
@@ -227,13 +232,15 @@ class ProductsController extends Controller
             }
         }
 
+        if ($request->has('unavailableDates')) {
+            $product->unavailableDates = $request->get('unavailableDates');
+        } else {
+            $product->unavailableDates = null;
+        }
+
         if($request->has('title')){
             $product->slug = Str::slug($request->get('title'));
         }
-
-        // if($request->has('gallery') && !empty($request->get('gallery'))){
-        //     $product->gallery = json_encode($request->get('gallery'));
-        // }
 
         if($request->has('attributes')){
             $product->attributes = json_encode($request->get('attributes') ?? []);

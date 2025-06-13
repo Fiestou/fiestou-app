@@ -50,8 +50,13 @@ class Product extends BaseModel
         'schedulingTax',
         'schedulingDiscount',
         'status',
+        'unavailableDates',
         'created_at',
         'updated_at'
+    ];
+
+    protected $casts = [
+        'unavailableDates' => 'array',
     ];
 
     public function medias(){
