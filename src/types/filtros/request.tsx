@@ -7,6 +7,13 @@ export interface RequestRegister {
   segment?: boolean
 }
 
+export interface FilterQueryType {
+    categories: number[];
+    colors: string[];
+    range: number;
+    order: string;
+}
+
 const RequestTypesPage: React.FC = () => {
   return (
     <div>
