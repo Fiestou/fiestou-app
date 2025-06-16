@@ -26,6 +26,9 @@ interface ApiRequestType {
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
 class Api {
+  static request<T>(arg0: { method: string; url: string; }) {
+      throw new Error("Method not implemented.");
+  }
   constructor() {}
 
   async connect({ method = "get", url, data, opts }: ApiRequestType, ctx?: any) {

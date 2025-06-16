@@ -6,7 +6,6 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import { moneyFormat } from "@/src/helper";
 import Img from "../utils/ImgBase";
 import React from "react";
-import Check from "../ui/form/CheckUI";
 import Colors from "../ui/form/ColorsUI";
 import { Group, useGroup } from "@/src/store/filter";
 import { GroupsResponse } from "@/src/types/filtros/response";
@@ -32,7 +31,12 @@ export interface categories {
   group_id?: number,
   element_related_id?: number[]
 }
-export default function Filter(params: { store?: string; busca?: string }) {
+export interface FilterProps {
+  store?: string;
+  busca?: string;
+}
+
+export default function Filter({ store, busca }: FilterProps) {
   const router = useRouter();
 
   const [query, setQuery] = useState<FilterQueryType>({
@@ -235,7 +239,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
   return (
     <form action="/produtos/listagem" method="GET">
-      {params?.store && <input type="hidden" value={params.store} name="store" />}
+      {store && <input type="hidden" value={store} name="store" />}
 
       <section ref={filterArea} className="w-full relative">
         <div className="h-[56px]"></div>
@@ -267,7 +271,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
               <input
                 type="text"
                 name="busca"
-                defaultValue={params?.busca ?? ""}
+                defaultValue={busca ?? ""}
                 className="w-full p-4"
                 placeholder="O que você precisa?"
               />
@@ -391,7 +395,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
         {(localGroups ?? []).map((group) => (
           <div key={group.id} className="pb-6">
             <Label>{group.name}</Label>
-
             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
               <div className={`flex md:flex-wrap gap-2 ${group.id === localGroups[0]?.id ? "space-x-2" : ""}`}>
                 {group.categories.map((element) => (
@@ -445,7 +448,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
         ))}
 
         <div className="flex justify-between items-center pt-4 w-full bg-white">
-          <Button type="button" className="text-sm" style="btn-link" href="/produtos/listagem/">
+          <Button type="button" className="text-sm" style="btn-link" >
             Limpar filtro
           </Button>
           <Button>Ver resultados</Button>
