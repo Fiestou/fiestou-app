@@ -125,7 +125,6 @@ export default function FilterStore({ returnData,store }: FilterProps) {
                 },
             });
 
-            console.log(request.data," request.data");
 
                 setLocalGroups([request.data[0]]);
 
@@ -233,11 +232,7 @@ export default function FilterStore({ returnData,store }: FilterProps) {
 
 
     };
-
-    useEffect(() => {
-        console.log("Local Groups Updated:", localGroups);
-    }, [localGroups]);
-
+    
     const openModal = () => {
         setFilterModal(true);
     };
