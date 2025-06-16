@@ -191,6 +191,7 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
 Route::group([ 'prefix' => 'group' ], function(){
     Route::get('/get/{GroupId}', [GroupController::class, 'Get']);
     Route::get('/list', [GroupController::class, 'List']);
+    Route::get('/listgroupstore', [GroupController::class, 'listGroupsByStore']);
     Route::get('/{GroupId}/descendants', [GroupController::class, 'GetAllDescendants']);
     Route::get('/targetadc', [GroupController::class, 'ListTargetAdc']);
 });
