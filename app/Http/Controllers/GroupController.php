@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\models;
 use Illuminate\Http\Request;
-
+use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Facades\Log;
 
@@ -14,9 +14,58 @@ class GroupController extends Controller
 
     public function List()
     {
-         Log::info('List_groups_teste');
         $groups = Group::active()->with('categories')->where('target_adc', '!=', true)->get();
-        Log::info('List_groups', $groups->toArray());
+        $response = [
+            'response' => true,
+            'data' => $groups
+        ];
+        
+        return response()->json($response);
+    }
+
+    public function listGroupsByStore(Request $request)
+    {
+        $storeId = $request->get('store_id');
+
+        if (!$storeId) {
+            return response()->json([
+                'response' => false,
+                'message' => 'store_id é obrigatório'
+            ], 400);
+        }
+        Log::info('List_groups_teste_agora');
+
+        // Busca todos os produtos da loja
+        $products = Product::where('store', $storeId)->get();
+
+        
+
+        // Coleta todos os IDs de categorias dos produtos
+        $categoryIds = [];
+        foreach ($products as $product) {
+            $ids = is_array($product->category) ? $product->category : json_decode($product->category, true);
+            if (is_array($ids)) {
+                $categoryIds = array_merge($categoryIds, $ids);
+            }
+        }
+        $categoryIds = array_unique($categoryIds);
+
+        // Busca as categorias no banco
+        $categories = Category::whereIn('id', $categoryIds)->get();
+
+        // Coleta todos os group_ids das categorias
+        $groupIds = $categories->pluck('group_id')->unique()->filter()->values();
+
+
+        // Busca os grupos no banco
+        $groups = Group::whereIn('id', $groupIds)
+        ->with(['categories' => function($query) use ($categoryIds) {
+            $query->whereIn('id', $categoryIds);
+        }])
+        ->get();
+
+        Log::info('List_groups_teste_agora', $groups->toArray());
+        
         $response = [
             'response' => true,
             'data' => $groups
@@ -33,7 +82,6 @@ class GroupController extends Controller
             ->with('categories')
             ->get();
 
-        Log::info('tropa',$groups->toArray());
 
         return response()->json([
             'response' => true,
