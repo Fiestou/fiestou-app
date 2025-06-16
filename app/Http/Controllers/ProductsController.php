@@ -53,6 +53,7 @@ class ProductsController extends Controller
 
     public function List(Request $request)
     {
+        Log::info('Listing products', ['request' => $request->all()]);
 
         $log = [];
         $metadata = [];
@@ -71,16 +72,27 @@ class ProductsController extends Controller
             });
         }
 
+        if ($request->has('categories') && $request->get('categories')) {
+            $categories = (array) $request->get('categories');
+            foreach ($categories as $categoryId) {
+                $products = $products->whereRaw('JSON_CONTAINS(category, ?)', [json_encode([$categoryId])]);
+            }
+        }
+
         if ($request->has('ignore')) {
             $slugs      = (is_array($request->get('ignore'))) ? $request->get('ignore') : [$request->get('ignore')];
             $products   = $products->whereNotIn('slug', $slugs);
         }
 
-        if ($request->has('cores') && $request->get('cores')) {
-            $colors = (is_array($request->get('cores'))) ? $request->get('cores') : [$request->get('cores')];
+        if ($request->has('colors') && $request->get('colors')) {
+            $colors = (is_array($request->get('colors'))) ? $request->get('colors') : [$request->get('colors')];
             $products = $products->where(function ($query) use ($colors) {
                 foreach ($colors as $key => $color) {
-                    $query->where('color', "like", '%' . $color . '%');
+                    if ($key === 0) {
+                        $query->where('color', '=', $color);
+                    } else {
+                        $query->orWhere('color', '=', $color);
+                    }
                 }
             });
         }
@@ -135,7 +147,7 @@ class ProductsController extends Controller
                 ->orderBy('description', 'asc')
                 ->orderBy('tags', 'asc');
         }
-
+        Log::info('Produtos filtrados do banco', ['produtos' => $products->get()]);
         return response()->json([
             'response'  => true,
             'data'      => Product::normalize($products->get(), false),
@@ -265,9 +277,9 @@ class ProductsController extends Controller
 
         // Salva o campo category como JSON, se for array
         if ($request->has('category')) {
-            $product->category = (array) $request->category;
+            $product->category = json_encode((array) $request->category);
         } else {
-            $product->category = [];
+            $product->category = json_encode([]);
         }
 
         $product->store = $store->id;
