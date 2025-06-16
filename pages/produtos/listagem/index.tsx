@@ -66,7 +66,7 @@ export default function Listagem({
       handleParams["categorias"] = handleParams["categoria[]"];
       delete handleParams["categoria[]"];
     }
-
+    
     setParams(handleParams);
 
     let offset = page * limit;
@@ -80,7 +80,8 @@ export default function Listagem({
         offset: offset,
       },
     });
-
+    console.log(request,"aqui aqui a chamada");
+    
     const handle = request.data;
 
     if (!handle?.length) {
