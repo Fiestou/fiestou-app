@@ -143,7 +143,6 @@ export default function Filter(attrs: FilterPainelType) {
             method: "get",
             url: "group/list",
         });
-        console.log("Filter data request:", request);
         if (!!request.response && Array.isArray(request.data)) {
             setAllGroups(request.data);
             setDisplayedGroups([request.data[0]]);

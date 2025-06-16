@@ -79,9 +79,7 @@ export default function Listagem({
         limit: limit,
         offset: offset,
       },
-    });
-    console.log(request,"aqui aqui a chamada");
-    
+    });  
     const handle = request.data;
 
     if (!handle?.length) {
