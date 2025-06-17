@@ -193,7 +193,7 @@ Route::group([ 'prefix' => 'group' ], function(){
     Route::get('/list', [GroupController::class, 'List']);
     Route::get('/listgroupstore', [GroupController::class, 'listGroupsByStore']);
     Route::get('/{GroupId}/descendants', [GroupController::class, 'GetAllDescendants']);
-    Route::get('/targetadc', [GroupController::class, 'ListTargetAdc']);
+    Route::get('/targetadcpbl', [GroupController::class, 'ListTargetAdcPublic']);
 });
 
 Route::group([ 'prefix' => 'element' ], function(){

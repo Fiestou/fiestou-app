@@ -27,70 +27,79 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function Login(Request $request)
+  public function Login(Request $request)
+{
+    $request->validate([
+        'email'         => 'required|email',
+        'password'      => 'required'
+    ]);
+
+    $email  = strtolower(trim($request->email));
+    $user   = User::where([
+                        'email'     => $email,
+                        'status'    => 1
+                    ])
+                    ->first();
+
+                    
+    Log::info('Login - Usuário encontrado', ['user' => $user]);
+    // Adicione este log para inspecionar o usuário encontrado
+    
+
+    if(isset($user->id))
     {
-        $request->validate([
-            'email'         => 'required|email',
-            'password'      => 'required'
-        ]);
-
-        $email  = strtolower(trim($request->email));
-        $user   = User::where([
-                            'email'     => $email,
-                            'status'    => 1
-                        ])
-                        ->first();
-
-        if(isset($user->id))
-        {
-            
         $store = Store::where("user", $user->id)->first();
 
-        if (!$store) {
-            return response()->json([
-                'response' => false,
-                'message' => 'loja não encontrada'
-            ], 404);
-        }
-
-            $credentials = request(['email', 'password']);
-
-            if(!$token = auth()->attempt($credentials))
-            {
+        if ($user->person === 'partner') {
+            $store = Store::where("user", $user->id)->first();
+            if (!$store) {
                 return response()->json([
-                    'response'  => false,
-                    'message'   => 'email_or_password_invalid',
-                ]);
+                    'response' => false,
+                    'message' => 'loja não encontrada'
+                ], 404);
             }
-
-            $details = !!$user->details ? json_decode($user->details, TRUE) : [];
-
-            if(!!$user->details){
-
-                $details['id'] = $user->id;
-                $details['hash'] = $user->hash ?? md5($user->email);
-                $details['name'] = $user->name;
-                $details['email'] = $user->email;
-                $details['type'] = $user->type;
-                $details['person'] = $user->person;
-                $details['status'] = $user->status;
-
-                $user = $details;
-            }
-
-            return response()->json([
-                'response'      => true,
-                'token'         => $token,
-                'user'          => $user,
-                'store'         => isset($store->id) ? $store->id : NULL
-            ]);
         }
 
+    $credentials = request(['email', 'password']);
+    
+    if(!$token = auth()->attempt($credentials))
+    {
         return response()->json([
             'response'  => false,
-            'message'   => 'email_or_password_invalid'
+            'message'   => 'email_or_password_invalid',
         ]);
     }
+
+    $details = !!$user->details ? json_decode($user->details, TRUE) : [];
+
+    if(!!$user->details){
+
+        $details['id'] = $user->id;
+        $details['hash'] = $user->hash ?? md5($user->email);
+        $details['name'] = $user->name;
+        $details['email'] = $user->email;
+        $details['type'] = $user->type;
+        $details['person'] = $user->person;
+        $details['status'] = $user->status;
+
+        $user = $details;
+    }
+
+    Log::info('Login - Usuário retornado', ['user' => $user]);
+
+    return response()->json([
+        'response'      => true,
+        'token'         => $token,
+        'user'          => $user,
+        'store'         => isset($store->id) ? $store->id : NULL
+    ]);
+    }
+
+    return response()->json([
+        'response'  => false,
+        'message'   => 'email_or_password_invalid'
+    ]);
+}
 
     public function ExternalAuth(Request $request){
 
