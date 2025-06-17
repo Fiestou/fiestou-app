@@ -207,7 +207,7 @@ export default function Filter({ store, busca }: FilterProps) {
     try {
       const request = await api.request<GroupsResponse>({
         method: "get",
-        url: "app/group/targetadc",
+        url: "group/targetadcpbl",
       });
       if (request) {
         setPblcAlvo(request.data);
