@@ -76,7 +76,22 @@ class GroupController extends Controller
 
     public function ListTargetAdc()
     {
-        Log::info('List_target_adc');
+        
+        $groups = Group::active()
+            ->where('target_adc', true)
+            ->with('categories')
+            ->get();
+
+
+        return response()->json([
+            'response' => true,
+            'data' => $groups
+        ]);
+    }
+
+    public function ListTargetAdcPublic()
+    {
+        Log::info('List_target_adc_public');
         $groups = Group::active()
             ->where('target_adc', true)
             ->with('categories')
