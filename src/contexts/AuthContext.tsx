@@ -81,7 +81,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       url: "auth/checkin",
       data: { ref: email },
     }) as CheckMail;
-
+    console.log("checkEmail", checkEmail);
+    
     if (checkEmail.response && !checkEmail.user){
       return {
         status: 422,
@@ -150,16 +151,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }
 
-  async function UserLogout() {
-    const handleSignOut = await signOut({ redirect: false });
+async function UserLogout() {
+  // Remova todos os cookies de autenticação
+  Cookies.remove("fiestou.authtoken");
+  Cookies.remove("fiestou.user");
+  Cookies.remove("fiestou.store");
+  Cookies.remove("fiestou.region");
+  Cookies.remove("fiestou.cart");
+  // Adicione outros cookies que você usa, se necessário
 
+  // Redirecione para a página de logout ou home
     if (!!window) {
       window.location.href = "/logout";
     } else {
       Router.push("/logout");
     }
-  }
-
+}
   return (
     <AuthContext.Provider value={{ isAuthenticated, SignIn, UserLogout }}>
       {children}

@@ -397,7 +397,7 @@ export default function Produto({
       method: "get",
       url: "request/products",
       data: {
-        ignore: product.slug,
+        ignore: product.id,
         store: store?.id ?? 0,
         tags: (product?.tags ?? ",").split(",").filter((item) => !!item),
         categorias: (product?.category ?? []).map((cat: any) => cat.slug),
