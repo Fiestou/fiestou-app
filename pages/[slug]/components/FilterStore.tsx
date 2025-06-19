@@ -105,7 +105,7 @@ export default function FilterStore({ returnData,store }: FilterProps) {
         try {
             const request = await api.request<GroupsResponse>({
                 method: "get",
-                url: "app/group/targetadcpbl",
+                url: "group/targetadcpbl",
             });
             if (request) {
                 setPblcAlvo(request.data);
