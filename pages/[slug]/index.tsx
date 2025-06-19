@@ -12,8 +12,10 @@ import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import ShareModal from "@/src/components/utils/ShareModal";
 import Modal from "@/src/components/utils/Modal";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import FilterStore from "./components/FilterStore";
+import { FilterQueryType } from "@/src/types/filtros/request";
 
 export interface Store {
   title: string;
@@ -56,10 +58,12 @@ export async function getStaticProps(ctx: any) {
       slug: slug,
     },
   });
-
-  if (!store?.data) {
+  if (!store?.data || store.data === false || store.data?.response === false) {
     return {
-      notFound: true,
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
     };
   } else {
     store = store.data;
@@ -106,15 +110,20 @@ export default function Store({
   const [share, setShare] = useState(false as boolean);
   const [page, setPage] = useState(0 as number);
   const [loading, setLoading] = useState(false as boolean);
+  const [handleParams, setHandleParams] = useState({} as FilterQueryType);
 
-  const getProducts = async () => {
+  const getProducts = async (reset = false, params = handleParams, pageNumber = page) => {
     setLoading(true);
 
-    let number = page + 1;
-    setPage(number);
+    let number = reset ? 0 : pageNumber + 1;
+    if (reset) {
+      setPage(0);
+      setListProducts([]); 
+    } else {
+      setPage(number);
+    }
 
     const api = new Api();
-
     let limit = 16;
     let offset = number * 16;
 
@@ -122,7 +131,8 @@ export default function Store({
       method: "get",
       url: "request/products",
       data: {
-        store: store?.id, 
+        ...params,
+        store: store?.id,
         user: store?.user,
         limit: limit,
         offset: offset,
@@ -134,7 +144,8 @@ export default function Store({
     if (!handle?.length) {
       setPage(-1);
     } else {
-      setListProducts([...listProducts, ...handle]);
+      // Se reset, substitui. Se não, adiciona.
+      setListProducts(reset ? handle : [...listProducts, ...handle]);
     }
 
     setLoading(false);
@@ -146,6 +157,7 @@ export default function Store({
     return <></>;
   }
 
+
   return (
     <Template
       scripts={Scripts}
@@ -154,8 +166,8 @@ export default function Store({
         image: !!getImage(store?.cover, "default")
           ? getImage(store?.cover)
           : !!getImage(DataSeo?.site_image)
-          ? getImage(DataSeo?.site_image)
-          : "",
+            ? getImage(DataSeo?.site_image)
+            : "",
         description: !!store?.description
           ? store?.description
           : DataSeo?.site_description,
@@ -285,7 +297,13 @@ export default function Store({
       </div>
 
       <div className="relative pt-5">
-        <Filter store={store?.slug} />
+        <FilterStore
+          store={store}
+          returnData={(dataProducts: FilterQueryType) => {
+            setHandleParams(dataProducts);
+            getProducts(true, dataProducts, 0); // Limpa e busca do zero
+          }}
+        />
       </div>
 
       <section className="py-4 md:pb-20">
@@ -304,7 +322,7 @@ export default function Store({
             <div className="text-center">
               <Button
                 onClick={() => {
-                  getProducts();
+                  getProducts(false, handleParams, page);
                 }}
                 loading={loading}
               >

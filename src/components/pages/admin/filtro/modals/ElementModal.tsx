@@ -2,18 +2,18 @@ import FileManager from "@/src/components/ui/form/FileManager";
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import SelectElements from "../selectElements/selectElements";
-import { Element } from "@/src/types/filtros/response";
+import { categorie } from "@/src/types/filtros/response";
 import { Trash2 } from "lucide-react";
 import { controllers } from "chart.js";
 interface ElementModalProps {
     open: boolean;
     onRequestClose: () => void;
-    localElementsRelatedDetails: Element[];
+    localElementsRelatedDetails: categorie[];
     groupId: number;
     grouptargeadc?: boolean;
-    relatedElements: Element[];
+    relatedElements: categorie[];
     onSaveClick: (data: ReturnElementData) => void;
-    data?: Element | null
+    data?: categorie | null
 }
 
 
@@ -32,7 +32,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
     const [name, setName] = useState<string>('');
     const [description, setDescription] = useState<string>('');
     const [openSelect, setOpenSelect] = useState<boolean>(false);
-    const [selectedList, setSelectedList] = useState<Element[]>([]);
+    const [selectedList, setSelectedList] = useState<categorie[]>([]);
 
     useEffect(() => {
     }, [props.relatedElements])
@@ -53,7 +53,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
             name: name,
             active: true,
             description: description,
-            element_related_id: selectedList.map((value) => value.id)
+            element_related_id: selectedList.map((value) => Number(value.id))
         }
 
         if (props.data) {
@@ -83,7 +83,6 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
     }, [props.data, props.localElementsRelatedDetails])
 
     useEffect(() => {
-        console.log('relatedElements', props.relatedElements);
     }, [props.relatedElements]);
 
     const hideRelatedElements =

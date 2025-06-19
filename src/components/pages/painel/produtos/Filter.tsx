@@ -16,7 +16,7 @@ interface FilterPainelType {
     onClose: Function;
 }
 
-interface Element {
+interface Categorie {
     id: number;
     name: string;
     icon?: string;
@@ -36,7 +36,7 @@ interface Group {
     segment: number;
     created_at: string;
     updated_at: string;
-    elements: Element[];
+    categories: Categorie[];
 }
 
 const initQuery: FilterQueryType = {
@@ -81,26 +81,26 @@ export default function Filter(attrs: FilterPainelType) {
 
     const emitSearch = () => {
         const elementNames = displayedGroups
-            .flatMap(group => group.elements)
+            .flatMap(group => group.categories)
             .filter(el => activeElements.includes(el.id))
             .map(el => el.name);
 
         !!attrs.onFilter && attrs.onFilter({ ...query, elements: elementNames });
     };
 
-    const handleElementClick = (element: Element) => {
-        const isChecked = activeElements.includes(element.id);
+    const handleElementClick = (categorie: Categorie) => {
+        const isChecked = activeElements.includes(categorie.id);
 
         if (isChecked) {
-            setActiveElements(activeElements.filter((id) => id !== element.id));
-            removeRelatedGroups(element);
+            setActiveElements(activeElements.filter((id) => id !== categorie.id));
+            removeRelatedGroups(categorie);
         } else {
-            setActiveElements([...activeElements, element.id]);
-            filterRelatedGroups(element);
+            setActiveElements([...activeElements, categorie.id]);
+            filterRelatedGroups(categorie);
         }
     };
 
-    const filterRelatedGroups = (clickedElement: Element) => {
+    const filterRelatedGroups = (clickedElement: Categorie) => {
         if (!clickedElement.element_related_id || clickedElement.element_related_id.length === 0) {
             return;
         }
@@ -110,7 +110,7 @@ export default function Filter(attrs: FilterPainelType) {
         const displayedGroupIds = newDisplayedGroups.map(g => g.id);
 
         allGroups.forEach(group => {
-            const shouldDisplay = group.elements.some(el => relatedElementIds.includes(el.id) && !activeElements.includes(el.id));
+            const shouldDisplay = group.categories.some(el => relatedElementIds.includes(el.id) && !activeElements.includes(el.id));
             if (shouldDisplay && !displayedGroupIds.includes(group.id)) {
                 newDisplayedGroups.push(group);
             }
@@ -119,14 +119,14 @@ export default function Filter(attrs: FilterPainelType) {
         setDisplayedGroups(newDisplayedGroups);
     };
 
-    const removeRelatedGroups = (clickedElement: Element) => {
-        const relatedElementIds = clickedElement.element_related_id;
+    const removeRelatedGroups = (clickedElement: Categorie) => {
+      const relatedElementIds = clickedElement.element_related_id;
 
-        const updatedDisplayedGroups = displayedGroups.filter(group => {
-            const hasActiveElementInGroup = group.elements.some(el => activeElements.includes(el.id) && el.id !== clickedElement.id);
-            const isOriginalFirstGroup = allGroups[0]?.id === group.id;
-            const isRelatedToDeselected = group.elements.some(el => relatedElementIds?.includes(el.id));
-            const isCurrentlyRelatedToActive = allGroups.some(g => g.id === group.id && g.elements.some(e => activeElements.includes(e.id) && e.element_related_id?.includes(clickedElement.id)));
+      const updatedDisplayedGroups = displayedGroups.filter(group => {
+          const hasActiveElementInGroup = group.categories.some(el => activeElements.includes(el.id) && el.id !== clickedElement.id);
+          const isOriginalFirstGroup = allGroups[0]?.id === group.id;
+          const isRelatedToDeselected = group.categories.some(el => relatedElementIds?.includes(el.id));
+          const isCurrentlyRelatedToActive = allGroups.some(g => g.id === group.id && g.categories.some(e => activeElements.includes(e.id) && e.element_related_id?.includes(clickedElement.id)));
 
             return hasActiveElementInGroup || isOriginalFirstGroup || !isRelatedToDeselected || isCurrentlyRelatedToActive;
         });
@@ -143,7 +143,6 @@ export default function Filter(attrs: FilterPainelType) {
             method: "get",
             url: "group/list",
         });
-
         if (!!request.response && Array.isArray(request.data)) {
             setAllGroups(request.data);
             setDisplayedGroups([request.data[0]]);
@@ -273,7 +272,7 @@ export default function Filter(attrs: FilterPainelType) {
                 <div className="pb-6">
                     <Label>Público-Alvo</Label>
                     <div className="flex gap-2 pt-1 pb-2">
-                        {(pblcAlvo[0]?.elements ?? []).map((element) => {
+                        {(pblcAlvo[0]?.categories ?? []).map((element) => {
                             const isSelected = activeElements.includes(element.id);
                             return (
                                 <div
@@ -308,30 +307,31 @@ export default function Filter(attrs: FilterPainelType) {
                             <Label>{group.name}</Label>
                             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
                                 <div className="flex md:flex-wrap gap-2">
-                                    {group.elements.map((element) => (
+                                    {group.categories.map((categorie) => (
                                         <div
-                                            key={element.id}
-                                            className={`border cursor-pointer ease relative rounded p-2 ${activeElements.includes(element.id)
-                                                ? "border-zinc-800 hover:border-zinc-500"
-                                                : "hover:border-zinc-300"
-                                                }`}
-                                            onClick={() => handleElementClick(element)}
+                                            key={categorie.id}
+                                            className={`border cursor-pointer ease relative rounded p-2 ${
+                                                activeElements.includes(categorie.id)
+                                                    ? "border-zinc-800 hover:border-zinc-500"
+                                                    : "hover:border-zinc-300"
+                                            }`}
+                                            onClick={() => handleElementClick(categorie)}
                                         >
                                             <div className="px-3 md:px-1 flex items-center gap-2">
-                                                {!!element.icon && (
+                                                {!!categorie.icon && (
                                                     <Img
-                                                        src={element.icon}
+                                                        src={categorie.icon}
                                                         className={`h-[20px] w-[20px] object-contain`}
                                                     />
                                                 )}
                                                 <div className="h-[20px] whitespace-nowrap text-sm md:text-base flex items-center">
-                                                    {element.name}
+                                                    {categorie.name}
                                                 </div>
-                                                {activeElements.includes(element.id) && (
+                                                {activeElements.includes(categorie.id) && (
                                                     <input
                                                         type="checkbox"
                                                         name="elemento[]"
-                                                        value={element.id}
+                                                        value={categorie.id}
                                                         defaultChecked={true}
                                                         className="absolute opacity-0 z-[-1]"
                                                     />
@@ -341,6 +341,7 @@ export default function Filter(attrs: FilterPainelType) {
                                     ))}
                                 </div>
                             </div>
+            {/* esse filtro dinamico */}
                         </div>
                     ))}
                 </div>
