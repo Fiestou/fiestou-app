@@ -344,17 +344,9 @@ class ContentController extends Controller
 
         if(isset($content->id)){
 
-            $categories = Category::with(["childs"])
-                                  ->where(["parent" => NULL])
-                                  ->get();
-
-            foreach ($categories as $key => $category) {
-                $category->childs = Category::reduceLevel($category->childs);
-            }
-
+        
             $data = array_merge(Content::getDefault(), [
                 "content" => $content->setCustomContent(),
-                "categories" => $categories
             ]);
 
             return response()->json([

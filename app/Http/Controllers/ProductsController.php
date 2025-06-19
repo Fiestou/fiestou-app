@@ -74,9 +74,11 @@ class ProductsController extends Controller
 
         if ($request->has('categories') && $request->get('categories')) {
             $categories = (array) $request->get('categories');
-            foreach ($categories as $categoryId) {
-                $products = $products->whereRaw('JSON_CONTAINS(category, ?)', [json_encode([$categoryId])]);
-            }
+            $products = $products->where(function ($query) use ($categories) {
+                foreach ($categories as $categoryId) {
+                    $query->orWhereRaw('JSON_CONTAINS(category, ?)', [json_encode([(int)$categoryId])]);
+                }
+            });
         }
 
         if ($request->has('ignore')) {
@@ -170,6 +172,10 @@ class ProductsController extends Controller
         }
 
         $product = $product->first();
+        
+        Log::info('Product retrieved', ['product' => $product]);
+        Log::info('Normalized product', ['product' => Product::normalize([$product])[0]]);
+
 
         if (isset($product->id)) {
             return response()->json([
