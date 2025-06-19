@@ -123,8 +123,6 @@ export default function Senha({
         },
       });
 
-      console.log(request, "submit");
-
       if (!!request.response) {
         window.location.href = "/acesso";
       } else {
