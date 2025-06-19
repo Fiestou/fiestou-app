@@ -33,12 +33,11 @@ class GroupController extends Controller
                 'message' => 'store_id é obrigatório'
             ], 400);
         }
+
         Log::info('List_groups_teste_agora');
 
         // Busca todos os produtos da loja
         $products = Product::where('store', $storeId)->get();
-
-        
 
         // Coleta todos os IDs de categorias dos produtos
         $categoryIds = [];
@@ -56,21 +55,21 @@ class GroupController extends Controller
         // Coleta todos os group_ids das categorias
         $groupIds = $categories->pluck('group_id')->unique()->filter()->values();
 
-
-        // Busca os grupos no banco
+        // Busca os grupos no banco, excluindo os com target_adc = true
         $groups = Group::whereIn('id', $groupIds)
-        ->with(['categories' => function($query) use ($categoryIds) {
-            $query->whereIn('id', $categoryIds);
-        }])
-        ->get();
+            ->where('target_adc', false)
+            ->with(['categories' => function($query) use ($categoryIds) {
+                $query->whereIn('id', $categoryIds);
+            }])
+            ->get();
 
         Log::info('List_groups_teste_agora', $groups->toArray());
-        
+
         $response = [
             'response' => true,
             'data' => $groups
         ];
-        
+
         return response()->json($response);
     }
 

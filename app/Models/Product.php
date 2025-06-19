@@ -127,9 +127,7 @@ class Product extends BaseModel
 
                     if (isset($product->category) && !!$product->category) {
                         $categories = json_decode($product->category, TRUE);
-                        $product->category = Category::with(["childs"])
-                            ->whereIn('id', $categories)
-                            ->get();
+                        $product->category = Category::whereIn('id', $categories)->get();
                     }
 
                     if (isset($product->attributes) && !!$product->attributes) {
