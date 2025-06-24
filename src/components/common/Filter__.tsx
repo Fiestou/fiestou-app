@@ -17,7 +17,7 @@ export interface FilterQueryType {
   order: string;
 }
 
-export interface Element {
+export interface categorie {
   id: number
   name: string
   icon: string
@@ -92,7 +92,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
   const { groups } = useGroup();
   const [localGroups, setLocalGroups] = useState<Group[]>([]);
 
-  const handleElementClick = (element: Element) => {
+  const handleElementClick = (element: categorie) => {
     const isSelected = query.categories.includes(element.id);
 
     const updatedCategories = isSelected
@@ -108,25 +108,25 @@ export default function Filter(params: { store?: string; busca?: string }) {
     }
   };
 
-  const filterTree = (clickedElement: Element) => {
+  const filterTree = (clickedElement: categorie) => {
     if (!clickedElement.element_related_id || clickedElement.element_related_id.length === 0) {
       return;
     }
 
     const relatedElement = groups
-      .flatMap(group => group.elements)
+      .flatMap(group => group.categories)
       .find(el => clickedElement.element_related_id?.includes(el.id));
 
     const relatedGroup = groups.find(group => group.id === relatedElement?.group_id);
     if (!relatedGroup) return;
 
-    const filteredElements = relatedGroup.elements.filter(el =>
+    const filteredElements = relatedGroup.categories.filter(el =>
       clickedElement.element_related_id?.includes(el.id)
     );
 
     const filteredGroup: Group = {
       ...relatedGroup,
-      elements: filteredElements,
+      categories: filteredElements,
     };
 
     setLocalGroups(prev => {
@@ -134,10 +134,10 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
       if (indexInPrev !== -1) {
         const updated = [...prev];
-        updated[indexInPrev].elements = [
-          ...updated[indexInPrev].elements,
-          ...filteredGroup.elements.filter(
-            el => !updated[indexInPrev].elements.some(existingEl => existingEl.id === el.id)
+        updated[indexInPrev].categories = [
+          ...updated[indexInPrev].categories,
+          ...filteredGroup.categories.filter(
+            el => !updated[indexInPrev].categories.some(existingEl => existingEl.id === el.id)
           ),
         ];
         return updated;
@@ -161,21 +161,21 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
   };
 
-  const removeRelatedElements = (clickedElement: Element) => {
+  const removeRelatedElements = (clickedElement: categorie) => {
     if (!clickedElement.element_related_id || clickedElement.element_related_id.length === 0) {
       return;
     }
 
     const otherSelectedElements = query.categories.filter(id => id !== clickedElement.id);
     const otherRelatedIds = groups
-      .flatMap(group => group.elements)
+      .flatMap(group => group.categories)
       .filter(el => otherSelectedElements.includes(el.id))
       .flatMap(el => el.element_related_id || []);
 
     setLocalGroups(prev =>
       prev.map(group => ({
         ...group,
-        elements: group.elements.filter(
+        elements: group.categories.filter(
           el =>
             !clickedElement.element_related_id?.includes(el.id) ||
             otherRelatedIds.includes(el.id)
@@ -343,7 +343,7 @@ export default function Filter(params: { store?: string; busca?: string }) {
 
             <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
               <div className={`flex md:flex-wrap gap-2 ${group.id === localGroups[0]?.id ? "space-x-2" : ""}`}>
-          {group.elements.map((element) => (
+          {group.categories.map((element) => (
             <div
               key={element.id}
               className={`

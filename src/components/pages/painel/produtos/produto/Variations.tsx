@@ -53,7 +53,6 @@ export default function Variations({
           }
         : variation
     );
-    console.log(update, "value");
     emitVariations(update);
   };
 

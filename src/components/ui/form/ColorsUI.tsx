@@ -68,7 +68,7 @@ export default function Colors(attr: ColorType) {
         ? [attr?.value]
         : attr?.value ?? ([] as any)
     );
-  }, [attr]);
+  }, [attr?.value]);
 
   const HandleColors = (color: string) => {
     var handle: any = value;

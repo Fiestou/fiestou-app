@@ -15,7 +15,7 @@ import HelpCard from "@/src/components/common/HelpCard";
 import { RelationType } from "@/src/models/relation";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { Element } from "@/src/types/filtros/response";
+import { categorie } from "@/src/types/filtros/response";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -74,13 +74,13 @@ export async function getServerSideProps(
 
   const page = request?.data?.query?.page ?? [];
   const storeTypes = request?.data?.query?.storeType ?? [];
-  const elements = request?.data?.query?.elements ?? [];
+  const categorie = request?.data?.query?.categorie ?? [];
 
   return {
     props: {
       page: page[0] ?? {},
       storeTypes: storeTypes,
-      elements: elements,
+      categorie: categorie,
     },
   };
 }
@@ -108,12 +108,12 @@ export default function Store({
 }: {
   page: any;
   storeTypes: Array<RelationType>;
-  elements: Element[];
+  elements: categorie[];
 }) {
   const api = new Api();
   const router = useRouter();
 
-  const [elements, setElements] = useState<Element[]>(initialElements || []);
+  const [elements, setElements] = useState<categorie[]>(initialElements || []);
   const [form, setForm] = useState(formInitial);
   const handleForm = (value: Object) => {
     setForm({ ...form, ...value });

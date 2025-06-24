@@ -60,8 +60,6 @@ export default function Saque({ user }: { user: UserType }) {
 
     handleForm({ loading: true });
 
-    console.log(withdraw, "submitWithdraw");
-
     const request: any = await api.bridge({
       method: 'post',
       url: "withdraw/update",

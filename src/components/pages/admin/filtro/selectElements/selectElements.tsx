@@ -1,14 +1,14 @@
 import React, { useRef, useEffect } from "react";
 import { X } from "lucide-react";
-import { Element } from "@/src/types/filtros/response";
+import { categorie } from "@/src/types/filtros/response";
 
 interface SelectElementsProps {
-    relatedElements:    Element[];
+    relatedElements:    categorie[];
     open: boolean;
     onRequestOpen: () => void;
     onRequestClose: () => void;
-    selectedList:Element[];
-    onChageSelectList: (data: Element[]) => void;
+    selectedList:categorie[];
+    onChageSelectList: (data: categorie[]) => void;
 }
 
 const SelectElements: React.FC<SelectElementsProps> = (props) => {
@@ -27,7 +27,7 @@ const SelectElements: React.FC<SelectElementsProps> = (props) => {
         };
     }, []);
 
-    const onCheckClick = (checked: boolean, value: Element) => {
+    const onCheckClick = (checked: boolean, value: categorie) => {
         props.onChageSelectList(
           checked
             ? [...props.selectedList, { ...value, checked: true }] 

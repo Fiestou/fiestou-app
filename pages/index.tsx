@@ -111,7 +111,7 @@ export default function Home({
   useEffect(()=>{
     getFilters()
   }, [])
-  
+
 const [imgLinks] = useState<string[]>(
   Array.isArray(Home?.main_slide)
     ? Home.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)
