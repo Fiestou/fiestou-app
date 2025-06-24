@@ -59,20 +59,24 @@ class Product extends BaseModel
         'unavailableDates' => 'array',
     ];
 
-    public function medias(){
+    public function medias()
+    {
         return $this->hasMany(Media::class, 'gallery', 'id');
     }
 
-    public function store(){
+    public function store()
+    {
         return $this->hasOne(Store::class, 'id', 'store')->select("id", "companyName", "slug", "title", "cover", "profile");
     }
 
-    public function comments(){
+    public function comments()
+    {
         return $this->hasMany(Comment::class, 'product', 'id');
     }
 
-    public static function normalize($products = [], $deep = true){
-        if(!empty($products)){
+    public static function normalize($products = [], $deep = true)
+    {
+        if (!empty($products)) {
             $products = json_decode(json_encode($products));
 
             foreach ($products as $key => $product) {
@@ -81,7 +85,7 @@ class Product extends BaseModel
                 $product->price     = floatFormat($product->price);
                 $product->priceSale = floatFormat($product->priceSale);
 
-                if(isset($product->gallery) && !!$product->gallery){
+                if (isset($product->gallery) && !!$product->gallery) {
                     $gallery = Media::whereIn('id', json_decode($product->gallery, TRUE))->get();
 
                     foreach ($gallery as $key => $item) {
@@ -91,51 +95,47 @@ class Product extends BaseModel
                     $product->gallery = $gallery;
                 }
 
-                if(isset($product->store) && isset($product->store->cover) && !!$product->store->cover){
+                if (isset($product->store) && isset($product->store->cover) && !!$product->store->cover) {
                     $cover = Media::where('id', $product->store->cover)->first();
 
-                    if($cover){
+                    if ($cover) {
                         $cover->details = isset($cover->details) && !!$cover->details ? json_decode($cover->details, TRUE) : [];
-                    }
-                    else{
+                    } else {
                         $cover = [];
                     }
 
                     $product->store->cover = $cover;
                 }
 
-                if(isset($product->store) && isset($product->store->profile) && !!$product->store->profile){
+                if (isset($product->store) && isset($product->store->profile) && !!$product->store->profile) {
                     $profile = Media::where('id', $product->store->profile)->first();
 
-                    if($profile){
+                    if ($profile) {
                         $profile->details = isset($profile->details) && !!$profile->details ? json_decode($profile->details) : [];
-                    }
-                    else{
+                    } else {
                         $profile = [];
                     }
 
                     $product->store->profile = $profile;
                 }
 
-                if(isset($product->unavailable) && !!$product->unavailable){
+                if (isset($product->unavailable) && !!$product->unavailable) {
                     $product->unavailable = json_decode($product->unavailable, TRUE);
                 }
 
-                if($deep){
-                    if(isset($product->combinations) && !!$product->combinations) {
+                if ($deep) {
+                    if (isset($product->combinations) && !!$product->combinations) {
                         $combinations = json_decode($product->combinations, TRUE);
 
                         $product->combinations = is_array($combinations) && !!count($combinations) ? Product::normalize(Product::whereIn('id', $combinations)->get(), false) : [];
                     }
 
-                    if(isset($product->category) && !!$product->category){
+                    if (isset($product->category) && !!$product->category) {
                         $categories = json_decode($product->category, TRUE);
-                        $product->category = Category::with(["childs"])
-                                                    ->whereIn('id', $categories)
-                                                    ->get();
+                        $product->category = Category::whereIn('id', $categories)->get();
                     }
 
-                    if(isset($product->attributes) && !!$product->attributes){
+                    if (isset($product->attributes) && !!$product->attributes) {
                         $product->attributes = is_string($product->attributes) ? json_decode($product->attributes) : [];
                     }
                 }

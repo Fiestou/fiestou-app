@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\models;
 use Illuminate\Http\Request;
-
-use App\Models\Element;
+use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
@@ -14,8 +14,7 @@ class GroupController extends Controller
 
     public function List()
     {
-        $groups = Group::active()->with('elements')->where('target_adc', '!=', true)->get();
-        
+        $groups = Group::active()->with('categories')->where('target_adc', '!=', true)->get();
         $response = [
             'response' => true,
             'data' => $groups
@@ -24,15 +23,79 @@ class GroupController extends Controller
         return response()->json($response);
     }
 
-    public function ListTargetAdc()
+    public function listGroupsByStore(Request $request)
     {
-        Log::info('List_target_adc');
-        $groups = Group::active()
-            ->where('target_adc', true)
-            ->with('elements')
+        $storeId = $request->get('store_id');
+
+        if (!$storeId) {
+            return response()->json([
+                'response' => false,
+                'message' => 'store_id é obrigatório'
+            ], 400);
+        }
+
+        Log::info('List_groups_teste_agora');
+
+        // Busca todos os produtos da loja
+        $products = Product::where('store', $storeId)->get();
+
+        // Coleta todos os IDs de categorias dos produtos
+        $categoryIds = [];
+        foreach ($products as $product) {
+            $ids = is_array($product->category) ? $product->category : json_decode($product->category, true);
+            if (is_array($ids)) {
+                $categoryIds = array_merge($categoryIds, $ids);
+            }
+        }
+        $categoryIds = array_unique($categoryIds);
+
+        // Busca as categorias no banco
+        $categories = Category::whereIn('id', $categoryIds)->get();
+
+        // Coleta todos os group_ids das categorias
+        $groupIds = $categories->pluck('group_id')->unique()->filter()->values();
+
+        // Busca os grupos no banco, excluindo os com target_adc = true
+        $groups = Group::whereIn('id', $groupIds)
+            ->where('target_adc', false)
+            ->with(['categories' => function($query) use ($categoryIds) {
+                $query->whereIn('id', $categoryIds);
+            }])
             ->get();
 
-        Log::info('tropa',$groups->toArray());
+        Log::info('List_groups_teste_agora', $groups->toArray());
+
+        $response = [
+            'response' => true,
+            'data' => $groups
+        ];
+
+        return response()->json($response);
+    }
+
+    public function ListTargetAdc()
+    {
+        
+        $groups = Group::active()
+            ->where('target_adc', true)
+            ->with('categories')
+            ->get();
+
+
+        return response()->json([
+            'response' => true,
+            'data' => $groups
+        ]);
+    }
+
+    public function ListTargetAdcPublic()
+    {
+        Log::info('List_target_adc_public');
+        $groups = Group::active()
+            ->where('target_adc', true)
+            ->with('categories')
+            ->get();
+
 
         return response()->json([
             'response' => true,
@@ -117,7 +180,7 @@ class GroupController extends Controller
             ], 404);
         }
         
-        $element = Element::where('id', $ElementId)->where('group_id', $GroupId)->first();
+        $element = Category::where('id', $ElementId)->where('group_id', $GroupId)->first();
         
         if (!$element) {
             return response()->json([

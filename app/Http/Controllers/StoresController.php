@@ -11,11 +11,11 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\Suborder;
+use App\Models\Category;
 use App\Models\User;
 use App\Models\Media;
 use App\Models\Customer;
 use App\Models\Withdraw;
-use App\Models\Category;
 use App\Models\CategoryRel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -79,7 +79,7 @@ class StoresController extends Controller
         if ($segmentGroup) {
             $segmentGroupId = $segmentGroup->id;
 
-            $elements = Element::where('group_id', $segmentGroupId)->get();
+            $elements = Category::where('group_id', $segmentGroupId)->get();
 
             $elementsForSelect = [];
             
@@ -131,6 +131,7 @@ class StoresController extends Controller
         $request->validate([
             'slug' => 'required'
         ]);
+        
 
         $store = Store::where("slug", $request->get('slug'))
                       ->where("status", 1)
@@ -341,7 +342,7 @@ class StoresController extends Controller
             $elementsForSelect = [];
 
             if ($segmentGroup) {
-                $elements = Element::where('group_id', $segmentGroup->id)->get();
+                $elements = Category::where('group_id', $segmentGroup->id)->get();
                 
                 foreach ($elements as $element) {
                     $elementsForSelect[] = [
@@ -413,13 +414,7 @@ class StoresController extends Controller
             $products = $products->where('price', '<=', $request->get('range'));
         }
 
-        if($request->has('categories') && $request->input('categories')){
-            $categories = (is_array($request->input('categories'))) ? $request->input('categories') : [$request->input('categories')];
-            $categories = Category::whereIn('slug', $categories)->pluck('id')->toArray();
-
-            $whereIn    = CategoryRel::whereIn('category', $categories)->pluck('product')->toArray();
-            $products   = $products->whereIn('id', $whereIn);
-        }
+      
 
         if($request->has('order') && !!$request->get('order')){
             $products = $products->orderBy('created_at', $request->get('order') == "asc" ? "asc" : "desc");

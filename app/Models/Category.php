@@ -2,120 +2,81 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Arr;
 use App\Models\BaseModel;
-use App\Models\CategoryRel;
-use Illuminate\Support\Str;
-use App\Models\Media;
-use DB;
+use Illuminate\Support\Facades\DB;
 
 class Category extends BaseModel
 {
-    protected $table = 'category';
+    protected $table = 'category'; 
     protected $fillable = [
-        "id",
-        "parent",
-        "closest",
-        "order",
-        "title",
-        "slug",
-        "feature",
-        "image",
-        "text",
-        "multiple",
-        "status",
-        "created_at",
-        "updated_at"
+        'id',
+        'name',
+        'description',
+        'icon',
+        'group_id',
+        'active',
+        'element_related_id',
+        'created_at',
+        'updated_at',
     ];
 
-    public function childs(){
-        return $this->child()->with(['childs']);
+    // Relacionamento direto com a tabela Group
+    public function group()
+    {
+        return $this->belongsTo(Group::class, 'group_id');
     }
 
-    public function child(){
-        return $this->hasMany(Category::class, 'parent', 'id')->orderBy('category.order', 'ASC')->orderBy('category.id', 'DESC');
+    // Relacionamento para elementos relacionados (filhos)
+    public function relatedElements()
+    {
+        return $this->belongsToMany(Category::class, 'element_related', 'element_id', 'related_element_id');
     }
 
-    public static function reorderApply($list){
+    // Relacionamento para o elemento pai
+    public function parentElement()
+    {
+        return $this->belongsTo(Category::class, 'element_related_id');
+    }
 
-        foreach ($list as $key => $item) {
-            $category = Category::where(['id' => $item['id']])->first();
-            $category->order = $key;
+    protected $casts = [
+        'element_related_id' => 'array',
+    ];
 
-            if(isset($item['childs']) && !!$item['childs']){
-                Category::reorderApply($item['childs']);
-            }
+    // Escopo para filtrar elementos que pertencem a grupos ativos
+    public function scopeFromActiveGroups($query)
+    {
+        return $query->whereHas('group', function ($q) {
+            $q->where('active', 1);
+        });
+    }
 
-            $category->save();
+    public function getDescendantsAttribute()
+    {
+        return self::getElementDescendants($this->id, 1);
+    }
+    
+    public function scopeFromTargetAdcGroups($query)
+    {
+        return $query->whereHas('group', function ($q) {
+            $q->where('target_adc', true);
+        });
+    }
+
+    /**
+     * Obtém todos os descendentes de um elemento.
+     *
+     * @param int $elementsId
+     * @param bool|null $isActive
+     * @return array
+     */
+    public static function getElementDescendants($elementsId, $isActive = null)
+    {
+        $query = self::where('element_related_id', $elementsId);
+    
+        if (!is_null($isActive)) {
+            $query->where('active', $isActive);
         }
-    }
-
-    public static function parents($parent, $parents = []){
-        $handle = Category::select(["id", "parent"])
-                          ->where("id", $parent)
-                          ->first();
-
-        if(isset($handle->id)){
-            $parents[] = $handle->id;
-
-            if($handle->parent){
-                $parents = Category::parents($handle->parent, $parents);
-            }
-        }
-
-        return $parents;
-    }
-
-    public static function reduceLevel($childs, $level = []){
-
-        if(!count($childs)) return [];
-
-        foreach($childs as $child){
-            $level[] = $child;
-
-            if($child->$childs){
-                $level = Category::reduceLevel($child->$childs, $level);
-            }
-        }
-
-        return $level;
-    }
-
-    public static function normalize($categories = []){
-        if(!empty($categories)){
-            foreach ($categories as $key => $category) {
-
-                $category->closest   = !!$category->closest  ? json_decode($category->closest) : [];
-                $category->metadata  = !!$category->metadata ? json_decode($category->metadata) : [];
-                $category->image     = !!$category->image    ? Media::where('id', $category->image)->first() : [];
-
-                if(!!$category->image){
-                    $category->image->details = isset($category->image->details) && !!$category->image->details ? json_decode($category->image->details) : [];
-
-                    $category->image = ["medias" => [$category->image]];
-                }
-
-                if(isset($category->childs) && !empty($category->childs)){
-                    $category->childs = Category::normalize($category->childs);
-                }
-            }
-
-            return $categories;
-        }
-
-        return [];
-    }
-
-    public function deleteChilds($childs){
-        foreach($childs as $category){
-            if(isset($category->childs) && !!$category->childs){
-                $category->deleteChilds($category->childs);
-            }
-
-            $categoryRel = CategoryRel::where(['category' => $category->id])
-                                        ->delete();
-
-            $category->delete();
-        }
+    
+        return $query->get();
     }
 }
