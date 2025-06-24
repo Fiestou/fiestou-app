@@ -33,6 +33,8 @@ import { Variable } from "@/src/components/pages/painel/produtos/produto";
 import Img from "@/src/components/utils/ImgBase";
 import router from "next/router";
 import Categories from "@/src/components/pages/painel/produtos/produto/Categories";
+import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
+
 import { getStore, getUser } from "@/src/contexts/AuthContext";
 import axios from "axios";
 import Gallery from "@/src/components/pages/painel/produtos/produto/Gallery";
@@ -114,6 +116,7 @@ export default function Form({
   const [tags, setTags] = useState("" as string);
   const [categories, setCategories] = useState([] as Array<any>);
   const [data, setData] = useState({} as ProductType);
+
   const handleData = (value: Object) => {
     setData({ ...data, ...value });
   };
@@ -121,10 +124,15 @@ export default function Form({
     handleData({ unavailableDates: dates });
   };
   const [colors, setColors] = useState([] as Array<any>);
+
   const handleColors = (value: any) => {
     handleData({ color: value.join("|") });
     setColors(value);
   };
+  const handleCategorie = (value: any) => {
+    handleData({ category: value.join("|") });
+  };
+
   const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
   const SearchProducts = async (search: string) => {
     if (search.length >= 3) {
@@ -185,22 +193,22 @@ export default function Form({
   };
 
   useEffect(() => {
-    if (!!window) {
-      getProduct();
-    }
+    setPlaceholder(false);
   }, []);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
     setFormValue({ loading: true });
+    
+    const dataToSend = { ...data, store: getStore() };
 
     setSubimitStatus("register_content");
 
     let request: any = await api.bridge({
       method: 'post',
       url: "products/register",
-      data: data,
+      data: dataToSend,
     });
 
     if (request.response) {
@@ -208,13 +216,13 @@ export default function Form({
 
       setSubimitStatus("clean_cache");
 
-      await axios.get(`/api/cache?route=/produtos/${request.data.slug}`);
+      await axios.get(`/api/cache?route=/produtos/${request.data.id}`);
 
       setSubimitStatus("register_complete");
 
-      setTimeout(() => {
-        router.push({ pathname: "/painel/produtos" });
-      }, 1000);
+      // setTimeout(() => {
+      //   router.push({ pathname: "/painel/produtos" });
+      // }, 1000);
     }
   };
 
@@ -545,23 +553,23 @@ export default function Form({
                             </div>
                             {(!data?.quantityType ||
                               data?.quantityType == "manage") && (
-                              <div className="w-full">
-                                <input
-                                  onChange={(e: any) =>
-                                    handleData({
-                                      quantity: justNumber(e.target.value),
-                                    })
-                                  }
-                                  value={justNumber(data?.quantity)}
-                                  min={0}
-                                  className="form-control text-center"
-                                  type="number"
-                                  name="quantidade"
-                                  placeholder="Digite a quantidade"
-                                  required
-                                />
-                              </div>
-                            )}
+                                <div className="w-full">
+                                  <input
+                                    onChange={(e: any) =>
+                                      handleData({
+                                        quantity: justNumber(e.target.value),
+                                      })
+                                    }
+                                    value={justNumber(data?.quantity)}
+                                    min={0}
+                                    className="form-control text-center"
+                                    type="number"
+                                    name="quantidade"
+                                    placeholder="Digite a quantidade"
+                                    required
+                                  />
+                                </div>
+                              )}
                           </div>
                         </div>
                       </div>
@@ -745,7 +753,7 @@ export default function Form({
                                             handleData({
                                               tags: handleTags(
                                                 data?.tags?.replace(item, "") ??
-                                                  "",
+                                                "",
                                                 ""
                                               ),
                                             })
@@ -762,6 +770,12 @@ export default function Form({
                         </div>
                       </div>
                     </div>
+
+                    <CategorieCreateProdutct 
+                      onChange={(value: any) => {
+                        handleCategorie(value);
+                      }}
+                    />
 
                     <div className="border-t pt-4 pb-2">
                       <h4 className="text-2xl text-zinc-900 pb-6">
@@ -964,12 +978,12 @@ export default function Form({
               {subimitStatus == "upload_images"
                 ? "Enviando imagens..."
                 : subimitStatus == "register_content"
-                ? "Salvando produto..."
-                : subimitStatus == "clean_cache"
-                ? "Limpando cache..."
-                : subimitStatus == "register_complete"
-                ? "Salvo com sucesso!"
-                : ""}
+                  ? "Salvando produto..."
+                  : subimitStatus == "clean_cache"
+                    ? "Limpando cache..."
+                    : subimitStatus == "register_complete"
+                      ? "Salvo com sucesso!"
+                      : ""}
             </div>
             <div className="text-2xl">
               {subimitStatus == "register_complete" ? (
