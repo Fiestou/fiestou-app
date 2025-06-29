@@ -63,7 +63,6 @@ export async function getStaticProps(ctx: any) {
   const api = new Api();
   const { id } = ctx.params;
 
-
   let request: any = await api.request(
     {
       method: "get",
@@ -143,6 +142,7 @@ export default function Produto({
 
   const [loadCart, setLoadCart] = useState(false as boolean);
   const [resume, setResume] = useState(false as boolean);
+  const [blockdate , setBlockdate] = useState(Array<string>());
 
   const [productToCart, setProductToCart] = useState<ProductOrderType>({
     product: product?.id,
@@ -151,6 +151,10 @@ export default function Produto({
     details: {},
     total: getPriceValue(product).price,
   });
+
+  useEffect(() => {
+    setBlockdate(product.unavailableDates ?? []);
+  }, [product]);
 
   const [days, setDays] = useState(1);
 
@@ -948,6 +952,7 @@ export default function Produto({
                         <Calendar
                           required
                           unavailable={unavailable ?? []}
+                          blockdate={blockdate}
                           onChange={(emit: any) => handleDetails(emit)}
                           availability={product?.availability ?? 1}
                         />

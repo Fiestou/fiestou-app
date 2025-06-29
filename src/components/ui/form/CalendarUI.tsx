@@ -12,6 +12,7 @@ interface CalendarType {
   onChange?: Function;
   required?: boolean;
   unavailable?: Array<any>;
+  blockdate?: Array<string>;
 }
 
 export default function Calendar(attr: CalendarType) {
@@ -47,7 +48,11 @@ export default function Calendar(attr: CalendarType) {
   };
 
   const tileDisabled = ({ date }: { date: Date }) => {
-    return (attr?.unavailable ?? []).includes(dateFormat(date));
+    const dataFormatada = dateFormat(date);
+    const datasBloqueadas = attr?.blockdate ?? [];
+    const datasIndisponiveis = attr?.unavailable ?? [];
+
+    return datasBloqueadas.includes(dataFormatada) || datasIndisponiveis.includes(dataFormatada);
   };
 
   return (
