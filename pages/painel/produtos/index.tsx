@@ -22,7 +22,7 @@ export async function getServerSideProps(
 
   const store: any = await api.graph(
     {
-      method: 'post',
+      method: "post",
       url: "content/graph",
       data: [
         {
@@ -40,7 +40,7 @@ export async function getServerSideProps(
   if (hasStore) {
     let request: any = await api.graph(
       {
-        method: 'post',
+        method: "post",
         url: "content/graph",
         data: [
           {
@@ -121,7 +121,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
     setPlaceholder(true);
 
     let request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "products/remove",
       data: { id: item.id },
     });
@@ -210,6 +210,8 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                     />
                   </button>
                 </div>
+
+                {/* Botão de filtro na página de produtos do lojista */}
                 <div>
                   <Button
                     type="button"
@@ -320,12 +322,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                     </div>
                   </div>
                   <div className="col-span-2 w-full lg:w-[32rem] text-center grid grid-cols-3 gap-2">
-                    <button className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3">
-                      <Icon icon="fa-share-alt" type="far" />
-                    </button>
-                    {/* <button className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3">
-                          <Icon icon="fa-copy" type="far" />
-                        </button> */}
+
                     <Link
                       href={`/painel/produtos/${item.id}`}
                       className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
