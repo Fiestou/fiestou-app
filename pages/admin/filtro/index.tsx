@@ -11,7 +11,7 @@ import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modal
 import { Group, GroupResponse, GroupsResponse, ResponseRegister } from "../../../src/types/filtros/response";
 import { RequestRegister } from "../../../src/types/filtros/request";
 import { toast } from "react-toastify";
-import { Element } from "@/src/types/filtros/response";
+import { categorie } from "@/src/types/filtros/response";
 export default function Categorias() {
   const api = new Api();
 
@@ -19,7 +19,7 @@ export default function Categorias() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [group_target_adc, setGroup_Target_Adc] = useState<Group[]>([]);
   const [updateGroup, setUpdateGroup] = useState<Group | null>();
-  const [nextGroupElements, setNextGroupElements] = useState<Element[]>([]);
+  const [nextGroupElements, setNextGroupElements] = useState<categorie[]>([]);
 
   const onSaveGroup = async (data: GroupData) => {
     let dataRequest: RequestRegister = {
@@ -80,8 +80,8 @@ export default function Categorias() {
           id: -1,
         }
       ]);
-    } else if (nextGroup && nextGroup.elements) {
-      const mappedElements = nextGroup.elements.map((element) => ({
+    } else if (nextGroup && nextGroup.categories) {
+      const mappedElements = nextGroup.categories.map((element) => ({
         ...element,
         groupName: nextGroup.name,
       }));
@@ -181,7 +181,7 @@ export default function Categorias() {
                 <Card
                   key={index}
                   onEditClick={onEditClick}
-                  elements={value.elements as Element[]}
+                  elements={value.categories as categorie[]}
                   grouptargeadc={value.target_adc ? true : false}
                   relatedElements={nextGroupElements}
                   title={value.name}
@@ -226,7 +226,7 @@ export default function Categorias() {
                 <Card
                   key={index}
                   onEditClick={onEditClick}
-                  elements={value.elements as Element[]}
+                  elements={value.categories as categorie[]}
                   relatedElements={nextGroupElements}
                   title={value.name}
                   description={value.description}

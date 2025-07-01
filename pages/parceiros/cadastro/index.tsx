@@ -8,7 +8,7 @@ import { UserType } from "@/src/models/user";
 import { StoreType } from "@/src/models/store";
 import { getZipCode, justNumber } from "@/src/helper";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
-import { Element } from "@/src/store/filter";
+import { categorie } from "@/src/store/filter";
 import { formatCpfCnpj } from "../../cadastre-se/components/FormMasks";
 import { formatName } from "@/src/components/utils/FormMasks";
 
@@ -20,7 +20,7 @@ interface PreUserDataResponse {
         name: string | null;
         document?: string | null;
     } | null;
-    elements: Element[];
+    categories: categorie[];
     message?: string;
 }
 
@@ -28,7 +28,7 @@ type CompleteRegisterApiResponse = {
     response: boolean;
     data?: StoreType;
     groups?: any[];
-    elements?: Element[];
+    categories?: categorie[];
     error?: string;
 };
 
@@ -53,7 +53,7 @@ export default function Cadastro() {
     const [step, setStep] = useState(1);
     const [form, setForm] = useState(FormInitialType);
     const [store, setStore] = useState<StoreType>({} as StoreType);
-    const [elements, setElements] = useState<Element[]>([]);    
+    const [elements, setElements] = useState<categorie[]>([]);    
     const [preUser, setPreUser] = useState<{
         email: string;
         person: string;
@@ -83,7 +83,7 @@ export default function Cadastro() {
                     
                     if (response.response && response.preUser) {
                         setPreUser(response.preUser);
-                        setElements(response.elements || []);                       
+                        setElements(response.categories || []);                       
                         setStore(prevStore => ({
                             ...prevStore,
                             email: response.preUser?.email || '',
