@@ -161,7 +161,6 @@ export default function Form({
     }
   };
 
-  const [showUnavailableDates, setShowUnavailableDates] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [product, setProduct] = useState({} as ProductType);
   const getProduct = async () => {
@@ -176,7 +175,6 @@ export default function Form({
       ...handle,
       assembly: !!handle.assembly ? handle.assembly : "on",
       store: getStore(),
-      unavailableDates: handle.unavailableDates?.map((d: any) => new Date(d).toISOString().split('T')[0]) || [],
     };
 
     setProduct(handle);
@@ -193,22 +191,22 @@ export default function Form({
   };
 
   useEffect(() => {
-    setPlaceholder(false);
+    if (!!window) {
+      getProduct();
+    }
   }, []);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
     setFormValue({ loading: true });
-    
-    const dataToSend = { ...data, store: getStore() };
 
     setSubimitStatus("register_content");
 
     let request: any = await api.bridge({
       method: 'post',
       url: "products/register",
-      data: dataToSend,
+      data: data,
     });
 
     if (request.response) {
@@ -216,13 +214,13 @@ export default function Form({
 
       setSubimitStatus("clean_cache");
 
-      await axios.get(`/api/cache?route=/produtos/${request.data.id}`);
+      await axios.get(`/api/cache?route=/produtos/${request.data.slug}`);
 
       setSubimitStatus("register_complete");
 
-      // setTimeout(() => {
-      //   router.push({ pathname: "/painel/produtos" });
-      // }, 1000);
+      setTimeout(() => {
+        router.push({ pathname: "/painel/produtos" });
+      }, 500);
     }
   };
 
@@ -303,7 +301,7 @@ export default function Form({
                             }
                             value={data?.title ?? ""}
                             required
-                            placeholder="Digite o nome completo"
+                            placeholder="Digite o nome do produto"
                             className="form-control"
                           />
                           <input
@@ -329,7 +327,7 @@ export default function Form({
                             }
                             value={data?.subtitle ?? ""}
                             required
-                            placeholder="Digite o subtítulo"
+                            placeholder="Digite o subtítulo do produto"
                             className="form-control"
                           />
                         </div>
@@ -491,7 +489,10 @@ export default function Form({
                         <div className="flex gap-2">
                           <div className="w-full grid gap-2 sm:grid-cols-2">
                             <div className="form-group">
-                              <Label>SKU</Label>
+                              <div className="flex items-center">
+                                <Label>SKU</Label>
+                                <span className="pl-2 text-xs">(código do produto)</span>
+                              </div>
                               <input
                                 onChange={(e: any) =>
                                   handleData({ sku: e.target.value })
@@ -577,7 +578,7 @@ export default function Form({
 
                     <div className="border-t pt-4 pb-2">
                       <h4 className="text-2xl text-zinc-900 mb-2">
-                        Períodos de Indisponibilidade                        
+                        Períodos de Indisponibilidade
                       </h4>
                       <div className="grid gap-2">
                         <div className="form-group">
@@ -593,7 +594,7 @@ export default function Form({
                               >
                                 <Icon icon="fa-exclamation-circle" className="text-sm" />
                               </button>
-                              
+
                               {showTooltip && (
                                 <div className="absolute left-0 bottom-full mb-2 z-50 w-64 p-3 bg-gray-600 text-white text-xs rounded-lg shadow-lg whitespace-normal break-words">
                                   <div className="relative">
@@ -771,7 +772,7 @@ export default function Form({
                       </div>
                     </div>
 
-                    <CategorieCreateProdutct 
+                    <CategorieCreateProdutct
                       onChange={(value: any) => {
                         handleCategorie(value);
                       }}
