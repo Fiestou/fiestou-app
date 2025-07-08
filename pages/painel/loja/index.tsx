@@ -210,7 +210,7 @@ export default function Store({
 
   const handleSubmitCover = async (e: any) => {
     e.preventDefault();
-
+    console.log("Formulário enviado!");
     handleForm({ loading: true });
 
     let coverValue = store?.cover;
