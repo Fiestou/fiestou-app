@@ -152,34 +152,34 @@ export default function Store({
       let request: any = await api.bridge({
         method: 'post',
         url: "stores/form",
-      });      
-  
+      });
+
       const handle = request.data ?? {};
       const elementsFromApi = request.elements ?? [];
       const openClose = Array.isArray(handle?.openClose) ? handle.openClose : [];
-      
+
       setElements(elementsFromApi);
       setOldStore(handle);
       setStore(handle);
       setWeek(openClose);
-  
+
       setHandleCover({
         remove: 0,
         preview: !!handle?.cover ? getImage(handle?.cover, "xl") : "",
       });
-  
+
       setHandleProfile({
         remove: 0,
         preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
       });
-  
+
     } catch (error) {
       console.error("Error fetching store data:", error);
       setWeek([]);
       setElements([]);
     }
   };
-  
+
   const handleCoverRemove = async (e: any) => {
     setHandleCover({
       preview: "",
@@ -191,7 +191,7 @@ export default function Store({
 
   const handleCoverPreview = async (e: any) => {
     const file = e.target.files[0];
-
+    
     const base64: any = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -201,10 +201,12 @@ export default function Store({
 
     const fileData = { base64, fileName: file.name };
 
-    setHandleCover({ ...handleCover, preview: fileData.base64 });
+    setHandleCover((prev) => ({ ...prev, preview: fileData.base64 }));
 
     return fileData;
+    
   };
+
 
   const handleSubmitCover = async (e: any) => {
     e.preventDefault();
@@ -240,7 +242,7 @@ export default function Store({
         })
         .then((data: any) => data);
 
-      if (upload.response && !!upload.medias[0].status) {
+      if (upload?.response && !!upload.medias?.[0]?.status) {
         const media = upload.medias[0].media;
         media["details"] = JSON.parse(media.details);
 
@@ -267,7 +269,7 @@ export default function Store({
       data: handle,
     });
 
-    if (request.response) {
+    if (request?.response) {
       setStore(handle);
       setOldStore(Object.assign({}, handle));
 
@@ -279,7 +281,7 @@ export default function Store({
 
     handleForm({ edit: "", loading: false });
   };
-  
+
   const handleProfileRemove = async (e: any) => {
     setHandleProfile({
       preview: "",
@@ -379,21 +381,20 @@ export default function Store({
 
     handleForm({ edit: "", loading: false });
   };
-  
+
   const handleZipCode = async (zipCode: string) => {
     const location = await getZipCode(zipCode);
 
     if (!!location) {
-      let address = store;
-
-      address["zipCode"] = justNumber(zipCode);
-      address["street"] = location.logradouro;
-      address["neighborhood"] = location.bairro;
-      address["city"] = location.localidade;
-      address["state"] = location.uf;
-      address["country"] = "Brasil";
-
-      setStore(address);
+      setStore({
+        ...store,
+        zipCode: justNumber(zipCode),
+        street: location.logradouro,
+        neighborhood: location.bairro,
+        city: location.localidade,
+        state: location.uf,
+        country: "Brasil",
+      });
     }
   };
 
@@ -415,6 +416,14 @@ export default function Store({
     }
 
     handleForm({ edit: "", loading: false });
+  };
+
+  const justNumber = (value: string): string => value.replace(/\D/g, "");
+
+  const formatCep = (value: string): string => {
+    const clean = justNumber(value);
+    if (clean.length !== 8) return clean;
+    return `${clean.substring(0, 5)}-${clean.substring(5)}`;
   };
 
   const renderAction = (
@@ -563,9 +572,8 @@ export default function Store({
                       {!!handleCover.preview ? (
                         <Img
                           src={handleCover.preview}
-                          className={`${
-                            form.loading ? "blur-lg" : ""
-                          } absolute object-cover h-full inset-0 w-full`}
+                          className={`${form.loading ? "blur-lg" : ""
+                            } absolute object-cover h-full inset-0 w-full`}
                         />
                       ) : (
                         <Icon
@@ -614,9 +622,8 @@ export default function Store({
                             <div className="aspect-square border-zinc-900 border-2 relative rounded-full overflow-hidden">
                               <Img
                                 src={handleProfile.preview}
-                                className={`${
-                                  form.loading ? "blur-lg" : ""
-                                } absolute object-cover h-full inset-0 w-full`}
+                                className={`${form.loading ? "blur-lg" : ""
+                                  } absolute object-cover h-full inset-0 w-full`}
                               />
                             </div>
                           ) : (
@@ -861,10 +868,23 @@ export default function Store({
                       <div className="grid gap-2">
                         <Input
                           name="cep"
-                          onChange={(e: any) => handleZipCode(e.target.value)}
                           required
-                          value={store?.zipCode}
                           placeholder="CEP"
+                          value={store?.zipCode ? formatCep(store.zipCode) : ""}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = justNumber(e.target.value);
+                            handleStore({ zipCode: value });
+
+                            if (value.length === 8) {
+                              handleZipCode(value);
+                            }
+                          }}
+                          onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                            const value = justNumber(e.target.value);
+                            if (value.length === 8) {
+                              handleStore({ zipCode: value });
+                            }
+                          }}
                         />
                         <div className="flex gap-2">
                           <div className="w-full">
@@ -958,49 +978,50 @@ export default function Store({
                       <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
                         Segmento
                       </h4>
+                      <span>Selecione um segmento</span>
                     </div>
                     <div className="w-fit">{renderAction("segment")}</div>
                   </div>
                   <div className="w-full">
-                  {form.edit == "segment" ? (
-                    <Select
-                    onChange={(e: any) => {
-                      if (!e.target.value) return;
-                      const selected = elements.find(el => el.id.toString() === e.target.value);
-                      handleStore({ segment: selected?.name });
-                    }}
-                    value={elements.find(el => el.name === store?.segment)?.id?.toString() || ""}
-                    placeholder={!store?.segment ? "Selecione seu segmento" : ""}
-                    name="segment"
-                    options={elements.map((element) => ({
-                      name: (
-                        <div className="flex items-center gap-2">
-                          <img 
-                            src={element.icon} 
-                            alt="" 
-                            className="w-5 h-5 object-contain"
-                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                    {form.edit == "segment" ? (
+                      <Select
+                        onChange={(e: any) => {
+                          if (!e.target.value) return;
+                          const selected = elements.find(el => el.id.toString() === e.target.value);
+                          handleStore({ segment: selected?.name });
+                        }}
+                        value={elements.find(el => el.name === store?.segment)?.id?.toString() || ""}
+                        placeholder={!store?.segment ? "Selecione seu segmento" : ""}
+                        name="segment"
+                        options={elements.map((element) => ({
+                          name: (
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={element.icon}
+                                alt=""
+                                className="w-5 h-5 object-contain"
+                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                              />
+                              {element.name}
+                            </div>
+                          ),
+                          value: element.id.toString()
+                        }))}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        {store?.segment && elements.find(el => el.name === store.segment)?.icon && (
+                          <img
+                            src={elements.find(el => el.name === store.segment)?.icon}
+                            alt={store.segment}
+                            className="w-5 h-5"
                           />
-                          {element.name}
-                        </div>
-                      ),
-                      value: element.id.toString()
-                    }))}
-                  />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      {store?.segment && elements.find(el => el.name === store.segment)?.icon && (
-                        <img 
-                          src={elements.find(el => el.name === store.segment)?.icon} 
-                          alt={store.segment}
-                          className="w-5 h-5"
-                        />
-                      )}
-                      <span>{store?.segment || "Informe o segmento da sua loja"}</span>
-                    </div>
-                  )}
-                </div>
-              </form>
+                        )}
+                        <span>{store?.segment || "Informe o segmento da sua loja"}</span>
+                      </div>
+                    )}
+                  </div>
+                </form>
               </div>
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
                 <HelpCard list={page.help_list} />
