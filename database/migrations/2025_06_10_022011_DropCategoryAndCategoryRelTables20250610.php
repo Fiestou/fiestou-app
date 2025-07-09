@@ -11,16 +11,16 @@ class DropCategoryAndCategoryRelTables20250610 extends Migration
      *
      * @return void
      */
-public function up()
-{
-    // Remover a foreign key de category_rel antes de dropar as tabelas
-    Schema::table('category_rel', function (Blueprint $table) {
-        $table->dropForeign('FK_rel_category');
-    });
+    public function up()
+    {
+        // Remover a foreign key de category_rel antes de dropar as tabelas
+        Schema::table('category_rel', function (Blueprint $table) {
+            $table->dropForeign('FK_rel_category');
+        });
 
-    Schema::dropIfExists('category_rel');
-    Schema::dropIfExists('category');
-}
+        Schema::dropIfExists('category_rel');
+        Schema::dropIfExists('category');
+    }
 
     /**
      * Reverse the migrations.
