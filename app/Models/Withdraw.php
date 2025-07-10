@@ -17,6 +17,7 @@ class Withdraw extends BaseModel
         "bankAccount",
         "value",
         "metadata",
+        'split_payment',
         "status",
         "created_at",
         "updated_at"

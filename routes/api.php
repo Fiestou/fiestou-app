@@ -64,6 +64,27 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
 
     Route::group(['middleware' => 'jwt.auth'],function(){
 
+    Route::prefix('split')->as('split.')->group(function () {
+
+        // CRUD para os recebedores
+        Route::apiResource('recipients', RecipientController::class);
+
+        // Sócios do recebedor
+        Route::apiResource('recipients.partners', RecipientPartnerController::class)
+            ->shallow(); // rotas sem o prefixo completo em show/update/delete
+
+        Route::apiResource('recipients.addresses', RecipientAddressController::class)
+            ->shallow();
+
+        Route::apiResource('recipients.phones', RecipientPhoneController::class)
+            ->shallow();
+
+        Route::get('recipients/{recipient}/config', [RecipientConfigController::class, 'show'])->name('recipients.config.show');
+        Route::put('recipients/{recipient}/config', [RecipientConfigController::class, 'update'])->name('recipients.config.update');
+
+        // Solicitações de saque
+        Route::apiResource('withdraws', WithdrawController::class);
+    });
         // ORDERS
         Route::post('/orders/list', [OrdersController::class, 'List']);
         Route::get('/orders/list/{id}', [OrdersController::class, 'getOrderById']);
