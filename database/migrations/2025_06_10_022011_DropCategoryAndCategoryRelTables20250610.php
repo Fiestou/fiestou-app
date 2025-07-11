@@ -13,7 +13,6 @@ class DropCategoryAndCategoryRelTables20250610 extends Migration
      */
 public function up()
 {
-
     Schema::dropIfExists('category_rel');
     Schema::dropIfExists('category');
 }
