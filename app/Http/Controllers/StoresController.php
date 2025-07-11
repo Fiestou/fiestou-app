@@ -91,10 +91,8 @@ class StoresController extends Controller
                 ];
             }
             
-            \Log::info('Elementos do Grupo com Segmento 1:', $elementsForSelect);
         } else {
             $elementsForSelect = [];
-            \Log::warning('Nenhum grupo com segmento 1 encontrado.');
         }
 
         if (isset($store->id)) {
@@ -195,7 +193,8 @@ class StoresController extends Controller
     public function Customers(Request $request){
 
         $request->validate([
-            'store' => 'required'
+            'store' => 'required|exists:stores,id',
+            'id' => 'nullable|integer|exists:users,id'
         ]);
 
         $user = auth()->user();
@@ -205,29 +204,31 @@ class StoresController extends Controller
 
         if(isset($store->id)){
 
-            $users = Suborder::where(['store' => $store->id])
-                             ->groupBy('user')
-                             ->pluck('user')
-                             ->toArray();
+            $users = Suborder::where('store', $store->id)
+                 ->distinct()
+                 ->pluck('user');
 
             $customers = User::whereIn('id', $users);
 
-            if($request->has('id')){
-                $customers = $customers->where(['id' => $request->get('id')])->first();
+            if ($request->has('id')) {
+                $customers = $customers->where('id', $request->get('id'))->first();
+
+                if (!$customers) {
+                    return response()->json([
+                        'response' => false,
+                        'message' => 'Cliente não encontrado para esta loja.'
+                    ], 404);
+                }
+
                 $customers->DetailsUp();
             }
-            else{
-                $customers = $customers->get();
-            }
-
-            return response()->json([
-                'response'  => true,
-                'data'      => $customers
-            ]);
         }
 
         return response()->json([
-            'response'  => false
+            'response' => true,
+            'data' => collect($customers)->map(function ($user) {
+                return $user->makeHidden(['password', 'remember_token', 'api_token']);
+            }),
         ]);
     }
 

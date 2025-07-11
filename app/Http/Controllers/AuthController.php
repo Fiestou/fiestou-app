@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 use App\Models\Element;
 use App\Models\Group;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ValidateUser;
 use App\Mail\RegisterUser;
@@ -19,6 +18,7 @@ use Hash;
 use App\Models\User;
 use App\Models\Message;
 use App\Models\Store;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -33,7 +33,7 @@ class AuthController extends Controller
         'email'         => 'required|email',
         'password'      => 'required'
     ]);
-
+    Log::info('Login - Realizado com sucesso');
     $email  = strtolower(trim($request->email));
     $user   = User::where([
                         'email'     => $email,
