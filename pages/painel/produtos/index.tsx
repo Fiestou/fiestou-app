@@ -115,6 +115,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
       total: request.metadata?.total ?? 0,
       pages: request.metadata?.pages ?? 0,
     });
+    
   };
 
   const RemoveProduct = async (item: any) => {
@@ -253,11 +254,11 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
           <div className="border border-t-0 grid md:grid-cols-2 lg:block w-full">
             <div className="hidden lg:flex border-t bg-zinc-100 p-4 lg:p-8 gap-4 lg:gap-8 font-bold text-zinc-900 font-title">
               <div className="w-full">Produto</div>
-              <div className="w-[32rem] max-w-[6rem]">Estoque</div>
-              <div className="w-[32rem]">Preço</div>
-              <div className="w-[32rem]">Exibição</div>
-              <div className="w-[32rem]">Tipo</div>
-              <div className="w-[32rem]">Ações</div>
+              <div className="w-[32rem] max-w-[7rem]">Estoque</div>
+              <div className="w-[32rem] max-w-[8rem]">Preço</div>
+              <div className="w-[32rem] max-w-[9rem]">Exibição</div>
+              <div className="w-[32rem] max-w-[7rem]">Tipo</div>
+              <div className="w-[32rem] max-w-[8rem]">Ações</div>
             </div>
             {placeholder ? (
               [1, 2, 3, 4, 5].map((item: any, key: number) => (
@@ -266,95 +267,89 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                 </div>
               ))
             ) : !!products.length ? (
-              products.map((item, key) => (
-                <div
-                  key={key}
-                  className="grid grid-cols-2 lg:flex border-t p-4 lg:p-8 gap-2 lg:gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 items-center"
-                >
-                  <div className="col-span-2 w-full flex items-center gap-4">
-                    <div className="aspect-square relative overflow-hidden w-[4rem] rounded-md bg-zinc-100">
-                      {!!item?.gallery?.length ? (
-                        <Img
-                          src={
-                            item?.gallery[0]?.base_url +
-                            item?.gallery[0]?.details?.sizes["sm"]
-                          }
-                          size="xs"
-                          className="absolute object-cover h-full inset-0 w-full"
-                        />
+              products.map((item, key) => {
+                return (
+                  <div
+                    key={key}
+                    className="grid grid-cols-2 lg:flex border-t p-4 lg:p-8 gap-2 lg:gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 items-center"
+                  >
+                    <div className="col-span-2 w-full flex items-center gap-4">
+                      <div className="aspect-square relative overflow-hidden w-[4rem] rounded-md bg-zinc-100">
+                        {!!item?.gallery?.length ? (
+                          <Img
+                            src={item?.gallery[0]?.base_url +
+                              item?.gallery[0]?.details?.sizes["sm"]}
+                            size="xs"
+                            className="absolute object-cover h-full inset-0 w-full" />
+                        ) : (
+                          <Icon
+                            icon="fa-image"
+                            className="text-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-25" />
+                        )}
+                      </div>
+                      <div className="font-semibold">{item.title}</div>
+                    </div>
+                    <div className="w-full lg:w-[32rem] lg:max-w-[6rem] text-center">
+                      {!!item?.quantity ? (
+                        <div className="rounded-md bg-zinc-100 py-2">
+                          {item?.quantity}
+                        </div>
                       ) : (
-                        <Icon
-                          icon="fa-image"
-                          className="text-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-25"
-                        />
+                        <div className="rounded-md bg-zinc-100 py-3 px-2 text-xs whitespace-nowrap">
+                          sem estoque
+                        </div>
                       )}
                     </div>
-                    <div className="font-semibold">{item.title}</div>
-                  </div>
-                  <div className="w-full lg:w-[32rem] lg:max-w-[6rem] text-center">
-                    {!!item?.quantity ? (
+                    <div className="w-full lg:w-[32rem] text-center">
+                      <div className="rounded-md bg-zinc-100">
+                        <div className="w-full py-2">
+                          R$ {getPrice(item).price}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-full lg:w-[32rem] text-center">
                       <div className="rounded-md bg-zinc-100 py-2">
-                        {item?.quantity}
-                      </div>
-                    ) : (
-                      <div className="rounded-md bg-zinc-100 py-3 px-2 text-xs whitespace-nowrap">
-                        sem estoque
-                      </div>
-                    )}
-                  </div>
-                  <div className="w-full lg:w-[32rem] text-center">
-                    <div className="rounded-md bg-zinc-100">
-                      <div className="w-full py-2">
-                        R$ {getPrice(item).price}
+                        {!!item.status ? "Exibindo" : "Oculto"}
                       </div>
                     </div>
-                  </div>
-                  <div className="w-full lg:w-[32rem] text-center">
-                    <div className="rounded-md bg-zinc-100 py-2">
-                      {!!item.status ? "Exibindo" : "Oculto"}
+                    <div className="w-full lg:w-[32rem] text-center">
+                      <div className="rounded-md bg-zinc-100 py-2">
+                        Para alugar
+                      </div>
                     </div>
-                  </div>
-                  <div className="w-full lg:w-[32rem] text-center">
-                    <div className="rounded-md bg-zinc-100 py-2">
-                      Para alugar
-                    </div>
-                  </div>
-                  <div className="col-span-2 w-full lg:w-[32rem] text-center grid grid-cols-3 gap-2">
-                    <button className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3">
-                      <Icon icon="fa-share-alt" type="far" />
-                    </button>
-                    {/* <button className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3">
-                          <Icon icon="fa-copy" type="far" />
-                        </button> */}
-                    <Link
-                      href={`/painel/produtos/${item.id}`}
-                      className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
-                    >
-                      <Icon icon="fa-pen" type="far" />
-                    </Link>
-                    <div className="group relative">
-                      <button
-                        type="button"
-                        className="rounded-md bg-zinc-100 group-hover:bg-yellow-300 ease py-2 px-3"
+                    <div className="col-span-2 w-full lg:w-[32rem] text-center grid grid-cols-3 gap-2">
+                      {/* Botão para editar produtos na página de produtos do lojista */}
+                      <Link
+                        href={`/painel/produtos/${item.id}`}
+                        className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
                       >
-                        <Icon icon="fa-trash" type="far" />
-                      </button>
-                      <input className="cursor-pointer absolute h-full w-full top-0 left-0 opacity-0" />
-                      <div className="absolute w-full bottom-0 left-0 hidden group-focus-within:block">
-                        <div className="absolute border top-0 -mt-1 left-1/2 -translate-x-1/2 flex bg-white py-2 px-4 text-sm rounded-md gap-5">
-                          <div className="cursor-pointer">cancelar</div>
-                          <button
-                            onClick={() => RemoveProduct(item)}
-                            className="cursor-pointer underline font-semibold text-zinc-900 hover:text-red-600"
-                          >
-                            confirmar
-                          </button>
+                        <Icon icon="fa-pen" type="far" />
+                      </Link>
+
+                      <div className="group relative">
+                        <button
+                          type="button"
+                          className="rounded-md bg-zinc-100 group-hover:bg-yellow-300 ease py-2 px-3"
+                        >
+                          <Icon icon="fa-trash" type="far" />
+                        </button>
+                        <input className="cursor-pointer absolute h-full w-full top-0 left-0 opacity-0" />
+                        <div className="absolute w-full bottom-0 left-0 hidden group-focus-within:block">
+                          <div className="absolute border top-0 -mt-1 left-1/2 -translate-x-1/2 flex bg-white py-2 px-4 text-sm rounded-md gap-5">
+                            <div className="cursor-pointer">cancelar</div>
+                            <button
+                              onClick={() => RemoveProduct(item)}
+                              className="cursor-pointer underline font-semibold text-zinc-900 hover:text-red-600"
+                            >
+                              confirmar
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-center px-4 py-10">
                 Não encontramos resultados para essa busca
