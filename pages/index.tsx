@@ -9,7 +9,7 @@ import Template from "@/src/template";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
+import { Autoplay, Navigation, Pagination } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -107,16 +107,16 @@ export default function Home({
       setGroups(request.data)
     }
   }
-  
-  useEffect(()=>{
+
+  useEffect(() => {
     getFilters()
   }, [])
 
-const [imgLinks] = useState<string[]>(
-  Array.isArray(Home?.main_slide)
-    ? Home.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)
-    : []
-);
+  const [imgLinks] = useState<string[]>(
+    Array.isArray(Home?.main_slide)
+      ? Home.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)
+      : []
+  );
 
   return (
     <Template
@@ -142,11 +142,16 @@ const [imgLinks] = useState<string[]>(
       <section className="group relative">
         <Swiper
           spaceBetween={0}
-          modules={[Pagination, Navigation]}
+          modules={[Pagination, Navigation, Autoplay]}
           navigation={{
             nextEl: ".swiper-main-next",
             prevEl: ".swiper-main-prev",
           }}
+          autoplay={{
+            delay: 3000,
+            disableOnInteraction: false,
+          }}
+          loop={true}
           breakpoints={{
             0: {
               slidesPerView: 1,
@@ -194,7 +199,7 @@ const [imgLinks] = useState<string[]>(
                             <Button
                               href={`${process.env.APP_URL}/acesso`}
                               className="md:text-lg px-4 py-2 md:py-4 md:px-8"
-                            >                              
+                            >
                               {slide?.main_slide_redirect?.label}
                             </Button>
                           </div>
