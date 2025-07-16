@@ -64,7 +64,14 @@ Route::group(['prefix' => 'app', 'middleware' => 'api'], function ($router) {
 
     Route::group(['middleware' => 'jwt.auth'],function(){
 
-        // ORDERS
+        Route::prefix('info')->as('split.')->group(function () {
+            Route::Get('recipient/infos/{id}', [OrdersController::class, 'show']);
+            Route::Get('recipient/withdraw/{id}', [WithdrawController::class, 'show']);
+            Route::Get('recipient/config/{id}', [SplitPayment::class, 'show']);
+            Route::Get('recipient/config/{id}', [SplitPayment::class, 'show']);
+        });
+
+        // Solicitações de saque 
         Route::post('/orders/list', [OrdersController::class, 'List']);
         Route::get('/orders/list/{id}', [OrdersController::class, 'getOrderById']);
         Route::post('/orders/get', [OrdersController::class, 'Get']);
