@@ -32,14 +32,12 @@ import Img from "@/src/components/utils/ImgBase";
 import { StoreType } from "@/src/models/store";
 import Newsletter from "@/src/components/common/Newsletter";
 import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
-
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination, Zoom } from "swiper";
 import 'swiper/css';
 import 'swiper/css/zoom';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-
 import Calendar from "@/src/components/ui/form/CalendarUI";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Modal from "@/src/components/utils/Modal";
@@ -92,6 +90,7 @@ export async function getStaticProps(ctx: any) {
 
     const categories = request?.data?.categories ?? {};
     const HeaderFooter = request?.data?.HeaderFooter ?? {};
+    console.log(HeaderFooter, "footer");
     const DataSeo = request?.data?.DataSeo ?? {};
     const Scripts = request?.data?.Scripts ?? {};
 
@@ -640,7 +639,7 @@ export default function Produto({
     >
       <section className="">
         <div className="container-medium py-4 md:py-6">
-          <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
+          <Breadcrumbs links={[{ url: `/produtos/${product?.id}`, name: "Produtos" }]} />
         </div>
       </section>
       <section className="">
@@ -953,6 +952,11 @@ export default function Produto({
                         Para quando você precisa?
                       </h4>
                       <div className="calendar relative">
+                        <div className="text-xs m-4">
+                          {!!productToCart?.details?.dateStart
+                            ? dateBRFormat(productToCart?.details?.dateStart)
+                            : "Selecione a data:"}
+                        </div>
                         <Calendar
                           required
                           unavailable={unavailable ?? []}
@@ -1001,12 +1005,9 @@ export default function Produto({
                     {!!productToCart?.total && (
                       <>
                         <div className="leading-tight self-center w-full px-4">
-                          <div className="text-xs">
-                            {!!productToCart?.details?.dateStart
-                              ? dateBRFormat(productToCart?.details?.dateStart)
-                              : "Selecione a data"}
+                          <div className="text-sm text-zinc-900">
+                            Total:
                           </div>
-
                           <div className="font-bold text-zinc-900 text-lg whitespace-nowrap">
                             R$ {moneyFormat(productToCart.total)}
                           </div>
@@ -1178,8 +1179,8 @@ export default function Produto({
       </section>
 
       {!!product?.combinations && (
-        <section className="pt-8 md:pt-16">
-          <div className="container-medium relative">
+        <section className="pt-8 md:pt-16 ">
+          <div className="container-medium relative ">
             <div className="grid md:flex items-center justify-between gap-2">
               <div className="flex w-full items-center gap-2">
                 <div>
@@ -1204,7 +1205,7 @@ export default function Produto({
       )}
 
       {!!match.length && (
-        <section className="pt-8 md:pt-16">
+        <section className="pt-8 md:pt-16  ">
           <div className="container-medium relative">
             <div className="grid md:flex items-center justify-between gap-2">
               <div className="flex w-full items-center gap-2">
@@ -1226,7 +1227,7 @@ export default function Produto({
         </section>
       )}
 
-      <div className="pt-16"></div>
+      <div className="pt-16 "></div>
 
       <SidebarCart
         status={cartModal}
