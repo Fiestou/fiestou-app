@@ -5,6 +5,7 @@ import SelectElements from "../selectElements/selectElements";
 import { categorie } from "@/src/types/filtros/response";
 import { Trash2 } from "lucide-react";
 import { controllers } from "chart.js";
+import { toast } from "react-toastify";
 interface ElementModalProps {
     open: boolean;
     onRequestClose: () => void;
@@ -40,10 +41,10 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
     const onSaveClick = () => {
 
         if (!icon) {
-            alert('Preencha o campo de ícone');
+            toast.error('Selecione um ícone');
             return;
         } else if (!name) {
-            alert('Preencha o campo de nome');
+            toast.error('Preencha o campo de nome');
             return;
         }
 
@@ -138,6 +139,8 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
                     <input
                         value={name}
                         onChange={(event) => { setName(event.target.value) }}
+                        required
+                        type="text"
                         className="flex-1 w-full border-[1px] border-black rounded-md p-2"
                         placeholder="Insira o nome do elemento"
                     />
@@ -149,6 +152,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
                     <textarea
                         value={description}
                         onChange={(event) => { setDescription(event.target.value) }}
+                        required
                         className="flex-1 w-full border-[1px] border-gray-500 min-h-[90px] rounded-md p-2" placeholder="Digite aqui a descrição do elemento" />
                 </div>
                 {!hideRelatedElements && (
