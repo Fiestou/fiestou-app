@@ -16,7 +16,6 @@ export default function Newsletter() {
           </div>
           <div className="relative z-[1]">
             <div className="max-w-2xl mx-auto text-center pb-10 md:pb-8">
-              <span>Newsletter</span>
               <h2 className="font-title text-zinc-900 font-bold text-3xl md:text-5xl mt-2">
                 Receba novidades e promoções
               </h2>
