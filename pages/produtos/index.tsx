@@ -149,7 +149,7 @@ export default function Produtos({
             <div key={key}>
               <Product product={item} />
             </div>
-          ))} 
+          ))}
         </div>
 
         <div className="pt-4 pb-14">
