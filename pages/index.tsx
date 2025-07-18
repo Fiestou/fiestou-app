@@ -348,12 +348,6 @@ export default function Home({
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
                 dangerouslySetInnerHTML={{ __html: Home?.categories_text }}
               ></h2>
-              <div
-                className="pt-4"
-                dangerouslySetInnerHTML={{
-                  __html: Home?.categories_description,
-                }}
-              ></div>
             </div>
             <div className="bg-white py-4 md:py-10 rounded-xl overflow-hidden relative">
               <Swiper
@@ -612,7 +606,7 @@ export default function Home({
           </div>
           <div className="grid md:grid-cols-3 gap-10 md:gap-6">
             {!!Blog?.length &&
-              Blog.map((post: any, key: any) => (
+              Blog.slice().reverse().map((post: any, key: any) => (
                 <div key={key}>
                   <PostItem post={post} />
                 </div>
