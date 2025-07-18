@@ -83,14 +83,13 @@ export async function getStaticProps(ctx: any) {
     request = await api.content(
       {
         method: 'get',
-        url: "product",
+        url: "products",
       },
       ctx
     );
 
     const categories = request?.data?.categories ?? {};
     const HeaderFooter = request?.data?.HeaderFooter ?? {};
-    console.log(HeaderFooter, "footer");
     const DataSeo = request?.data?.DataSeo ?? {};
     const Scripts = request?.data?.Scripts ?? {};
 
