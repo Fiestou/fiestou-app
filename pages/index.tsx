@@ -244,7 +244,6 @@ export default function Home({
       <section className="py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-8">
-            <span>{Home?.feature_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
               dangerouslySetInnerHTML={{ __html: Home?.feature_text }}
@@ -269,7 +268,6 @@ export default function Home({
       <section className="py-12 md:py-20">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{Home?.works_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
               dangerouslySetInnerHTML={{ __html: Home?.works_text }}
@@ -346,7 +344,6 @@ export default function Home({
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-xl mx-auto text-center pb-14">
-              <span>{Home?.categories_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
                 dangerouslySetInnerHTML={{ __html: Home?.categories_text }}
@@ -415,7 +412,6 @@ export default function Home({
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-4xl mx-auto text-center pb-8 md:pb-14">
-              <span>{Home?.partner_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
                 dangerouslySetInnerHTML={{ __html: Home?.partner_text }}
@@ -483,19 +479,12 @@ export default function Home({
           <div className="lg:flex justify-center">
             <div className="w-full">
               <div className="max-w-xl pb-14">
-                <span>{Home?.quotes_title}</span>
                 <h2
                   className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4"
                   dangerouslySetInnerHTML={{
                     __html: Home?.quotes_text,
                   }}
                 ></h2>
-                <div
-                  className="pt-4"
-                  dangerouslySetInnerHTML={{
-                    __html: Home?.quotes_description,
-                  }}
-                ></div>
                 <div className="pt-10">
                   <Img
                     src="/images/loop-arrow.png"
@@ -515,11 +504,16 @@ export default function Home({
                           type: "fraction",
                         }}
                         spaceBetween={16}
-                        modules={[Pagination, Navigation]}
+                        modules={[Pagination, Navigation, Autoplay]}
                         navigation={{
                           nextEl: ".swiper-quotes-next",
                           prevEl: ".swiper-quotes-prev",
                         }}
+                        autoplay={{
+                          delay: 3000,
+                          disableOnInteraction: false,
+                        }}
+                        loop={true}
                         breakpoints={{
                           0: {
                             slidesPerView: 1,
@@ -612,7 +606,6 @@ export default function Home({
       <section className="pb-14 xl:py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{Home?.blog_subtitle}</span>
             <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
               {Home?.blog_title}
             </h2>
