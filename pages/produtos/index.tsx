@@ -2,19 +2,16 @@ import Product from "@/src/components/common/Product";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
-
 import Img from "@/src/components/utils/ImgBase";
 import { getImage } from "@/src/helper";
-
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { Button } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
 import Paginate from "@/src/components/utils/Paginate";
 import Filter from "@/src/components/common/Filter";
+import { Footer } from "@/src/default/footer";
 
 let limit = 15;
 
@@ -152,7 +149,7 @@ export default function Produtos({
             <div key={key}>
               <Product product={item} />
             </div>
-          ))} 
+          ))}
         </div>
 
         <div className="pt-4 pb-14">

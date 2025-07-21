@@ -1,18 +1,14 @@
 import Api from "@/src/services/api";
 import Template from "@/src/template";
-import Link from "next/link";
-import { useState } from "react";
 import Img from "@/src/components/utils/ImgBase";
-import { Button, Input, Label } from "@/src/components/ui/form";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import { clean, cleanText, getExtenseData, getImage } from "@/src/helper";
+import { getImage } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import PostItem from "@/src/components/common/PostItem";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.content({method: 'get', url: `blog` });
+  let request: any = await api.content({ method: 'get', url: `blog` });
 
   const Blog = request?.data?.Blog ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
@@ -74,8 +70,7 @@ export default function Post({
               </div>
               <h1
                 className="font-title font-bold text-4xl md:text-5xl mb-4"
-                dangerouslySetInnerHTML={{ __html: Blog?.blog_text }}
-              ></h1>
+              >	Inspire sua Festa!</h1>
               <div
                 className="text-lg md:text-2xl font-semibold"
                 dangerouslySetInnerHTML={{ __html: Blog?.blog_description }}
@@ -96,7 +91,7 @@ export default function Post({
         <div className="container-medium grid gap-6 md:gap-10">
           <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {!!Posts.length &&
-              Posts.map((post: any, key: any) => (
+              Posts.slice().reverse().map((post: any, key: any) => (
                 <div key={key} className="w-full pb-6">
                   <PostItem post={post} />
                 </div>
