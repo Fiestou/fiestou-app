@@ -20,6 +20,7 @@ class Withdraw extends BaseModel
         'split_payment',
         "status",
         "created_at",
-        "updated_at"
+        "updated_at",
+        "is_split"
     ];
 }

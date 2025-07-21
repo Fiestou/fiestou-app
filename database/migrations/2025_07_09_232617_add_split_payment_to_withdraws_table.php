@@ -13,7 +13,7 @@ class AddSplitPaymentToWithdrawsTable extends Migration
      */
     public function up()
     {
-        Schema::table('withdraws', function (Blueprint $table) {
+        Schema::table('withdraw', function (Blueprint $table) {
             $table->boolean('split_payment')->default(false)->after('id');
         });
     }
@@ -25,7 +25,7 @@ class AddSplitPaymentToWithdrawsTable extends Migration
      */
     public function down()
     {
-        Schema::table('withdraws', function (Blueprint $table) {
+        Schema::table('withdraw', function (Blueprint $table) {
             $table->dropColumn('split_payment');
         });
     }
