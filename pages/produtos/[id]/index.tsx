@@ -1,6 +1,5 @@
 import Product from "@/src/components/common/Product";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-
 import Link from "next/link";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
@@ -33,14 +32,12 @@ import Img from "@/src/components/utils/ImgBase";
 import { StoreType } from "@/src/models/store";
 import Newsletter from "@/src/components/common/Newsletter";
 import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
-
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Zoom } from "swiper";
+import { Autoplay, Navigation, Pagination, Zoom } from "swiper";
 import 'swiper/css';
 import 'swiper/css/zoom';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-
 import Calendar from "@/src/components/ui/form/CalendarUI";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Modal from "@/src/components/utils/Modal";
@@ -86,7 +83,7 @@ export async function getStaticProps(ctx: any) {
     request = await api.content(
       {
         method: 'get',
-        url: "product",
+        url: "products",
       },
       ctx
     );
@@ -142,7 +139,7 @@ export default function Produto({
 
   const [loadCart, setLoadCart] = useState(false as boolean);
   const [resume, setResume] = useState(false as boolean);
-  const [blockdate , setBlockdate] = useState(Array<string>());
+  const [blockdate, setBlockdate] = useState(Array<string>());
 
   const [productToCart, setProductToCart] = useState<ProductOrderType>({
     product: product?.id,
@@ -518,13 +515,13 @@ export default function Produto({
             <div className="border-t border-dashed"></div>
           </div>
           <div className="grid gap-3">
-            {!!productUpdated?.color && (
+            {!!product?.color && (
               <div className="flex items-center gap-3 text-zinc-900">
                 <div className="w-fit whitespace-nowrap pt-1">Cores:</div>
                 <div className="w-full flex items-center flex-wrap gap-1">
                   {ColorsList.map(
                     (color: any, key: any) =>
-                      productUpdated?.color?.indexOf(color.value) !== -1 && (
+                      product?.color?.indexOf(color.value) !== -1 && (
                         <Link
                           key={key}
                           href={`/produtos/listagem/?cores=${color.value}`}
@@ -571,11 +568,11 @@ export default function Produto({
                   )
               )}
 
-            {!!productUpdated?.tags && (
+            {!!product?.tags && (
               <div className="flex gap-1 text-zinc-900">
                 <div className="w-fit whitespace-nowrap">Tags:</div>
                 <div className="w-full flex items-center flex-wrap gap-1">
-                  {productUpdated?.tags
+                  {product?.tags
                     .split(",")
                     .filter((item) => !!item)
                     .map((item, key) => (
@@ -641,7 +638,7 @@ export default function Produto({
     >
       <section className="">
         <div className="container-medium py-4 md:py-6">
-          <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
+          <Breadcrumbs links={[{ url: `/produtos/${product?.id}`, name: "Produtos" }]} />
         </div>
       </section>
       <section className="">
@@ -654,7 +651,7 @@ export default function Produto({
                     onSwiper={(swiper) => setSwiperInstance(swiper)}
                     zoom={true}
                     spaceBetween={0}
-                    modules={[Zoom, Pagination, Navigation]}
+                    modules={[Zoom, Pagination, Navigation, Autoplay]}
                     navigation={{
                       prevEl: ".swiper-gallery-prev", // define o botão anterior
                       nextEl: ".swiper-gallery-next", // define o botão próximo
@@ -662,6 +659,11 @@ export default function Produto({
                     pagination={{
                       el: ".swiper-pagination",
                     }}
+                    autoplay={{
+                      delay: 3000,
+                      disableOnInteraction: false,
+                    }}
+                    loop={true}
                     className="border-y md:border md:rounded-md"
                   >
                     {!!product?.gallery?.length &&
@@ -673,10 +675,10 @@ export default function Produto({
                                 <div className="aspect-square flex justify-center items-center px-1 md:px-2">
                                   {!!getImage(img, "xl") && (
                                     <div className="swiper-zoom-container">
-                                    <Img
-                                      src={getImage(img, "xl")}
-                                      className="w-full rounded-md"
-                                    />
+                                      <Img
+                                        src={getImage(img, "xl")}
+                                        className="w-full rounded-md"
+                                      />
                                     </div>
                                   )}
                                 </div>
@@ -949,6 +951,11 @@ export default function Produto({
                         Para quando você precisa?
                       </h4>
                       <div className="calendar relative">
+                        <div className="text-xs m-4">
+                          {!!productToCart?.details?.dateStart
+                            ? dateBRFormat(productToCart?.details?.dateStart)
+                            : "Selecione a data:"}
+                        </div>
                         <Calendar
                           required
                           unavailable={unavailable ?? []}
@@ -961,7 +968,7 @@ export default function Produto({
                         )}
                       </div>
                     </div>
-                  </div> 
+                  </div>
 
                   <div className="bg-white relative w-full mb-6">
                     {!!productToCart?.total && (
@@ -997,12 +1004,9 @@ export default function Produto({
                     {!!productToCart?.total && (
                       <>
                         <div className="leading-tight self-center w-full px-4">
-                          <div className="text-xs">
-                            {!!productToCart?.details?.dateStart
-                              ? dateBRFormat(productToCart?.details?.dateStart)
-                              : "Selecione a data"}
+                          <div className="text-sm text-zinc-900">
+                            Total:
                           </div>
-
                           <div className="font-bold text-zinc-900 text-lg whitespace-nowrap">
                             R$ {moneyFormat(productToCart.total)}
                           </div>
@@ -1160,7 +1164,7 @@ export default function Produto({
                         </strong>{" "}
                         Garantia do Fiestou da entrega.
                       </div>
-                    </div>                    
+                    </div>
                   </div>
                 </div>
               </form>
@@ -1174,8 +1178,8 @@ export default function Produto({
       </section>
 
       {!!product?.combinations && (
-        <section className="pt-8 md:pt-16">
-          <div className="container-medium relative">
+        <section className="pt-8 md:pt-16 ">
+          <div className="container-medium relative ">
             <div className="grid md:flex items-center justify-between gap-2">
               <div className="flex w-full items-center gap-2">
                 <div>
@@ -1200,7 +1204,7 @@ export default function Produto({
       )}
 
       {!!match.length && (
-        <section className="pt-8 md:pt-16">
+        <section className="pt-8 md:pt-16  ">
           <div className="container-medium relative">
             <div className="grid md:flex items-center justify-between gap-2">
               <div className="flex w-full items-center gap-2">
@@ -1222,7 +1226,7 @@ export default function Produto({
         </section>
       )}
 
-      <div className="pt-16"></div>
+      <div className="pt-16 "></div>
 
       <SidebarCart
         status={cartModal}

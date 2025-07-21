@@ -68,6 +68,7 @@ export function Footer(props: FooterType) {
     return (
       <div>
         {whatsapp && getWhatsapp()}
+        {/* footer */}
         <div className="container-medium py-14">
           <div className="grid md:flex items-start text-center md:text-left gap-4 md:gap-8">
             <div className="w-full md:max-w-[24rem]">

@@ -9,7 +9,7 @@ import Template from "@/src/template";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
+import { Autoplay, Navigation, Pagination } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -107,16 +107,16 @@ export default function Home({
       setGroups(request.data)
     }
   }
-  
-  useEffect(()=>{
+
+  useEffect(() => {
     getFilters()
   }, [])
 
-const [imgLinks] = useState<string[]>(
-  Array.isArray(Home?.main_slide)
-    ? Home.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)
-    : []
-);
+  const [imgLinks] = useState<string[]>(
+    Array.isArray(Home?.main_slide)
+      ? Home.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)
+      : []
+  );
 
   return (
     <Template
@@ -142,11 +142,16 @@ const [imgLinks] = useState<string[]>(
       <section className="group relative">
         <Swiper
           spaceBetween={0}
-          modules={[Pagination, Navigation]}
+          modules={[Pagination, Navigation, Autoplay]}
           navigation={{
             nextEl: ".swiper-main-next",
             prevEl: ".swiper-main-prev",
           }}
+          autoplay={{
+            delay: 3000,
+            disableOnInteraction: false,
+          }}
+          loop={true}
           breakpoints={{
             0: {
               slidesPerView: 1,
@@ -194,7 +199,7 @@ const [imgLinks] = useState<string[]>(
                             <Button
                               href={`${process.env.APP_URL}/acesso`}
                               className="md:text-lg px-4 py-2 md:py-4 md:px-8"
-                            >                              
+                            >
                               {slide?.main_slide_redirect?.label}
                             </Button>
                           </div>
@@ -239,7 +244,6 @@ const [imgLinks] = useState<string[]>(
       <section className="py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-8">
-            <span>{Home?.feature_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
               dangerouslySetInnerHTML={{ __html: Home?.feature_text }}
@@ -264,7 +268,6 @@ const [imgLinks] = useState<string[]>(
       <section className="py-12 md:py-20">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{Home?.works_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
               dangerouslySetInnerHTML={{ __html: Home?.works_text }}
@@ -341,17 +344,10 @@ const [imgLinks] = useState<string[]>(
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-xl mx-auto text-center pb-14">
-              <span>{Home?.categories_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
                 dangerouslySetInnerHTML={{ __html: Home?.categories_text }}
               ></h2>
-              <div
-                className="pt-4"
-                dangerouslySetInnerHTML={{
-                  __html: Home?.categories_description,
-                }}
-              ></div>
             </div>
             <div className="bg-white py-4 md:py-10 rounded-xl overflow-hidden relative">
               <Swiper
@@ -410,7 +406,6 @@ const [imgLinks] = useState<string[]>(
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-4xl mx-auto text-center pb-8 md:pb-14">
-              <span>{Home?.partner_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
                 dangerouslySetInnerHTML={{ __html: Home?.partner_text }}
@@ -478,19 +473,12 @@ const [imgLinks] = useState<string[]>(
           <div className="lg:flex justify-center">
             <div className="w-full">
               <div className="max-w-xl pb-14">
-                <span>{Home?.quotes_title}</span>
                 <h2
                   className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4"
                   dangerouslySetInnerHTML={{
                     __html: Home?.quotes_text,
                   }}
                 ></h2>
-                <div
-                  className="pt-4"
-                  dangerouslySetInnerHTML={{
-                    __html: Home?.quotes_description,
-                  }}
-                ></div>
                 <div className="pt-10">
                   <Img
                     src="/images/loop-arrow.png"
@@ -510,11 +498,16 @@ const [imgLinks] = useState<string[]>(
                           type: "fraction",
                         }}
                         spaceBetween={16}
-                        modules={[Pagination, Navigation]}
+                        modules={[Pagination, Navigation, Autoplay]}
                         navigation={{
                           nextEl: ".swiper-quotes-next",
                           prevEl: ".swiper-quotes-prev",
                         }}
+                        autoplay={{
+                          delay: 3000,
+                          disableOnInteraction: false,
+                        }}
+                        loop={true}
                         breakpoints={{
                           0: {
                             slidesPerView: 1,
@@ -607,14 +600,13 @@ const [imgLinks] = useState<string[]>(
       <section className="pb-14 xl:py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{Home?.blog_subtitle}</span>
             <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
               {Home?.blog_title}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-10 md:gap-6">
             {!!Blog?.length &&
-              Blog.map((post: any, key: any) => (
+              Blog.slice().reverse().map((post: any, key: any) => (
                 <div key={key}>
                   <PostItem post={post} />
                 </div>
