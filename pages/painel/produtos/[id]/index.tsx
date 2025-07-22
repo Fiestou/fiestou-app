@@ -123,12 +123,14 @@ export default function Form({
   const handleUnavailableDatesChange = (dates: string[]) => {
     handleData({ unavailableDates: dates });
   };
-  const [colors, setColors] = useState([] as Array<any>);
+  const [colors, setColors] = useState([]);
 
   const handleColors = (value: any) => {
     handleData({ color: value.join("|") });
     setColors(value);
+    console.log("Colors changed:", value);
   };
+
   const handleCategorie = (value: any) => {
     handleData({ category: value.join("|") });
   };
@@ -693,10 +695,10 @@ export default function Form({
                           <Label>Cor</Label>
                           <Colors
                             value={colors}
-                            onChange={(value: any) => handleColors(value)}
+                            onChange={handleColors}
                           />
                           <div className="text-sm text-zinc-400 whitespace-nowrap">
-                            {colors?.length ?? 0} de 3
+                            {(colors?.filter(Boolean).length ?? 0)} de 3
                           </div>
                         </div>
 
