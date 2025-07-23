@@ -128,7 +128,6 @@ export default function Form({
   const handleColors = (value: any) => {
     handleData({ color: value.join("|") });
     setColors(value);
-    console.log("Colors changed:", value);
   };
 
   const handleCategorie = (value: any) => {
