@@ -16,10 +16,6 @@ const getCoordinatesFromCEP = async (cep: string) => {
     const { lat, lng }: GeoType = data.results[0].geometry.location;
     return { lat, lng };
   } else {
-    console.log(
-      "Não foi possível encontrar as coordenadas para o CEP fornecido."
-    );
-
     return {} as GeoType;
   }
 };

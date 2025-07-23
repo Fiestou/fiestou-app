@@ -79,8 +79,6 @@ export async function getStaticProps(ctx: any) {
     ctx
   );
 
-  console.log(request, "< request");
-
   let metadata: any = request?.metadata ?? {};
 
   const pages: any = new Array(

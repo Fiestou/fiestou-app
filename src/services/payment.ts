@@ -38,9 +38,6 @@ class Payment {
     return await api
       .post("/api/stripe/create-stripe-session", data)
       .then(({ data }: any) => data)
-      .catch((response: any) => {
-        console.log("catch: ", response);
-      });
   }
 
   async getSession(session: string, ctx?: any) {
@@ -57,9 +54,6 @@ class Payment {
     return await api
       .post("/api/stripe/get-stripe-session", { session: session })
       .then(({ data }: any) => data)
-      .catch((response: any) => {
-        console.log(response);
-      });
   }
 }
 

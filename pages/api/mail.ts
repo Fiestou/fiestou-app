@@ -22,12 +22,11 @@ export default async function handler(
         }
       })
       .catch(({ response }) => {
-        console.log(response, "<--");
         res.status(500).json({
           response: response,
         });
       });
   } catch (err) {
-    console.log("500", err);
+
   }
 }
