@@ -17,7 +17,6 @@ interface CheckType {
 }
 
 export default function Check(attr: CheckType) {
-  // console.log(attr?.checked);
 
   return (
     <>
