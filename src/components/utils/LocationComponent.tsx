@@ -13,9 +13,7 @@ export default function LocationComponent() {
   const getLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(showPosition, showError);
-    } else {
-      console.log("Geolocalização não é suportada por este navegador.");
-    }
+    } 
   };
 
   const showPosition = async (position: GeolocationPosition) => {
@@ -41,13 +39,10 @@ export default function LocationComponent() {
   const showError = (error: GeolocationPositionError) => {
     switch (error.code) {
       case error.PERMISSION_DENIED:
-        console.log("Permissão negada pelo usuário.");
         break;
       case error.POSITION_UNAVAILABLE:
-        console.log("Informação de localização indisponível.");
         break;
       case error.TIMEOUT:
-        console.log("O pedido para obter a localização expirou.");
         break;
     }
   };
