@@ -1,31 +1,58 @@
 export interface StoreType {
   id: number
   user?: number;
-  phone?: string;
+  birth?: string;
   title?: string;
+  document?: string;
   slug?: string;
   companyName?: string;
-  document?: string;
-  description: string
-  cover: Cover
-  profile: Profile
   segment?: string;
   segmentId?: number;
   hasDelivery: boolean;
-  metadata: any
+  StoreTypeEnum?: StoreEnumType;
   openClose: DayType[]
-  zipCode?: string;
-  street?: string;
-  number?: string;
-  complement?: string;
-  neighborhood?: string;
   city?: string;
   state?: string;
-  country?: string;
   status?: number;    
   created_at: string
   updated_at: string
 }
+
+export enum StoreEnumType {
+  CNPJ = 'cnpj',
+  PF = 'pf',
+}
+
+//   original interface 
+//   export interface StoreType {
+//   id: number
+//   user?: number;
+//   phone?: string;
+//   birth?: string;
+//   title?: string;
+//   slug?: string;
+//   companyName?: string;
+//   document?: string;
+//   description: string
+//   cover: Cover
+//   profile: Profile 
+//   segment?: string;
+//   segmentId?: number;
+//   hasDelivery: boolean;
+//   metadata: any
+//   openClose: DayType[]
+//   zipCode?: string;
+//   street?: string;
+//   number?: string;
+//   complement?: string;
+//   neighborhood?: string;
+//   city?: string;
+//   state?: string;
+//   country?: string;
+//   status?: number;    
+//   created_at: string
+//   updated_at: string
+// }
 
 export interface Cover {
   id: number

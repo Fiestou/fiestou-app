@@ -153,8 +153,9 @@ export default function SejaParceiro({
                     person: "partner",
                 },
             });
-           
-            if (data.response) {
+           console.log("Pré-cadastro realizado:", data);
+
+            if (data) {
                 toast.success(data.message || "Pré-cadastro realizado com sucesso!");
                 router.push({
                     pathname: form.redirect,
