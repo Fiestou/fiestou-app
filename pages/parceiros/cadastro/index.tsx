@@ -11,6 +11,12 @@ import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import { categorie } from "@/src/store/filter";
 import { formatCpfCnpj } from "../../cadastre-se/components/FormMasks";
 import { formatName } from "@/src/components/utils/FormMasks";
+import InfoBox from "@/src/components/ui/Infobox";
+import buttonTextIcon from "@/src/components/ui/buttonTextIcon";
+import question from "@/src/icons/question";
+import ButtonTextIcon from "@/src/components/ui/buttonTextIcon";
+import UserIcon from "@/src/icons/UserIcon";
+import CompanyIcon from "@/src/icons/CompanyIcon";
 
 interface PreUserDataResponse {
     response: boolean;
@@ -53,7 +59,7 @@ export default function Cadastro() {
     const [step, setStep] = useState(1);
     const [form, setForm] = useState(FormInitialType);
     const [store, setStore] = useState<StoreType>({} as StoreType);
-    const [elements, setElements] = useState<categorie[]>([]);    
+    const [elements, setElements] = useState<categorie[]>([]);
     const [preUser, setPreUser] = useState<{
         email: string;
         person: string;
@@ -66,11 +72,14 @@ export default function Cadastro() {
 
     useEffect(() => {
         if (preUser?.document) {
-            setMaskedDocument(formatCpfCnpj(preUser.document));
-            handleStore({ document: preUser.document });
+             
         }
     }, [preUser?.document]);
-   
+
+    useEffect(() => {
+        console.log("Store state updated:", store);
+    }, [store]);
+
     useEffect(() => {
         const fetchPreUserData = async () => {
             if (ref && typeof ref === 'string') {
@@ -80,10 +89,10 @@ export default function Cadastro() {
                         method: 'get',
                         url: `auth/pre-register/${ref}`,
                     });
-                    
+                    console.log("Dados do preUser recebidos:", response);
                     if (response.response && response.preUser) {
                         setPreUser(response.preUser);
-                        setElements(response.categories || []);                       
+                        setElements(response.categories || []);
                         setStore(prevStore => ({
                             ...prevStore,
                             email: response.preUser?.email || '',
@@ -108,7 +117,7 @@ export default function Cadastro() {
                 setLoadingPreUser(false);
             }
         };
-        
+
         if (ref && preUser === null && preUserError === null) {
             fetchPreUserData();
         }
@@ -132,37 +141,37 @@ export default function Cadastro() {
     };
 
     const handleStore = (value: Object) => {
+        cacheStore();
         setStore(prevStore => ({ ...prevStore, ...value }));
     };
 
-    const submitStep = async (e: React.FormEvent) => {
+    const cacheStore = () => {
+        console.log("Armazenando store no localStorage:", store);
+        try {
+            localStorage.setItem("cachedStore", JSON.stringify(store));
+        } catch (error) {
+            console.error("Erro ao salvar store no localStorage:", error);
+        }
+    };
+
+    const submitStore = async (e: React.FormEvent) => {
         e.preventDefault();
         setForm({ ...form, loading: true });
-        
-        if (!preUser?.email) {
-            console.error("Email do usuário não disponível para cadastro completo.");
-            setForm({ ...form, loading: false });
-            return;
-        }
 
         try {
             const dataToSend = {
-                email: preUser.email,
+                birth: store.birth,
+                email: preUser?.email,
                 document: store.document,
                 companyName: store.companyName || store.title,
-                hasDelivery: store.hasDelivery,               
-                phone: store.phone,
-                zipCode: store.zipCode,
-                street: store.street,
-                number: store.number,
-                complement: store.complement,
-                neighborhood: store.neighborhood,
+                hasDelivery: store.hasDelivery,
                 city: store.city,
                 state: store.state,
-                country: store.country,
+                StoreTypeEnum: store.document?.length === 11 ? "pf" : "cnpj",
                 segment: store.segment,
+                segmentId: store.segmentId,
             };
-            
+
             const request = await api.bridge<CompleteRegisterApiResponse>({
                 method: 'post',
                 url: "stores/complete-register",
@@ -170,7 +179,7 @@ export default function Cadastro() {
             });
 
             if (request.response) {
-                setStep(prevStep => prevStep + 1);
+                router.push("/acesso");
             } else {
                 console.warn("Resposta da API indica falha no cadastro:", request.error);
                 alert(`Erro no cadastro: ${request.error || "Ocorreu um erro desconhecido."}`);
@@ -183,22 +192,22 @@ export default function Cadastro() {
         }
     };
 
-    const handleZipCode = async (zipCode: string) => {
-        const location = await getZipCode(zipCode);
+    // const handleZipCode = async (zipCode: string) => {
+    //     const location = await getZipCode(zipCode);
 
-        if (!!location) {
-            let address = { ...store };
-            address["zipCode"] = zipCode;
-            address["street"] = location.logradouro;
-            address["neighborhood"] = location.bairro;
-            address["city"] = location.localidade;
-            address["state"] = location.uf;
-            address["country"] = "Brasil";
-            handleStore(address);
-        } else {
-            console.warn("CEP inválido ou não encontrado.");
-        }
-    };
+    //     if (!!location) {
+    //         let address = { ...store };
+    //         address["zipCode"] = zipCode;
+    //         address["street"] = location.logradouro;
+    //         address["neighborhood"] = location.bairro;
+    //         address["city"] = location.localidade;
+    //         address["state"] = location.uf;
+    //         address["country"] = "Brasil";
+    //         handleStore(address);
+    //     } else {
+    //         console.warn("CEP inválido ou não encontrado.");
+    //     }
+    // };
 
     const backStep = (e: any) => {
         e.preventDefault();
@@ -208,7 +217,7 @@ export default function Cadastro() {
             setStep(prevStep => prevStep - 1);
         }
     };
-    
+
     const segmentOptions = useMemo(() => {
         const options: SelectOption[] = [
             { value: "", name: "Selecione um segmento", disabled: true },
@@ -232,9 +241,9 @@ export default function Cadastro() {
         ];
         return options;
     }, [elements]);
-    
+
     useEffect(() => { }, [elements]);
-    
+
     if (loadingPreUser) {
         return (
             <Template header={{ template: "clean", position: "solid" }}>
@@ -257,7 +266,7 @@ export default function Cadastro() {
             </Template>
         );
     }
-    
+
     if (!preUser) {
         return (
             <Template header={{ template: "clean", position: "solid" }}>
@@ -296,14 +305,10 @@ export default function Cadastro() {
                                 className={step == 1 ? "block" : "absolute overflow-hidden h-0"}
                             >
                                 <form
-                                    onSubmit={(e: any) => {
-                                        submitStep(e);
-                                    }}
-                                    method="POST"
                                 >
                                     <div className="text-center mb-4 md:mb-10">
                                         <h3 className="font-title text-zinc-900 font-bold text-4xl text-center">
-                                            Sobre a sua empresa
+                                            Cadastro de parceiro
                                         </h3>
                                         <div className="pt-2">
                                             Preencha as informações de cadastro da sua loja.
@@ -311,7 +316,42 @@ export default function Cadastro() {
                                     </div>
 
                                     <div className="form-group">
-                                        <Label>CPF ou CNPJ</Label>
+                                        <Label>Nome completo</Label>
+                                        <Input
+                                            name="nome-fantasia"
+                                            placeholder="Nome da loja ou empresa"
+                                            required
+                                            value={preUser.name || ""}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <Label>Data de nascimento</Label>
+                                        <Input
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                let value = justNumber(e.target.value).slice(0, 8);
+                                                // Formata para DD/MM/AAAA
+                                                if (value.length >= 5) {
+                                                    value = value.replace(/^(\d{2})(\d{2})(\d{0,4})$/, "$1/$2/$3");
+                                                } else if (value.length >= 3) {
+                                                    value = value.replace(/^(\d{2})(\d{0,2})$/, "$1/$2");
+                                                }
+                                                handleStore({ birth: value });
+                                            }}
+                                            onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                                if (!/[0-9]/.test(e.key)) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                            name="birth"
+                                            required
+                                            value={store?.birth || ""}
+                                            placeholder="DD/MM/AAAA"
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <Label>CPF</Label>
                                         <Input
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                 const unmaskedValue = justNumber(e.target.value);
@@ -332,24 +372,9 @@ export default function Cadastro() {
                                         />
                                     </div>
 
-                                    <div className="form-group">
-                                        <Label>Nome fantasia</Label>
-                                        <Input
-                                            onChange={(e: any) => {
-                                                const value = formatName(e.target.value);
-                                                handleStore({
-                                                    title: value,
-                                                    companyName: value,
-                                                });
-                                            }}
-                                            name="nome-fantasia"
-                                            placeholder="O nome pelo qual a sua empresa é conhecida"
-                                            required
-                                            value={store?.title || ""}
-                                        />
-                                    </div>
 
-                                    <div className="form-group">
+
+                                    {/* <div className="form-group">
                                         <Label>Segmento</Label>
                                         <Select
                                             onChange={(e: any) => {
@@ -399,10 +424,46 @@ export default function Cadastro() {
                                                 Não
                                             </Label>
                                         </div>
+                                    </div> */}
+
+                                    <div className="form-group flex mt-1 gap-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group">
+                                                <Label>Cidade</Label>
+                                                <Input
+                                                    onChange={(e: any) => {
+                                                        handleStore({ city: e.target.value });
+                                                    }}
+                                                    name="cidade"
+                                                    placeholder="Cidade"
+                                                    required
+                                                    value={store?.city || ""}
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <Label>Estado</Label>
+                                                <Input
+                                                    onChange={(e: any) => {
+                                                        handleStore({ state: e.target.value });
+                                                    }}
+                                                    name="estado"
+                                                    placeholder="Estado"
+                                                    required
+                                                    value={store?.state || ""}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div className="grid mt-8">
-                                        <Button loading={form.loading}>Avançar</Button>
+                                        <Button
+                                            onClick={(e: any) => {
+                                                e.preventDefault();
+                                                cacheStore();
+                                                setStep(2);
+                                            }}
+                                        >Avançar</Button>
                                     </div>
                                 </form>
                                 <div className="text-center pt-4 text-sm">Etapa 1 de 3</div>
@@ -411,21 +472,32 @@ export default function Cadastro() {
                                 className={step == 2 ? "block" : "absolute overflow-hidden h-0"}
                             >
                                 <form
-                                    onSubmit={(e: any) => {
-                                        submitStep(e);
-                                    }}
-                                    method="POST"
+                                    className="flex flex-col gap-6"
                                 >
                                     <div className="text-center mb-4 md:mb-10">
                                         <h3 className="font-title text-zinc-900 font-bold text-4xl text-center">
-                                            Informações de contato
+                                            Sobre seu negócio
                                         </h3>
                                         <div className="pt-2">
-                                            Precisamos de algumas informações para entrarmos em contato com você.
+                                            Preencha as informações de cadastro da sua loja.
                                         </div>
                                     </div>
+                                    <InfoBox title="Por que isso é importante?" subscription="Realizamos o pagamento aos fornecedores automaticamente por meio de split de pagamento, com o valor sendo creditado diretamente em sua conta. Saiba mais:" icon={question()} />
+                                    <div className="flex gap-6 justify-center items-center ">
+                                        <ButtonTextIcon
+                                            title="Pessoa Física"
+                                            icon={<UserIcon />}
+                                            active={store.StoreTypeEnum === "pf"}
+                                        />
+                                        <ButtonTextIcon
+                                            title="Pessoa Jurídica"
+                                            disabled={true}
+                                            icon={<CompanyIcon />}
+                                            active={store.StoreTypeEnum === "cnpj"}
+                                        />
+                                    </div>
 
-                                    <div className="form-group">
+                                    {/* <div className="form-group">
                                         <Label>Telefone</Label>
                                         <Input
                                             onChange={(e: any) => {
@@ -535,10 +607,14 @@ export default function Cadastro() {
                                                 value={store?.state || ""}
                                             />
                                         </div>
-                                    </div>
+                                    </div> */}
 
                                     <div className="grid mt-8">
-                                        <Button loading={form.loading}>Avançar</Button>
+                                        <Button onClick={(e: any) => {
+                                            e.preventDefault();
+                                            cacheStore();
+                                            setStep(3);
+                                        }}>Avançar</Button>
                                     </div>
                                 </form>
                                 <div className="text-center pt-4 text-sm">Etapa 2 de 3</div>
@@ -554,45 +630,79 @@ export default function Cadastro() {
                                         Revise os seus dados antes de finalizar o cadastro.
                                     </div>
                                 </div>
-
-                                <div className="py-4">
-                                    <h5 className="font-bold text-lg text-zinc-900 mb-2">Dados da Empresa:</h5>
-                                    <p><strong>CPF ou CNPJ:</strong> {store?.document}</p>
-                                    <p><strong>Nome Fantasia:</strong> {store?.title}</p>
-                                    <p><strong>Segmento:</strong> {elements.find(el => el.id === Number(store?.segment))?.name || "Não informado"}</p>
-                                    <p><strong>Possui Entrega:</strong> {store?.hasDelivery ? 'Sim' : 'Não'}</p>
+                                <div className="form-group">
+                                    <Label>Nome da Sua Loja </Label>
+                                    <Input
+                                        onChange={(e: any) => {
+                                            const value = formatName(e.target.value);
+                                            handleStore({
+                                                title: value,
+                                                companyName: value,
+                                            });
+                                        }}
+                                        name="nome-fantasia"
+                                        placeholder="Nome da loja ou empresa"
+                                        required
+                                        value={store?.title || ""}
+                                    />
                                 </div>
-
-                                <div className="py-4">
-                                    <h5 className="font-bold text-lg text-zinc-900 mb-2">Informações de Contato:</h5>
-                                    <p><strong>Telefone:</strong> {store?.phone}</p>
-                                    <p><strong>Endereço:</strong> {store?.street}, {store?.number} {store?.complement && ` - ${store?.complement}`} - {store?.neighborhood}, {store?.city} - {store?.state}, {store?.zipCode} - {store?.country}</p>
+                                <div className="form-group">
+                                    <Label>Segmento</Label>
+                                    <Select
+                                        onChange={(e: any) => {
+                                            if (!e.target.value) return;
+                                            const selected = elements.find(el => el.id.toString() === e.target.value);
+                                            handleStore({ segment: selected?.name });
+                                        }}
+                                        value={store?.segment?.toString() || ""}
+                                        placeholder={!store?.segment ? "Selecione seu segmento" : ""}
+                                        name="segment"
+                                        options={elements.map((element) => ({
+                                            name: element.name,
+                                            value: element.id.toString(),
+                                            icon: element.icon,
+                                        }))}
+                                    />
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        Segmento selecionado: {elements.find(el => el.id === Number(store?.segment))?.name || "Nenhum"}
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <Label>Você possui serviço de entrega?</Label>
+                                    <div className="flex mt-1 gap-4">
+                                        <Label className="block w-full border p-3 rounded-md">
+                                            <input
+                                                onChange={(e: any) => {
+                                                    handleStore({ hasDelivery: true });
+                                                }}
+                                                name="entrega"
+                                                checked={store?.hasDelivery === true}
+                                                className="mr-2"
+                                                type="radio"
+                                            />
+                                            Sim
+                                        </Label>
+                                        <Label className="block w-full border p-3 rounded-md">
+                                            <input
+                                                onChange={(e: any) => {
+                                                    handleStore({ hasDelivery: false });
+                                                }}
+                                                name="entrega"
+                                                checked={store?.hasDelivery === false}
+                                                className="mr-2"
+                                                type="radio"
+                                            />
+                                            Não
+                                        </Label>
+                                    </div>
                                 </div>
 
                                 <div className="grid mt-8">
-                                    <Button loading={form.loading} onClick={submitStep}>
+                                    <Button onClick={submitStore}>
                                         Finalizar Cadastro
                                     </Button>
                                 </div>
                                 <div className="text-center pt-4 text-sm">Etapa 3 de 3</div>
-                            </div>
-                            <div
-                                className={step == 4 ? "block" : "absolute overflow-hidden h-0"}
-                            >
-                                <div className="text-center py-12">
-                                    <Icon icon="fa-check-circle" />
-                                    <h3 className="font-title text-zinc-900 font-bold text-3xl mt-4">
-                                        Cadastro realizado com sucesso!
-                                    </h3>
-                                    <p className="mt-2">
-                                        Em breve, nossa equipe entrará em contato para validar suas informações.
-                                    </p>
-                                    <div className="mt-6">
-                                        <Link href="/acesso">
-                                            <Button>Ir para a página de acesso</Button>
-                                        </Link>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
