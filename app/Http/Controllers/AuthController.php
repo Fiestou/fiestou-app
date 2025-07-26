@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ValidateUser;
 use App\Mail\RegisterUser;
-
+use App\Models\Category;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -43,8 +43,7 @@ class AuthController extends Controller
 
                     
     Log::info('Login - Usuário encontrado', ['user' => $user]);
-    // Adicione este log para inspecionar o usuário encontrado
-    
+
 
     if(isset($user->id))
     {
@@ -180,17 +179,18 @@ class AuthController extends Controller
     }
     
     public function GetPreRegisterData(string $hash) {
+        
         $user = User::where('hash', $hash)->first();
-    
+
         if (!$user) {
             return response()->json(['response' => false, 'message' => 'Hash inválido'], 404);
         }
-    
+        
         $segmentGroup = Group::where('segment', 1)->first();
         $elementsForSelect = [];
     
         if ($segmentGroup) {
-            $elements = Element::where('group_id', $segmentGroup->id)->get();
+            $elements = Category::where('group_id', $segmentGroup->id)->get();
             foreach ($elements as $element) {
                 $elementsForSelect[] = [
                     'id' => $element->id,
@@ -201,11 +201,12 @@ class AuthController extends Controller
         } else {
             Log::warning('Nenhum grupo com segmento 1 encontrado.');
         }
-    
+        Log::info('GetPreRegisterDataElements', ['user' => $elementsForSelect]);
+
         return response()->json([
             'response' => true,
-            'preUser' => $user->only(['email', 'person', 'name']), // Renomeei para preUser para clareza
-            'elements' => $elementsForSelect,
+            'categories' => $elementsForSelect,
+            'preUser' => $user->only(['email','name']), // Renomeei para preUser para clareza
         ]);
     }
 

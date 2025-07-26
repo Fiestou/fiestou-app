@@ -137,6 +137,7 @@ class UsersController extends Controller
     }
 
     public function PreRegister(Request $request){
+        Log::info("PreRegister User: " . json_encode($request->all()));
 
          $request->validate([
             'email'  => "required|email",
@@ -169,6 +170,8 @@ class UsersController extends Controller
         $user->details = json_encode(['phone' => $request->get('phone')]);
         $user->person = $request->get('person');
         $user->status = 0;
+
+        Log::info("PreRegister User Details: " . json_encode($user));
 
         if(!$user->save()){
             return response()->json([
