@@ -13,7 +13,7 @@ class Recipient extends Model
     protected $fillable = [
         'id', 'partner_id', 'code', 'type_enum', 'email', 'document', 'type',
         'company_name', 'trading_name', 'annual_revenue', 'name', 'birth_date',
-        'monthly_income', 'professional_occupation'
+        'monthly_income', 'professional_occupation', 'store_id'
     ];
 
     public function partners() { return $this->hasMany(RecipientPartner::class); }
