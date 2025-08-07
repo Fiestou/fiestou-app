@@ -34,7 +34,7 @@ export interface FilterProps {
     returnData?: (dataProducts: FilterQueryType) => void;
 }
 
-export default function FilterStore({ returnData,store }: FilterProps) {
+export default function FilterStore({ returnData, store }: FilterProps) {
     const router = useRouter();
     const [busca, setBusca] = useState<string>("");
     const [query, setQuery] = useState<FilterQueryType>({
@@ -126,7 +126,7 @@ export default function FilterStore({ returnData,store }: FilterProps) {
             });
 
 
-                setLocalGroups([request.data[0]]);
+            setLocalGroups([request.data[0]]);
 
         } catch (error) {
             console.error("Error fetching groups:", error);
@@ -232,10 +232,22 @@ export default function FilterStore({ returnData,store }: FilterProps) {
 
 
     };
-    
+
     const openModal = () => {
         setFilterModal(true);
     };
+
+    const [produtos, setProdutos] = useState([]);
+
+    const getProducts = async (query: FilterQueryType) => {
+        const res = await fetch(`/api/produtos?order=${query.order}`);
+        const data = await res.json();
+        setProdutos(data);
+    };
+
+    useEffect(() => {
+        getProducts(query);
+    }, [query]);
 
     const handleStick = () => {
         const element = filterArea.current;
@@ -304,6 +316,7 @@ export default function FilterStore({ returnData,store }: FilterProps) {
                 <div className="pb-6">
                     <Label>Ordenar por</Label>
                     <div className="relative">
+                        {/* Estou aqui */}
                         <Button
                             type="button"
                             style="btn-outline-light"
@@ -408,62 +421,62 @@ export default function FilterStore({ returnData,store }: FilterProps) {
                 </div>
 
                 {Array.isArray(localGroups) && localGroups.length > 0 &&
-    localGroups
-        .filter(group => group && group.name)
-        .map((group) => (
-            <div key={group.id} className="pb-6">
-                <Label>{group.name}</Label>
-                <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
-                    <div className={`flex md:flex-wrap gap-2 ${group.id === localGroups[0]?.id ? "space-x-2" : ""}`}>
-                        {(group.categories ?? []).map((element) => (
-                            <div
-                                key={element.id}
-                                className={`
+                    localGroups
+                        .filter(group => group && group.name)
+                        .map((group) => (
+                            <div key={group.id} className="pb-6">
+                                <Label>{group.name}</Label>
+                                <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
+                                    <div className={`flex md:flex-wrap gap-2 ${group.id === localGroups[0]?.id ? "space-x-2" : ""}`}>
+                                        {(group.categories ?? []).map((element) => (
+                                            <div
+                                                key={element.id}
+                                                className={`
               border cursor-pointer ease relative rounded
               ${query.categories.includes(element.id)
-                                                ? "border-zinc-800 hover:border-zinc-500"
-                                                : "hover:border-zinc-300"
-                                            }
+                                                        ? "border-zinc-800 hover:border-zinc-500"
+                                                        : "hover:border-zinc-300"
+                                                    }
               flex flex-col items-center p-2 w-auto
             `}
-                                onClick={() => { handleElementClick(element) }}
-                            >
-                                <div className={`flex items-center gap-2 ${group.id === localGroups[0]?.id ? "flex-col" : "flex-row whitespace-nowrap"}`}>
-                                    {element.icon && (
-                                        <Img
-                                            src={element.icon}
-                                            className={`object-contain ${group.id === localGroups[0]?.id
-                                                ? "h-[40px] w-[40px]"
-                                                : "h-[20px] w-[20px] flex-shrink-0"
-                                                }`}
-                                        />
-                                    )}
+                                                onClick={() => { handleElementClick(element) }}
+                                            >
+                                                <div className={`flex items-center gap-2 ${group.id === localGroups[0]?.id ? "flex-col" : "flex-row whitespace-nowrap"}`}>
+                                                    {element.icon && (
+                                                        <Img
+                                                            src={element.icon}
+                                                            className={`object-contain ${group.id === localGroups[0]?.id
+                                                                ? "h-[40px] w-[40px]"
+                                                                : "h-[20px] w-[20px] flex-shrink-0"
+                                                                }`}
+                                                        />
+                                                    )}
 
-                                    <div
-                                        className={`text-sm md:text-base ${group.id === localGroups[0]?.id
-                                            ? "text-center font-medium"
-                                            : "font-normal whitespace-nowrap"
-                                            }`}
-                                    >
-                                        {element.name}
+                                                    <div
+                                                        className={`text-sm md:text-base ${group.id === localGroups[0]?.id
+                                                            ? "text-center font-medium"
+                                                            : "font-normal whitespace-nowrap"
+                                                            }`}
+                                                    >
+                                                        {element.name}
+                                                    </div>
+
+                                                    {query.categories.includes(element.id) && (
+                                                        <input
+                                                            type="checkbox"
+                                                            name="categoria[]"
+                                                            value={element.name}
+                                                            defaultChecked
+                                                            className="absolute opacity-0 z-[-1]"
+                                                        />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-
-                                    {query.categories.includes(element.id) && (
-                                        <input
-                                            type="checkbox"
-                                            name="categoria[]"
-                                            value={element.name}
-                                            defaultChecked
-                                            className="absolute opacity-0 z-[-1]"
-                                        />
-                                    )}
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </div>
-            </div>
-        ))}
 
                 <div className="flex justify-between items-center pt-4 w-full bg-white">
                     <Button

@@ -182,7 +182,6 @@ export default function Sobre({
       <section className="py-10 md:pt-20 relative overflow-hidden">
         <div className="container-medium">
           <div className="max-w-3xl mx-auto text-center pb-6 md:pb-14">
-            <span>{About?.args_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-3xl md:text-5xl mt-2"
               dangerouslySetInnerHTML={{ __html: About?.args_text }}
