@@ -42,6 +42,11 @@ class Store extends BaseModel
         return $this->belongsTo(User::class, 'user', 'id');
     }
 
+    public function recipients()
+    {
+        return $this->hasMany(Recipient::class, 'store_id');
+    }
+
     public static function normalize($stores = [])
     {
         if (!empty($stores)) {

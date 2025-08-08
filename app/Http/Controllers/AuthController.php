@@ -51,7 +51,7 @@ class AuthController extends Controller
 
         if ($user->person === 'partner') {
             $store = Store::where("user", $user->id)->first();
-            if (!$store) {
+            if (!$store) {  
                 return response()->json([
                     'response' => false,
                     'message' => 'loja não encontrada'
@@ -186,7 +186,7 @@ class AuthController extends Controller
             return response()->json(['response' => false, 'message' => 'Hash inválido'], 404);
         }
         
-        $segmentGroup = Group::where('segment', 1)->first();
+        $segmentGroup = Group::where('segment', '1')->first();
         $elementsForSelect = [];
     
         if ($segmentGroup) {
@@ -206,7 +206,7 @@ class AuthController extends Controller
         return response()->json([
             'response' => true,
             'categories' => $elementsForSelect,
-            'preUser' => $user->only(['email','name']), // Renomeei para preUser para clareza
+            'preUser' => $user->only(['email','name','details']), // Renomeei para preUser para clareza
         ]);
     }
 

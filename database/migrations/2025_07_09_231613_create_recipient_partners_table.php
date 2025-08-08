@@ -15,7 +15,7 @@ class CreateRecipientPartnersTable extends Migration
     {
         Schema::create('recipient_partners', function (Blueprint $table) {
             $table->id();
-            $table->uuid('recipient_id');
+            $table->foreignId('recipient_id')->constrained('recipients')->onDelete('cascade');
             $table->string('name');
             $table->string('email');
             $table->string('document');
@@ -24,8 +24,6 @@ class CreateRecipientPartnersTable extends Migration
             $table->string('professional_occupation')->nullable();
             $table->boolean('self_declared_legal_representative')->default(false);
             $table->timestamps();
-
-            $table->foreign('recipient_id')->references('id')->on('recipients')->onDelete('cascade');
         });
     }
 

@@ -14,7 +14,8 @@ use App\Models\Suborder;
 
 class WithdrawController extends Controller
 {
-    public function Get(Request $request){
+    public function Get(Request $request)
+    {
 
         $request->validate([
             'slug' => 'required',
@@ -43,7 +44,30 @@ class WithdrawController extends Controller
         ]);
     }
 
-    public function Register(Request $request){
+
+    public function listSplitWithdraws(Request $request, $storeId)
+    {
+        try {
+            $withdraws = DB::table('withdraws')
+                ->where('store', $storeId)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $withdraws
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao buscar os saques.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function Register(Request $request)
+    {
 
         $request->validate([
             'bankAccount'   => 'required',
@@ -60,27 +84,24 @@ class WithdrawController extends Controller
 
         $cash = $payments - $withdraw;
 
-        if(!!Withdraw::where(['status' => 0])->count()){
+        if (!!Withdraw::where(['status' => 0])->count()) {
             return response()->json([
                 'response'  => false,
                 'message'   => "recent_request"
             ]);
-        }
-        else if($cash < 10){
+        } elseif ($cash < 10) {
             return response()->json([
                 'response'  => false,
                 'message'   => "no_min_cash"
             ]);
-        }
-        else if($cash < $request->get('value')){
+        } elseif ($cash < $request->get('value')) {
             return response()->json([
                 'response'  => false,
                 'message'   => "no_cash"
             ]);
-        }
-        else{
+        } else {
 
-            $withdraw = new Withdraw;
+            $withdraw = new Withdraw();
             $withdraw->store = $store->id;
             $withdraw->code = $request->get('code');
             $withdraw->bankAccount = $request->get('bankAccount');
@@ -89,7 +110,7 @@ class WithdrawController extends Controller
 
             DB::beginTransaction();
 
-            if(!$withdraw->save()){
+            if (!$withdraw->save()) {
                 DB::rollback();
 
                 return response()->json([
@@ -106,7 +127,8 @@ class WithdrawController extends Controller
         }
     }
 
-    public function Update(Request $request){
+    public function Update(Request $request)
+    {
 
         $request->validate([
             'code' => 'required',
@@ -116,8 +138,9 @@ class WithdrawController extends Controller
         $withdraw = Withdraw::where(['code' => $request->get("code")])->first();
         $withdraw->status = $request->get("status");
 
-        if($request->has("bankAccount"))
+        if ($request->has("bankAccount")) {
             $withdraw->bankAccount = json_encode($request->get("bankAccount"));
+        }
 
         $withdraw->save();
 
@@ -127,19 +150,19 @@ class WithdrawController extends Controller
         ]);
     }
 
-    public function List(Request $request){
+    public function List(Request $request)
+    {
 
         $user = auth()->user();
 
-        if($user->person == "master"){
+        if ($user->person == "master") {
             $withdraw = Withdraw::orderBy('id', 'desc')->get();
-        }
-        else{
+        } else {
 
             $store = Store::where(["user" => $user->id])
                           ->first();
 
-            if(!isset($store->id)){
+            if (!isset($store->id)) {
                 return response()->json([
                     'response'  => false
                 ]);

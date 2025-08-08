@@ -16,17 +16,20 @@ use App\Models\User;
 use App\Models\Media;
 use App\Models\Customer;
 use App\Models\Withdraw;
-use App\Models\CategoryRel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Models\Recipient;
+use App\Models\RecipientAddress;
+use App\Models\RecipientPhone;
 
 class StoresController extends Controller
 {
-    public function Balance(Request $request){
+    public function Balance(Request $request)
+    {
 
         $user = auth()->user();
         $store = Store::where(["user" => $user->id])->first();
-        
+
         if (!$store) {
             $balance = [
                 'cash' => 0,
@@ -46,7 +49,7 @@ class StoresController extends Controller
         $cash       = $payments - $withdraw;
         $orders     = Suborder::where(['store' => $store->id])->count() ?? 0;
         $promises   = Suborder::where(['store' => $store->id])
-                            ->where(function($query){
+                            ->where(function ($query) {
                                 $query->where('status', 0)
                                       ->orWhere('status', 2);
                             })->sum('paying') ?? 0;
@@ -64,7 +67,8 @@ class StoresController extends Controller
         ]);
     }
 
-    public function Form(Request $request){
+    public function Form(Request $request)
+    {
 
         $user = auth()->user();
         $store = Store::where(["user" => $user->id])
@@ -82,7 +86,7 @@ class StoresController extends Controller
             $elements = Category::where('group_id', $segmentGroupId)->get();
 
             $elementsForSelect = [];
-            
+
             foreach ($elements as $element) {
                 $elementsForSelect[] = [
                     'id' => $element->id,
@@ -90,7 +94,7 @@ class StoresController extends Controller
                     'icon' => $element->icon,
                 ];
             }
-            
+
         } else {
             $elementsForSelect = [];
         }
@@ -110,7 +114,7 @@ class StoresController extends Controller
 
             $store->openClose = json_decode($store->openClose);
             $store->metadata = json_decode($store->metadata);
-            
+
             return response()->json([
                 'response' => true,
                 'data' => $store,
@@ -124,30 +128,31 @@ class StoresController extends Controller
         ], 500);
     }
 
-    public function Get(Request $request){
+    public function Get(Request $request)
+    {
 
         $request->validate([
             'slug' => 'required'
         ]);
-        
+
 
         $store = Store::where("slug", $request->get('slug'))
                       ->where("status", 1)
                       ->first();
 
-        if(isset($store->id)){
+        if (isset($store->id)) {
 
             $products = Product::with(["store"])
                                ->where('store', $store->id);
 
             $cover = !!$store->cover ? Media::where(['id' => $store->cover])->first() : [];
-            if(isset($cover->id)){
+            if (isset($cover->id)) {
                 $cover->details = json_decode($cover->details);
                 $store->cover   = $cover;
             }
 
             $profile = !!$store->profile ? Media::where(['id' => $store->profile])->first() : [];
-            if(isset($profile->id)){
+            if (isset($profile->id)) {
                 $profile->details = json_decode($profile->details);
                 $store->profile   = $profile;
             }
@@ -167,7 +172,8 @@ class StoresController extends Controller
         ], 500);
     }
 
-    public function List(Request $request){
+    public function List(Request $request)
+    {
 
         $stores = Store::orderBy('id', 'DESC')
                        ->where('status', 1)
@@ -176,7 +182,7 @@ class StoresController extends Controller
         foreach ($stores as $key => $store) {
 
             $profile = !!$store->profile ? Media::where(['id' => $store->profile])->first() : [];
-            if(isset($profile->id)){
+            if (isset($profile->id)) {
                 $profile->details = json_decode($profile->details);
                 $store->profile   = $profile;
             }
@@ -190,7 +196,8 @@ class StoresController extends Controller
         ]);
     }
 
-    public function Customers(Request $request){
+    public function Customers(Request $request)
+    {
 
         $request->validate([
             'store' => 'required|exists:stores,id',
@@ -202,7 +209,7 @@ class StoresController extends Controller
         $store = Store::where(["user" => $user->id, "id" => $request->get("store")])
                       ->first();
 
-        if(isset($store->id)){
+        if (isset($store->id)) {
 
             $users = Suborder::where('store', $store->id)
                  ->distinct()
@@ -232,25 +239,26 @@ class StoresController extends Controller
         ]);
     }
 
-    public function Register(Request $request){
+    public function Register(Request $request)
+    {
 
         $user   = auth()->user();
         $store  = Store::where(["user" => $user->id])
                        ->first();
 
-        if(isset($store->id)){
+        if (isset($store->id)) {
             $store = Store::where('id', $store->id)
                           ->first();
 
             $cover      = $store->cover;
             $profile    = $store->profile;
 
-            if($request->has('cover') && !!$request->get('cover')){
+            if ($request->has('cover') && !!$request->get('cover')) {
                 $cover = $request->get('cover');
                 $cover = $cover['id'];
             }
 
-            if($request->has('profile') && !!$request->get('profile')){
+            if ($request->has('profile') && !!$request->get('profile')) {
                 $profile = $request->get('profile');
                 $profile = $profile['id'];
             }
@@ -264,14 +272,14 @@ class StoresController extends Controller
 
             DB::beginTransaction();
 
-            if(!$store->save()){
+            if (!$store->save()) {
                 DB::rollback();
             }
 
             DB::commit();
 
-            $store->cover   = !!$store->$cover      ? Media::TakeImage($store->cover)   : NULL;
-            $store->profile = !!$store->$profile    ? Media::TakeImage($store->profile) : NULL;
+            $store->cover   = !!$store->$cover ? Media::TakeImage($store->cover) : null;
+            $store->profile = !!$store->$profile ? Media::TakeImage($store->profile) : null;
 
             return response()->json([
                 'response'  => true,
@@ -292,41 +300,34 @@ class StoresController extends Controller
         $validated = $request->validate([
             'email' => 'required|email',
             'document' => 'required',
-            'companyName' => 'required'
+            'companyName' => 'required',
         ], [
             'email.required' => 'O email é obrigatório',
             'document.required' => 'O documento (CPF/CNPJ) é obrigatório',
-            'companyName.required' => 'O nome da empresa é obrigatório'
+            'companyName.required' => 'O nome da empresa é obrigatório',
+            'birth_date.required' => 'A data de nascimento é obrigatória',
+            'phone.required' => 'O telefone é obrigatório',
         ]);
-    
+
         DB::beginTransaction();
+
         try {
             $user = User::where("email", $validated['email'])->firstOrFail();
 
-            if (!$user) {
-                Log::error('Usuário não encontrado');
-                return response()->json(['response' => false, 'message' => 'Usuário não encontrado.'], 404);
-            }
-
             $store = Store::where(["user" => $user->id])->first();
-            
-            if(!$store){
+
+            if (!$store) {
                 $store = new Store();
                 $store->user = $user->id;
                 $store->status = 0;
                 Log::info('Nova loja criada');
             }
-            
-            if($request->has("document")){
-                $store->document = $request->get("document");
-            }
 
-            if($request->has("companyName")){
-                $store->title = $request->get("companyName");
-                $store->slug = Str::slug(strip_tags($request->get("companyName")));
-                $store->companyName = $request->get("companyName");
-            }
-            
+            $store->document = $request->get("document");
+            $store->title = $request->get("companyName");
+            $store->slug = Str::slug(strip_tags($request->get("companyName")));
+            $store->companyName = $request->get("companyName");
+
             $user->RequestToThis($request);
             $user->person = "partner";
             $user->save();
@@ -334,17 +335,63 @@ class StoresController extends Controller
             $store->RequestToThis($request);
             $store->hasDelivery = $request->get("hasDelivery", false);
 
-            if(!$store->save()) {
+            if (!$store->save()) {
                 throw new \Exception("Falha ao salvar a loja");
             }
+
+            $birthDate = null;
+            if ($request->filled('birth_date')) {
+                try {
+                    $birthDate = Carbon::createFromFormat('d/m/Y', $request->birth_date)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    Log::error("Erro ao converter data de nascimento: " . $e->getMessage());
+                    // opcionalmente, você pode lançar uma exceção ou retornar erro de validação aqui
+                }
+            }
+
+            // ✅ Criação do Recipient local
+            $recipient = new Recipient();
+            $recipient->store_id = $store->id;
+            $recipient->partner_id = null;
+            $recipient->type_enum = 'PF';
+            $recipient->email = $user->email;
+            $recipient->document = $request->get('document');
+            $recipient->type = 'individual';
+            $recipient->name = $user->name;
+            $recipient->company_name = $user->companyName;
+            $recipient->birth_date = $birthDate;
+            $recipient->save();
+
             
+
+            // ✅ Criação do RecipientAddress
+            $address = new RecipientAddress();
+            $address->recipient_id = $recipient->id;
+            $address->city = $request->get('city');
+            $address->state = $request->get('state');
+            $address->save();
+
+
+
+            $fullPhone = preg_replace('/\D/', '', $request->get('phone')); 
+
+            $areaCode = substr($fullPhone, 0, 2);
+            $number = substr($fullPhone, 2);
+
+            $phone = new RecipientPhone();
+            $phone->recipient_id = $recipient->id;
+            $phone->area_code = $areaCode;
+            $phone->number = $number;
+            $phone->type = 'Recipient';
+            $phone->save();
+
+            // Dados adicionais para o frontend
             $groups = Group::where('active', 1)->get();
             $segmentGroup = Group::where('segment', 1)->first();
             $elementsForSelect = [];
 
             if ($segmentGroup) {
                 $elements = Category::where('group_id', $segmentGroup->id)->get();
-                
                 foreach ($elements as $element) {
                     $elementsForSelect[] = [
                         'id' => $element->id,
@@ -353,9 +400,9 @@ class StoresController extends Controller
                     ];
                 }
             }
-            
+
             DB::commit();
-            
+
             return response()->json([
                 'response' => true,
                 'data' => $store,
@@ -373,7 +420,8 @@ class StoresController extends Controller
         }
     }
 
-    public function Products(Request $request){
+    public function Products(Request $request)
+    {
 
         $user   = auth()->user();
         $store  = Store::where(["user" => $user->id])
@@ -385,11 +433,11 @@ class StoresController extends Controller
                             ->where('store', $store->id)
                             ->with(["store"]);
 
-        if($request->has('search') && $request->get('search')){
+        if ($request->has('search') && $request->get('search')) {
             $busca = $request->get('search');
             $products = $products->where(function ($query) use ($busca) {
                 $busca = is_array($busca) ? $busca : [$busca];
-                foreach($busca as $term){
+                foreach ($busca as $term) {
                     $query->orWhere('tags', "like", '%'.$term.'%');
                     $query->orWhere('title', "like", '%'.$term.'%');
                     $query->orWhere('subtitle', "like", '%'.$term.'%');
@@ -398,11 +446,11 @@ class StoresController extends Controller
             });
         }
 
-        if($request->has('limit') && $request->get('limit')){
+        if ($request->has('limit') && $request->get('limit')) {
             $products = $products->limit($request->get('limit'));
         }
 
-        if($request->has('colors') && $request->get('colors')){
+        if ($request->has('colors') && $request->get('colors')) {
             $colors = (is_array($request->get('colors'))) ? $request->get('colors') : [$request->get('colors')];
             $products = $products->where(function ($query) use ($colors) {
                 foreach ($colors as $key => $color) {
@@ -411,16 +459,15 @@ class StoresController extends Controller
             });
         }
 
-        if($request->has('range') && $request->get('range')){
+        if ($request->has('range') && $request->get('range')) {
             $products = $products->where('price', '<=', $request->get('range'));
         }
 
-      
 
-        if($request->has('order') && !!$request->get('order')){
+
+        if ($request->has('order') && !!$request->get('order')) {
             $products = $products->orderBy('created_at', $request->get('order') == "asc" ? "asc" : "desc");
-        }
-        else{
+        } else {
             $products = $products->orderBy('title', 'asc')
                                 ->orderBy('description', 'asc')
                                 ->orderBy('tags', 'asc');

@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Recipient extends Model
 {
     use HasFactory;
-    public $incrementing = false;
-    protected $keyType = 'string';
     protected $fillable = [
         'id', 'partner_id', 'code', 'type_enum', 'email', 'document', 'type',
         'company_name', 'trading_name', 'annual_revenue', 'name', 'birth_date',

@@ -15,15 +15,14 @@ class CreateRecipientPhonesTable extends Migration
     {
         Schema::create('recipient_phones', function (Blueprint $table) {
             $table->id();
-            $table->uuid('recipient_id');
+            $table->foreignId('recipient_id')->constrained('recipients')->onDelete('cascade');
             $table->enum('type', ['Recipient', 'Partner']);
             $table->string('partner_document')->nullable();
-            $table->string('area_code');
-            $table->string('number');
+            $table->string('area_code')->nullable();
+            $table->string('number')->nullable();
             $table->timestamps();
-
-            $table->foreign('recipient_id')->references('id')->on('recipients')->onDelete('cascade');
         });
+
     }
 
     /**

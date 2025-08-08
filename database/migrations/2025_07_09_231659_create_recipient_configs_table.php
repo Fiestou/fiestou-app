@@ -15,7 +15,7 @@ class CreateRecipientConfigsTable extends Migration
     {
         Schema::create('recipient_configs', function (Blueprint $table) {
             $table->id();
-            $table->uuid('recipient_id');
+            $table->foreignId('recipient_id')->constrained('recipients')->onDelete('cascade');
             $table->boolean('transfer_enabled')->default(false);
             $table->string('transfer_interval');
             $table->integer('transfer_day');
@@ -25,8 +25,6 @@ class CreateRecipientConfigsTable extends Migration
             $table->string('anticipation_days')->nullable();
             $table->string('anticipation_delay')->nullable();
             $table->timestamps();
-
-            $table->foreign('recipient_id')->references('id')->on('recipients')->onDelete('cascade');
         });
     }
 

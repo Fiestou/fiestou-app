@@ -6,41 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 class AddStoreIdTable extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up(): void
     {
+        // Verifica se a coluna 'is_split' já existe antes de criar
         Schema::table('withdraw', function (Blueprint $table) {
-            $table->boolean('is_split'); // corrigido aqui
-        });
-
-        Schema::table('recipients', function (Blueprint $table) {
-            $table->unsignedBigInteger('store_id')->after('id');
-
-            $table->foreign('store_id')
-                ->references('id')
-                ->on('stores')
-                ->onDelete('cascade');
+            if (!Schema::hasColumn('withdraw', 'is_split')) {
+                $table->boolean('is_split')->default(false);
+            }
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down(): void
     {
         Schema::table('withdraw', function (Blueprint $table) {
-            $table->dropColumn('is_split');
-        });
-
-        Schema::table('recipients', function (Blueprint $table) {
-            $table->dropForeign(['store_id']);
-            $table->dropColumn('store_id');
+            if (Schema::hasColumn('withdraw', 'is_split')) {
+                $table->dropColumn('is_split');
+            }
         });
     }
 }

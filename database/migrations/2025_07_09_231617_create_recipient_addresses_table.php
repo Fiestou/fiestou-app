@@ -11,26 +11,24 @@ class CreateRecipientAddressesTable extends Migration
      *
      * @return void
      */
-    public function up()
-    {
-        Schema::create('recipient_addresses', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('recipient_id');
-            $table->enum('type', ['Recipient', 'Partner']);
-            $table->string('partner_document')->nullable();
-            $table->string('street');
-            $table->string('complementary')->nullable();
-            $table->string('street_number');
-            $table->string('neighborhood');
-            $table->string('city');
-            $table->string('state');
-            $table->string('zip_code');
-            $table->string('reference_point')->nullable();
-            $table->timestamps();
-
-            $table->foreign('recipient_id')->references('id')->on('recipients')->onDelete('cascade');
-        });
-    }
+   public function up()
+{
+    Schema::create('recipient_addresses', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('recipient_id')->constrained('recipients')->onDelete('cascade');
+        $table->enum('type', ['Recipient', 'Partner']);
+        $table->string('partner_document')->nullable();
+        $table->string('street')->nullable();
+        $table->string('complementary')->nullable();
+        $table->string('street_number')->nullable();
+        $table->string('neighborhood')->nullable();
+        $table->string('city')->nullable();
+        $table->string('state')->nullable();
+        $table->string('zip_code')->nullable();
+        $table->string('reference_point')->nullable();
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.
