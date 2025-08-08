@@ -72,7 +72,7 @@ export default function Form({
       if (!!page.publicUrl)
         await axios.get(`/api/cache?route=${page.publicUrl}`);
     } catch (error) {
-      console.log(error);
+ 
     }
   };
 

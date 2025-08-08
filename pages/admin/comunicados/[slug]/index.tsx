@@ -59,7 +59,7 @@ export default function Form({ slug }: { slug: string }) {
     try {
       await axios.get(`/api/cache?route=/blog/${content.slug}`);
     } catch (error) {
-      console.log(error);
+
     }
   };
 
