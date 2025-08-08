@@ -162,8 +162,6 @@ const Card: React.FC<CardProps> = (props) => {
         };
     }, [isTooltipVisible]);
 
-    console.log("props.relatedElementsasdasdasdasdx", props.grouptargeadc);
-
     return (
         <div className="flex flex-col justify-center items-center relative border-2 border-black rounded-md h-15 w-full p-4 text-black gap-3">
             <button

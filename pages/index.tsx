@@ -606,7 +606,9 @@ export default function Home({
           </div>
           <div className="grid md:grid-cols-3 gap-10 md:gap-6">
             {!!Blog?.length &&
-              Blog.slice().reverse().map((post: any, key: any) => (
+              Blog.sort(
+                (a, b) => b.id - a.id
+              ).map((post: any, key: any) => (
                 <div key={key}>
                   <PostItem post={post} />
                 </div>

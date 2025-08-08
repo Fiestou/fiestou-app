@@ -21,7 +21,6 @@ const MailSend = async (data: any) => {
   })
     .then((response) => response.text())
     .then((result) => result)
-    .catch((error) => console.log("error", error));
 
   return request;
 };
@@ -43,10 +42,6 @@ export const RegisterUserMail = async (user: any, content: ContentType) => {
     subject: content.subject,
     content: html,
   };
-
-  const handleMailSend = await MailSend(data);
-
-  console.log("RegisterUserMail: ", handleMailSend);
 };
 
 export const RegisterOrderMail = async (
@@ -108,10 +103,6 @@ export const RegisterOrderMail = async (
     subject: content.subject,
     content: html,
   };
-
-  const handleMailSend = await MailSend(data);
-
-  console.log("RegisterOrderMail: ", handleMailSend);
 };
 
 export const CompleteOrderMail = async (
@@ -136,10 +127,6 @@ export const CompleteOrderMail = async (
     subject: content.subject,
     content: html,
   };
-
-  const handleMailSend = await MailSend(data);
-
-  console.log("CompleteOrderMail: ", handleMailSend);
 };
 
 export const PartnerNewOrderMail = async (
@@ -165,9 +152,6 @@ export const PartnerNewOrderMail = async (
       content: html,
     };
 
-    const handleMailSend = await MailSend(data);
-
-    console.log("PartnerNewOrderMail: ", handleMailSend);
   });
 };
 
@@ -203,7 +187,4 @@ export const ChangeDeliveryStatusMail = async (
     content: html,
   };
 
-  const handleMailSend = MailSend(data);
-
-  console.log("ChangeDeliveryStatusMail: ", handleMailSend);
 };
