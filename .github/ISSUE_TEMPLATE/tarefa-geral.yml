@@ -1,0 +1,54 @@
+name: 📌 Tarefa
+description: Use este template para criar uma tarefa clara, objetiva e bem estruturada.
+title: "[tipo] Descreva o que deve ser feito"
+labels: ["tarefa"]
+assignees:
+  - seu-usuario-github-aqui
+body:
+  - type: textarea
+    id: descricao
+    attributes:
+      label: 📄 Descrição
+      description: Explique brevemente o que precisa ser feito e por que isso é importante.
+      placeholder: >
+        Ao clicar no botão X, nada acontece. Deve ser exibida uma mensagem de erro...
+    validations:
+      required: true
+
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: 🎯 Objetivo da tarefa
+      description: Qual é o objetivo por trás dessa tarefa?
+      placeholder: >
+        Melhorar a experiência do usuário ao preencher o formulário...
+    validations:
+      required: true
+
+  - type: textarea
+    id: criterios
+    attributes:
+      label: ✅ Critérios de aceitação
+      description: Liste os critérios para considerar a tarefa como concluída.
+      placeholder: >
+        - [ ] Exibir mensagem de erro
+        - [ ] Validar campo no backend
+        - [ ] Cobertura de testes
+
+  - type: input
+    id: referencias
+    attributes:
+      label: 🔗 Referências (opcional)
+      description: Link de design, issues relacionadas, documentação, etc.
+      placeholder: https://figma.com/file/...
+
+  - type: dropdown
+    id: prioridade
+    attributes:
+      label: 🚦 Prioridade
+      options:
+        - Alta
+        - Média
+        - Baixa
+    validations:
+      required: true
