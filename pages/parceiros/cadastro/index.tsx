@@ -13,10 +13,11 @@ import { formatCpfCnpj } from "../../cadastre-se/components/FormMasks";
 import { formatName } from "@/src/components/utils/FormMasks";
 import InfoBox from "@/src/components/ui/Infobox";
 import buttonTextIcon from "@/src/components/ui/buttonTextIcon";
-import question from "@/src/icons/question";
 import ButtonTextIcon from "@/src/components/ui/buttonTextIcon";
 import UserIcon from "@/src/icons/UserIcon";
 import CompanyIcon from "@/src/icons/CompanyIcon";
+import QuestionIcon from "@/src/icons/QuestionIcon";
+import { toast } from "react-toastify";
 
 interface PreUserDataResponse {
     response: boolean;
@@ -63,6 +64,7 @@ export default function Cadastro() {
     const [preUser, setPreUser] = useState<{
         email: string;
         person: string;
+        details?: string;
         name: string | null;
         document?: string | null;
     } | null>(null);
@@ -70,11 +72,6 @@ export default function Cadastro() {
     const [preUserError, setPreUserError] = useState<string | null>(null);
     const [maskedDocument, setMaskedDocument] = useState('');
 
-    useEffect(() => {
-        if (preUser?.document) {
-             
-        }
-    }, [preUser?.document]);
 
     useEffect(() => {
         console.log("Store state updated:", store);
@@ -153,6 +150,13 @@ export default function Cadastro() {
             console.error("Erro ao salvar store no localStorage:", error);
         }
     };
+    // da para melhorar mas não tenho tempo  ...
+
+    const formatPhone = (phone: string): string => {
+        return phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+    };
+
+    const parsedDetails = preUser?.details ? JSON.parse(preUser.details) : {};
 
     const submitStore = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -160,14 +164,15 @@ export default function Cadastro() {
 
         try {
             const dataToSend = {
-                birth: store.birth,
                 email: preUser?.email,
                 document: store.document,
                 companyName: store.companyName || store.title,
                 hasDelivery: store.hasDelivery,
+                birth_date: store.birth,
+                phone: formatPhone(parsedDetails.phone || ''),
                 city: store.city,
                 state: store.state,
-                StoreTypeEnum: store.document?.length === 11 ? "pf" : "cnpj",
+                StoreTypeEnum: store.document?.length === 11 ? "PF" : "PJ",
                 segment: store.segment,
                 segmentId: store.segmentId,
             };
@@ -180,6 +185,7 @@ export default function Cadastro() {
 
             if (request.response) {
                 router.push("/acesso");
+                toast.success('Grupo de filtros salvo com sucesso!');
             } else {
                 console.warn("Resposta da API indica falha no cadastro:", request.error);
                 alert(`Erro no cadastro: ${request.error || "Ocorreu um erro desconhecido."}`);
@@ -482,7 +488,7 @@ export default function Cadastro() {
                                             Preencha as informações de cadastro da sua loja.
                                         </div>
                                     </div>
-                                    <InfoBox title="Por que isso é importante?" subscription="Realizamos o pagamento aos fornecedores automaticamente por meio de split de pagamento, com o valor sendo creditado diretamente em sua conta. Saiba mais:" icon={question()} />
+                                    <InfoBox title="Por que isso é importante?" subscription="Realizamos o pagamento aos fornecedores automaticamente por meio de split de pagamento, com o valor sendo creditado diretamente em sua conta. Saiba mais:" icon={QuestionIcon()} />
                                     <div className="flex gap-6 justify-center items-center ">
                                         <ButtonTextIcon
                                             title="Pessoa Física"

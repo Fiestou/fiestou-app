@@ -64,6 +64,8 @@ export const formatCep = (value: string): string => {
 
 /* Name Formatting (first letter uppercase) */ 
 export const formatName = (value: string): string => {
+  if (typeof value !== "string") return "";
+
   return value
     .toLowerCase()
     .split(" ")
