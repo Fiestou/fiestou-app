@@ -1,0 +1,18 @@
+name: Auto Add Label
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  add_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add label to new issue
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: Fiestou_App
