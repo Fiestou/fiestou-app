@@ -8,6 +8,9 @@ import HelpCard from "@/src/components/common/HelpCard";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useEffect, useState } from "react";
+import HelpCardConfig from "@/src/components/common/HelpCardConfig";
+import InterrogacaoIcon from "@/src/icons/InterrogacaoIcon";
+import SettingsIcon from "@/src/icons/SettingsIcon";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -78,11 +81,11 @@ export default function MeusDados({ page }: { page: any }) {
             <Breadcrumbs
               links={[
                 { url: "/painel", name: "Painel" },
-                { url: "/painel/meus-dados", name: "Meus dados" },
+                { url: "/painel/Dados_do_recebedor", name: "Dados_do_recebedor" },
               ]}
             />
           </div>
-          <div className="grid md:flex gap-4 items-center w-full">
+          <div className="grid md:flex gap-4 items-center w-full border-b pb-8 mb-0">
             <div className="w-full flex items-center">
               <Link passHref href="/painel">
                 <Icon
@@ -91,7 +94,7 @@ export default function MeusDados({ page }: { page: any }) {
                 />
               </Link>
               <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                <span className="font-title font-bold">Meus dados</span>
+                <span className="font-title font-bold">Dados do recebedor</span>
               </div>
             </div>
           </div>
@@ -104,8 +107,13 @@ export default function MeusDados({ page }: { page: any }) {
               <div className="w-full grid gap-8">
                 <UserEdit user={user} />
               </div>
-              <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
-                <HelpCard list={page.help_list} />
+              <div className="w-full md:max-w-[18rem] lg:max-w-[24rem] flex flex-col gap-6">
+                <HelpCardConfig help_text="Realizamos o pagamento aos fornecedores automaticamente por meio de split de pagamento, com o valor sendo creditado diretamente em sua conta. 
+
+                " help_title="Por que isso é importante?" help_icon={<SettingsIcon />} help_complete="Saiba mais:" />
+                <HelpCardConfig help_text="A seção de configurações é apenas para visualização, pois seus parâmetros são definidos pelo Fiestou, conforme descrito nos termos de aceite.
+
+                " help_title="Configurações" help_icon={<InterrogacaoIcon />} help_complete={"Confira:"} />
               </div>
             </div>
           </div>

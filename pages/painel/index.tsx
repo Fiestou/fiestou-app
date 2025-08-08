@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { getUser } from "@/src/contexts/AuthContext";
+import { getStore, getUser } from "@/src/contexts/AuthContext";
 import { UserType } from "@/src/models/user";
 import Template from "@/src/template";
 import { AuthContext } from "@/src/contexts/AuthContext";
@@ -12,6 +12,7 @@ import DobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Api from "@/src/services/api";
 import { BalanceType } from "@/src/models/order";
 import { PARTNER_MENU } from "@/src/default/header/Painel";
+import Partner from "../admin/parceiros";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -48,9 +49,14 @@ export async function getServerSideProps(ctx: any) {
 export default function Parceiro({ content }: { content: any }) {
   const { UserLogout } = useContext(AuthContext);
 
+  const [period, setPeriod] = useState("month" as string);
+  const [user, setUser] = useState({} as UserType);
+  const [storeId, setStoreId] = useState<any>();
+  const [balance, setBalance] = useState({} as BalanceType);
+  const [recipientCode, setRecipientCode] = useState<string>("");
   const api = new Api();
 
-  const [balance, setBalance] = useState({} as BalanceType);
+
   const getBalance = async () => {
     let request: any = await api.bridge({
       method: "post",
@@ -78,17 +84,39 @@ export default function Parceiro({ content }: { content: any }) {
     setOrders(request.data);
   };
 
-  const [period, setPeriod] = useState("month" as string);
 
-  const [user, setUser] = useState({} as UserType);
+  const getRecipientCode = async (storeId: string) => {
+    try {
+      const response: any = await api.bridge({
+        method: "GET",
+        url: `recipient/${storeId}/code`,
+      });
+
+      const code = response?.data?.code;
+
+      if (code) {
+        setRecipientCode(code); // salva direto no estado!
+      }
+    } catch (error) {
+      console.error("Complete o cadastro :", error);
+    }
+  };
+
 
   useEffect(() => {
     if (!!window) {
       getOrders();
       getBalance();
       setUser(getUser);
+      setStoreId(getStore);
     }
   }, []);
+
+  useEffect(() => {
+    if (storeId) {
+      getRecipientCode(storeId); // ✅
+    }
+  }, [storeId]);
 
   return (
     <Template
@@ -102,8 +130,8 @@ export default function Parceiro({ content }: { content: any }) {
     >
       <section className="">
         <div className="container-medium py-6 lg:py-16">
-          <div className="grid sm:flex items-center gap-8 lg:gap-20 pb-8 lg:pb-10">
-            <div className="w-full">
+          <div className="grid sm:flex items-center gap-8 lg:gap-2 pb-8 lg:pb-10">
+            <div className="w-8/12">
               <div className="font-title max-w-[38rem] font-bold text-2xl md:text-5xl flex gap-4 items-center mb-2 text-zinc-900">
                 Olá, {user.name}
               </div>
@@ -111,7 +139,7 @@ export default function Parceiro({ content }: { content: any }) {
                 dangerouslySetInnerHTML={{ __html: content.main_text }}
               ></div>
             </div>
-            <div className="w-fit">
+            <div className=" flex items-start justify-center flex-col gap-4">
               <div className="flex gap-4 items-center justify-center">
                 <div>
                   <DobleIcon icon="fa-piggy-bank" />
@@ -122,7 +150,7 @@ export default function Parceiro({ content }: { content: any }) {
                     <span className="text-base lg:text-2xl">R$</span>{" "}
                     {moneyFormat(balance.cash)}
                   </h4>
-                  <div className="pt-3">
+                  {/* <div className="pt-3">
                     <Button
                       href="/painel/saques"
                       className="btn p-2 pl-3 pr-5 text-sm text-nowrap"
@@ -130,9 +158,18 @@ export default function Parceiro({ content }: { content: any }) {
                       <Icon icon="fa-hand-holding-usd" />
                       Solicitar saque
                     </Button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
+              <p
+                className={`text-base ${recipientCode ? "text-green-800" : "text-red-600 font-semibold"
+                  }`}
+              >
+                {recipientCode
+                  ? `Código recebedor: ${recipientCode}`
+                  : "Conclua seu cadastro para começar a receber."}
+              </p>
+
             </div>
           </div>
           <div className="lg:flex items-start gap-8 xl:gap-20">
