@@ -1,54 +1,69 @@
-name: 📌 Tarefa
-description: Use este template para criar uma tarefa clara, objetiva e bem estruturada.
-title: "[tipo] Descreva o que deve ser feito"
-labels: ["tarefa"]
-assignees:
-  - seu-usuario-github-aqui
+name: 🛠️ Backend
+description: Template simplificado para tarefas de backend (Feature ou Chore)
+title: "[backend][feat|chore] Descreva a tarefa"
+labels: ["backend"]
 body:
+  - type: dropdown
+    id: tipo
+    attributes:
+      label: Tipo da tarefa
+      options:
+        - feat (nova funcionalidade)
+        - chore (manutenção/infra)
+    validations:
+      required: true
+
   - type: textarea
     id: descricao
     attributes:
       label: 📄 Descrição
-      description: Explique brevemente o que precisa ser feito e por que isso é importante.
+      description: O que precisa ser feito? Contexto rápido para entender a necessidade.
       placeholder: >
-        Ao clicar no botão X, nada acontece. Deve ser exibida uma mensagem de erro...
+        Exemplo:
+        Criar endpoint POST /clientes para permitir cadastro de novos clientes.
     validations:
       required: true
 
   - type: textarea
     id: objetivo
     attributes:
-      label: 🎯 Objetivo da tarefa
-      description: Qual é o objetivo por trás dessa tarefa?
+      label: 🎯 Objetivo
+      description: Qual o resultado esperado após concluir a tarefa?
       placeholder: >
-        Melhorar a experiência do usuário ao preencher o formulário...
+        Exemplo:
+        Possibilitar que o frontend envie dados de novos clientes para o sistema.
     validations:
       required: true
 
   - type: textarea
-    id: criterios
+    id: testes
     attributes:
-      label: ✅ Critérios de aceitação
-      description: Liste os critérios para considerar a tarefa como concluída.
+      label: ✅ Critérios de aceitação e testes
+      description: DOD + plano de testes (unit/integration/e2e), mocks e cenários.
       placeholder: >
-        - [ ] Exibir mensagem de erro
-        - [ ] Validar campo no backend
-        - [ ] Cobertura de testes
+        Critérios:
+        - [ ] POST /v1/orders retorna 400 quando payment_method inválido
+        - [ ] Log de falha gravado com correlationId
+        - [ ] Métrica de erro incrementa em caso 400
+        Testes:
+        - Unit: validar PaymentMethodValidator
+        - Integração: contrato com PaymentGateway mockado
+        - E2E: fluxo completo com DB real (staging)
 
-  - type: input
+  - type: textarea
     id: referencias
     attributes:
       label: 🔗 Referências (opcional)
-      description: Link de design, issues relacionadas, documentação, etc.
-      placeholder: https://figma.com/file/...
+      description: Links úteis (issues relacionadas, documentação, API schema, etc.).
+      placeholder: >
+        https://swagger.io/... | Issue #123
 
-  - type: dropdown
-    id: prioridade
+
+  - type: textarea
+    id: regras
     attributes:
-      label: 🚦 Prioridade
-      options:
-        - Alta
-        - Média
-        - Baixa
-    validations:
-      required: true
+      label: 📐 Regras de negócio
+      description: Regras claras, edge cases e fluxos alternativos.
+      placeholder: >
+        - payment_method ∈ {credit_card, pix, boleto}
+        - Se status=cancelled, não permitir transição para paid...

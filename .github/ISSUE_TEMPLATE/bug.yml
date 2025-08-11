@@ -1,0 +1,78 @@
+name: 🐞 Bug Backend
+description: Template para correções de backend.
+title: "[backend][bug] Descreva o problema"
+labels: ["backend", "bug"]
+assignees:
+  - seu-usuario-github-aqui
+body:
+  - type: textarea
+    id: sintomas
+    attributes:
+      label: 🚨 Sintomas
+      description: O que está acontecendo? Inclua logs e mensagens de erro.
+      placeholder: >
+        Ao chamar POST /v1/orders retorna 500 com stacktrace XYZ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducao
+    attributes:
+      label: 🔁 Passos para reproduzir
+      placeholder: >
+        1. Enviar request com payload X
+        2. Header Y
+        3. Resultado: 500
+  
+  - type: input
+    id: ambiente
+    attributes:
+      label: 🌎 Ambiente
+      placeholder: dev | stage | prod
+
+  - type: textarea
+    id: impacto
+    attributes:
+      label: 📉 Impacto
+      description: Quem é afetado? Qual severidade? Há SLA violado?
+      placeholder: >
+        30% das requisições falham. P95 saltou para 1.2s.
+  
+  - type: textarea
+    id: hipoteses
+    attributes:
+      label: 🧪 Hipóteses e diagnóstico
+      placeholder: >
+        Suspeita de timeout no gateway externo. Verificar conexões penduradas.
+  
+  - type: textarea
+    id: logs_metricas
+    attributes:
+      label: 📊 Evidências (logs/métricas/traces)
+      placeholder: >
+        - Log: timeout após 2000ms
+        - Métrica: http_client_errors_total ↑
+        - Trace: span external_call com erro DEADLINE_EXCEEDED
+  
+  - type: textarea
+    id: solucao
+    attributes:
+      label: 🛠️ Proposta de correção
+      placeholder: >
+        - Aumentar timeout para 3s + retry com jitter
+        - Circuit breaker quando taxa de erro > 10%
+  
+  - type: textarea
+    id: validacao
+    attributes:
+      label: ✅ Validação e testes
+      placeholder: >
+        - [ ] Reproduzir em dev
+        - [ ] Adicionar teste de integração com mock de timeout
+        - [ ] Monitorar métricas por 24h após deploy
+  
+  - type: input
+    id: referencias
+    attributes:
+      label: 📚 Referências
+      placeholder: Logs no Kibana, painel no Grafana, PR #456
