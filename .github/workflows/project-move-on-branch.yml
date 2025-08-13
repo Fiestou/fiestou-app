@@ -1,0 +1,96 @@
+name: Project Move on Branch Create
+
+on:
+  create: # dispara em criação de branch/tag
+    branches:
+      - "**"
+
+permissions:
+  contents: read
+  issues: write
+  projects: write
+
+jobs:
+  move_in_progress:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const ref = context.payload.ref; // nome da branch criada
+            // Tenta extrair número da issue da branch (feat/123-desc, 123-desc, issue-123, etc.)
+            const match = ref.match(/(?:^|[^\d])(\d{1,6})(?:[-_/]|$)/);
+            if (!match) {
+              core.info(`Branch '${ref}' não contém número de issue. Padrões aceitos: 123-*, feat/123-*, issue-123-*`);
+              return;
+            }
+            const issueNumber = Number(match[1]);
+
+            // === CONFIG ===
+            const ORG = "Fiestou";
+            const PROJECT_NUMBER = 1;
+            const STATUS_FIELD = "Status";         // campo single-select
+            const TO_IN_PROGRESS = "In Progress";  // opção do campo Status
+            // =============
+
+            const gql = (q, v) => github.graphql(q, v);
+
+            // Busca Project + campo Status
+            const { organization: { projectV2 } } = await gql(`
+              query($org:String!, $num:Int!) {
+                organization(login:$org) {
+                  projectV2(number:$num) {
+                    id
+                    fields(first:50) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options { id name }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, { org: ORG, num: PROJECT_NUMBER });
+
+            const statusField = projectV2.fields.nodes.find(f => f && f.name === STATUS_FIELD);
+            if (!statusField) throw new Error(`Campo '${STATUS_FIELD}' não encontrado no Project.`);
+            const option = statusField.options.find(o => o.name === TO_IN_PROGRESS);
+            if (!option) throw new Error(`Opção '${TO_IN_PROGRESS}' não encontrada no campo '${STATUS_FIELD}'.`);
+
+            // Busca ID da issue
+            const { repository: { issue } } = await gql(`
+              query($owner:String!,$repo:String!,$n:Int!) {
+                repository(owner:$owner, name:$repo) { issue(number:$n){ id } }
+              }
+            `, { owner: context.repo.owner, repo: context.repo.repo, n: issueNumber });
+
+            if (!issue) { core.info(`Issue #${issueNumber} não encontrada no repo.`); return; }
+
+            // Adiciona item ao Project (idempotente) e seta Status
+            const addRes = await gql(`
+              mutation($projectId:ID!, $contentId:ID!){
+                addProjectV2ItemById(input:{projectId:$projectId, contentId:$contentId}) {
+                  item { id }
+                }
+              }
+            `, { projectId: projectV2.id, contentId: issue.id });
+
+            const itemId = addRes.addProjectV2ItemById.item.id;
+
+            await gql(`
+              mutation($projectId:ID!,$itemId:ID!,$fieldId:ID!,$opt:String!){
+                updateProjectV2ItemFieldValue(input:{
+                  projectId:$projectId,
+                  itemId:$itemId,
+                  fieldId:$fieldId,
+                  value:{ singleSelectOptionId:$opt }
+                }) { clientMutationId }
+              }
+            `, { projectId: projectV2.id, itemId, fieldId: statusField.id, opt: option.id });
+
+            core.info(`Issue #${issueNumber} movida para '${TO_IN_PROGRESS}' por criação da branch '${ref}'.`);

@@ -1,0 +1,52 @@
+name: 🐞 Bug Frontend
+description: Reporte um bug encontrado no frontend.
+title: "[frontend][bug] Descreva o problema"
+labels: ["frontend", "bug"]
+body:
+  - type: textarea
+    id: descricao
+    attributes:
+      label: 📄 Descrição do problema
+      description: Explique o que está acontecendo.
+      placeholder: >
+        Exemplo:
+        Ao clicar no botão "Enviar", nada acontece. Não é exibida mensagem de erro.
+    validations:
+      required: true
+
+  - type: textarea
+    id: passos
+    attributes:
+      label: 🔁 Passos para reproduzir
+      description: Detalhe como reproduzir o bug passo a passo.
+      placeholder: |
+        1. Acessar a página de login.
+        2. Inserir usuário e senha corretos.
+        3. Clicar em "Entrar".
+        4. O botão fica carregando indefinidamente.
+    validations:
+      required: true
+
+  - type: textarea
+    id: resultado_esperado
+    attributes:
+      label: ✅ Resultado esperado
+      placeholder: >
+        Exemplo:
+        Ao clicar em "Entrar", o usuário deve ser redirecionado para a dashboard.
+
+
+  - type: textarea
+    id: evidencias
+    attributes:
+      label: 📷 Evidências (opcional)
+      description: Inclua prints, gravações ou logs do console do navegador.
+      placeholder: >
+        Arraste e solte imagens ou cole logs aqui.
+
+  - type: input
+    id: referencias
+    attributes:
+      label: 🔗 Referências (opcional)
+      placeholder: >
+        Links para issues relacionadas, documentação, ou designs no Figma.
