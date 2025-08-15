@@ -6,7 +6,6 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import { moneyFormat } from "@/src/helper";
 import Img from "../utils/ImgBase";
 import React from "react";
-import Check from "../ui/form/CheckUI";
 import Colors from "../ui/form/ColorsUI";
 import { Group, useGroup } from "@/src/store/filter";
 
@@ -30,6 +29,7 @@ export interface categorie {
   group_id?: number,
   element_related_id?: number[]
 }
+
 export default function Filter(params: { store?: string; busca?: string }) {
   const router = useRouter();
 
@@ -39,11 +39,13 @@ export default function Filter(params: { store?: string; busca?: string }) {
     range: 1000,
     order: "desc",
   });
+
   const handleQueryValues = (value: Partial<FilterQueryType>) => {
     setQuery({ ...query, ...value });
   };
 
   const startQueryHandle = () => {
+
     const routerQuery = router.query as {
       categorias?: string | string[];
       "categoria[]"?: string | string[];
@@ -70,6 +72,9 @@ export default function Filter(params: { store?: string; busca?: string }) {
     if (routerQuery?.ordem) {
       handleQuery["order"] = routerQuery.ordem;
     }
+    console.log("Router Query:", routerQuery);
+
+    alert("Router Query: " + JSON.stringify(routerQuery));
 
     setQuery({ ...query, ...handleQuery });
   };
@@ -98,6 +103,8 @@ export default function Filter(params: { store?: string; busca?: string }) {
     const updatedCategories = isSelected
       ? query.categories.filter((id) => id !== element.id)
       : [...query.categories, element.id];
+
+      console.log("Updated Categories:", updatedCategories);
 
     handleQueryValues({ categories: updatedCategories });
 
@@ -182,8 +189,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
         ),
       })).filter(group => group.elements.length > 0)
     );
-
-   
   };
 
   useEffect(() => {
@@ -204,7 +209,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
       );
     }
   };
-
   
   useEffect(() => {
     if (typeof window !== "undefined") {
