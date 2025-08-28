@@ -20,11 +20,11 @@ export default function Admin() {
       <section className="">
         <div className="container-medium py-14">
           <div className="font-title font-bold text-5xl flex gap-4 items-center mb-4 text-zinc-900">
-            Olá, Admin
+            Olá, Pedro
           </div>
           <div>
-            Lorem ipsum dolor sit amet consectetu enim nisi massa rutrum
-            tristique.
+            Seja bem-vindo ao painel administrativo. Aqui você pode gerenciar
+            seu perfil, eventos, e muito mais.
           </div>
         </div>
 
