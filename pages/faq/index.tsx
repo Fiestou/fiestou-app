@@ -133,29 +133,27 @@ export default function Ajuda({
 
       <section>
         <div className="container-medium py-14">
-          <div className="bg-zinc-100 border border-zinc-100 rounded-xl grid lg:flex items-center relative overflow-hidden">
-            <div className="w-full grid gap-6 p-6 md:p-16 text-zinc-900">
-              <h4
-                className="font-title font-bold max-w-[30rem] text-3xl md:text-4xl"
-                dangerouslySetInnerHTML={{
-                  __html: cleanText(Faq?.cta_description),
-                }}
-              ></h4>
-              {!!Faq?.cta_button?.url && (
-                <div className="pt-2">
-                  <Button href={Faq?.cta_button.url}>
-                    {Faq?.cta_button.label ?? "Enviar mensagem"}
-                  </Button>
-                </div>
-              )}
-            </div>
-            {!!Faq?.cta_image && (
-              <div className="w-full">
-                <Img className="w-full" src={getImage(Faq?.cta_image)} />
-              </div>
-            )}
-          </div>
-        </div>
+  <div className="bg-zinc-100 border border-zinc-100 rounded-xl grid lg:flex items-center relative overflow-hidden">
+    <div className="w-full grid gap-6 p-6 md:p-16 text-zinc-900">
+      <h4 className="font-title font-bold max-w-[30rem] text-3xl md:text-4xl">
+        Fale com a nossa equipe e tire todas as suas dúvidas!
+      </h4>
+
+      <div className="pt-2">
+        <Button href="/contato">Enviar mensagem</Button>
+      </div>
+    </div>
+
+    <div className="w-full">
+      <Img
+        className="w-full"
+        src="/images/faq-banner.png" // <-- aqui você coloca a imagem fixa
+        alt="Entre em contato conosco"
+      />
+    </div>
+  </div>
+</div>
+
       </section>
     </Template>
   );

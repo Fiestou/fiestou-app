@@ -181,12 +181,12 @@ export function Footer(props: FooterType) {
             <div>
               Desenvolvido por
               <a
-                href="https://8pdev.studio/"
+                href="https://www.fiestou.com.br/"
                 target="_blank"
                 className="hover:underline hover:text-rose-600 ease font-semibold pl-1"
                 rel="noreferrer"
               >
-                oitop
+                Team Fiestou
               </a>
             </div>
           </div>

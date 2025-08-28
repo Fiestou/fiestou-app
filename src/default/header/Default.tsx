@@ -47,26 +47,23 @@ export default function Default({
   return (
     <>
       <header
-        className={`${
-          params.position == "fixed" ? "fixed top-0 left-0" : "relative"
-        } w-full z-[99] ${params.background}`}
+        className={`${params.position == "fixed" ? "fixed top-0 left-0" : "relative"
+          } w-full z-[99] ${params.background}`}
       >
         <div
-          className={`${
-            params.scroll
+          className={`${params.scroll
               ? `${bgScroll} lg:py-0`
               : `${params.background} lg:py-2`
-          } ease absolute h-full w-full inset-0`}
+            } ease absolute h-full w-full inset-0`}
         ></div>
         <div className="ease container-medium relative text-white pl-4 pr-2 lg:px-4">
           <div className="flex justify-between gap-2 lg:gap-16 items-center py-2">
             <div className="w-full lg:w-[120px] order-1">
               <div
-                className={`max-w-[72px] md:max-w-[120px] ${
-                  params.position == "fixed" &&
+                className={`max-w-[72px] md:max-w-[120px] ${params.position == "fixed" &&
                   params.scroll &&
                   "lg:max-w-[100px]"
-                } ease`}
+                  } ease`}
               >
                 <Link passHref href="/">
                   <div className="aspect aspect-video -mt-2">
@@ -85,27 +82,31 @@ export default function Default({
             </div>
 
             <div className="hidden lg:grid z-10 bottom-0 left-0 order-2">
+
               <div className="w-full flex gap-6">
-                {!!content?.menu_links &&
-                  content.menu_links.map((item: any, key: any) => (
-                    <div key={key}>
-                      <Link passHref href={item.menu_link}>
-                        <div
-                          className={`whitespace-nowrap ease ${
-                            params.pathname == ``
-                              ? "text-yellow-300 font-bold"
-                              : "hover:text-yellow-300"
-                          }`}
-                        >
-                          {item.menu_title}
-                        </div>
-                      </Link>
-                    </div>
-                  ))}
+                <Link href="/" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
+                  Início
+                </Link>
+
+                <Link href="/produtos" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/produtos" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
+                  Produtos
+                </Link>
+
+                <Link href="/parceiros" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/parceiros" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
+                  Parceiros
+                </Link>
+
+                <Link href="/ajuda" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/ajuda" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
+                  Ajuda
+                </Link>
+
+                <Link href="/sobre" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/sobre-nos" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
+                  Sobre nós
+                </Link>
               </div>
             </div>
 
-            <div className="w-fit order-3 lg:order-4 flex items-center gap-4 md:gap-8"> 
+            <div className="w-fit order-3 lg:order-4 flex items-center gap-4 md:gap-8">
               {!!user?.id ? <User user={user} /> : <Login content={content} />}
             </div>
 
@@ -135,9 +136,8 @@ export default function Default({
               >
                 <Icon
                   icon={menuModal ? "fa-times" : "fa-bars"}
-                  className={`${
-                    menuModal ? "mx-[.15rem]" : ""
-                  } text-xl lg:text-3xl`}
+                  className={`${menuModal ? "mx-[.15rem]" : ""
+                    } text-xl lg:text-3xl`}
                 />
               </Button>
             </div>
@@ -162,9 +162,8 @@ export default function Default({
       )}
 
       <div
-        className={`${
-          menuModal ? "grid" : "hidden"
-        } fixed z-[60] top-0 left-0 w-full`}
+        className={`${menuModal ? "grid" : "hidden"
+          } fixed z-[60] top-0 left-0 w-full`}
       >
         <div className="fixed text-white left-0 top-0 w-full h-screen bg-cyan-500  text-right flex flex-col items-start">
           <div className="min-h-[78vh] w-full flex text-2xl flex-col items-start pt-20">
@@ -173,11 +172,10 @@ export default function Default({
                 <div className="w-full py-2 px-4" key={key}>
                   <Link passHref href={item.menu_link}>
                     <div
-                      className={`leading-tight whitespace-nowrap flex justify-between ease ${
-                        params.pathname == ``
+                      className={`leading-tight whitespace-nowrap flex justify-between ease ${params.pathname == ``
                           ? "text-yellow-300 font-bold"
                           : "hover:text-yellow-300"
-                      }`}
+                        }`}
                     >
                       <div className="">
                         {!!item.menu_icon && <FIcon icon={item.menu_icon} />}
@@ -200,7 +198,7 @@ export default function Default({
                     className="hover:text-yellow-300 ease"
                   >
                     {getSocial(item.social_link ?? item.social_title ?? "#") ==
-                    "tiktok" ? (
+                      "tiktok" ? (
                       <BIcon icon="bi-tiktok" />
                     ) : (
                       <FIcon
