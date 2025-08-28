@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { email: email, password: password },
     });
     
-    if (!!data.token) {
+    if (data && data.token) {
       const user: UserType = data.user;
 
       Cookies.set("fiestou.authtoken", data.token, expires);
