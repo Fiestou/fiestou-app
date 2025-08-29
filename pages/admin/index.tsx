@@ -1,11 +1,10 @@
 import { Button } from "@/src/components/ui/form";
 import { AuthContext } from "@/src/contexts/AuthContext";
 import Template from "@/src/template";
-import { signOut } from "next-auth/react";
 import { useContext } from "react";
 
 export default function Admin() {
-  const { UserLogout } = useContext(AuthContext);
+  const { } = useContext(AuthContext);
 
   return (
     <Template

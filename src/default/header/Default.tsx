@@ -96,11 +96,11 @@ export default function Default({
                   Parceiros
                 </Link>
 
-                <Link href="/ajuda" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/ajuda" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
+                <Link href="/faq" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/faq" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
                   Ajuda
                 </Link>
 
-                <Link href="/sobre" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/sobre-nos" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
+                <Link href="/sobre" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/sobre" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
                   Sobre nós
                 </Link>
               </div>

@@ -6,21 +6,28 @@ import { useRouter } from "next/router";
 import ButtonLoader from "@/src/components/utils/ButtonLoader";
 import Img from "@/src/components/utils/ImgBase";
 import { Button, Input, Label } from "@/src/components/ui/form";
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import Newsletter from "@/src/components/common/Newsletter";
 import { clean, getImage } from "@/src/helper";
-
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faHandPointUp, faCalendar, faWineBottle } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
+// Configura a biblioteca do Font Awesome
+library.add(faHandPointUp, faCalendar, faWineBottle);
+
+// Tipagem para as props (se usar TypeScript)
+interface SobreProps {
+  About: any;
+  HeaderFooter: any;
+  DataSeo: any;
+  Scripts: any;
+}
+
+// Função getStaticProps
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-
-  let request: any = await api.content({method: 'get', url: `about` });
+  let request: any = await api.content({ method: 'get', url: `about` });
 
   const About = request?.data?.About ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
@@ -29,34 +36,41 @@ export async function getStaticProps(ctx: any) {
 
   return {
     props: {
-      About: About,
-      HeaderFooter: HeaderFooter,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
+      About,
+      HeaderFooter,
+      DataSeo,
+      Scripts,
     },
     revalidate: 60 * 60 * 60,
   };
 }
 
-export default function Sobre({
-  About,
-  HeaderFooter,
-  DataSeo,
-  Scripts,
-}: {
-  About: any;
-  HeaderFooter: any;
-  DataSeo: any;
-  Scripts: any;
-}) {
+// Dados dos itens
+const worksList = [
+  {
+    work_title: 'Clicou',
+    work_description: 'Procure no site pelas melhores ofertas de fornecedores no setor de eventos, pesquisando por produtos ou por parceiros. Em alguns clicks sua festa está pronta.',
+    work_icon: faHandPointUp, // Alterado de faCircle para fa-hand-point-up
+  },
+  {
+    work_title: 'Marcou',
+    work_description: 'Na data e horário marcado, a entrega será feita no endereço registrado. Pontualmente e com o acompanhamento pelo portal do usuário.',
+    work_icon: faCalendar,
+  },
+  {
+    work_title: 'Fiestou',
+    work_description: 'Aproveite sua festa. No dia seguinte recolhemos, o que for alugado. E dá uma forcinha para gente e avalie o serviço.',
+    work_icon: faWineBottle,
+  },
+];
+
+export default function Sobre({ About, HeaderFooter, DataSeo, Scripts }: SobreProps) {
   return (
     <Template
       scripts={Scripts}
       metaPage={{
         title: `Sobre | ${DataSeo?.site_text}`,
-        image: !!getImage(DataSeo?.site_image)
-          ? getImage(DataSeo?.site_image)
-          : "",
+        image: getImage(DataSeo?.site_image) || "",
         description: clean(About?.main_description),
         url: `sobre`,
       }}
@@ -70,84 +84,57 @@ export default function Sobre({
         content: HeaderFooter,
       }}
     >
-      <section className="bg-cyan-500  pt-24 md:pt-32 relative">
+      <section className="bg-cyan-500 pt-24 md:pt-32 relative">
         <div className="container-medium relative pb-4 md:pb-10 text-white">
           <div className="flex">
             <div className="w-full">
               <div className="pb-4">
                 <Breadcrumbs links={[{ url: "/sobre", name: "Sobre" }]} />
               </div>
-              <h1
-                className="font-title font-bold text-4xl md:text-5xl mb-4"
-                dangerouslySetInnerHTML={{ __html: About?.main_text }}
-              ></h1>
-              <div
-                className="text-lg md:text-2xl font-semibold"
-                dangerouslySetInnerHTML={{ __html: About?.main_description }}
-              ></div>
-            </div>
-            {!!getImage(About?.main_icons) && (
-              <div className="w-fit">
-                <Img
-                  src={getImage(About?.main_icons)}
-                  className="w-auto max-w-full"
-                />
+              <h1 className="font-title font-bold text-4xl md:text-5xl mb-4">
+                Sobre nós
+              </h1>
+              <div className="text-lg md:text-2xl font-semibold">
+                Uma start-up para facilitar em como realizar sua festa
               </div>
-            )}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="py-10 md:py-20 relative overflow-hidden">
+      <section className="py-10 md:pt-20 relative overflow-hidden">
         <div className="container-medium">
           <div className="max-w-3xl mx-auto text-center pb-6 md:pb-14">
-            <h2
-              className="font-title text-zinc-900 font-bold text-3xl md:text-5xl mt-2"
-              dangerouslySetInnerHTML={{ __html: About?.works_text }}
-            ></h2>
+            <h2 className="font-title text-zinc-900 font-bold text-3xl md:text-5xl mt-2">
+              Te ajudamos a festejar sem dor de cabeça
+            </h2>
           </div>
-          <div className="">
-            <Swiper
-              spaceBetween={16}
-              modules={[Navigation]}
-              breakpoints={{
-                0: {
-                  slidesPerView: 1.25,
-                },
-                640: {
-                  slidesPerView: 2.5,
-                },
-                1024: {
-                  slidesPerView: 3,
-                },
-              }}
-              className="swiper-equal swiper-visible"
-            >
-              {!!About?.works_text &&
-                About?.works_list.map((item: any, key: any) => (
-                  <SwiperSlide key={key}>
-                    <div className="border h-full rounded-lg p-6 md:p-10">
-                      <div className="p-8 text-yellow-400 relative">
-                        <Icon
-                          icon={item.work_image ?? "fa-hand-point-up"}
-                          className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
-                        />
-                        <Icon
-                          icon={item.work_image ?? "fa-hand-point-up"}
-                          type="fa"
-                          className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
-                        />
-                      </div>
-                      <div className="pt-6">
-                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
-                          {item.work_title}
-                        </h3>
-                        <div>{item.work_description}</div>
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                ))}
-            </Swiper>
+          <div className="px-4 py-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {worksList.map((item, index) => (
+                <div
+                  key={index}
+                  className="border h-full rounded-lg p-6 md:p-10 bg-white"
+                >
+                  <div className="p-8 text-yellow-400 relative">
+                    <FontAwesomeIcon
+                      icon={item.work_icon}
+                      className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
+                    />
+                    <FontAwesomeIcon
+                      icon={item.work_icon}
+                      className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
+                    />
+                  </div>
+                  <div className="pt-6">
+                    <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
+                      {item.work_title}
+                    </h3>
+                    <div className="text-gray-600">{item.work_description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -175,61 +162,6 @@ export default function Sobre({
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-10 md:pt-20 relative overflow-hidden">
-        <div className="container-medium">
-          <div className="max-w-3xl mx-auto text-center pb-6 md:pb-14">
-            <span>{About?.args_title}</span>
-            <h2
-              className="font-title text-zinc-900 font-bold text-3xl md:text-5xl mt-2"
-              dangerouslySetInnerHTML={{ __html: About?.args_text }}
-            ></h2>
-          </div>
-          <div className="">
-            <Swiper
-              spaceBetween={16}
-              modules={[Navigation]}
-              breakpoints={{
-                0: {
-                  slidesPerView: 1.25,
-                },
-                640: {
-                  slidesPerView: 2.5,
-                },
-                1024: {
-                  slidesPerView: 3,
-                },
-              }}
-              className="swiper-equal swiper-visible"
-            >
-              {!!About?.args_list &&
-                About?.args_list.map((item: any, key: any) => (
-                  <SwiperSlide key={key}>
-                    <div className="border h-full rounded-lg p-6 md:p-10">
-                      <div className="p-8 text-yellow-400 relative">
-                        <Icon
-                          icon={item.arg_image ?? "fa-hand-point-up"}
-                          className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
-                        />
-                        <Icon
-                          icon={item.arg_image ?? "fa-hand-point-up"}
-                          type="fa"
-                          className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
-                        />
-                      </div>
-                      <div className="pt-6">
-                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
-                          {item.arg_title}
-                        </h3>
-                        <div>{item.arg_description}</div>
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                ))}
-            </Swiper>
           </div>
         </div>
       </section>
