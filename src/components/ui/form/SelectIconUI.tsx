@@ -66,6 +66,7 @@ export default function SelectIcon(attr: SelectIconType) {
                         onClick={() => {
                           handleSelected(icon[0]);
                           setTimeout(() => setDropdown(false), 1);
+                          console.log(icon[0]);
                         }}
                         className="relative aspect-square p-0"
                       >
