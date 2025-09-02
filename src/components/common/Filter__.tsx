@@ -72,7 +72,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
     if (routerQuery?.ordem) {
       handleQuery["order"] = routerQuery.ordem;
     }
-    console.log("Router Query:", routerQuery);
 
     alert("Router Query: " + JSON.stringify(routerQuery));
 
@@ -103,8 +102,6 @@ export default function Filter(params: { store?: string; busca?: string }) {
     const updatedCategories = isSelected
       ? query.categories.filter((id) => id !== element.id)
       : [...query.categories, element.id];
-
-      console.log("Updated Categories:", updatedCategories);
 
     handleQueryValues({ categories: updatedCategories });
 

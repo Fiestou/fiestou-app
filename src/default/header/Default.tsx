@@ -1,7 +1,5 @@
 import Img from "@/src/components/utils/ImgBase";
 import {
-  getFirstName,
-  getImage,
   getSocial,
   isMobileDevice,
 } from "@/src/helper";
@@ -34,6 +32,7 @@ export default function Default({
   const [menuModal, setMenuModal] = useState(false as boolean);
 
   const [layout, setLayout] = useState({} as any);
+  
 
   useEffect(() => {
     if (!!Cookies.get("fiestou.cart")) {
@@ -52,8 +51,8 @@ export default function Default({
       >
         <div
           className={`${params.scroll
-              ? `${bgScroll} lg:py-0`
-              : `${params.background} lg:py-2`
+            ? `${bgScroll} lg:py-0`
+            : `${params.background} lg:py-2`
             } ease absolute h-full w-full inset-0`}
         ></div>
         <div className="ease container-medium relative text-white pl-4 pr-2 lg:px-4">
@@ -68,11 +67,7 @@ export default function Default({
                 <Link passHref href="/">
                   <div className="aspect aspect-video -mt-2">
                     <Img
-                      src={
-                        !!content?.header_logo
-                          ? getImage(content.header_logo)
-                          : "/images/logo.png"
-                      }
+                      src="/images/logo.png"
                       size="md"
                       className="w-full h-full object-contain"
                     />
@@ -173,8 +168,8 @@ export default function Default({
                   <Link passHref href={item.menu_link}>
                     <div
                       className={`leading-tight whitespace-nowrap flex justify-between ease ${params.pathname == ``
-                          ? "text-yellow-300 font-bold"
-                          : "hover:text-yellow-300"
+                        ? "text-yellow-300 font-bold"
+                        : "hover:text-yellow-300"
                         }`}
                     >
                       <div className="">
