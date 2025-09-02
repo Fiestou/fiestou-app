@@ -1,5 +1,4 @@
 import Img from "@/src/components/utils/ImgBase";
-import { getImage } from "@/src/helper";
 import FIcon from "@/src/icons/fontAwesome/FIcon";
 import BIcon from "@/src/icons/bootstrapIcons/BIcon";
 import Link from "next/link";
@@ -79,37 +78,31 @@ export function Footer(props: FooterType) {
               <div className="w-full max-w-[150px] inline-block">
                 <Link passHref href="/">
                   <Img
-                    src={
-                      !!content?.footer_logo
-                        ? getImage(content.footer_logo)
-                        : "/images/logo.png"
-                    }
+                    src="/images/logo.png"
                     size="md"
-                    className="w-full"
+                    className="w-full h-full object-contain"
                   />
                 </Link>
               </div>
               <div
                 className="mx-auto max-w-[16rem] md:ml-0 md:max-w-[20rem] py-6"
-
-              >Clicou👆, Marcou🗓, Fiestou🍾! Marketplace ideal para festas. <br/><br/> CNPJ: 62.363.954/0001-16</div>
-              <span> </span>
+              >Clicou👆, Marcou🗓, Fiestou🍾! Marketplace ideal para festas. <br /><br /> CNPJ: 62.363.954/0001-16</div>
             </div>
 
             <div className="w-full grid gap-10 items-start md:grid-cols-2 xl:grid-cols-4">
-              <div className="grid gap-4">
+              <div className="grid gap-4 ">
                 <div className="text-zinc-900 font-bold">Fiestou</div>
                 <Link href="/sobre-nos" className="hover:text-yellow-500 ease">
                   <div>Sobre nós</div>
-                </Link>
-                <Link href="/faq" className="hover:text-yellow-500 ease">
-                  <div>FAQ</div>
                 </Link>
                 <Link href="/contato" className="hover:text-yellow-500 ease">
                   <div>Contato</div>
                 </Link>
                 <Link href="/blog" className="hover:text-yellow-500 ease">
                   <div>Blog</div>
+                </Link>
+                <Link href="/faq" className="hover:text-yellow-500 ease">
+                  <div>FAQ</div>
                 </Link>
               </div>
               <div className="grid gap-4">
@@ -206,7 +199,7 @@ export function Footer(props: FooterType) {
                       icon="bi-tiktok"
                       className="text-zinc-900 group-hover:text-yellow-500 ease"
                     />
-                    <span>Tik Tok</span>
+                    <span>TikTok</span>
                   </div>
                 </Link>
               </div>

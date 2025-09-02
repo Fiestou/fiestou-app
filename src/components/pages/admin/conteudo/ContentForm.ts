@@ -32,13 +32,6 @@ export interface FormType {
 
 const site: Array<FormType> = [
   {
-    title: "Menu e Rodapé",
-    slug: "menu",
-    publicUrl: "",
-    form: HeaderFooterForm,
-    origin: "global",
-  },
-  {
     title: "Home",
     slug: "home",
     publicUrl: "/",
