@@ -139,6 +139,7 @@ export default function Home({
         content: HeaderFooter,
       }}
     >
+      {/* Slider principal */}
       <section className="group relative">
         <Swiper
           spaceBetween={0}
@@ -211,6 +212,8 @@ export default function Home({
             </SwiperSlide>
           ))}
         </Swiper>
+
+
         {(Home?.main_slide ?? []).length > 1 && (
           <div className="opacity-0 group-hover:opacity-100 hidden sm:flex ease absolute px-4 top-1/2 left-0 w-full -translate-y-1/2 items-center h-0 justify-between z-10">
             <div>
@@ -235,19 +238,20 @@ export default function Home({
         )}
       </section>
 
+      {/* Filtros */}
       <div className="relative pb-16 -mt-7">
         <div className="absolute w-full">
           <Filter />
         </div>
       </div>
 
+      {/* Produtos em destaque */}
       <section className="py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-8">
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-              dangerouslySetInnerHTML={{ __html: Home?.feature_text }}
-            ></h2>
+            >Encontre a decoração perfeita para você</h2>
           </div>
           <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6">
             <div className="order-3 md:order-2 grid md:grid-cols-2 lg:grid-cols-4 gap-4 w-full relative overflow-hidden">
@@ -265,13 +269,13 @@ export default function Home({
         </div>
       </section>
 
+      {/* Como montar sua festa */}
       <section className="py-12 md:py-20">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-              dangerouslySetInnerHTML={{ __html: Home?.works_text }}
-            ></h2>
+            >Veja como é muito fácil montar sua festa!</h2>
           </div>
           <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6 -mx-[1rem] xl:-mx-[4rem]">
             <div className="hidden md:block order-1 w-1/2 text-right md:text-center md:w-fit p-2">
@@ -306,28 +310,105 @@ export default function Home({
                 }}
                 className="swiper-equal"
               >
-                {!!Home?.works_steps &&
-                  Home?.works_steps.map((item: any, key: any) => (
-                    <SwiperSlide key={key}>
-                      <div className="border h-full rounded-lg">
-                        <div className="aspect-square bg-zinc-100">
-                          {!!item?.step_cover && (
-                            <Img
-                              src={getImage(item?.step_cover)}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </div>
-                        <div className="p-4 md:p-5">
-                          <h3 className="font-title text-zinc-900 font-bold">
-                            {item?.step_text}
-                          </h3>
-                        </div>
-                      </div>
-                    </SwiperSlide>
-                  ))}
+                {/* Slide 1 */}
+                <SwiperSlide>
+                  <div className="border h-full rounded-lg">
+                    <div className="aspect-square bg-zinc-100">
+                      <Img
+                        src="/images/stepsImage/step1.jpeg"
+                        alt="1 - Peça pelo site"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4 md:p-5 text-center">
+                      <h4 className="font-title text-zinc-900 font-bold">1 - Peça pelo site</h4>
+                    </div>
+                  </div>
+                </SwiperSlide>
+
+                {/* Slide 2 */}
+                <SwiperSlide>
+                  <div className="border h-full rounded-lg">
+                    <div className="aspect-square bg-zinc-100">
+                      <Img
+                        src="/images/stepsImage/step2.jpeg"
+                        alt="2 - Recebemos o seu pedido"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4 md:p-5 text-center">
+                      <h4 className="font-title text-zinc-900 font-bold">2 - Recebemos o seu pedido</h4>
+                    </div>
+                  </div>
+                </SwiperSlide>
+
+                {/* Slide 3 */}
+                <SwiperSlide>
+                  <div className="border h-full rounded-lg">
+                    <div className="aspect-square bg-zinc-100">
+                      <Img
+                        src="/images/stepsImage/step3.jpeg"
+                        alt="3 - Preparamos para o envio"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4 md:p-5 text-center">
+                      <h4 className="font-title text-zinc-900 font-bold">3 - Preparamos para o envio</h4>
+                    </div>
+                  </div>
+                </SwiperSlide>
+
+                {/* Slide 4 */}
+                <SwiperSlide>
+                  <div className="border h-full rounded-lg">
+                    <div className="aspect-square bg-zinc-100">
+                      <Img
+                        src="/images/stepsImage/step4.jpeg"
+                        alt="4 - Entregamos sem atraso"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4 md:p-5 text-center">
+                      <h4 className="font-title text-zinc-900 font-bold">4 - Entregamos sem atraso</h4>
+                    </div>
+                  </div>
+                </SwiperSlide>
+
+                {/* Slide 5 */}
+                <SwiperSlide>
+                  <div className="border h-full rounded-lg">
+                    <div className="aspect-square bg-zinc-100">
+                      <Img
+                        src="/images/stepsImage/step5.jpeg"
+                        alt="5 - Fiestouuu!"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4 md:p-5 text-center">
+                      <h4 className="font-title text-zinc-900 font-bold">5 - Fiestouuu!</h4>
+                    </div>
+                  </div>
+                </SwiperSlide>
+
+                {/* Slide 6 */}
+                <SwiperSlide>
+                  <div className="border h-full rounded-lg">
+                    <div className="aspect-square bg-zinc-100">
+                      <Img
+                        src="/images/stepsImage/step6.jpeg"
+                        alt="6 - Recolhemos"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4 md:p-5 text-center">
+                      <h4 className="font-title text-zinc-900 font-bold">6 - Recolhemos</h4>
+                    </div>
+                  </div>
+                </SwiperSlide>
               </Swiper>
             </div>
+
+
             <div className="hidden md:block order-2 md:order-3 w-1/2 text-left md:text-center md:w-fit p-2">
               <Button className="swiper-next p-5 rounded-full">
                 <Icon
@@ -340,12 +421,12 @@ export default function Home({
         </div>
       </section>
 
+      {/* Parceiros */}
       <section className="xl:py-14">
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-4xl mx-auto text-center pb-8 md:pb-14">
-              <h2
-                className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
+              <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
                 Confira os parceiros já cadastrados</h2>
             </div>
             {!!Home?.partner_list?.length && (
@@ -390,7 +471,8 @@ export default function Home({
               <div className="w-full">
                 <div className="aspect-[2/2]">
                   <Img
-                    src={getImage(Home.partner_image)}
+                    src="/images/Faca-parte-do-Fiestou.png"
+                    alt="Faça parte do Fiestou"
                     className="w-full h-full object-contain"
                   />
                 </div>
@@ -400,6 +482,7 @@ export default function Home({
         </div>
       </section>
 
+      {/* Depoimentos */}
       <section className="py-14">
         <div className="container-medium">
           <div className="lg:flex justify-center">
@@ -529,6 +612,7 @@ export default function Home({
         </div>
       </section>
 
+      {/* Blog */}
       <section className="pb-14 xl:py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">

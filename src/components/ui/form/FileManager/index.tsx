@@ -187,7 +187,7 @@ export default function FileManager(attr: FileManagerType) {
 
   return (
     <div>
-      {/* <div
+      <div
         className={`${
           attr?.options?.type == "thumb"
             ? "flex flex-row-reverse items-center"
@@ -257,7 +257,7 @@ export default function FileManager(attr: FileManagerType) {
               ))}
           </div>
         )}
-      </div> */}
+      </div>
 
       {modalStatus && (
         <div className="fixed flex flex-col bg-white z-50 w-full h-full inset-0">
