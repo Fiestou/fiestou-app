@@ -3,11 +3,6 @@ import { iconsLib } from "@/src/icons/fontAwesome/fontAwesomeIcons";
 import { useState } from "react";
 import Button from "./ButtonUI";
 
-interface OptionType {
-  name?: string;
-  value: any;
-}
-
 interface SelectIconType {
   name: string;
   onChange?: Function;
@@ -66,7 +61,6 @@ export default function SelectIcon(attr: SelectIconType) {
                         onClick={() => {
                           handleSelected(icon[0]);
                           setTimeout(() => setDropdown(false), 1);
-                          console.log(icon[0]);
                         }}
                         className="relative aspect-square p-0"
                       >

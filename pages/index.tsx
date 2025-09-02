@@ -343,73 +343,10 @@ export default function Home({
       <section className="xl:py-14">
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
-            <div className="max-w-xl mx-auto text-center pb-14">
-              <h2
-                className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-                dangerouslySetInnerHTML={{ __html: Home?.categories_text }}
-              ></h2>
-            </div>
-            <div className="bg-white py-4 md:py-10 rounded-xl overflow-hidden relative">
-              <Swiper
-                spaceBetween={16}
-                breakpoints={{
-                  0: {
-                    slidesPerView: 2.5,
-                  },
-                  640: {
-                    slidesPerView: 3.5,
-                  },
-                  1024: {
-                    slidesPerView: 5,
-                  },
-                }}
-              >
-                {!!Categories &&
-                  Categories.filter((item: any) => !!item?.feature).map(
-                    (item: any, key: any) => (
-                      <SwiperSlide key={key}>
-                        <Link passHref href={`/categoria/${item?.slug}`}>
-                          <div className="group grid gap-2 text-center">
-                            <div className="w-full max-w-[10rem] mx-auto">
-                              <div className="aspect-square">
-                                {!!getImage(item?.image, "thumb") && (
-                                  <Img
-                                    src={getImage(item?.image, "thumb")}
-                                    className="w-full h-full object-contain"
-                                  />
-                                )}
-                              </div>
-                            </div>
-                            <div className="pb-2">
-                              <h3 className="font-title font-bold text-zinc-900 group-hover:text-yellow-400 ease whitespace-nowrap">
-                                {item?.title}
-                              </h3>
-                            </div>
-                          </div>
-                        </Link>
-                      </SwiperSlide>
-                    )
-                  )}
-              </Swiper>
-            </div>
-            <div className="text-center mt-10">
-              <Button href="/produtos">
-                <Icon icon="fa-shopping-bag" type="far" />
-                Ver todos
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="xl:py-14">
-        <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
-          <div className="container-medium">
             <div className="max-w-4xl mx-auto text-center pb-8 md:pb-14">
               <h2
-                className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-                dangerouslySetInnerHTML={{ __html: Home?.partner_text }}
-              ></h2>
+                className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
+                Confira os parceiros já cadastrados</h2>
             </div>
             {!!Home?.partner_list?.length && (
               <div className="flex justify-center gap-2 md:gap-12">
@@ -435,17 +372,14 @@ export default function Home({
             <div className="bg-white mt-6 lg:mt-20 rounded-xl grid lg:flex items-center relative overflow-hidden">
               <div className="w-full grid gap-6 p-6 md:p-16">
                 <h4
-                  className="font-title font-bold max-w-[30rem] text-zinc-900 text-5xl"
-                  dangerouslySetInnerHTML={{
-                    __html: Home?.partner_text_secondary,
-                  }}
-                ></h4>
+                  className="font-title font-bold max-w-[30rem] text-zinc-900 text-5xl"             >
+                  Faça parte do Fiestou</h4>
                 <div
-                  className="max-w-[20rem]"
-                  dangerouslySetInnerHTML={{
-                    __html: Home?.partner_description_secondary,
-                  }}
-                ></div>
+                  className="max-w-[20rem]">
+                  <span>
+                    Atua no setor de eventos e quer alcançar mais clientes, em João Pessoa? Entre no nosso time criando sua conta agora!
+                  </span>
+                </div>
                 <div className="md:pt-4">
                   <Button href="/parceiros/seja-parceiro">
                     <Icon icon="fa-store" type="far" />
@@ -455,12 +389,10 @@ export default function Home({
               </div>
               <div className="w-full">
                 <div className="aspect-[2/2]">
-                  {!!getImage(Home?.partner_image) && (
-                    <Img
-                      src={getImage(Home?.partner_image)}
-                      className="w-full h-full object-contain"
-                    />
-                  )}
+                  <Img
+                    src={getImage(Home.partner_image)}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
               </div>
             </div>
