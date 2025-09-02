@@ -74,9 +74,8 @@ export default function List(attr: ListType) {
                 </div>
               </div>
               <div
-                className={`${
-                  collapseTrash == key ? "" : "hidden"
-                } w-fit flex gap-2`}
+                className={`${collapseTrash == key ? "" : "hidden"
+                  } w-fit flex gap-2`}
               >
                 <Button
                   type="button"
@@ -96,9 +95,8 @@ export default function List(attr: ListType) {
                 </Button>
               </div>
               <div
-                className={`${
-                  collapseTrash == key ? "hidden" : ""
-                } w-fit flex gap-2`}
+                className={`${collapseTrash == key ? "hidden" : ""
+                  } w-fit flex gap-2`}
               >
                 <Button
                   type="button"
@@ -123,11 +121,10 @@ export default function List(attr: ListType) {
               </div>
             </div>
             <div
-              className={`fixed top-0 left-0 w-full z-20 bg-zinc-900 bg-opacity-75 ${
-                modalItemStatus == key
-                  ? "h-full min-h-screen overflow-y-scroll"
-                  : "h-0 overflow-hidden"
-              }`}
+              className={`fixed top-0 left-0 w-full z-20 bg-zinc-900 bg-opacity-75 ${modalItemStatus == key
+                ? "h-full min-h-screen overflow-y-scroll"
+                : "h-0 overflow-hidden"
+                }`}
             >
               <div
                 onClick={() => setModalItemStatus(-1)}
@@ -167,7 +164,9 @@ export default function List(attr: ListType) {
             </div>
           </div>
         ))}
+
       <div className="grid">
+        {/* estou aqui nesse momento */}
         <Button
           type="button"
           onClick={() => addItem()}

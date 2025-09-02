@@ -210,6 +210,7 @@ export default function Categoria({
           )}
         </div>
       </section>
+      
     </Template>
   );
 }

@@ -21,7 +21,7 @@ interface ButtonType {
   disable?: boolean;
   othersAttrs?: any;
   children: ReactNode;
-  rel?: string;
+  ref?: any;
 }
 
 export default function Button(attr: ButtonType) {

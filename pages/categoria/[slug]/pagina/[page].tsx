@@ -169,12 +169,12 @@ export default function Categoria({
                 className="font-title font-bold text-4xl md:text-5xl mb-8 md:mb-0"
                 dangerouslySetInnerHTML={{ __html: category?.title }}
               ></h1>
-              {/*
+              
               <div
                 className="text-lg md:text-2xl font-semibold"
                 dangerouslySetInnerHTML={{ __html: content?.main_description }}
               ></div>
-              */}
+             
             </div>
             {!!getImage(content?.main_icons) && (
               <div className="w-fit">
