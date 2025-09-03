@@ -6,7 +6,7 @@ import Badge from "@/src/components/utils/Badge";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { NextApiRequest } from "next";
-import Filter from "@/src/components/common/Filter";
+
 import { getImage } from "@/src/helper";
 import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -14,8 +14,9 @@ import ShareModal from "@/src/components/utils/ShareModal";
 import Modal from "@/src/components/utils/Modal";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import FilterStore from "./components/FilterStore";
-import { FilterQueryType } from "@/src/types/filtros/request";
+import { FilterQueryType } from "@/src/types/filtros";
+import Filter from "@/src/components/common/filters/Filter";
+
 
 export interface Store {
   title: string;
@@ -297,12 +298,8 @@ export default function Store({
       </div>
 
       <div className="relative pt-5">
-        <FilterStore
-          store={store}
-          returnData={(dataProducts: FilterQueryType) => {
-            setHandleParams(dataProducts);
-            getProducts(true, dataProducts, 0); // Limpa e busca do zero
-          }}
+        <Filter
+          store={store.id}
         />
       </div>
 

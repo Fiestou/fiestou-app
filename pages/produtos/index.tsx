@@ -10,8 +10,8 @@ import "swiper/css/pagination";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useRouter } from "next/router";
 import Paginate from "@/src/components/utils/Paginate";
-import Filter from "@/src/components/common/Filter";
 import { Footer } from "@/src/default/footer";
+import Filter from "@/src/components/common/filters/Filter";
 
 let limit = 15;
 

@@ -17,10 +17,9 @@ import "swiper/css/pagination";
 import Product from "@/src/components/common/Product";
 import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
-import Filter from "@/src/components/common/Filter";
-import { useEffect, useState } from "react";
-import { GroupsResponse } from "../src/types/filtros/response";
-import { useGroup } from "@/src/store/filter";
+
+import {useState } from "react";
+import Filter from "@/src/components/common/filters/Filter";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -70,7 +69,6 @@ export default function Home({
   Scripts: any;
 }) {
   const api = new Api();
-  const { setGroups } = useGroup();
 
   const renderImageSlider = (slide: any) => {
     return getImage(slide?.main_slide_cover, "default") ? (
@@ -95,22 +93,6 @@ export default function Home({
     );
   };
 
-  const getFilters = async () => {
-    const request = await api.request<GroupsResponse>(
-      {
-        method: 'get',
-        url: 'group/list'
-      }
-    )
-
-    if (request?.data && request.response) {
-      setGroups(request.data)
-    }
-  }
-
-  useEffect(() => {
-    getFilters()
-  }, [])
 
   const [imgLinks] = useState<string[]>(
     Array.isArray(Home?.main_slide)
