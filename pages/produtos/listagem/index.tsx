@@ -1,6 +1,7 @@
 /* Titar 'request' */
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import Filter from "@/src/components/common/Filter";
+import Filter from "@/src/components/common/filters/Filter";
+
 import Newsletter from "@/src/components/common/Newsletter";
 import Product from "@/src/components/common/Product";
 import { Button } from "@/src/components/ui/form";
