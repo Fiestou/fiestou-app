@@ -429,27 +429,28 @@ export default function Home({
               <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
                 Confira os parceiros já cadastrados</h2>
             </div>
-            {!!Home?.partner_list?.length && (
-              <div className="flex justify-center gap-2 md:gap-12">
-                {Home?.partner_list.map((item: any, key: any) => (
-                  <Link
-                    key={key}
-                    href={item?.partner_item_link}
-                    title={item?.partner_item_title}
-                    className="block w-full max-w-[10rem] border rounded-xl border-zinc-300 bg-white"
-                  >
-                    <div className="aspect-square">
-                      {!!getImage(item?.partner_item_image) && (
-                        <Img
-                          src={getImage(item?.partner_item_image)}
-                          className="w-full h-full object-contain"
-                        />
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+            <div className="flex justify-center gap-2 md:gap-12">
+
+                <div className="aspect-square">
+                  <Img
+                    src="/images/circus.png"
+                    className="w-full h-full"
+                  />
+                </div>
+                <div className="aspect-square">
+                  <Img
+                    className="w-full h-full object-contain"
+                    src="/images/fiori.png"
+                  />
+                </div>
+                <div className="aspect-square">
+                  <Img
+                    className="w-full h-full"
+                    src="/images/flavia.png"
+                  />
+                </div>
+
+            </div>
             <div className="bg-white mt-6 lg:mt-20 rounded-xl grid lg:flex items-center relative overflow-hidden">
               <div className="w-full grid gap-6 p-6 md:p-16">
                 <h4

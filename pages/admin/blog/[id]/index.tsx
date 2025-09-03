@@ -36,7 +36,7 @@ interface PostType {
   slug: string;
   image: Array<any>;
   blocks: Array<any>;
-  status: string | number;
+  // status: string | number;
 }
 
 export default function Form({ id }: { id: number | string }) {
@@ -51,7 +51,7 @@ export default function Form({ id }: { id: number | string }) {
   };
 
   const [content, setContent] = useState<PostType>({
-    status: 0,
+    // status: 0,
     id: 0,
     title: "",
     slug: "",
@@ -99,7 +99,7 @@ export default function Form({ id }: { id: number | string }) {
         id: content.id ?? null,
         title: content?.title ?? `content-${shortId()}`,
         slug: content?.title ?? null,
-        status: content?.status,
+        // status: content?.status,
         content: {
           image: handle.image,
           blocks: handle.blocks,
@@ -242,7 +242,7 @@ export default function Form({ id }: { id: number | string }) {
                     </Button>
                   </div>
                   <div className="grid gap-4 order-1 lg:order-2 form-group">
-                    <div>
+                    {/* <div>
                       <label style={{ float: 'right' }}>
                         Visualização: {content?.status === 0 ? 'Público' : 'Privado'}
                       </label>
@@ -263,13 +263,13 @@ export default function Form({ id }: { id: number | string }) {
                           )
                         )}
                       </select>
-                    </div>
+                    </div> */}
 
                     <div>
                       <div className="">
                         <FileManager
                           placeholder="Imagem destaque"
-                          value={content?.image ?? []}
+                          // value={content?.image ?? []}
                           aspect="aspect-square"
                           multiple={false}
                           onChange={(emit: any) =>
