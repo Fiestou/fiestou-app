@@ -1,5 +1,5 @@
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import Filter from "@/src/components/common/Filter";
+import Filter from "@/src/components/common/filters/Filter";
 import Product from "@/src/components/common/Product";
 import Img from "@/src/components/utils/ImgBase";
 import Paginate from "@/src/components/utils/Paginate";

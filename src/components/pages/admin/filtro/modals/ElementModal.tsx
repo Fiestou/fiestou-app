@@ -2,10 +2,11 @@ import FileManager from "@/src/components/ui/form/FileManager";
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import SelectElements from "../selectElements/selectElements";
-import { categorie } from "@/src/types/filtros/response";
+
 import { Trash2 } from "lucide-react";
-import { controllers } from "chart.js";
+
 import { toast } from "react-toastify";
+import { categorie } from "@/src/store/filter";
 interface ElementModalProps {
     open: boolean;
     onRequestClose: () => void;
@@ -160,7 +161,7 @@ const ElementModal: React.FC<ElementModalProps> = (props) => {
                         <h2 className="text-xl font-semibold text-black underline-offset-4">
                             Selecione os elementos relacionados
                         </h2>
-                        <p className="text-sm text-gray-700">{props.relatedElements[0]?.groupName}</p>
+                        <p className="text-sm text-gray-700">{}</p>
                         <SelectElements
                             selectedList={selectedList}
                             onRequestClose={() => setOpenSelect(false)}
