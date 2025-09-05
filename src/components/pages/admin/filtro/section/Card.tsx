@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { categorie, ElementResponse, ElementsResponse, GenericResponse, GroupResponse, GroupsResponse } from "@/src/types/filtros/response";
 import Api from "@/src/services/api";
 import ElementModal, { ReturnElementData } from "../modals/ElementModal";
 import { toast } from "react-toastify";
 import { X, Trash2, Pencil, EllipsisVertical, Plus } from "lucide-react";
 import DeleteModal from "../modals/DeleteModal";
 import { elements } from "chart.js";
+import { categorie } from "@/src/store/filter";
+import { ElementsResponse, GenericResponse } from "@/src/types/filtros";
 
 interface CardProps {
     title: string;
