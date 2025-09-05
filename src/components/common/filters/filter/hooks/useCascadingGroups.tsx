@@ -1,5 +1,5 @@
 // hooks/useCascadingGroups.ts
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, use } from "react";
 import { Categorie } from "@/src/types/filtros";
 import { Group } from "./useFiltersData";
 
@@ -41,7 +41,7 @@ export function useCascadingGroups(allGroups: Group[]) {
       return up;
     });
   }, [allGroups]);
-
+  useEffect(() => {console.log(localGroups)}, [localGroups]);
   const removeRelatedOf = useCallback((clicked: Categorie, keptSelectedIds: number[]) => {
     if (!clicked.element_related_id?.length) return;
     const otherRelIds = allGroups

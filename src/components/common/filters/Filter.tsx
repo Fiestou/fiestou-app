@@ -17,14 +17,11 @@ export type ProductPage<T = any> = {
 };
 
 export interface FilterProps<T = any> {
-  store?: StoreType;
+  store?: number;
   busca?: string;
   storeView?: boolean;
-  /** UI/roteamento: 'home' navega; 'store' e 'panel' não navegam */
   context?: "home" | "store" | "panel";
-  /** Usado apenas em store/panel (para buscas acionadas pelo usuário) */
   fetchProducts?: (params: Record<string, any>) => Promise<ProductPage<T>>;
-  /** Recebe os resultados (auto-load do painel e buscas) */
   onResults?: (data: ProductPage<T>, params: Record<string, any>) => void;
 }
 
@@ -115,7 +112,7 @@ export default function Filter<T = any>({
     }
   }, [router.query]);
 
-  // ----- helpers -----
+
   const buildParams = (overrides?: Record<string, any>) => {
     const params: Record<string, any> = {
       ...(busca ? { busca } : {}),
@@ -125,9 +122,9 @@ export default function Filter<T = any>({
       ...overrides,
     };
 
-    if (store?.id) params.store = store.id;
-    if (query.colors.length) params.colors = query.colors; // <-- aqui!
-    if (query.categories.length) params["categoria[]"] = query.categories;
+    if (store) params.store = store;
+    if (query.colors.length) params.colors = query.colors;
+    if (query.categories.length) params.category = query.categories; // <-- aqui!
 
     return params;
   };
@@ -143,7 +140,6 @@ export default function Filter<T = any>({
     }
   };
 
-  /** Ação final: home navega; store/panel fazem fetch */
   const act = (params: Record<string, any>) => {
     if (context === "home") {
       router.push({ pathname: "/produtos/listagem", query: params });
@@ -182,9 +178,12 @@ export default function Filter<T = any>({
 
       const res: any = await api.bridge({
         method: "get",
-        url: "stores/products?" + queryString,
+        url:
+          (context === "panel"
+            ? "stores/products?"
+            : "request/products?") + queryString,
       });
-
+      
       const raw = res?.data ?? res ?? {};
       const items = raw.items ?? raw.data ?? (Array.isArray(raw) ? raw : []);
       const total = Number(raw.total ?? items.length ?? 0);
@@ -200,16 +199,15 @@ export default function Filter<T = any>({
 
 
   useEffect(() => {
-    if (context === "panel") {
-
+    if (context === "panel" || context === "store") {
       loadPanelProducts(1);
     }
 
   }, []);
 
   return (
-    <form className="w-full">
-      {store && <input type="hidden" value={store.id} name="store" />}
+    <div className="w-full">
+      {store && <input type="hidden" value={store} name="store" />}
 
       {storeView ? (
         <InputserachStore
@@ -240,8 +238,7 @@ export default function Filter<T = any>({
         onSubmit={handleSeeResults}
         store={store}
         storeView={storeView}
-      // title={`Filtros${loading ? " (carregando…)" : ""}`} // opcional
       />
-    </form>
+    </div>
   );
 }
