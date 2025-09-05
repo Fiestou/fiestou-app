@@ -5,7 +5,7 @@ import { ProductType } from "@/src/models/product";
 
 import Img from "@/src/components/utils/ImgBase";
 import { getImage } from "@/src/helper";
-import Filter from "@/src/components/common/Filter";
+
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -15,6 +15,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { Button } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
 import Paginate from "@/src/components/utils/Paginate";
+import Filter from "@/src/components/common/filters/Filter";
 
 let limit = 15;
 
