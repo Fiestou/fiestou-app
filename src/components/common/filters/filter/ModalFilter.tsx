@@ -8,8 +8,7 @@ import GroupChips from "./sections/GroupChips";
 import Footer from "./sections/Footer";
 import { FilterQueryType, Categorie } from "@/src/types/filtros";
 import { useFiltersData } from "./hooks/useFiltersData";
-import { useCascadingGroups } from "./hooks/useCascadingGroups";
-import { StoreType } from "@/src/models/product";
+import { useCascadingGroups } from "./hooks/useCascadingGroups";;
 
 export interface ModalFilterProps {
   open: boolean;
@@ -18,7 +17,7 @@ export interface ModalFilterProps {
   onChange: (patch: Partial<FilterQueryType>) => void;
   count: number;
   onSubmit?: () => void;
-  store?: StoreType;   
+  store?: number;   
   storeView?: boolean;
 }
 

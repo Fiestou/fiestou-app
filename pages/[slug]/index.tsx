@@ -112,6 +112,44 @@ export default function Store({
   const [page, setPage] = useState(0 as number);
   const [loading, setLoading] = useState(false as boolean);
   const [handleParams, setHandleParams] = useState({} as FilterQueryType);
+  const [mounted, setMounted] = useState(false);
+
+  // Função para buscar produtos com filtros e paginação
+  const fetchProducts = async (params: any) => {
+    setLoading(true);
+    const api = new Api();
+    const limit = 16;
+    const offset = 0; // sempre começa do início ao filtrar
+
+    const request: any = await api.request({
+      method: "get",
+      url: "request/products",
+      data: {
+        ...params,
+        store: store?.id,
+        user: store?.user,
+        limit,
+        offset,
+      },
+    });
+
+    const items = request.data ?? [];
+    setLoading(false);
+
+    return {
+      items,
+      total: items.length,
+      page: 0,
+      pageSize: limit,
+      pages: Math.ceil((items.length || 1) / limit),
+    };
+  };
+
+  // Função para atualizar a lista de produtos ao filtrar
+  const handleFilterResults = (data: any) => {
+    setListProducts(data.items);
+    setPage(data.page);
+  };
 
   const getProducts = async (reset = false, params = handleParams, pageNumber = page) => {
     setLoading(true);
@@ -127,6 +165,8 @@ export default function Store({
     const api = new Api();
     let limit = 16;
     let offset = number * 16;
+
+   
 
     let request: any = await api.request({
       method: "get",
@@ -152,9 +192,17 @@ export default function Store({
     setLoading(false);
   };
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    getProducts();
+  }, []);
+
   const baseUrl = `https://fiestou.com.br/${store?.slug}`;
 
-  if (isFallback) {
+  if (isFallback || !mounted) {
     return <></>;
   }
 
@@ -299,7 +347,10 @@ export default function Store({
 
       <div className="relative pt-5">
         <Filter
-          store={store.id}
+          store={store?.id}
+          context="store"
+          fetchProducts={fetchProducts}
+          onResults={handleFilterResults}
         />
       </div>
 

@@ -7,6 +7,7 @@ export interface Group {
   active: number;
   created_at: string;
   updated_at: string;
+  target_adc?: boolean;
   categories: categorie[];
 }
 
