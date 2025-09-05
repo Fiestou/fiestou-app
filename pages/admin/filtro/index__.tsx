@@ -8,10 +8,14 @@ import { CirclePlus } from 'lucide-react';
 import EyeButton from "../../../src/components/pages/admin/filtro/buttons/Eye";
 import Card from "../../../src/components/pages/admin/filtro/section/Card";
 import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modals/GroupModal";
-import { Group, GroupResponse, GroupsResponse, ResponseRegister } from "../../../src/types/filtros/response";
-import { RequestRegister } from "../../../src/types/filtros/request";
+
+
 import { toast } from "react-toastify";
-import { categorie } from "@/src/types/filtros/response";
+import { categorie, Group } from "@/src/store/filter";
+import { GroupsResponse, RequestRegister, ResponseRegister } from "@/src/types/filtros";
+
+// TODO : refatorar tipo das chamadas de API
+
 export default function Categorias() {
   const api = new Api();
 
