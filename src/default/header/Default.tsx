@@ -1,5 +1,7 @@
 import Img from "@/src/components/utils/ImgBase";
 import {
+  getFirstName,
+  getImage,
   getSocial,
   isMobileDevice,
 } from "@/src/helper";
@@ -32,16 +34,20 @@ export default function Default({
   const [menuModal, setMenuModal] = useState(false as boolean);
 
   const [layout, setLayout] = useState({} as any);
-  
+
 
   useEffect(() => {
-    if (!!Cookies.get("fiestou.cart")) {
-      setCart(JSON.parse(Cookies.get("fiestou.cart") ?? ""));
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuModal(false);
+    };
+    if (menuModal) {
+      document.addEventListener("keydown", handleEsc);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
     }
-    if (!!window) {
-      setLayout({ ...layout, isMobile: isMobileDevice() });
-    }
-  }, []);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [menuModal]);
 
   return (
     <>
@@ -79,6 +85,23 @@ export default function Default({
             <div className="hidden lg:grid z-10 bottom-0 left-0 order-2">
 
               <div className="w-full flex gap-6">
+               
+                {!!content?.menu_links &&
+                
+                  content.menu_links.map((item: any, key: any) => (
+                    <div key={key}>
+                      <Link passHref href={item.menu_link}>
+                        <div
+                          className={`whitespace-nowrap ease ${params.pathname === item.menu_link
+                            ? "text-yellow-300 font-bold"
+                            : "hover:text-yellow-300"
+                            }`}
+                        >
+                          {item.menu_title}
+                        </div>
+                      </Link>
+                    </div>
+                  ))}
                 <Link href="/" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
                   Início
                 </Link>
@@ -126,14 +149,13 @@ export default function Default({
               <Button
                 style="btn-transparent"
                 type="button"
-                onClick={() => setMenuModal(!menuModal)}
+                onClick={() => {
+                  console.log("Menu toggle clicked, new state:", !menuModal);
+                  setMenuModal(!menuModal);
+                }}
                 className="py-2 px-1 text-white"
               >
-                <Icon
-                  icon={menuModal ? "fa-times" : "fa-bars"}
-                  className={`${menuModal ? "mx-[.15rem]" : ""
-                    } text-xl lg:text-3xl`}
-                />
+                <Icon icon={menuModal ? "fa-times" : "fa-bars"} className={`${menuModal ? "mx-[.15rem]" : ""} text-xl lg:text-3xl`} />
               </Button>
             </div>
           </div>
@@ -162,24 +184,23 @@ export default function Default({
       >
         <div className="fixed text-white left-0 top-0 w-full h-screen bg-cyan-500  text-right flex flex-col items-start">
           <div className="min-h-[78vh] w-full flex text-2xl flex-col items-start pt-20">
-            {!!content?.menu_links &&
-              content.menu_links.map((item: any, key: any) => (
-                <div className="w-full py-2 px-4" key={key}>
-                  <Link passHref href={item.menu_link}>
-                    <div
-                      className={`leading-tight whitespace-nowrap flex justify-between ease ${params.pathname == ``
-                        ? "text-yellow-300 font-bold"
-                        : "hover:text-yellow-300"
-                        }`}
-                    >
-                      <div className="">
-                        {!!item.menu_icon && <FIcon icon={item.menu_icon} />}
-                      </div>
-                      <div>{item.menu_title}</div>
+            {!!content?.menu_links?.length && content.menu_links.map((item: any, key: any) => (
+              <div className="w-full py-2 px-4" key={key}>
+                <Link passHref href={item.menu_link}>
+                  <div
+                    className={`leading-tight whitespace-nowrap flex justify-between ease ${params.pathname == ``
+                      ? "text-yellow-300 font-bold"
+                      : "hover:text-yellow-300"
+                      }`}
+                  >
+                    <div className="">
+                      {!!item.menu_icon && <FIcon icon={item.menu_icon} />}
                     </div>
-                  </Link>
-                </div>
-              ))}
+                    <div>{item.menu_title}</div>
+                  </div>
+                </Link>
+              </div>
+            ))}
           </div>
 
           {!!params?.content?.social && (
