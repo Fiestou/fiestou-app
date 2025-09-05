@@ -54,7 +54,6 @@ export async function getStaticProps(ctx: any) {
 
 export default function Home({
   Home,
-  Categories,
   Products,
   Blog,
   HeaderFooter,
@@ -62,7 +61,6 @@ export default function Home({
   Scripts,
 }: {
   Home: any;
-  Categories: Array<RelationType>;
   Products: Array<ProductType>;
   Blog: Array<any>;
   HeaderFooter: any;
@@ -73,25 +71,28 @@ export default function Home({
   const { setGroups } = useGroup();
 
   const renderImageSlider = (slide: any) => {
-    return getImage(slide?.main_slide_cover, "default") ? (
+    const desktopImage = getImage(slide?.main_slide_cover, "default");
+    const mobileImage = getImage(slide?.main_slide_cover_mobile, "default");
+
+    if (!desktopImage && !mobileImage) return null;
+
+    return (
       <>
-        {!!slide?.main_slide_cover && (
+        {desktopImage && (
           <Img
             size="7xl"
-            src={getImage(slide?.main_slide_cover, "default")}
+            src={desktopImage}
             className="hidden md:block absolute w-full bottom-0 left-0"
           />
         )}
-        {!!slide?.main_slide_cover_mobile && (
+        {mobileImage && (
           <Img
             size="7xl"
-            src={getImage(slide?.main_slide_cover_mobile, "default")}
+            src={mobileImage}
             className="md:hidden absolute w-full bottom-0 left-0"
           />
         )}
       </>
-    ) : (
-      <></>
     );
   };
 
@@ -217,20 +218,24 @@ export default function Home({
         {(Home?.main_slide ?? []).length > 1 && (
           <div className="opacity-0 group-hover:opacity-100 hidden sm:flex ease absolute px-4 top-1/2 left-0 w-full -translate-y-1/2 items-center h-0 justify-between z-10">
             <div>
-              <Button className="swiper-main-prev p-6 rounded-full">
+              <Button className="swiper-main-prev p-6 rounded-full" alt="Seta para esquerda" title="Seta para esquerda">
                 <Icon
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -ml-[2px]"
                   icon="fa-chevron-left"
                   type="far"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -ml-[2px]"
+                  alt="Seta para esquerda"
+                  title="Seta para esquerda"
                 />
               </Button>
             </div>
             <div>
-              <Button className="swiper-main-next p-6 rounded-full">
+              <Button className="swiper-main-next p-6 rounded-full" alt="Seta para direita" title="Seta para direita">
                 <Icon
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ml-[1px]"
                   icon="fa-chevron-right"
                   type="far"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ml-[1px]"
+                  alt="Seta para direita"
+                  title="Seta para direita"
                 />
               </Button>
             </div>
@@ -279,10 +284,12 @@ export default function Home({
           </div>
           <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6 -mx-[1rem] xl:-mx-[4rem]">
             <div className="hidden md:block order-1 w-1/2 text-right md:text-center md:w-fit p-2">
-              <Button className="swiper-prev p-5 rounded-full">
+              <Button className="swiper-prev p-5 rounded-full" alt="Seta para esquerda" title="Seta para esquerda">
                 <Icon
                   icon="fa-arrow-left"
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  alt="Seta para esquerda"
+                  title="Seta para esquerda"
                 />
               </Button>
             </div>
@@ -315,9 +322,10 @@ export default function Home({
                   <div className="border h-full rounded-lg">
                     <div className="aspect-square bg-zinc-100">
                       <Img
+                        className="w-full h-full object-cover"
                         src="/images/stepsImage/step1.jpeg"
                         alt="1 - Peça pelo site"
-                        className="w-full h-full object-cover"
+                        title="No primeiro passo, escolha seu produto e peça pelo site"
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
@@ -331,9 +339,10 @@ export default function Home({
                   <div className="border h-full rounded-lg">
                     <div className="aspect-square bg-zinc-100">
                       <Img
+                        className="w-full h-full object-cover"
                         src="/images/stepsImage/step2.jpeg"
                         alt="2 - Recebemos o seu pedido"
-                        className="w-full h-full object-cover"
+                        title="No segundo passo, recebemos o seu pedido"
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
@@ -347,9 +356,10 @@ export default function Home({
                   <div className="border h-full rounded-lg">
                     <div className="aspect-square bg-zinc-100">
                       <Img
+                        className="w-full h-full object-cover"
                         src="/images/stepsImage/step3.jpeg"
                         alt="3 - Preparamos para o envio"
-                        className="w-full h-full object-cover"
+                        title="No terceiro passo, preparamos para o envio"
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
@@ -363,9 +373,10 @@ export default function Home({
                   <div className="border h-full rounded-lg">
                     <div className="aspect-square bg-zinc-100">
                       <Img
+                        className="w-full h-full object-cover"
                         src="/images/stepsImage/step4.jpeg"
                         alt="4 - Entregamos sem atraso"
-                        className="w-full h-full object-cover"
+                        title="No quarto passo, entregamos sem atraso"
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
@@ -379,9 +390,10 @@ export default function Home({
                   <div className="border h-full rounded-lg">
                     <div className="aspect-square bg-zinc-100">
                       <Img
+                        className="w-full h-full object-cover"
                         src="/images/stepsImage/step5.jpeg"
                         alt="5 - Fiestouuu!"
-                        className="w-full h-full object-cover"
+                        title="No quinto passo, é só curtir a festa! Fiestouuu!"
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
@@ -395,9 +407,10 @@ export default function Home({
                   <div className="border h-full rounded-lg">
                     <div className="aspect-square bg-zinc-100">
                       <Img
+                        className="w-full h-full object-cover"
                         src="/images/stepsImage/step6.jpeg"
                         alt="6 - Recolhemos"
-                        className="w-full h-full object-cover"
+                        title="No sexto passo, recolhemos tudo depois da festa sem que você precise se preocupar com nada"
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
@@ -410,10 +423,12 @@ export default function Home({
 
 
             <div className="hidden md:block order-2 md:order-3 w-1/2 text-left md:text-center md:w-fit p-2">
-              <Button className="swiper-next p-5 rounded-full">
+              <Button className="swiper-next p-5 rounded-full" alt="Seta para direita" title="Seta para direita">
                 <Icon
-                  icon="fa-arrow-right"
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  icon="fa-arrow-right"
+                  alt="Seta para direita"
+                  title="Seta para direita"
                 />
               </Button>
             </div>
@@ -429,28 +444,40 @@ export default function Home({
               <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
                 Confira os parceiros já cadastrados</h2>
             </div>
+            {/* Confira nosso parceiros cadastrados */}
             <div className="flex justify-center gap-2 md:gap-12">
-
-                <div className="aspect-square">
+              <div className="aspect-square">
+                <a href="https://www.fiestou.com.br/circus-festas/" target="_blank" rel="noopener noreferrer">
                   <Img
+                    className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
                     src="/images/circus.png"
-                    className="w-full h-full"
+                    alt="Visite nosso parceiro Circus Festas"
+                    title="Visite nosso parceiro Circus Festas"
                   />
-                </div>
-                <div className="aspect-square">
+                </a>
+              </div>
+              <div className="aspect-square">
+                <a href="https://www.fiestou.com.br/fiori/" target="_blank" rel="noopener noreferrer">
                   <Img
-                    className="w-full h-full object-contain"
+                    className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
                     src="/images/fiori.png"
+                    alt="Visite nosso parceiro Fiori"
+                    title="Visite nosso parceiro Fiori"
                   />
-                </div>
-                <div className="aspect-square">
+                </a>
+              </div>
+              <div className="aspect-square">
+                <a href="https://www.fiestou.com.br/flavia-fagundes-cerimonial/" target="_blank" rel="noopener noreferrer">
                   <Img
-                    className="w-full h-full"
+                    className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
                     src="/images/flavia.png"
+                    alt="Visite nosso parceiro Flávia Fagundes cerimonial"
+                    title="Visite nosso parceiro Flávia Fagundes cerimonial"
                   />
-                </div>
-
+                </a>
+              </div>
             </div>
+            {/* Faça para do fiestou */}
             <div className="bg-white mt-6 lg:mt-20 rounded-xl grid lg:flex items-center relative overflow-hidden">
               <div className="w-full grid gap-6 p-6 md:p-16">
                 <h4
@@ -472,9 +499,10 @@ export default function Home({
               <div className="w-full">
                 <div className="aspect-[2/2]">
                   <Img
+                    className="w-full h-full object-contain"
                     src="/images/Faca-parte-do-Fiestou.png"
                     alt="Faça parte do Fiestou"
-                    className="w-full h-full object-contain"
+                    title="Faça parte do Fiestou"
                   />
                 </div>
               </div>
