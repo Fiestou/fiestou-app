@@ -126,7 +126,8 @@ export function Footer(props: FooterType) {
                   <div>Políticas de Privacidade</div>
                 </Link>
               </div>
-              <div className="grid gap-4">
+
+              <div className="grid gap-4 ">
                 <div className="text-zinc-900 font-bold">Siga nas redes</div>
 
                 <Link
@@ -134,7 +135,7 @@ export function Footer(props: FooterType) {
                   target="_blank"
                   className="group hover:text-yellow-500 ease"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex justify-center items-center gap-2">
                     <FIcon
                       icon="fa-facebook"
                       type="fab"
@@ -149,7 +150,7 @@ export function Footer(props: FooterType) {
                   target="_blank"
                   className="group hover:text-yellow-500 ease"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex justify-center items-center gap-2">
                     <FIcon
                       icon="fa-instagram"
                       type="fab"
@@ -164,7 +165,7 @@ export function Footer(props: FooterType) {
                   target="_blank"
                   className="group hover:text-yellow-500 ease"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex justify-center items-center gap-2">
                     <FIcon
                       icon="fa-pinterest"
                       type="fab"
@@ -179,7 +180,7 @@ export function Footer(props: FooterType) {
                   target="_blank"
                   className="group hover:text-yellow-500 ease"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex justify-center items-center gap-2">
                     <FIcon
                       icon="fa-youtube"
                       type="fab"
@@ -194,7 +195,7 @@ export function Footer(props: FooterType) {
                   target="_blank"
                   className="group hover:text-yellow-500 ease"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex justify-center items-center gap-2">
                     <BIcon
                       icon="bi-tiktok"
                       className="text-zinc-900 group-hover:text-yellow-500 ease"
