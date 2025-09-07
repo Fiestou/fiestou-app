@@ -1,16 +1,14 @@
+"use client";
+
 import Img from "@/src/components/utils/ImgBase";
 import {
-  getFirstName,
-  getImage,
   getSocial,
-  isMobileDevice,
 } from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { HeaderType } from "@/src/default/header/index";
 import { UserType } from "@/src/models/user";
-import Cookies from "js-cookie";
 import { Button } from "@/src/components/ui/form";
 import User from "./utils/User";
 import Login from "./utils/Login";
@@ -25,16 +23,11 @@ export default function Default({
   user: UserType;
 }) {
   const content = params.content;
-
   const bgScroll =
-    params.background != "bg-transparent" ? params.background : "bg-cyan-500 ";
+    params.background != "bg-transparent" ? params.background : "bg-cyan-500";
 
-  const [cart, setCart] = useState([]);
-
-  const [menuModal, setMenuModal] = useState(false as boolean);
-
-  const [layout, setLayout] = useState({} as any);
-
+  const [cart, setCart] = useState<any[]>([]);
+  const [menuModal, setMenuModal] = useState(false);
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
@@ -55,80 +48,86 @@ export default function Default({
         className={`${params.position == "fixed" ? "fixed top-0 left-0" : "relative"
           } w-full z-[99] ${params.background}`}
       >
+        {/* background dinâmico */}
         <div
           className={`${params.scroll
             ? `${bgScroll} lg:py-0`
             : `${params.background} lg:py-2`
             } ease absolute h-full w-full inset-0`}
         ></div>
+
         <div className="ease container-medium relative text-white pl-4 pr-2 lg:px-4">
-          <div className="flex justify-between gap-2 lg:gap-16 items-center py-2">
+          <div className="flex justify-between items-center gap-2 lg:gap-16 py-2">
+
+            {/* Logo */}
             <div className="w-full lg:w-[120px] order-1">
-              <div
-                className={`max-w-[72px] md:max-w-[120px] ${params.position == "fixed" &&
-                  params.scroll &&
-                  "lg:max-w-[100px]"
-                  } ease`}
+              <Link href="/" passHref>
+                <div className="aspect-video max-w-[72px] md:max-w-[120px] -mt-2">
+                  <Img
+                    src="/images/logo.png"
+                    size="md"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </Link>
+            </div>
+
+            {/* Navegação Desktop */}
+            <nav className="hidden lg:flex order-2 gap-6">
+              <Link
+                href="/"
+                className={`whitespace-nowrap transition-colors duration-200 ${params.pathname === "/"
+                  ? "text-yellow-300 font-bold"
+                  : "hover:text-yellow-300"
+                  }`}
               >
-                <Link passHref href="/">
-                  <div className="aspect aspect-video -mt-2">
-                    <Img
-                      src="/images/logo.png"
-                      size="md"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                </Link>
-              </div>
-            </div>
+                Início
+              </Link>
+              <Link
+                href="/produtos"
+                className={`whitespace-nowrap transition-colors duration-200 ${params.pathname === "/produtos"
+                  ? "text-yellow-300 font-bold"
+                  : "hover:text-yellow-300"
+                  }`}
+              >
+                Produtos
+              </Link>
+              <Link
+                href="/parceiros"
+                className={`whitespace-nowrap transition-colors duration-200 ${params.pathname === "/parceiros"
+                  ? "text-yellow-300 font-bold"
+                  : "hover:text-yellow-300"
+                  }`}
+              >
+                Parceiros
+              </Link>
+              <Link
+                href="/faq"
+                className={`whitespace-nowrap transition-colors duration-200 ${params.pathname === "/faq"
+                  ? "text-yellow-300 font-bold"
+                  : "hover:text-yellow-300"
+                  }`}
+              >
+                Ajuda
+              </Link>
+              <Link
+                href="/sobre"
+                className={`whitespace-nowrap transition-colors duration-200 ${params.pathname === "/sobre"
+                  ? "text-yellow-300 font-bold"
+                  : "hover:text-yellow-300"
+                  }`}
+              >
+                Sobre nós
+              </Link>
+            </nav>
 
-            <div className="hidden lg:grid z-10 bottom-0 left-0 order-2">
-
-              <div className="w-full flex gap-6">
-               
-                {!!content?.menu_links &&
-                
-                  content.menu_links.map((item: any, key: any) => (
-                    <div key={key}>
-                      <Link passHref href={item.menu_link}>
-                        <div
-                          className={`whitespace-nowrap ease ${params.pathname === item.menu_link
-                            ? "text-yellow-300 font-bold"
-                            : "hover:text-yellow-300"
-                            }`}
-                        >
-                          {item.menu_title}
-                        </div>
-                      </Link>
-                    </div>
-                  ))}
-                <Link href="/" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
-                  Início
-                </Link>
-
-                <Link href="/produtos" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/produtos" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
-                  Produtos
-                </Link>
-
-                <Link href="/parceiros" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/parceiros" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
-                  Parceiros
-                </Link>
-
-                <Link href="/faq" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/faq" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
-                  Ajuda
-                </Link>
-
-                <Link href="/sobre" className={`whitespace-nowrap transition-colors ease-in-out duration-200 ${params.pathname === "/sobre" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"}`}>
-                  Sobre nós
-                </Link>
-              </div>
-            </div>
-
+            {/* Usuário (login ou perfil) */}
             <div className="w-fit order-3 lg:order-4 flex items-center gap-4 md:gap-8">
               {!!user?.id ? <User user={user} /> : <Login content={content} />}
             </div>
 
-            <div className="relative w-fit order-3 lg:order-5 text-center">
+            {/* Carrinho */}
+            <div className="relative w-fit order-3 lg:order-5">
               <Button
                 href="/carrinho"
                 style="btn-transparent"
@@ -137,7 +136,7 @@ export default function Default({
                 <Icon icon="fa-shopping-cart" className="text-xl lg:text-3xl" />
                 {!!cart.length && (
                   <div className="absolute bg-zinc-900 -mr-2 rounded-full right-0 top-0 p-[.65rem] md:p-3 text-white">
-                    <span className="text-xs md:text-sm font-normal md:font-semibold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <span className="text-xs md:text-sm font-semibold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                       {cart.length}
                     </span>
                   </div>
@@ -145,92 +144,96 @@ export default function Default({
               </Button>
             </div>
 
-            <div className="w-fit order-4 relative lg:hidden text-right">
+            {/* Botão Mobile */}
+            <div className="w-fit order-4 lg:hidden">
               <Button
                 style="btn-transparent"
                 type="button"
-                onClick={() => {
-                  console.log("Menu toggle clicked, new state:", !menuModal);
-                  setMenuModal(!menuModal);
-                }}
+                onClick={() => setMenuModal(!menuModal)}
                 className="py-2 px-1 text-white"
               >
-                <Icon icon={menuModal ? "fa-times" : "fa-bars"} className={`${menuModal ? "mx-[.15rem]" : ""} text-xl lg:text-3xl`} />
+                <Icon
+                  icon={menuModal ? "fa-times" : "fa-bars"}
+                  className="text-xl lg:text-3xl"
+                />
               </Button>
             </div>
           </div>
         </div>
-        {!params.scroll && (
-          <div className="container-medium relative">
-            <hr className="border-white opacity-50" />
-          </div>
-        )}
       </header>
 
+      {/* Menu Mobile */}
       {menuModal && (
-        <div
-          dangerouslySetInnerHTML={{
-            __html: `<style>
-          body, html{
-          overflow:hidden}
-        </style>`,
-          }}
-        ></div>
-      )}
+        <div className="fixed z-[60] inset-0 bg-cyan-500 text-white flex flex-col">
+          <div className="flex flex-col items-start text-2xl pt-20">
 
-      <div
-        className={`${menuModal ? "grid" : "hidden"
-          } fixed z-[60] top-0 left-0 w-full`}
-      >
-        <div className="fixed text-white left-0 top-0 w-full h-screen bg-cyan-500  text-right flex flex-col items-start">
-          <div className="min-h-[78vh] w-full flex text-2xl flex-col items-start pt-20">
-            {!!content?.menu_links?.length && content.menu_links.map((item: any, key: any) => (
-              <div className="w-full py-2 px-4" key={key}>
-                <Link passHref href={item.menu_link}>
-                  <div
-                    className={`leading-tight whitespace-nowrap flex justify-between ease ${params.pathname == ``
-                      ? "text-yellow-300 font-bold"
-                      : "hover:text-yellow-300"
-                      }`}
-                  >
-                    <div className="">
-                      {!!item.menu_icon && <FIcon icon={item.menu_icon} />}
-                    </div>
-                    <div>{item.menu_title}</div>
-                  </div>
-                </Link>
-              </div>
-            ))}
+            <Link
+              href="/"
+              className={`w-full py-3 px-6 flex items-center gap-3 ${params.pathname === "/" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"
+                }`}
+            >
+              <FIcon icon="fa-home" />
+              Início
+            </Link>
+
+            <Link
+              href="/produtos"
+              className={`w-full py-3 px-6 flex items-center gap-3 ${params.pathname === "/produtos" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"
+                }`}
+            >
+              <FIcon icon="fa-box" />
+              Produtos
+            </Link>
+
+            <Link
+              href="/parceiros"
+              className={`w-full py-3 px-6 flex items-center gap-3 ${params.pathname === "/parceiros" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"
+                }`}
+            >
+              <FIcon icon="fa-handshake" />
+              Parceiros
+            </Link>
+
+            <Link
+              href="/faq"
+              className={`w-full py-3 px-6 flex items-center gap-3 ${params.pathname === "/faq" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"
+                }`}
+            >
+              <FIcon icon="fa-question-circle" />
+              Ajuda
+            </Link>
+
+            <Link
+              href="/sobre"
+              className={`w-full py-3 px-6 flex items-center gap-3 ${params.pathname === "/sobre" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"
+                }`}
+            >
+              <FIcon icon="fa-file-alt" />
+              Sobre nós
+            </Link>
           </div>
 
-          {!!params?.content?.social && (
-            <div className="fixed bottom-0 left-0 w-full">
-              <div className="border-t opacity-20 w-[90%] mx-auto"></div>
-              <div className="w-full py-4 flex gap-4 justify-center text-xl">
-                {params.content.social.map((item: any) => (
-                  <Link
-                    href={item.social_link ?? "#"}
-                    key={item.id}
-                    className="hover:text-yellow-300 ease"
-                  >
-                    {getSocial(item.social_link ?? item.social_title ?? "#") ==
-                      "tiktok" ? (
-                      <BIcon icon="bi-tiktok" />
-                    ) : (
-                      <FIcon
-                        icon={`fa-${getSocial(
-                          item.social_link ?? item.social_title ?? "#"
-                        )}`}
-                        type="fab"
-                      />
-                    )}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Social fixo */}
+          <div className="mt-auto border-t border-white/20 py-6 flex justify-center gap-6 text-xl">
+            <Link href="https://www.facebook.com/Fiestou.com.br#" className="hover:text-yellow-300">
+              <FIcon icon="fa-facebook" type="fab" />
+            </Link>
+            <Link href="https://www.instagram.com/fiestou.com.br/" className="hover:text-yellow-300">
+              <FIcon icon="fa-instagram" type="fab" />
+            </Link>
+            <Link href="https://pin.it/1zZ5jI3PS" className="hover:text-yellow-300">
+              <FIcon icon="fa-pinterest" type="fab" />
+            </Link>
+            <Link href="https://www.youtube.com/channel/UCOs0m-bltMn5n3ewKBLWVaQ" className="hover:text-yellow-300 gap-4">
+              <FIcon icon="fa-youtube" type="fab" />
+            </Link>
+            <Link href="https://www.tiktok.com/@fiestou.com" className="hover:text-yellow-300">
+              <BIcon icon="bi-tiktok" />
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
+
     </>
   );
 }
