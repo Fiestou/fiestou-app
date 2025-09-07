@@ -90,7 +90,7 @@ export function Footer(props: FooterType) {
             </div>
 
             <div className="w-full grid gap-10 items-start md:grid-cols-2 xl:grid-cols-4">
-              <div className="grid gap-4 ">
+              <div className="flex flex-col items-center gap-4">
                 <div className="text-zinc-900 font-bold">Fiestou</div>
                 <Link href="/sobre-nos" className="hover:text-yellow-500 ease">
                   <div>Sobre nós</div>
@@ -105,16 +105,16 @@ export function Footer(props: FooterType) {
                   <div>FAQ</div>
                 </Link>
               </div>
-              <div className="grid gap-4">
+              <div className="flex flex-col items-center gap-4">
                 <div className="text-zinc-900 font-bold">Produtos e Serviços</div>
-                <Link href="/produtos/decoracoes" className="hover:text-yellow-500 ease">
-                  <div>Decorações</div>
-                </Link>
                 <Link href="/produtos/termos" className="hover:text-yellow-500 ease">
                   <div>Termos de aluguel</div>
                 </Link>
+                <Link href="/produtos/listagem/?busca=&ordem=desc&range=1000&categoria%5B%5D=Decoração" className="hover:text-yellow-500 ease">
+                  <div>Decorações</div>
+                </Link>
               </div>
-              <div className="grid gap-4">
+              <div className="flex flex-col items-center text-center gap-4">
                 <div className="text-zinc-900 font-bold">Cadastrar</div>
                 <Link href="/cadastro/cliente" className="hover:text-yellow-500 ease">
                   <div>Como cliente</div>
@@ -127,7 +127,7 @@ export function Footer(props: FooterType) {
                 </Link>
               </div>
 
-              <div className="grid gap-4 ">
+              <div className="flex flex-col items-center gap-4 ">
                 <div className="text-zinc-900 font-bold">Siga nas redes</div>
 
                 <Link
