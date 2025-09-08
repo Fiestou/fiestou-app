@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Template from "@/src/template";
-import { Button, Input, Label, Select } from "@/src/components/ui/form";
+import { Button, Input } from "@/src/components/ui/form";
 import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
@@ -242,6 +242,7 @@ export default function Form({ id }: { id: number | string }) {
                     </Button>
                   </div>
                   <div className="grid gap-4 order-1 lg:order-2 form-group">
+
                     {/* <div>
                       <label style={{ float: 'right' }}>
                         Visualização: {content?.status === 0 ? 'Público' : 'Privado'}

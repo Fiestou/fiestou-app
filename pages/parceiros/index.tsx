@@ -1,16 +1,9 @@
-import Product from "@/src/components/common/Product";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import Image from "next/image";
-import Link from "next/link";
 import Partner from "@/src/components/common/Partner";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { StoreType } from "@/src/models/store";
 import { getImage } from "@/src/helper";
-import Img from "@/src/components/utils/ImgBase";
-import Filter from "@/src/components/common/Filter";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { useEffect } from "react";
 import { PartnerType } from "@/src/models/partner";
 import { HeaderFooterType } from "@/src/models/headerFooter";
 import { DataSeoType } from "@/src/models/dataSeo";
@@ -19,14 +12,14 @@ import { ScriptsType } from "@/src/models/scripts";
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
-  let request: any = await api.content({method: 'get', url: `partners` });
+  let request: any = await api.content({ method: 'get', url: `partners` });
 
   const Stores = request?.data?.Stores ?? [];
   const Partners = request?.data?.Partners ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
-  
+
   return {
     props: {
       Stores: Stores,
@@ -52,7 +45,7 @@ export default function Parceiros({
   DataSeo: DataSeoType;
   Scripts: ScriptsType;
 }) {
-  
+
   return (
     <Template
       scripts={Scripts}
@@ -83,23 +76,9 @@ export default function Parceiros({
                   links={[{ url: "/parceiros", name: "Parceiros" }]}
                 />
               </div>
-              <h1
-                className="font-title font-bold text-4xl md:text-5xl mb-4"
-                dangerouslySetInnerHTML={{ __html: Partners?.main_text }}
-              ></h1>
-              <div
-                className="text-lg md:text-2xl font-semibold"
-                dangerouslySetInnerHTML={{ __html: Partners?.main_description }}
-              ></div>
+              <h1 className="font-title font-bold text-4xl md:text-5xl mb-4">Lojas parceiras</h1>
+              <div className="text-lg md:text-2xl font-semibold">Os melhores são parceiros Fiestou!</div>
             </div>
-            {!!getImage(Partners?.main_icons) && (
-              <div className="w-fit">
-                <Img
-                  src={getImage(Partners?.main_icons)}
-                  className="w-auto max-w-full"
-                />
-              </div>
-            )}
           </div>
         </div>
       </section>
@@ -115,7 +94,7 @@ export default function Parceiros({
               ))}
           </div>
         </div>
-      </section> 
+      </section>
     </Template>
   );
 }

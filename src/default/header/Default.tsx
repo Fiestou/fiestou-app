@@ -1,9 +1,4 @@
-"use client";
-
 import Img from "@/src/components/utils/ImgBase";
-import {
-  getSocial,
-} from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { useEffect, useState } from "react";

@@ -481,7 +481,7 @@ export default function Home({
             <div className="bg-white mt-6 lg:mt-20 rounded-xl grid lg:flex items-center relative overflow-hidden">
               <div className="w-full grid gap-6 p-6 md:p-16">
                 <h4
-                  className="font-title font-bold max-w-[30rem] text-zinc-900 text-5xl"             >
+                  className="font-title font-bold max-w-[30rem] text-zinc-900 text-5xl">
                   Faça parte do Fiestou</h4>
                 <div
                   className="max-w-[20rem]">
