@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { X } from "lucide-react";
-import { categorie } from "@/src/types/filtros/response";
+import { categorie } from "@/src/store/filter";
 
 interface SelectElementsProps {
     relatedElements:    categorie[];
