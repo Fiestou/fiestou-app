@@ -15,9 +15,7 @@ export interface FooterType {
 
 export function Footer(props: FooterType) {
   const pathname = usePathname() || "";
-
   const content = props.content;
-
   const [params, setParams] = useState({
     template: "",
     position: "fixed",
@@ -25,12 +23,9 @@ export function Footer(props: FooterType) {
     scroll: false,
     ...props,
   });
-
   const [whatsapp, setWhatsapp] = useState(false as boolean);
-
   const getWhatsapp = () => {
     const url = window.location.href;
-
     const isHidden =
       url.includes("admin") || url.includes("carrinho") || url.includes("checkout");
 
@@ -91,44 +86,44 @@ export function Footer(props: FooterType) {
 
             <div className="w-full grid gap-10 items-start md:grid-cols-2 xl:grid-cols-4">
               <div className="flex flex-col items-center gap-4">
-                <div className="text-zinc-900 font-bold">Fiestou</div>
-                <Link href="/sobre-nos" className="hover:text-yellow-500 ease">
-                  <div>Sobre nós</div>
+                <span className="text-zinc-900 font-bold">Fiestou</span>
+                <Link href="/sobre" className="hover:text-yellow-500 ease">
+                  <span>Sobre nós</span>
                 </Link>
                 <Link href="/contato" className="hover:text-yellow-500 ease">
-                  <div>Contato</div>
+                  <span>Contato</span>
                 </Link>
                 <Link href="/blog" className="hover:text-yellow-500 ease">
-                  <div>Blog</div>
+                  <span>Blog</span>
                 </Link>
                 <Link href="/faq" className="hover:text-yellow-500 ease">
-                  <div>FAQ</div>
+                  <span>FAQ</span>
                 </Link>
               </div>
               <div className="flex flex-col items-center gap-4">
-                <div className="text-zinc-900 font-bold">Produtos e Serviços</div>
-                <Link href="/produtos/termos" className="hover:text-yellow-500 ease">
-                  <div>Termos de aluguel</div>
+                <span className="text-zinc-900 font-bold">Produtos e Serviços</span>
+                <Link href="/comunicados/termos-de-aluguel" className="hover:text-yellow-500 ease">
+                  <span>Termos de aluguel</span>
                 </Link>
-                <Link href="/produtos/listagem/?busca=&ordem=desc&range=1000&categoria%5B%5D=Decoração" className="hover:text-yellow-500 ease">
-                  <div>Decorações</div>
+                <Link href="/produtos/listagem/?order=desc&range=1000&page=1&category=50" className="hover:text-yellow-500 ease">
+                  <span>Decorações</span>
                 </Link>
               </div>
               <div className="flex flex-col items-center text-center gap-4">
-                <div className="text-zinc-900 font-bold">Cadastrar</div>
-                <Link href="/cadastro/cliente" className="hover:text-yellow-500 ease">
-                  <div>Como cliente</div>
+                <span className="text-zinc-900 font-bold">Cadastrar</span>
+                <Link href="/cadastre-se" className="hover:text-yellow-500 ease">
+                  <span>Como cliente</span>
                 </Link>
-                <Link href="/cadastro/parceiro" className="hover:text-yellow-500 ease">
-                  <div>Como parceiro</div>
+                <Link href="/parceiros/seja-parceiro" className="hover:text-yellow-500 ease">
+                  <span>Como parceiro</span>
                 </Link>
-                <Link href="/politicas-de-privacidade" className="hover:text-yellow-500 ease">
-                  <div>Políticas de Privacidade</div>
+                <Link href="/comunicados/politica-de-privacidade" className="hover:text-yellow-500 ease">
+                  <span>Políticas de Privacidade</span>
                 </Link>
               </div>
 
               <div className="flex flex-col items-center gap-4 ">
-                <div className="text-zinc-900 font-bold">Siga nas redes</div>
+                <span className="text-zinc-900 font-bold">Siga nas redes</span>
 
                 <Link
                   href="https://web.facebook.com/Fiestou.com.br#"
