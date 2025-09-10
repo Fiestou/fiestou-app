@@ -5,6 +5,8 @@ import Newsletter from "@/src/components/common/Newsletter";
 import { clean, getImage } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Icon from "@/src/icons/fontAwesome/FIcon";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper";
 
 interface SobreProps {
   About: any;
@@ -53,6 +55,7 @@ export default function Sobre({ About, HeaderFooter, DataSeo, Scripts }: SobrePr
         content: HeaderFooter,
       }}
     >
+      {/* Header */}
       <section className="bg-cyan-500 pt-24 md:pt-32 relative">
         <div className="container-medium relative pb-4 md:pb-10 text-white">
           <div className="flex">
@@ -71,6 +74,7 @@ export default function Sobre({ About, HeaderFooter, DataSeo, Scripts }: SobrePr
         </div>
       </section>
 
+      {/* Te ajudamos a festejar sem dor de cabeça */}
       <section className="py-10 md:pt-20 relative overflow-hidden">
         <div className="container-medium">
           <div className="max-w-3xl mx-auto text-center pb-6 md:pb-14">
@@ -83,7 +87,15 @@ export default function Sobre({ About, HeaderFooter, DataSeo, Scripts }: SobrePr
               {/* Card 1 */}
               <div className="border h-full rounded-lg p-6 md:p-10 bg-white">
                 <div className="p-8 text-yellow-400 relative">
-                  <Icon icon="fa-hand-point-up" className="text-6xl absolute text-yellow-400 top-1/2 left-0 -translate-y-1/2"></Icon>
+                  <Icon
+                    icon="fa-hand-point-up"
+                    className="text-6xl absolute text-yellow-400 top-1/2 left-0 -translate-y-1/2"
+                  ></Icon>
+                  <Icon
+                    icon="fa-hand-point-up"
+                    type="fa"
+                    className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
+                  />
                 </div>
                 <div className="pt-6">
                   <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
@@ -98,7 +110,15 @@ export default function Sobre({ About, HeaderFooter, DataSeo, Scripts }: SobrePr
               {/* Card 2 */}
               <div className="border h-full rounded-lg p-6 md:p-10 bg-white">
                 <div className="p-8 text-yellow-400 relative">
-                  <Icon icon="fa-calendar-star" className="text-6xl absolute text-yellow-400 top-1/2 left-0 -translate-y-1/2"></Icon>
+                  <Icon
+                    icon="fa-calendar-star"
+                    className="text-6xl absolute text-yellow-400 top-1/2 left-0 -translate-y-1/2"
+                  ></Icon>
+                  <Icon
+                    icon="fa-calendar-star"
+                    type="fa"
+                    className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
+                  />
                 </div>
                 <div className="pt-6">
                   <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
@@ -113,15 +133,23 @@ export default function Sobre({ About, HeaderFooter, DataSeo, Scripts }: SobrePr
               {/* Card 3 */}
               <div className="border h-full rounded-lg p-6 md:p-10 bg-white">
                 <div className="p-8 text-yellow-400 relative">
-                  <Icon icon="fa-wine-bottle" className="text-6xl absolute text-yellow-400 top-1/2 left-0 -translate-y-1/2"></Icon>
+                  <Icon
+                    icon="fa-wine-bottle"
+                    className="text-6xl absolute text-yellow-400 top-1/2 left-0 -translate-y-1/2"
+                  ></Icon>
+                  <Icon
+                    icon="fa-wine-bottle"
+                    type="fa"
+                    className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
+                  />
                 </div>
                 <div className="pt-6">
                   <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
                     Fiestou
                   </h3>
-                  <div className="text-gray-600">
+                  <p className="text-gray-600">
                     Aproveite sua festa. No dia seguinte recolhemos, o que for alugado. E dá uma forcinha para gente e avalie o serviço.
-                  </div>
+                  </p>
                 </div>
               </div>
             </div>
@@ -129,14 +157,14 @@ export default function Sobre({ About, HeaderFooter, DataSeo, Scripts }: SobrePr
         </div>
       </section>
 
+      {/* Nossa missão */}
       <section>
         <div className="md:py-6">
           <div className="max-w-[88rem] pt-10 pb-6 md:py-20 mx-auto bg-zinc-100">
             <div className="container-medium grid lg:flex gap-6 md:gap-10 items-center">
               <div className="w-full grid gap-4 md:gap-8">
-                <h4
-                  className="font-title font-bold max-w-[30rem] text-4xl text-zinc-900"
-                >Nossa missão</h4>
+                <h4 className="font-title font-bold max-w-[30rem] text-4xl text-zinc-900">
+                  Nossa missão</h4>
                 <div className="max-w-[30rem] md:text-lg">
                   <p>Com a Fiestou, você pode encontrar tudo o que precisa para a sua festa em um só lugar. Desde itens de decoração até
                     serviços de buffet, a plataforma oferece uma variedade de opções para atender às suas necessidades.</p><br />
@@ -156,6 +184,85 @@ export default function Sobre({ About, HeaderFooter, DataSeo, Scripts }: SobrePr
         </div>
       </section>
 
+      <section className="py-10 md:pt-20 relative overflow-hidden">
+        <div className="container-medium">
+          <div className="max-w-3xl mx-auto text-center pb-6 md:pb-14">
+            <h2 className="font-title text-zinc-900 font-bold text-3xl md:text-5xl mt-2">
+              O que você vai contar conosco</h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Card 1 */}
+            <div className="border h-full rounded-lg p-6 md:p-10 bg-white">
+              <div className="p-8 text-yellow-400 relative">
+                <Icon
+                  icon="fa-medal"
+                  className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
+                />
+                <Icon
+                  icon="fa-medal"
+                  type="fa"
+                  className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
+                />
+              </div>
+              <div className="pt-6">
+                <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
+                  Os melhores
+                </h3>
+                <p className="text-gray-600">
+                  Os parceiros são qualificados, experientes no setor. E tem a garantia que  o serviço será entregue.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 2 */}
+            <div className="border h-full rounded-lg p-6 md:p-10 bg-white">
+              <div className="p-8 text-yellow-400 relative">
+                <Icon
+                  icon="fa-lock-alt"
+                  className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
+                />
+                <Icon
+                  icon="fa-lock-alt"
+                  type="fa"
+                  className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
+                />
+              </div>
+              <div className="pt-6">
+                <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
+                  Segurança
+                </h3>
+                <p className="text-gray-600">
+                  O pagamento está seguro, e com garantia. Para parceiros a divisão é feito automaticamente.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3 */}
+            <div className="border h-full rounded-lg p-6 md:p-10 bg-white">
+              <div className="p-8 text-yellow-400 relative">
+                <Icon
+                  icon="fa-phone-rotary"
+                  className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
+                />
+                <Icon
+                  icon="fa-phone-rotary"
+                  type="fa"
+                  className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
+                />
+              </div>
+              <div className="pt-6">
+                <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
+                  Atendimento
+                </h3>
+                <p className="text-gray-600">
+                  Estamos atentos, converse com cada fornecedor pelo chat, com uma rápida resposta.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       <Newsletter />
     </Template>
   );

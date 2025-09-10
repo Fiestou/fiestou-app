@@ -1,26 +1,24 @@
-import Newsletter from "@/src/components/common/Newsletter";
-import { Button, Input } from "@/src/components/ui/form";
-import Img from "@/src/components/utils/ImgBase";
+import { Button } from "@/src/components/ui/form";
 import { getImage } from "@/src/helper";
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import { ProductType } from "@/src/models/product";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Navigation, Pagination } from "swiper";
+import { useEffect, useState } from "react";
+import { useGroup } from "@/src/store/filter";
+import { GroupsResponse } from "../src/types/filtros/response";
+import Newsletter from "@/src/components/common/Newsletter";
+import Img from "@/src/components/utils/ImgBase";
+import Icon from "@/src/icons/fontAwesome/FIcon";
 import Api from "@/src/services/api";
 import Template from "@/src/template";
 import Link from "next/link";
-
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Navigation, Pagination } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-
 import Product from "@/src/components/common/Product";
-import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
 import Filter from "@/src/components/common/Filter";
-import { useEffect, useState } from "react";
-import { GroupsResponse } from "../src/types/filtros/response";
-import { useGroup } from "@/src/store/filter";
+
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -477,6 +475,7 @@ export default function Home({
                 </a>
               </div>
             </div>
+
             {/* Faça para do fiestou */}
             <div className="bg-white mt-6 lg:mt-20 rounded-xl grid lg:flex items-center relative overflow-hidden">
               <div className="w-full grid gap-6 p-6 md:p-16">
@@ -519,10 +518,8 @@ export default function Home({
               <div className="max-w-xl pb-14">
                 <h2
                   className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4"
-                  dangerouslySetInnerHTML={{
-                    __html: Home?.quotes_text,
-                  }}
-                ></h2>
+
+                >Veja quem recomenda</h2>
                 <div className="pt-10">
                   <Img
                     src="/images/loop-arrow.png"
@@ -532,111 +529,105 @@ export default function Home({
               </div>
             </div>
             <div className="w-full lg:max-w-[30rem]">
-              {!!Home?.quotes_list && (
-                <>
-                  <div>
-                    {Home?.quotes_list.length > 1 ? (
-                      <Swiper
-                        pagination={{
-                          el: ".swiper-quotes-pagination",
-                          type: "fraction",
-                        }}
-                        spaceBetween={16}
-                        modules={[Pagination, Navigation, Autoplay]}
-                        navigation={{
-                          nextEl: ".swiper-quotes-next",
-                          prevEl: ".swiper-quotes-prev",
-                        }}
-                        autoplay={{
-                          delay: 3000,
-                          disableOnInteraction: false,
-                        }}
-                        loop={true}
-                        breakpoints={{
-                          0: {
-                            slidesPerView: 1,
-                          },
-                        }}
-                      >
-                        {!!Home?.quotes_list.map &&
-                          Home?.quotes_list.map((item: any, key: any) => (
-                            <SwiperSlide key={key}>
-                              <div className="w-full">
-                                <div className="flex gap-4 items-center">
-                                  {item?.quote_image && (
-                                    <div className="max-w-[2.5rem] overflow-hidden relative rounded-full">
-                                      <div className="aspect-square bg-zinc-200">
-                                        <Img
-                                          src={getImage(item?.quote_image)}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div>
-                                    <div className="font-bold text-zinc-900">
-                                      {item?.quote_name}
-                                    </div>
-                                    <div className="text-sm">
-                                      {item?.quote_work}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="text-xl py-8">
-                                  “{item?.quote_text}”
-                                </div>
-                              </div>
-                            </SwiperSlide>
-                          ))}
-                      </Swiper>
-                    ) : (
-                      Home?.quotes_list.map((item: any, key: any) => (
-                        <div key={key} className="w-full">
-                          <div className="flex gap-4 items-center">
-                            {item?.quote_image && (
-                              <div className=" max-w-[2.5rem] overflow-hidden relative rounded-full">
-                                <div className="aspect-square bg-zinc-200">
-                                  <Img
-                                    src={getImage(item?.quote_image)}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            <div>
-                              <div className="font-bold text-zinc-900">
-                                {item?.quote_name}
-                              </div>
-                              <div className="text-sm">{item?.quote_work}</div>
-                            </div>
-                          </div>
-                          <div className="text-xl py-8">
-                            “{item?.quote_text}”
+              <div>
+                <Swiper
+                  pagination={{
+                    el: ".swiper-quotes-pagination",
+                    type: "fraction",
+                  }}
+                  spaceBetween={16}
+                  modules={[Pagination, Navigation, Autoplay]}
+                  navigation={{
+                    nextEl: ".swiper-quotes-next",
+                    prevEl: ".swiper-quotes-prev",
+                  }}
+                  autoplay={{
+                    delay: 3000,
+                    disableOnInteraction: false,
+                  }}
+                  loop={true}
+                  breakpoints={{
+                    0: {
+                      slidesPerView: 1,
+                    },
+                  }}
+                >
+                  <SwiperSlide>
+                    <div className="w-full">
+                      <div className="flex gap-4 items-center">
+                        <div className="max-w-[2.5rem] overflow-hidden relative rounded-full">
+                          <div className="aspect-square bg-zinc-200">
+                            <Img
+                              src="images/depoimentos/debora-pinheiro.png"
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
-                  {Home?.quotes_list.length > 1 && (
-                    <div className="flex gap-2 pt-4 items-center">
-                      <span className="swiper-quotes-pagination w-auto pr-3"></span>
-                      <Button className="swiper-quotes-prev p-4 rounded-full">
-                        <Icon
-                          icon="fa-arrow-left"
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                        />
-                      </Button>
-                      <Button className="swiper-quotes-next p-4 rounded-full">
-                        <Icon
-                          icon="fa-arrow-right"
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                        />
-                      </Button>
+                        <div>
+                          <div className="font-bold text-zinc-900">
+                            <p>Débora Pinheiro</p>
+                          </div>
+                          <div className="text-sm">
+                            <p>Decoradora de eventos</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xl py-8">
+                        <p>
+                          Tem diversas opções de decoração. Trabalhei no ramo em mais de
+                          25 anos, e agora tem uma solução mais prática para decorar sua
+                          festa em João Pessoa.
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </>
-              )}
+                  </SwiperSlide>
+                  <SwiperSlide>
+                    <div className="w-full">
+                      <div className="flex gap-4 items-center">
+                        <div className="max-w-[2.5rem] overflow-hidden relative rounded-full">
+                          <div className="aspect-square bg-zinc-200">
+                            <Img
+                              src="images/depoimentos/priscila.png"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-bold text-zinc-900">
+                            <p>Priscila</p>
+                          </div>
+                          <div className="text-sm">
+                            <p>Cerimionalista Infantil</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xl py-8">
+                        <p>
+                          Uma nova maneira de realizar festa na capital João pessoa, facilidade de encontrar os itens que precisa para complementar na decoração.
+                        </p>
+                      </div>
+                    </div>
+                  </SwiperSlide>
+                </Swiper>
+              </div>
+
+              <div className="flex gap-2 pt-4 items-center">
+                <span className="swiper-quotes-pagination w-auto pr-3"></span>
+                <Button className="swiper-quotes-prev p-4 rounded-full">
+                  <Icon
+                    icon="fa-arrow-left"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  />
+                </Button>
+                <Button className="swiper-quotes-next p-4 rounded-full">
+                  <Icon
+                    icon="fa-arrow-right"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  />
+                </Button>
+              </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -646,7 +637,7 @@ export default function Home({
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
             <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
-              {Home?.blog_title}
+              Veja nossas dicas
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-10 md:gap-6">
