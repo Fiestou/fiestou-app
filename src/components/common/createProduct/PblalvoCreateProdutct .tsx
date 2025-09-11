@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import FilterTags from "./FilterTags";
 import Img from "@/src/components/utils/ImgBase";
 import { Categorie } from "@/src/types/filtros";
+import FilterTagsPblAlvo from "./FilterTagsPblAlvo";
 
 
-const MAX = 6;
+const MAX = 1;
 
-export default function CategorieCreateProdutct({
+export default function PblalvoCreateProdutct ({
   onChange,
 }: {
   onChange?: (ids: number[]) => void;
@@ -39,8 +40,8 @@ export default function CategorieCreateProdutct({
     <div>
       <div>
         <div className="flex items-center">
-          <Label>Categoria</Label>
-          <div className="text-xs pt-1 pl-2">(máx {MAX} categorias)</div>
+          <Label>Publico Alvo</Label>
+          <div className="text-xs pt-1 pl-2">(máx {MAX} publico alvo)</div>
         </div>
 
         <div className="relative">
@@ -76,7 +77,7 @@ export default function CategorieCreateProdutct({
               </div>
             ) : (
               <div className="text-zinc-400 text-sm pt-1">
-                Selecione a categoria
+                        Selecione o publico alvo
               </div>
             )}
           </div>
@@ -90,13 +91,13 @@ export default function CategorieCreateProdutct({
               aria-haspopup="dialog"
               aria-expanded={filterActive}
             >
-              Selecione a Categoria
+              Selecione o publico alvo
             </Button>
           </div>
         </div>
       </div>
 
-      <FilterTags
+      <FilterTagsPblAlvo
         status={filterActive}
         maxSelected={MAX}
         onClose={() => setFilterActive(false)}

@@ -2,7 +2,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Template from "@/src/template";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ProductType } from "@/src/models/product";
 import Api from "@/src/services/api";
 import { NextApiRequest, NextApiResponse } from "next";
@@ -40,6 +40,7 @@ import axios from "axios";
 import Gallery from "@/src/components/pages/painel/produtos/produto/Gallery";
 import UnavailableDates from "@/src/components/ui/form/UnavailableDates";
 import React from "react";
+import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -113,6 +114,7 @@ export default function Form({
   const setFormValue = (value: any) => {
     setForm((form) => ({ ...form, ...value }));
   };
+
   const [tags, setTags] = useState("" as string);
   const [categories, setCategories] = useState([] as Array<any>);
   const [data, setData] = useState({} as ProductType);
@@ -130,9 +132,19 @@ export default function Form({
     setColors(value);
   };
 
-  const handleCategorie = (value: any) => {
-    handleData({ category: value.join("|") });
-  };
+const handleCategorie = useCallback((ids: (string | number)[]) => {
+  console.log(ids);
+  const joined = ids.map(String).join("|");
+  const current =
+    Array.isArray(data?.category)
+      ? data.category.map(String).join("|")
+      : typeof data?.category === "string"
+        ? data.category
+        : "";
+
+  if (current === joined) return;
+  handleData({ category: joined });
+}, [data?.category, handleData]);
 
   const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
   const SearchProducts = async (search: string) => {
@@ -161,6 +173,9 @@ export default function Form({
       }
     }
   };
+  useEffect(() => {
+    console.log(categories)
+  }, [categories]);
 
   const [showTooltip, setShowTooltip] = useState(false);
   const [product, setProduct] = useState({} as ProductType);
@@ -774,9 +789,11 @@ export default function Form({
                     </div>
 
                     <CategorieCreateProdutct
-                      onChange={(value: any) => {
-                        handleCategorie(value);
-                      }}
+                      onChange={(value: any[]) => handleCategorie(value)}
+                    />
+
+                    <PblalvoCreateProdutct
+                         onChange={(value: any[]) => handleCategorie(value)}
                     />
 
                     <div className="border-t pt-4 pb-2">

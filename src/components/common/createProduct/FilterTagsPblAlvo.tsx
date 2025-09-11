@@ -7,7 +7,7 @@ import { Categorie, Group } from "@/src/types/filtros";
 import { useCascadingGroups } from "../filters/filter/hooks/useCascadingGroups";
 
 
-interface FilterTagsProps {
+interface FilterTagsPblAlvoProps {
   status: boolean;
   onFilter?: (categorie: Categorie[]) => void;
   onClose?: () => void;
@@ -15,13 +15,13 @@ interface FilterTagsProps {
   maxSelected?: number; // novo
 }
 
-export default function FilterTags({
+export default function FilterTagsPblAlvo({
   status,
   onFilter,
   onClose,
   clickedElements,
   maxSelected = 6,
-}: FilterTagsProps) {
+}: FilterTagsPblAlvoProps) {
   const api = new Api();
   const [allGroups, setAllGroups] = useState<Group[]>([]);
   const [activeElements, setActiveElements] = useState<number[]>([]);
@@ -40,7 +40,7 @@ export default function FilterTags({
     if (!status) return;
 
     const getFilterData = async () => {
-      const request: any = await api.request({ method: "get", url: "group/list" });
+      const request: any = await api.request({ method: "get", url: "group/targetadcpbl" });
 
       if (Array.isArray(request.data)) {
         const groups: Group[] = request.data.map((g: any) => ({
@@ -161,7 +161,7 @@ export default function FilterTags({
             type="button"
             onClick={() => onFilter?.(selectedElementsFull)}
           >
-            Adicionar Categorias
+            Adicionar Publico alvo
           </Button>
         </div>
       </div>
