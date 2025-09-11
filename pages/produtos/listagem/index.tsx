@@ -1,4 +1,3 @@
-/* Titar 'request' */
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/Filter";
 import Newsletter from "@/src/components/common/Newsletter";

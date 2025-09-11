@@ -444,7 +444,7 @@ export default function Home({
             </div>
             {/* Confira nosso parceiros cadastrados */}
             <div className="flex justify-center gap-2 md:gap-12">
-              <div className="aspect-square">
+              <div className="flex flex-col gap-4 aspect-square text-center">
                 <a href="https://www.fiestou.com.br/circus-festas/" target="_blank" rel="noopener noreferrer">
                   <Img
                     className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
@@ -453,8 +453,9 @@ export default function Home({
                     title="Visite nosso parceiro Circus Festas"
                   />
                 </a>
+                <h4 className="font-bold">Circus Festas</h4>
               </div>
-              <div className="aspect-square">
+              <div className="flex flex-col gap-4 aspect-square text-center">
                 <a href="https://www.fiestou.com.br/fiori/" target="_blank" rel="noopener noreferrer">
                   <Img
                     className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
@@ -463,16 +464,20 @@ export default function Home({
                     title="Visite nosso parceiro Fiori"
                   />
                 </a>
+                <h4 className="font-bold">Fiori</h4>
               </div>
-              <div className="aspect-square">
-                <a href="https://www.fiestou.com.br/flavia-fagundes-cerimonial/" target="_blank" rel="noopener noreferrer">
-                  <Img
-                    className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
-                    src="/images/flavia.png"
-                    alt="Visite nosso parceiro Flávia Fagundes cerimonial"
-                    title="Visite nosso parceiro Flávia Fagundes cerimonial"
-                  />
-                </a>
+              <div className="flex flex-col gap-4 aspect-square text-center">
+                <div className="aspect-square">
+                  <a href="https://www.fiestou.com.br/flavia-fagundes-cerimonial/" target="_blank" rel="noopener noreferrer">
+                    <Img
+                      className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
+                      src="/images/flavia.png"
+                      alt="Visite nosso parceiro Flávia Fagundes cerimonial"
+                      title="Visite nosso parceiro Flávia Fagundes cerimonial"
+                    />
+                  </a>
+                </div>
+                <h4 className="font-bold ">Flávia Fagundes</h4>
               </div>
             </div>
 

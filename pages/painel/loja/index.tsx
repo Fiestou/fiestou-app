@@ -1,5 +1,3 @@
-// TODO: Check the code and fix the types
-//@ts-nocheck
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { useEffect, useState } from "react";
@@ -7,10 +5,10 @@ import { Button, Input, Select, TextArea } from "@/src/components/ui/form";
 import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
-import { Cover, DayType, StoreType } from "@/src/models/store";
+import { DayType, StoreType } from "@/src/models/store";
 import Img from "@/src/components/utils/ImgBase";
 import FileInput from "@/src/components/ui/form/FileInputUI";
-import { getImage, getZipCode, justNumber } from "@/src/helper";
+import { getImage, getZipCode } from "@/src/helper";
 import HelpCard from "@/src/components/common/HelpCard";
 import { RelationType } from "@/src/models/relation";
 import Link from "next/link";
@@ -103,7 +101,6 @@ const days = [
 
 export default function Store({
   page,
-  storeTypes,
   elements: initialElements,
 }: {
   page: any;

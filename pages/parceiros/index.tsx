@@ -50,21 +50,19 @@ export default function Parceiros({
     <Template
       scripts={Scripts}
       metaPage={{
-        title: `${Partners?.main_text} | ${DataSeo?.site_text}`,
-        image: getImage(DataSeo?.site_image)
-          ? getImage(DataSeo?.site_image)
-          : "",
-        description: `${Partners?.main_description} - ${DataSeo?.site_description}`,
-        url: `faq`,
+        title: "Parceiros | Fiestou",
+        image: "/images/fiestou-logo.png",
+        description: "Conheça nossas lojas parceiras e aproveite descontos exclusivos",
+        url: `parceiros`,
       }}
       header={{
         template: "default",
         position: "fixed",
-        content: HeaderFooter,
+        content: {},
       }}
       footer={{
         template: "default",
-        content: HeaderFooter,
+        content: {},
       }}
     >
       <section className="bg-cyan-500 pt-24 md:pt-32 relative">

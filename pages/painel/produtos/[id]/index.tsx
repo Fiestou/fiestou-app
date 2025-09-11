@@ -8,33 +8,26 @@ import Api from "@/src/services/api";
 import { NextApiRequest, NextApiResponse } from "next";
 import {
   Button,
-  Input,
   Label,
   Select,
   TextArea,
 } from "@/src/components/ui/form";
 import {
   decimalNumber,
-  getImage,
   handleTags,
   justNumber,
-  justValidateNumber,
-  moneyFormat,
   realMoneyNumber,
   slugfy,
 } from "@/src/helper";
-import FileInput from "@/src/components/ui/form/FileInputUI";
 import HelpCard from "@/src/components/common/HelpCard";
 import Cookies from "js-cookie";
 import Colors from "@/src/components/ui/form/ColorsUI";
 import Options from "@/src/components/ui/form/OptionsUI";
 import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
-import Img from "@/src/components/utils/ImgBase";
 import router from "next/router";
 import Categories from "@/src/components/pages/painel/produtos/produto/Categories";
 import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
-
 import { getStore, getUser } from "@/src/contexts/AuthContext";
 import axios from "axios";
 import Gallery from "@/src/components/pages/painel/produtos/produto/Gallery";

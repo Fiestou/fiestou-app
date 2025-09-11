@@ -5,8 +5,6 @@ import Newsletter from "@/src/components/common/Newsletter";
 import { clean, getImage } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper";
 
 interface SobreProps {
   About: any;
