@@ -7,10 +7,11 @@ export interface Group {
   active: number;
   created_at: string;
   updated_at: string;
-  elements: Element[];
+  target_adc?: boolean;
+  categories: categorie[];
 }
 
-export interface Element {
+export interface categorie {
   id: number
   name: string
   icon: string
@@ -22,17 +23,3 @@ export interface Element {
   group_id?: number,
   element_related_id?: number[]
 }
-
-interface GroupStore {
-  groups: Group[];
-  setGroups: (groups: Group[]) => void;
-}
-
-export const useGroup = create<GroupStore>((set) => ({
-  groups: [], 
-
-  setGroups: (groups) =>
-    set(() => ({
-      groups,
-    })),
-}));

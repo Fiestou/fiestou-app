@@ -1,32 +1,28 @@
 export interface StoreType {
   id: number
-  user: number
-  title: string
-  slug: string
-  companyName: string
-  deliveryRegions: any[]
-  // Km Value
-  default_delivery_fee: number
-  // If the store has a delivery fee
-  
-  is_delivery_fee_active: boolean
-  document: any
+  user?: number;
+  phone?: string;
+  title?: string;
+  slug?: string;
+  companyName?: string;
+  document?: string;
   description: string
   cover: Cover
   profile: Profile
-  segment: string
-  hasDelivery: any
+  segment?: string;
+  segmentId?: number;
+  hasDelivery: boolean;
   metadata: any
   openClose: DayType[]
-  zipCode: string
-  street: string
-  number: string
-  neighborhood: string
-  complement: any
-  city: string
-  state: string
-  country: string
-  status: number
+  zipCode?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  status?: number;    
   created_at: string
   updated_at: string
 }

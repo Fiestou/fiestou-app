@@ -11,7 +11,6 @@ export default async function handler(
     axios
       .post(process.env.BASE_URL + "/api/mail-send", post)
       .then(({ data }) => {
-        console.log(">>", data);
         if (data.response) {
           res.status(200).json({
             response: data.response,
@@ -23,12 +22,11 @@ export default async function handler(
         }
       })
       .catch(({ response }) => {
-        console.log(response, "<--");
         res.status(500).json({
           response: response,
         });
       });
   } catch (err) {
-    console.log("500", err);
+
   }
 }

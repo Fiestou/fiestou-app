@@ -42,7 +42,6 @@ export default function Contact({
   Scripts: any;
 }) {
   const api = new Api();
-  console.log(Contact);
 
   const [data, setData] = useState({} as any);
   const [form, setForm] = useState({

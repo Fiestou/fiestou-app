@@ -6,14 +6,17 @@ import Badge from "@/src/components/utils/Badge";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { NextApiRequest } from "next";
-import Filter from "@/src/components/common/Filter";
+
 import { getImage } from "@/src/helper";
 import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import ShareModal from "@/src/components/utils/ShareModal";
 import Modal from "@/src/components/utils/Modal";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { FilterQueryType } from "@/src/types/filtros";
+import Filter from "@/src/components/common/filters/Filter";
+
 
 export interface Store {
   title: string;
@@ -56,10 +59,12 @@ export async function getStaticProps(ctx: any) {
       slug: slug,
     },
   });
-
-  if (!store?.data) {
+  if (!store?.data || store.data === false || store.data?.response === false) {
     return {
-      notFound: true,
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
     };
   } else {
     store = store.data;
@@ -106,23 +111,69 @@ export default function Store({
   const [share, setShare] = useState(false as boolean);
   const [page, setPage] = useState(0 as number);
   const [loading, setLoading] = useState(false as boolean);
+  const [handleParams, setHandleParams] = useState({} as FilterQueryType);
+  const [mounted, setMounted] = useState(false);
 
-  const getProducts = async () => {
+  // Função para buscar produtos com filtros e paginação
+  const fetchProducts = async (params: any) => {
+    setLoading(true);
+    const api = new Api();
+    const limit = 16;
+    const offset = 0; // sempre começa do início ao filtrar
+
+    const request: any = await api.request({
+      method: "get",
+      url: "request/products",
+      data: {
+        ...params,
+        store: store?.id,
+        user: store?.user,
+        limit,
+        offset,
+      },
+    });
+
+    const items = request.data ?? [];
+    setLoading(false);
+
+    return {
+      items,
+      total: items.length,
+      page: 0,
+      pageSize: limit,
+      pages: Math.ceil((items.length || 1) / limit),
+    };
+  };
+
+  // Função para atualizar a lista de produtos ao filtrar
+  const handleFilterResults = (data: any) => {
+    setListProducts(data.items);
+    setPage(data.page);
+  };
+
+  const getProducts = async (reset = false, params = handleParams, pageNumber = page) => {
     setLoading(true);
 
-    let number = page + 1;
-    setPage(number);
+    let number = reset ? 0 : pageNumber + 1;
+    if (reset) {
+      setPage(0);
+      setListProducts([]); 
+    } else {
+      setPage(number);
+    }
 
     const api = new Api();
-
     let limit = 16;
     let offset = number * 16;
+
+   
 
     let request: any = await api.request({
       method: "get",
       url: "request/products",
       data: {
-        store: store?.id, 
+        ...params,
+        store: store?.id,
         user: store?.user,
         limit: limit,
         offset: offset,
@@ -134,17 +185,27 @@ export default function Store({
     if (!handle?.length) {
       setPage(-1);
     } else {
-      setListProducts([...listProducts, ...handle]);
+      // Se reset, substitui. Se não, adiciona.
+      setListProducts(reset ? handle : [...listProducts, ...handle]);
     }
 
     setLoading(false);
   };
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    getProducts();
+  }, []);
+
   const baseUrl = `https://fiestou.com.br/${store?.slug}`;
 
-  if (isFallback) {
+  if (isFallback || !mounted) {
     return <></>;
   }
+
 
   return (
     <Template
@@ -154,8 +215,8 @@ export default function Store({
         image: !!getImage(store?.cover, "default")
           ? getImage(store?.cover)
           : !!getImage(DataSeo?.site_image)
-          ? getImage(DataSeo?.site_image)
-          : "",
+            ? getImage(DataSeo?.site_image)
+            : "",
         description: !!store?.description
           ? store?.description
           : DataSeo?.site_description,
@@ -285,7 +346,12 @@ export default function Store({
       </div>
 
       <div className="relative pt-5">
-        <Filter store={store?.slug} />
+        <Filter
+          store={store?.id}
+          context="store"
+          fetchProducts={fetchProducts}
+          onResults={handleFilterResults}
+        />
       </div>
 
       <section className="py-4 md:pb-20">
@@ -304,7 +370,7 @@ export default function Store({
             <div className="text-center">
               <Button
                 onClick={() => {
-                  getProducts();
+                  getProducts(false, handleParams, page);
                 }}
                 loading={loading}
               >

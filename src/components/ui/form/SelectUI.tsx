@@ -3,6 +3,8 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 interface OptionType {
   name?: string;
   value: any;
+  disabled?: boolean;
+  icon?: string;
 }
 
 interface SelectType {

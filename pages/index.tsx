@@ -9,7 +9,7 @@ import Template from "@/src/template";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
+import { Autoplay, Navigation, Pagination } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -17,10 +17,9 @@ import "swiper/css/pagination";
 import Product from "@/src/components/common/Product";
 import { RelationType } from "@/src/models/relation";
 import PostItem from "@/src/components/common/PostItem";
-import Filter from "@/src/components/common/Filter";
-import { useEffect, useState } from "react";
-import { GroupsResponse } from "../src/types/filtros/response";
-import { useGroup } from "@/src/store/filter";
+
+import {useState } from "react";
+import Filter from "@/src/components/common/filters/Filter";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -29,8 +28,6 @@ export async function getStaticProps(ctx: any) {
     method: 'get',
     url: `home`,
   });
-
-  console.log("Home data:", request);
 
   const Categories = request?.data?.Categories ?? [];
   const Home = request?.data?.Home ?? {};
@@ -72,9 +69,6 @@ export default function Home({
   Scripts: any;
 }) {
   const api = new Api();
-  const { setGroups } = useGroup();
-
-  console.log("Home component props:", Home);
 
   const renderImageSlider = (slide: any) => {
     return getImage(slide?.main_slide_cover, "default") ? (
@@ -99,24 +93,12 @@ export default function Home({
     );
   };
 
-  const getFilters = async () => {
-    const request = await api.request<GroupsResponse>(
-      {
-        method: 'get',
-        url: 'group/list'
-      }
-    )
 
-    if (request.data && request.response) {
-      setGroups(request.data)
-    }
-  }
-  
-  useEffect(()=>{
-    getFilters()
-  }, [])
-//se der erro aqui ao rodar o projeto não rodou o backend da forma correta
-  const [imgLinks] = useState<string[]>([Home?.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)]);
+  const [imgLinks] = useState<string[]>(
+    Array.isArray(Home?.main_slide)
+      ? Home.main_slide.map((slide: any) => slide?.main_slide_redirect?.url)
+      : []
+  );
 
   return (
     <Template
@@ -142,11 +124,16 @@ export default function Home({
       <section className="group relative">
         <Swiper
           spaceBetween={0}
-          modules={[Pagination, Navigation]}
+          modules={[Pagination, Navigation, Autoplay]}
           navigation={{
             nextEl: ".swiper-main-next",
             prevEl: ".swiper-main-prev",
           }}
+          autoplay={{
+            delay: 3000,
+            disableOnInteraction: false,
+          }}
+          loop={true}
           breakpoints={{
             0: {
               slidesPerView: 1,
@@ -195,7 +182,6 @@ export default function Home({
                               href={`${process.env.APP_URL}/acesso`}
                               className="md:text-lg px-4 py-2 md:py-4 md:px-8"
                             >
-                              {/* <Icon icon="fa-user-plus" type="far" /> */}
                               {slide?.main_slide_redirect?.label}
                             </Button>
                           </div>
@@ -240,35 +226,18 @@ export default function Home({
       <section className="py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-8">
-            <span>{Home?.feature_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
               dangerouslySetInnerHTML={{ __html: Home?.feature_text }}
             ></h2>
           </div>
           <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6">
-            {/* <div className="hidden md:block order-1 w-1/2 text-right md:text-center md:w-fit p-2">
-              <Button className="swiper-Products-prev p-5 rounded-full">
-                <Icon
-                  icon="fa-arrow-left"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
-              </Button>
-            </div> */}
             <div className="order-3 md:order-2 grid md:grid-cols-2 lg:grid-cols-4 gap-4 w-full relative overflow-hidden">
               {!!Products.length &&
                 Products.map((item: any, key: any) => (
                   <Product key={key} product={item} />
                 ))}
             </div>
-            {/* <div className="hidden md:block order-2 md:order-3 w-1/2 text-left md:text-center md:w-fit p-2">
-              <Button className="swiper-Products-next p-5 rounded-full">
-                <Icon
-                  icon="fa-arrow-right"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
-              </Button>
-            </div> */}
           </div>
           <div className="text-center mt-10">
             <Button href="/produtos">
@@ -281,7 +250,6 @@ export default function Home({
       <section className="py-12 md:py-20">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{Home?.works_title}</span>
             <h2
               className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
               dangerouslySetInnerHTML={{ __html: Home?.works_text }}
@@ -358,17 +326,10 @@ export default function Home({
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-xl mx-auto text-center pb-14">
-              <span>{Home?.categories_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
                 dangerouslySetInnerHTML={{ __html: Home?.categories_text }}
               ></h2>
-              <div
-                className="pt-4"
-                dangerouslySetInnerHTML={{
-                  __html: Home?.categories_description,
-                }}
-              ></div>
             </div>
             <div className="bg-white py-4 md:py-10 rounded-xl overflow-hidden relative">
               <Swiper
@@ -427,7 +388,6 @@ export default function Home({
         <div className="max-w-[88rem] py-12 md:py-20 mx-auto bg-zinc-100">
           <div className="container-medium">
             <div className="max-w-4xl mx-auto text-center pb-8 md:pb-14">
-              <span>{Home?.partner_title}</span>
               <h2
                 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
                 dangerouslySetInnerHTML={{ __html: Home?.partner_text }}
@@ -495,19 +455,12 @@ export default function Home({
           <div className="lg:flex justify-center">
             <div className="w-full">
               <div className="max-w-xl pb-14">
-                <span>{Home?.quotes_title}</span>
                 <h2
                   className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4"
                   dangerouslySetInnerHTML={{
                     __html: Home?.quotes_text,
                   }}
                 ></h2>
-                <div
-                  className="pt-4"
-                  dangerouslySetInnerHTML={{
-                    __html: Home?.quotes_description,
-                  }}
-                ></div>
                 <div className="pt-10">
                   <Img
                     src="/images/loop-arrow.png"
@@ -527,11 +480,16 @@ export default function Home({
                           type: "fraction",
                         }}
                         spaceBetween={16}
-                        modules={[Pagination, Navigation]}
+                        modules={[Pagination, Navigation, Autoplay]}
                         navigation={{
                           nextEl: ".swiper-quotes-next",
                           prevEl: ".swiper-quotes-prev",
                         }}
+                        autoplay={{
+                          delay: 3000,
+                          disableOnInteraction: false,
+                        }}
+                        loop={true}
                         breakpoints={{
                           0: {
                             slidesPerView: 1,
@@ -624,14 +582,15 @@ export default function Home({
       <section className="pb-14 xl:py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <span>{Home?.blog_subtitle}</span>
             <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
               {Home?.blog_title}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-10 md:gap-6">
             {!!Blog?.length &&
-              Blog.map((post: any, key: any) => (
+              Blog.sort(
+                (a, b) => b.id - a.id
+              ).map((post: any, key: any) => (
                 <div key={key}>
                   <PostItem post={post} />
                 </div>
