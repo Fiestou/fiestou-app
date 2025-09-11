@@ -1,15 +1,12 @@
 import Api from "@/src/services/api";
 import Template from "@/src/template";
-import Link from "next/link";
-import { FormEvent, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import ButtonLoader from "@/src/components/utils/ButtonLoader";
 import Img from "@/src/components/utils/ImgBase";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
+import { Navigation } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -18,13 +15,10 @@ import { formatPhone } from "@/pages/cadastre-se/components/FormMasks";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { formatName, validateEmail } from "@/src/components/utils/FormMasks";
-import { CheckMail } from "@/src/models/CheckEmail";
 
 export async function getStaticProps(ctx: any) {
     const api = new Api();
-
     let request: any = await api.content({ method: 'get', url: `become-partner` });
-
     const Partner = request?.data?.Partner ?? {};
     const Roles = request?.data?.Roles ?? {};
     const HeaderFooter = request?.data?.HeaderFooter ?? {};
@@ -75,10 +69,10 @@ export default function SejaParceiro({
     const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
     const [isFormValid, setIsFormValid] = useState(false);
     const [errorMail, setErrorMail] = useState<string | null>(null);
-    
+
     const validatePassword = (pwd: string): string[] => {
         const errors: string[] = [];
-        
+
         if (pwd.length < 8) {
             errors.push("Mínimo de 8 caracteres");
         }
@@ -91,13 +85,13 @@ export default function SejaParceiro({
         if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/.test(pwd)) {
             errors.push("Pelo menos um caractere especial");
         }
-        
+
         return errors;
     };
 
     const validateAndSetPasswordErrors = (currentPassword: string, currentRepeat: string): boolean => {
         const errors = validatePassword(currentPassword);
-        
+
         if (currentPassword !== currentRepeat && currentRepeat.length > 0) {
             errors.push("As senhas devem ser iguais!");
         }
@@ -111,23 +105,23 @@ export default function SejaParceiro({
         const isNameValid = name.trim() !== "";
         const isEmailValid = email.trim() !== "" && validateEmail(email);
         const isPhoneValid = phone.replace(/\D/g, '').length >= 11;
-        
+
         setIsFormValid(arePasswordsValid && isNameValid && isEmailValid && isPhoneValid);
     };
 
-    useEffect(()=>{
-        if (errorMail){
-        setTimeout(()=>{
-            setErrorMail("");
-        }, 30000)
+    useEffect(() => {
+        if (errorMail) {
+            setTimeout(() => {
+                setErrorMail("");
+            }, 30000)
         }
     }, [errorMail])
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
         if (!isFormValid) {
-             toast.error("Por favor, preencha todos os campos corretamente.");
-             return;
+            toast.error("Por favor, preencha todos os campos corretamente.");
+            return;
         }
 
         setForm({ ...form, loading: true });
@@ -135,7 +129,7 @@ export default function SejaParceiro({
 
         try {
             const cleanedPhone = phone.replace(/\D/g, '');
-            
+
             if (cleanedPhone.length < 11) {
                 toast.error("Número de telefone inválido");
                 return;
@@ -153,7 +147,7 @@ export default function SejaParceiro({
                     person: "partner",
                 },
             });
-           
+
             if (data.response) {
                 toast.success(data.message || "Pré-cadastro realizado com sucesso!");
                 router.push({
@@ -166,7 +160,7 @@ export default function SejaParceiro({
         } catch (error: any) {
             console.error("Erro na requisição de pré-cadastro:", error);
             setForm((prevForm) => ({ ...prevForm, loading: false }));
-            
+
             if (error.response && error.response.data) {
                 const { status, data: responseData } = error.response;
 
@@ -288,10 +282,10 @@ export default function SejaParceiro({
                                             <div className="form-group">
                                                 <Label style="light">E-mail</Label>
                                                 <Input
-                                                     onChange={(e: any) => {
+                                                    onChange={(e: any) => {
                                                         const newValue = e.target.value.toLowerCase();
                                                         setEmail(newValue);
-                                                       
+
                                                         if (newValue.trim() === "") {
                                                             setErrorMail(null);
                                                         } else if (!validateEmail(newValue)) {
@@ -353,7 +347,7 @@ export default function SejaParceiro({
                                                     required
                                                     value={repeat}
                                                 />
-                                                
+
                                                 <ul className="text-xs text-red-500 mt-1 list-disc list-inside">
                                                     <li className={password.length >= 8 ? 'text-green-600' : ''}>Mínimo de 8 caracteres</li>
                                                     <li className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>Pelo menos uma letra maiúscula</li>

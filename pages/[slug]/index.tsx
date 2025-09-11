@@ -154,7 +154,7 @@ export default function Store({
   const baseUrl = `https://fiestou.com.br/${store?.slug}`;
 
   if (isFallback) {
-    return <></>;
+    return null;
   }
 
 

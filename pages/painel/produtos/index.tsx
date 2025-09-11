@@ -1,18 +1,14 @@
-import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { Button, Input } from "@/src/components/ui/form";
 import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
-import { ProductType, getPrice } from "@/src/models/product";
-import { moneyFormat } from "@/src/helper";
+import { getPrice } from "@/src/models/product";
 import { useEffect, useState } from "react";
 import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import Cookies from "js-cookie";
 import Filter from "@/src/components/pages/painel/produtos/Filter";
-import { FilterQueryType } from "@/src/components/common/Filter";
 
 export async function getServerSideProps(
   req: NextApiRequest,

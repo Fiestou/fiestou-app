@@ -3,7 +3,6 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { Button, Input, Select } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
 import { useEffect, useState } from "react";
 import { getExtenseData, moneyFormat } from "@/src/helper";
