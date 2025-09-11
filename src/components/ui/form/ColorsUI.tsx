@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 interface ColorType {
   name?: string;
@@ -16,7 +17,6 @@ export const ColorsList = [
   { code: "bg-orange-200", value: "bege" },
   { code: "bg-yellow-400", value: "amarelo" },
   { code: "bg-green-500", value: "verde" },
-  // { code: "bg-cyan-300", value: "azul" },
   { code: "bg-blue-500", value: "azul escuro" },
   { code: "bg-purple-500", value: "violeta" },
   { code: "bg-zinc-900", value: "preto" },
@@ -51,9 +51,8 @@ export const ColorfulRender = (item: any) => {
     default:
       return (
         <div
-          className={`${item?.code} ${
-            item?.value == "branco" ? "border" : ""
-          } p-3 rounded-full`}
+          className={`${item?.code} ${item?.value == "branco" ? "border" : ""
+            } p-3 rounded-full`}
         ></div>
       );
   }
@@ -68,22 +67,25 @@ export default function Colors(attr: ColorType) {
         ? [attr?.value]
         : attr?.value ?? ([] as any)
     );
-  }, [attr]);
+  }, [attr?.value]);
 
   const HandleColors = (color: string) => {
-    var handle: any = value;
-    var index = handle.indexOf(color);
+    let handle = [...value];
 
-    if (index !== -1) {
-      handle.splice(index, 1);
+    if (handle.includes(color)) {
+      handle = handle.filter(c => c !== color);
     } else {
       handle.push(color);
     }
 
-    handle = value.slice(0, parseInt((attr?.maxSelect ?? "100000").toString()));
+    // Remove undefined, null, vazio
+    handle = handle.filter(Boolean);
+
+    // Limita ao máximo permitido
+    handle = handle.slice(0, Number(attr?.maxSelect ?? 3));
 
     setValue(handle);
-    !!attr?.onChange ? attr?.onChange(handle) : {};
+    attr?.onChange?.(handle);
   };
 
   return (
@@ -105,11 +107,10 @@ export default function Colors(attr: ColorType) {
           <div
             key={key}
             onClick={(e: any) => HandleColors(item.value)}
-            className={`${
-              value?.includes(item.value)
-                ? "border-zinc-800"
-                : "border-zinc-200"
-            } group p-2 border hover:border-zinc-400 ease rounded-md cursor-pointer relative`}
+            className={`${value?.includes(item.value)
+              ? "border-zinc-800"
+              : "border-zinc-200"
+              } group p-2 border hover:border-zinc-400 ease rounded-md cursor-pointer relative`}
           >
             {ColorfulRender(item)}
             <div className="hidden group-hover:block absolute text-xs bottom-0 left-1/2 -translate-x-1/2 whitespace-nowrap -mb-1 bg-white shadow px-1 rounded">

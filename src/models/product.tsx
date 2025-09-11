@@ -80,6 +80,7 @@ export interface ProductType {
   vehicle?: string;
   freeTax?: string;
   comercialType?: string | "selling" | "renting";
+  unavailableDates?: string[];
   schedulingPeriod?: string;
   schedulingTax?: number;
   schedulingDiscount?: number;

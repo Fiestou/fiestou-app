@@ -1,18 +1,20 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Element, ElementResponse, ElementsResponse, GenericResponse, GroupResponse, GroupsResponse } from "@/src/types/filtros/response";
 import Api from "@/src/services/api";
 import ElementModal, { ReturnElementData } from "../modals/ElementModal";
 import { toast } from "react-toastify";
 import { X, Trash2, Pencil, EllipsisVertical, Plus } from "lucide-react";
 import DeleteModal from "../modals/DeleteModal";
 import { elements } from "chart.js";
+import { categorie } from "@/src/store/filter";
+import { ElementsResponse, GenericResponse } from "@/src/types/filtros";
 
 interface CardProps {
     title: string;
     description: string;
-    relatedElements: Element[];
+    relatedElements: categorie[];
     onEditClick: (id: number) => void;
-    elements: Element[];
+    elements: categorie[];
+    grouptargeadc?: boolean;
     id: number;
     onAddElementClick?: (currentGroupId: number) => void;
     onDeleteGroup: () => void;
@@ -23,12 +25,12 @@ const Card: React.FC<CardProps> = (props) => {
     const api = new Api();
 
     const [isTooltipVisible, setTooltipVisible] = useState(false);
-    const [updateElement, setUpdateElement] = useState<Element | null>(null);
+    const [updateElement, setUpdateElement] = useState<categorie | null>(null);
     const [openElementModal, setOpenElementModal] = useState(false);
     const [openGroupDeleteModal, setGroupOpenDeleteModal] = useState(false);
     const [hoveredElement, setHoveredElement] = useState<number | null>(null);
-    const [localElements, setLocalElements] = useState<Element[]>([]);
-    const [elementsRelatedDetails, setElementsRelatedDetail] = useState<Element[]>([]);
+    const [localElements, setLocalElements] = useState<categorie[]>([]);
+    const [elementsRelatedDetails, setElementsRelatedDetail] = useState<categorie[]>([]);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
 
 
@@ -56,7 +58,7 @@ const Card: React.FC<CardProps> = (props) => {
 
             //MELHORAR NO FUTURO
             if (request.response && request.data instanceof Object) {
-                const newElement = request.data as unknown as Element;
+                const newElement = request.data as unknown as categorie;
                 setLocalElements((prev) => [
                     ...prev,
                     {
@@ -183,15 +185,18 @@ const Card: React.FC<CardProps> = (props) => {
                         </div>
                         <label className="flex-2 w-full flex justify-start items-start cursor-pointer">Editar</label>
                     </button>
-                    <button
-                        onClick={() => setGroupOpenDeleteModal(true)}
-                        className="flex p-1 gap-2 justify-start items-start text-black hover:bg-gray-200 rounded-md"
-                    >
-                        <div className="flex-1 w-full flex justify-start items-center cursor-pointer">
-                            <Trash2 size={20} />
-                        </div>
-                        <label className="flex-2 w-full flex justify-center items-center cursor-pointer">Excluir</label>
-                    </button>
+                    {!props.grouptargeadc && (
+                        <button
+                            onClick={() => setGroupOpenDeleteModal(true)}
+                            className="flex p-1 gap-2 justify-start items-start text-black hover:bg-gray-200 rounded-md"
+                        >
+                            <div className="flex-1 w-full flex justify-start items-center cursor-pointer">
+                                <Trash2 size={20} />
+                            </div>
+                            <label className="flex-2 w-full flex justify-center items-center cursor-pointer">Excluir</label>
+                        </button>
+                    )}
+                    
                 </div>
             )}
 
@@ -262,6 +267,7 @@ const Card: React.FC<CardProps> = (props) => {
                 data={updateElement}
                 localElementsRelatedDetails={elementsRelatedDetails}
                 onSaveClick={onSaveElement}
+                grouptargeadc={props.grouptargeadc}
                 groupId={props.id || 0}
                 relatedElements={props.relatedElements}
                 onRequestClose={() => setOpenElementModal(false)}

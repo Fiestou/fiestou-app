@@ -11,15 +11,15 @@ import PostItem from "@/src/components/common/PostItem";
 import Newsletter from "@/src/components/common/Newsletter";
 
 export const getStaticPaths = async (ctx: any) => {
-  // const api = new Api();
+  const api = new Api();
 
-  // let request: any = await api.content({ url: `post` });
+  let request: any = await api.content({ url: `post` });
 
-  // const paths = request.data
-  //   .filter((slug: any) => !!slug)
-  //   .map((slug: any) => {
-  //     return { params: { slug: slug } };
-  //   });
+  const paths = request.data
+    .filter((slug: any) => !!slug)
+    .map((slug: any) => {
+      return { params: { slug: slug } };
+    });
 
   return {
     paths: [],
@@ -120,7 +120,7 @@ export default function Post({
         <div className="container-medium">
           <div className="content-editor mx-auto max-w-[40rem] grid gap-4">
             {!!Post?.blocks?.length &&
-              Post?.blocks.map((item: any, key: any) => (
+              Post?.blocks.slice().reverse().map((item: any, key: any) => (
                 <div
                   key={key}
                   dangerouslySetInnerHTML={{ __html: item.content }}
@@ -139,7 +139,7 @@ export default function Post({
           </div>
           <div className="grid md:grid-cols-3 gap-4 md:gap-6">
             {!!Related?.length &&
-              Related.map((post: any, key: any) => (
+              Related.slice().reverse().map((post: any, key: any) => (
                 <div key={key}>
                   <PostItem post={post} />
                 </div>

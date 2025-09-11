@@ -1,16 +1,10 @@
-import Product from "@/src/components/common/Product";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import Image from "next/image";
-import Link from "next/link";
 import Partner from "@/src/components/common/Partner";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { StoreType } from "@/src/models/store";
 import { getImage } from "@/src/helper";
 import Img from "@/src/components/utils/ImgBase";
-import Filter from "@/src/components/common/Filter";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { useEffect } from "react";
 import { PartnerType } from "@/src/models/partner";
 import { HeaderFooterType } from "@/src/models/headerFooter";
 import { DataSeoType } from "@/src/models/dataSeo";

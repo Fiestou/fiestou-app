@@ -114,7 +114,7 @@ export default function SejaEntregador() {
                         type="text"
                         name="nome"
                         className="form-control"
-                        placeholder="email@email.com.br"
+                        placeholder="exemplo@email.com"
                       />
                     </div>
                     <div className="form-group">
@@ -156,11 +156,9 @@ export default function SejaEntregador() {
       <section className="py-20">
         <div className="container-medium">
           <div className="max-w-xl mx-auto text-center pb-14">
-            <span>Como funciona</span>
             <h2 className="font-title text-zinc-900 font-bold text-5xl mt-2">
               Porque entregar com Fiestou
             </h2>
-            <div className="pt-4">Lorem ipsum dolor sit amet consectetur.</div>
           </div>
           <div className="grid grid-cols-4 gap-4 md:gap-6">
             {[1, 2, 3, 4].map((item: any, key: any) => (

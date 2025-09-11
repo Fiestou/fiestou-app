@@ -1,16 +1,14 @@
+/* Titar 'request' */
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import Filter from "@/src/components/common/Filter";
+import Filter from "@/src/components/common/filters/Filter";
+
 import Newsletter from "@/src/components/common/Newsletter";
 import Product from "@/src/components/common/Product";
 import { Button } from "@/src/components/ui/form";
-import Img from "@/src/components/utils/ImgBase";
 import { getImage, getQueryUrlParams } from "@/src/helper";
 import { ProductType } from "@/src/models/product";
-import { RelationType } from "@/src/models/relation";
-import { StoreType } from "@/src/models/store";
 import Api from "@/src/services/api";
 import Template from "@/src/template";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
@@ -18,14 +16,19 @@ let limit = 15;
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
+  let request: any;
 
-  let request: any = await api.content(
-    {
-      method: 'get',
-      url: "default",
-    },
-    ctx
-  );
+  try {
+    request = await api.content(
+      {
+        method: 'get',
+        url: "default",
+      },
+      ctx
+    );
+  } catch (error) {
+    request = { data: {} };
+  }
 
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
@@ -59,26 +62,56 @@ export default function Listagem({
   const [params, setParams] = useState({} as any);
   const [products, setProducts] = useState([] as Array<ProductType>);
 
+  function toQuery(params: Record<string, any>) {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === "") return;
+      if (Array.isArray(v)) {
+        v.forEach((item) => qs.append(`${k}[]`, String(item)));
+      } else {
+        qs.append(k, String(v));
+      }
+    });
+    return qs.toString();
+  }
+
   const getProducts = async () => {
     const handleParams: any = getQueryUrlParams();
+    const normalized: any = {};
 
-    if (!!handleParams["categoria[]"]) {
-      handleParams["categorias"] = handleParams["categoria[]"];
-      delete handleParams["categoria[]"];
+    const passthroughKeys = ["busca", "range", "tags", "store", "ordem", "whereIn"];
+    for (const k of passthroughKeys) {
+      if (handleParams[k] !== undefined && handleParams[k] !== "") normalized[k] = handleParams[k];
     }
 
-    setParams(handleParams);
+    const rawCategory =
+      handleParams["category"] ??
+      handleParams["categoria"] ??
+      handleParams["categorias"] ??
+      handleParams["categoria[]"] ??
+      handleParams["categories"];
+    if (rawCategory !== undefined && rawCategory !== "")
+      normalized["category"] = Array.isArray(rawCategory) ? rawCategory : [rawCategory];
 
-    let offset = page * limit;
+    const rawColors =
+      handleParams["colors"] ??
+      handleParams["color"] ??
+      handleParams["cores"] ??
+      handleParams["cor"] ??
+      handleParams["cor[]"];
+    if (rawColors !== undefined && rawColors !== "")
+      normalized["colors"] = Array.isArray(rawColors) ? rawColors : [rawColors];
 
-    let request: any = await api.request({
+    setParams(normalized);
+
+    const offset = page * limit;
+
+    const qs = toQuery({ ...normalized, limit, offset });
+    
+    const request: any = await api.request(
+      {
       method: "get",
-      url: "request/products",
-      data: {
-        ...handleParams,
-        limit: limit,
-        offset: offset,
-      },
+      url: `request/products?${qs}`,
     });
 
     const handle = request.data;
@@ -86,24 +119,32 @@ export default function Listagem({
     if (!handle?.length) {
       setPage(-1);
     } else {
-      setPage(page + 1);
-      setProducts([...products, ...handle]);
+      setPage((p) => p + 1);
+      setProducts((prev) => [...prev, ...handle]);
     }
-
     setPlaceholder(false);
   };
-
+  
   useEffect(() => {
     if (!!window) {
       getProducts();
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setProducts([]);
+    setPage(0);
+    setPlaceholder(true);
+    getProducts();
+    
+  }, [router.asPath]);
+
   return (
     <Template
       scripts={Scripts}
       metaPage={{
-        title: `Produtos | ${DataSeo?.site_text}`,
+        title: `Produtos | ${DataSeo?.site_text ?? 'Fiestou'}`,
         image: !!getImage(DataSeo?.site_image)
           ? getImage(DataSeo?.site_image)
           : "",

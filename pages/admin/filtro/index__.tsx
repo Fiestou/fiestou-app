@@ -8,17 +8,21 @@ import { CirclePlus } from 'lucide-react';
 import EyeButton from "../../../src/components/pages/admin/filtro/buttons/Eye";
 import Card from "../../../src/components/pages/admin/filtro/section/Card";
 import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modals/GroupModal";
-import { Group, GroupResponse, GroupsResponse, ResponseRegister } from "../../../src/types/filtros/response";
-import { RequestRegister } from "../../../src/types/filtros/request";
+
+
 import { toast } from "react-toastify";
-import { Element } from "@/src/types/filtros/response";
+import { categorie, Group } from "@/src/store/filter";
+import { GroupsResponse, RequestRegister, ResponseRegister } from "@/src/types/filtros";
+
+// TODO : refatorar tipo das chamadas de API
+
 export default function Categorias() {
   const api = new Api();
 
   const [openGroupModal, setOpenGroupModal] = useState<boolean>(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [updateGroup, setUpdateGroup] = useState<Group | null>();
-  const [nextGroupElements, setNextGroupElements] = useState<Element[]>([]);
+  const [nextGroupElements, setNextGroupElements] = useState<categorie[]>([]);
 
   const onSaveGroup = async (data: GroupData) => {
     let dataRequest: RequestRegister = {
@@ -79,10 +83,10 @@ export default function Categorias() {
           id: -1, // Você pode definir isso conforme necessário
         }
       ]);
-    } else if (nextGroup && nextGroup.elements) {
+    } else if (nextGroup && nextGroup.categories) {
       // Mapeando os elementos de Element[] para ElementsCard[]
-      const mappedElements = nextGroup.elements.map((element) => ({
-        ...element,  // Preserva as propriedades de Element
+      const mappedElements = nextGroup.categories.map((categorie) => ({
+        ...categorie,  // Preserva as propriedades de Element
         groupName: nextGroup.name, // Adiciona a propriedade groupName
       }));
       	
@@ -173,7 +177,7 @@ export default function Categorias() {
                 <Card
                   key={index}
                   onEditClick={onEditClick}
-                  elements={value.elements as Element[]}
+                  elements={value.categories as categorie[]}
                   relatedElements={nextGroupElements}
                   title={value.name}
                   description={value.description}

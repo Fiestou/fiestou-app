@@ -22,9 +22,13 @@ import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
 import router from "next/router";
 import Categories from "@/src/components/pages/painel/produtos/produto/Categories";
-import { getStore } from "@/src/contexts/AuthContext";
+import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
+
+import { getStore, getUser } from "@/src/contexts/AuthContext";
 import axios from "axios";
 import Gallery from "@/src/components/pages/painel/produtos/produto/Gallery";
+import UnavailableDates from "@/src/components/ui/form/UnavailableDates";
+import React from "react";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -92,28 +96,31 @@ export default function Form({
   id: string | number;
 }) {
   const api = new Api();
-
   const [subimitStatus, setSubimitStatus] = useState("" as string);
   const [placeholder, setPlaceholder] = useState(true as boolean);
-
   const [form, setForm] = useState(formInitial);
   const setFormValue = (value: any) => {
     setForm((form) => ({ ...form, ...value }));
   };
-
   const [tags, setTags] = useState("" as string);
   const [categories, setCategories] = useState([] as Array<any>);
-
   const [data, setData] = useState({} as ProductType);
+
   const handleData = (value: Object) => {
-    console.log(value);
     setData({ ...data, ...value });
   };
+  const handleUnavailableDatesChange = (dates: string[]) => {
+    handleData({ unavailableDates: dates });
+  };
+  const [colors, setColors] = useState([]);
 
-  const [colors, setColors] = useState([] as Array<any>);
   const handleColors = (value: any) => {
     handleData({ color: value.join("|") });
     setColors(value);
+  };
+
+  const handleCategorie = (value: any) => {
+    handleData({ category: value.join("|") });
   };
 
   const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
@@ -144,6 +151,7 @@ export default function Form({
     }
   };
 
+  const [showTooltip, setShowTooltip] = useState(false);
   const [product, setProduct] = useState({} as ProductType);
   const getProduct = async () => {
     let request: any = await api.bridge({
@@ -202,7 +210,7 @@ export default function Form({
 
       setTimeout(() => {
         router.push({ pathname: "/painel/produtos" });
-      }, 1000);
+      }, 500);
     }
   };
 
@@ -283,7 +291,7 @@ export default function Form({
                             }
                             value={data?.title ?? ""}
                             required
-                            placeholder="Digite o nome completo"
+                            placeholder="Digite o nome do produto"
                             className="form-control"
                           />
                           <input
@@ -309,7 +317,7 @@ export default function Form({
                             }
                             value={data?.subtitle ?? ""}
                             required
-                            placeholder="Digite o subtítulo"
+                            placeholder="Digite o subtítulo do produto"
                             className="form-control"
                           />
                         </div>
@@ -413,7 +421,7 @@ export default function Form({
                       </div>
 
                       {data.comercialType == "renting" && (
-                        <>
+                        <React.Fragment>
                           <div className="w-full">
                             <Label>Tempo</Label>
                             <Select
@@ -449,7 +457,7 @@ export default function Form({
                               className="form-control"
                             />
                           </div>
-                        </>
+                        </React.Fragment>
                       )}
                     </div>
 
@@ -471,7 +479,10 @@ export default function Form({
                         <div className="flex gap-2">
                           <div className="w-full grid gap-2 sm:grid-cols-2">
                             <div className="form-group">
-                              <Label>SKU</Label>
+                              <div className="flex items-center">
+                                <Label>SKU</Label>
+                                <span className="pl-2 text-xs">(código do produto)</span>
+                              </div>
                               <input
                                 onChange={(e: any) =>
                                   handleData({ sku: e.target.value })
@@ -483,19 +494,6 @@ export default function Form({
                                 className="form-control"
                               />
                             </div>
-                            {/* <div className="form-group">
-                              <Label>Código do produto</Label>
-                              <input
-                                onChange={(e: any) =>
-                                  handleData({ code: e.target.value })
-                                }
-                                value={data?.code}
-                                type="text"
-                                name="codigo"
-                                placeholder="1234"
-                                className="form-control"
-                              />
-                            </div> */}
                             <div className="form-group">
                               <div className="flex items-center">
                                 <Label>Disponibilidade</Label>
@@ -546,24 +544,62 @@ export default function Form({
                             </div>
                             {(!data?.quantityType ||
                               data?.quantityType == "manage") && (
-                              <div className="w-full">
-                                <input
-                                  onChange={(e: any) =>
-                                    handleData({
-                                      quantity: justNumber(e.target.value),
-                                    })
-                                  }
-                                  value={justNumber(data?.quantity)}
-                                  min={0}
-                                  className="form-control text-center"
-                                  type="number"
-                                  name="quantidade"
-                                  placeholder="Digite a quantidade"
-                                  required
-                                />
-                              </div>
-                            )}
+                                <div className="w-full">
+                                  <input
+                                    onChange={(e: any) =>
+                                      handleData({
+                                        quantity: justNumber(e.target.value),
+                                      })
+                                    }
+                                    value={justNumber(data?.quantity)}
+                                    min={0}
+                                    className="form-control text-center"
+                                    type="number"
+                                    name="quantidade"
+                                    placeholder="Digite a quantidade"
+                                    required
+                                  />
+                                </div>
+                              )}
                           </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4 pb-2">
+                      <h4 className="text-2xl text-zinc-900 mb-2">
+                        Períodos de Indisponibilidade
+                      </h4>
+                      <div className="grid gap-2">
+                        <div className="form-group">
+                          <Label>
+                            Selecione as datas em que o produto não estará disponível.
+                            <div className="relative inline-block ml-2">
+                              <button
+                                type="button"
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                onClick={() => setShowTooltip(!showTooltip)}
+                                onMouseEnter={() => setShowTooltip(true)}
+                                onMouseLeave={() => setShowTooltip(false)}
+                              >
+                                <Icon icon="fa-exclamation-circle" className="text-sm" />
+                              </button>
+
+                              {showTooltip && (
+                                <div className="absolute left-0 bottom-full mb-2 z-50 w-64 p-3 bg-gray-600 text-white text-xs rounded-lg shadow-lg whitespace-normal break-words">
+                                  <div className="relative">
+                                    Essa funcionalidade é indicada para quando o produto é alugado fora da plataforma Fiestou.
+                                    <div className="absolute top-full right-4 w-2 h-2 bg-gray-600 transform rotate-45 translate-y-[-1px]"></div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </Label>
+                          <UnavailableDates
+                            initialDates={data.unavailableDates}
+                            onChange={handleUnavailableDatesChange}
+                            minDate={new Date()}
+                          />
                         </div>
                       </div>
                     </div>
@@ -643,18 +679,16 @@ export default function Form({
                         Características
                       </h4>
                       <div className="grid gap-8">
-                        {/* ColorsList */}
                         <div className="">
                           <Label>Cor</Label>
                           <Colors
                             value={colors}
-                            onChange={(value: any) => handleColors(value)}
+                            onChange={handleColors}
                           />
                           <div className="text-sm text-zinc-400 whitespace-nowrap">
-                            {colors?.length ?? 0} de 3
+                            {(colors?.filter(Boolean).length ?? 0)} de 3
                           </div>
                         </div>
-                        {/* ---- */}
 
                         <div className="">
                           <div className="flex items-center">
@@ -710,7 +744,7 @@ export default function Form({
                                             handleData({
                                               tags: handleTags(
                                                 data?.tags?.replace(item, "") ??
-                                                  "",
+                                                "",
                                                 ""
                                               ),
                                             })
@@ -727,6 +761,12 @@ export default function Form({
                         </div>
                       </div>
                     </div>
+
+                    <CategorieCreateProdutct
+                      onChange={(value: any) => {
+                        handleCategorie(value);
+                      }}
+                    />
 
                     <div className="border-t pt-4 pb-2">
                       <h4 className="text-2xl text-zinc-900 pb-6">
@@ -925,12 +965,12 @@ export default function Form({
               {subimitStatus == "upload_images"
                 ? "Enviando imagens..."
                 : subimitStatus == "register_content"
-                ? "Salvando produto..."
-                : subimitStatus == "clean_cache"
-                ? "Limpando cache..."
-                : subimitStatus == "register_complete"
-                ? "Salvo com sucesso!"
-                : ""}
+                  ? "Salvando produto..."
+                  : subimitStatus == "clean_cache"
+                    ? "Limpando cache..."
+                    : subimitStatus == "register_complete"
+                      ? "Salvo com sucesso!"
+                      : ""}
             </div>
             <div className="text-2xl">
               {subimitStatus == "register_complete" ? (

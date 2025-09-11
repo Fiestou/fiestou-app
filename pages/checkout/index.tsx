@@ -399,13 +399,16 @@ export default function Checkout({
         template: "clean",
       }}
     >
-      <section className="py-6 md:py-10">
+      <section className="py-4 sm:py-6 lg:py-10 min-h-screen">
         <form autoComplete="off" onSubmit={(e: any) => submitOrder(e)}>
-          <div className="container-medium pb-14">
-            <div className="grid md:flex gap-4 md:gap-10 items-start">
-              <div className="grid gap-6 w-full">
-                <div className="pb-4 md:pb-6 border-b">
-                  <div className="pb-4">
+          <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-6xl">
+            
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 xr:gap-12">
+              {/* Coluna Principal - Formulário */}
+              <div className="w-full lg:w-2/3 xl:w-[68%] space-y-6 lg:space-y-8">
+                {/* Header com Breadcrumbs */}
+                <div className="pb-4 lg:pb-6 border-b border-gray-200">
+                  <div className="mb-3 lg:mb-4">
                     <Breadcrumbs
                       links={[
                         { url: "/produtos", name: "Produtos" },
@@ -417,139 +420,126 @@ export default function Checkout({
                     <Link passHref href="/carrinho">
                       <Icon
                         icon="fa-long-arrow-left"
-                        className="mr-4 md:mr-6 text-2xl text-zinc-900"
+                        className="mr-3 lg:mr-4 text-xl lg:text-2xl text-zinc-900 hover:text-yellow-500 transition-colors"
                       />
                     </Link>
-                    <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900">
+                    <h1 className="font-title font-bold text-2xl sm:text-3xl lg:text-4xl text-zinc-900">
                       Finalizar
-                    </div>
+                    </h1>
                   </div>
                 </div>
 
-                <div className="grid gap-6 md:gap-10">
-                  <div className="grid gap-4 mb-0">
-                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                      Endereço de entrega
-                    </h4>
-                    {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
-                      <div className="flex items-center bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
-                        <Icon icon="fa-exclamation-triangle" className="mr-2" />
-                        <div>
-                          Sua região ainda não está disponível para nossos
-                          fornecedores.
-                        </div>
-                      </div>
-                    )}
+                {/* Endereço de Entrega */}
+                <div className="space-y-4 lg:space-y-6">
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
+                    Endereço de entrega
+                  </h2>
+                  
+                  {/* Alertas */}
+                  {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
+                    <div className="flex items-center bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
+                      <Icon icon="fa-exclamation-triangle" className="mr-2 flex-shrink-0" />
+                      <span>Sua região ainda não está disponível para nossos fornecedores.</span>
+                    </div>
+                  )}
 
-                    {(!address?.complement ||
-                      !address?.street ||
-                      !address?.number ||
-                      !address?.city ||
-                      !address?.state) && (
-                      <div className="flex items-start bg-yellow-100 text-yellow-900 px-4 py-3 rounded-md">
-                        <Icon
-                          icon="fa-exclamation-triangle"
-                          className="mr-3 mt-1"
-                        />
-                        <div>
-                          Preencha seu endereço corretamente. Não se esqueça do
-                          informar o complemento.
-                        </div>
-                      </div>
-                    )}
+                  {(!address?.complement ||
+                    !address?.street ||
+                    !address?.number ||
+                    !address?.city ||
+                    !address?.state) && (
+                    <div className="flex items-start bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
+                      <Icon
+                        icon="fa-exclamation-triangle"
+                        className="mr-2 mt-0.5 flex-shrink-0"
+                      />
+                      <span>
+                        Preencha seu endereço corretamente. Não se esqueça de informar o complemento.
+                      </span>
+                    </div>
+                  )}
 
-                    {!!locations.length && !customLocation && (
-                      <div className="grid gap-2">
-                        <div className="">
-                          {locations.map((addr: AddressType, key: any) => (
-                            <div
-                              className={`${
-                                addr == address
-                                  ? "border-yellow-400"
-                                  : "border-zinc-200 hover:border-zinc-400"
-                              } rounded-md border ease cursor-pointer`}
-                              key={key}
-                              onClick={() => {
-                                setAddress(addr);
-                              }}
-                            >
-                              <div className={`flex gap-3 p-4 items-center`}>
-                                <div className="pr-2">
-                                  <div
-                                    className={`${
-                                      addr?.street == address?.street
-                                        ? "border-zinc-400"
-                                        : "border-zinc-300"
-                                    } w-[1rem] h-[1rem] rounded-full border relative`}
-                                  >
-                                    {addr?.street == address?.street && (
-                                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div>
-                                    {addr.street}, {addr.number}
-                                  </div>
-                                  <div>
-                                    {addr.neighborhood} - {addr.city} |{" "}
-                                    {addr.state}
-                                  </div>
-                                  <div>
-                                    CEP: {addr.zipCode} - {addr.country}
-                                  </div>
-                                </div>
+                  {/* Lista de Endereços */}
+                  {!!locations.length && !customLocation && (
+                    <div className="space-y-3">
+                      {locations.map((addr: AddressType, key: any) => (
+                        <div
+                          className={`${
+                            addr == address
+                              ? "border-yellow-400 bg-yellow-50"
+                              : "border-gray-200 hover:border-gray-300"
+                          } rounded-lg border cursor-pointer transition-all duration-200`}
+                          key={key}
+                          onClick={() => setAddress(addr)}
+                        >
+                          <div className="flex gap-3 p-3 sm:p-4 items-start">
+                            <div className="pt-1">
+                              <div
+                                className={`${
+                                  addr?.street == address?.street
+                                    ? "border-yellow-500"
+                                    : "border-gray-300"
+                                } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
+                              >
+                                {addr?.street == address?.street && (
+                                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                )}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                        {!customLocation && (
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() => setCustomLocation(true)}
-                              className="text-sm underline text-zinc-900 hover:text-yellow-500 ease"
-                            >
-                              Entregar em outro endereço
-                            </button>
+                            <div className="text-sm sm:text-base leading-relaxed">
+                              <div className="font-medium">
+                                {addr.street}, {addr.number}
+                              </div>
+                              <div className="text-gray-600">
+                                {addr.neighborhood} - {addr.city} | {addr.state}
+                              </div>
+                              <div className="text-gray-600">
+                                CEP: {addr.zipCode} - {addr.country}
+                              </div>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setCustomLocation(true)}
+                        className="text-sm underline text-zinc-700 hover:text-yellow-600 transition-colors"
+                      >
+                        Entregar em outro endereço
+                      </button>
+                    </div>
+                  )}
 
-                    {!!locations.length && !!customLocation && (
-                      <div>
-                        <button
-                          type="button"
-                          onClick={() => setCustomLocation(false)}
-                          className="text-sm underline text-zinc-900 hover:text-yellow-500 ease"
-                        >
-                          Selecionar meu endereço
-                        </button>
-                      </div>
-                    )}
+                  {!!locations.length && !!customLocation && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomLocation(false)}
+                      className="text-sm underline text-zinc-700 hover:text-yellow-600 transition-colors mb-4"
+                    >
+                      Selecionar meu endereço
+                    </button>
+                  )}
 
-                    {(!locations.length || customLocation) && (
-                      <div>
-                        <AddressCheckoutForm
-                          address={address}
-                          onChange={(value: any) => handleAddress(value)}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  {(!locations.length || customLocation) && (
+                    <AddressCheckoutForm
+                      address={address}
+                      onChange={(value: any) => handleAddress(value)}
+                    />
+                  )}
+                </div>
 
+                {/* Verificação de Telefone */}
+                <div className="space-y-4">
                   <div>
-                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
                       Verifique seu número de telefone
-                    </h4>
-                    <p className="whitespace-nowrap text-sm">
-                      * O Fiestou utiliza seu número exclusivamente para enviar
-                      atualizações sobre o status do seu pedido.
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      * O Fiestou utiliza seu número exclusivamente para enviar atualizações sobre o status do seu pedido.
                     </p>
                   </div>
 
-                  <div className="flex flex-row border-1 gap-2">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <input
                       name="phone"
                       onChange={(e) => {
@@ -560,13 +550,13 @@ export default function Checkout({
                       required
                       value={phone}
                       placeholder="Insira seu telefone aqui"
-                      className={`form-control flex flex-3 w-full ${
-                        phone && !isPhoneValid(phone)
-                          ? "border-2 border-red-500"
-                          : !hasChanged()
-                          ? "bg-gray-100"
-                          : "border-2 border-green-500"
-                      }`}
+                      className={`form-control flex-1 px-3 py-2 rounded-lg border text-sm sm:text-base ${
+                        phone && !isPhoneValid(phone) 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : !hasChanged() 
+                          ? 'bg-gray-100 border-gray-300' 
+                          : 'border-green-500 focus:border-green-600'
+                      } focus:outline-none focus:ring-2 focus:ring-opacity-50`}
                     />
                     <Button
                       onClick={handleSavePhone}
@@ -575,231 +565,263 @@ export default function Checkout({
                         phone === formatPhone(user?.phone || "")
                       }
                       style="btn-yellow"
+                      className="px-4 py-2 sm:px-6 whitespace-nowrap"
                     >
-                      <b>Salvar</b>
-                      <ToastContainer />
+                      <strong>Salvar</strong>
                     </Button>
                   </div>
+                  <ToastContainer position="top-right" />
+                </div>
 
-                  <div className="mb-0 relative overflow-hidden">
-                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                      Detalhes de entrega
-                    </h4>
-                    <div className="flex pt-4 flex-col gap-6">
-                      <div className="grid md:grid-cols-3 gap-2 md:gap-4">
-                        {[
-                          { type: "reception", icon: "🏢" },
-                          { type: "door", icon: "🚪" },
-                          { type: "for_me", icon: "📦" },
-                        ].map((option: any, key: any) => (
-                          <div
-                            key={key}
-                            onClick={(e: any) => {
-                              setDeliveryTo(option.type);
-                            }}
-                            className={`border ${
-                              deliveryTo == option.type
-                                ? "border-yellow-400"
-                                : "hover:border-zinc-400"
-                            } p-3 md:p-4 cursor-pointer rounded-md ease flex gap-2 items-center`}
-                          >
-                            <div
-                              className={`${
-                                deliveryTo == option.type
-                                  ? "border-zinc-400"
-                                  : ""
-                              } w-[1rem] h-[1rem] rounded-full border relative`}
-                            >
-                              {deliveryTo == option.type && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                              )}
-                            </div>
-                            <div className="text-[.85rem] leading-tight text-nowrap">
-                              {deliveryToName[option.type]}
-                            </div>
-                            <span className="text-lg self-end">
-                              {option.icon}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="border relative rounded-lg py-4">
-                        <div className="h-0 relative overflow-hidden">
-                          {!schedule && (
-                            <input readOnly name="agendamento" required />
+                {/* Detalhes de Entrega */}
+                <div className="space-y-4 lg:space-y-6">
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
+                    Detalhes de entrega
+                  </h2>
+                  
+                  {/* Opções de Entrega */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { type: "reception", icon: "🏢" },
+                      { type: "door", icon: "🚪" },
+                      { type: "for_me", icon: "📦" },
+                    ].map((option: any, key: any) => (
+                      <div
+                        key={key}
+                        onClick={() => setDeliveryTo(option.type)}
+                        className={`border ${
+                          deliveryTo == option.type
+                            ? "border-yellow-400 bg-yellow-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        } p-3 lg:p-4 cursor-pointer rounded-lg transition-all duration-200 flex gap-3 items-center`}
+                      >
+                        <div
+                          className={`${
+                            deliveryTo == option.type
+                              ? "border-yellow-500"
+                              : "border-gray-300"
+                          } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
+                        >
+                          {deliveryTo == option.type && (
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
                           )}
                         </div>
-                        <div className="absolute top-0 left-0 bg-white text-sm -mt-3 px-1 mx-1">
-                          Horário
+                        <div className="text-sm font-medium leading-tight flex-1">
+                          {deliveryToName[option.type]}
                         </div>
-                        <Swiper
-                          spaceBetween={0}
-                          breakpoints={{
-                            0: {
-                              slidesPerView: 4.5,
-                            },
-                            1024: {
-                              slidesPerView: 7.5,
-                            },
-                          }}
-                        >
-                          {[
-                            { period: "Manhã", time: "08:00" },
-                            { period: "Manhã", time: "09:00" },
-                            { period: "Manhã", time: "10:00" },
-                            { period: "Manhã", time: "11:00" },
-                            { period: "Manhã", time: "12:00" },
-                            { period: "Tarde", time: "13:00" },
-                            { period: "Tarde", time: "14:00" },
-                            { period: "Tarde", time: "15:00" },
-                            { period: "Tarde", time: "16:00" },
-                            { period: "Tarde", time: "17:00" },
-                            { period: "Noite", time: "18:00" },
-                            { period: "Noite", time: "19:00" },
-                            { period: "Noite", time: "20:00" },
-                            { period: "Noite", time: "21:00" },
-                          ].map((item: any, key) => (
-                            <SwiperSlide key={key} className="pl-4">
-                              <div
-                                onClick={() =>
-                                  setSchedule(`${item.period} - ${item.time}`)
-                                }
-                                className={`${
-                                  schedule == item.period + " - " + item.time
-                                    ? "text-yellow-500"
-                                    : "text-zinc-500 hover:text-zinc-900"
-                                }  ease cursor-pointer`}
-                              >
-                                <div className="text-xs">{item.period}</div>
-                                <div className="font-semibold">{item.time}</div>
-                              </div>
-                            </SwiperSlide>
-                          ))}
-                        </Swiper>
+                        <span className="text-lg">{option.icon}</span>
                       </div>
-                    </div>
+                    ))}
                   </div>
 
-                  <div className="grid gap-4 pb-4 md:pb-8 mb-0">
-                    <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                      Fornecedores
-                    </h4>
-                    <div className="grid lg:grid-cols-2 gap-4">
-                      {stores.map((store: any, key: any) => (
-                        <div key={key}>
-                          <Partner params={store} />
-                        </div>
-                      ))}
+                  {/* Seleção de Horário */}
+                  <div className="border border-gray-200 rounded-lg p-4 relative">
+                    <div className="h-0 relative overflow-hidden">
+                      {!schedule && (
+                        <input readOnly name="agendamento" required />
+                      )}
                     </div>
+                    <div className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
+                      Horário
+                    </div>
+                    
+                    <div className="mt-2">
+                      <Swiper
+                        spaceBetween={12}
+                        breakpoints={{
+                          0: {
+                            slidesPerView: 3.5,
+                          },
+                          640: {
+                            slidesPerView: 5.5,
+                          },
+                          1024: {
+                            slidesPerView: 7.5,
+                          },
+                        }}
+                        className="!pb-2"
+                      >
+                        {[
+                          { period: "Manhã", time: "08:00" },
+                          { period: "Manhã", time: "09:00" },
+                          { period: "Manhã", time: "10:00" },
+                          { period: "Manhã", time: "11:00" },
+                          { period: "Manhã", time: "12:00" },
+                          { period: "Tarde", time: "13:00" },
+                          { period: "Tarde", time: "14:00" },
+                          { period: "Tarde", time: "15:00" },
+                          { period: "Tarde", time: "16:00" },
+                          { period: "Tarde", time: "17:00" },
+                          { period: "Noite", time: "18:00" },
+                          { period: "Noite", time: "19:00" },
+                          { period: "Noite", time: "20:00" },
+                          { period: "Noite", time: "21:00" },
+                        ].map((item: any, key) => (
+                          <SwiperSlide key={key}>
+                            <div
+                              onClick={() =>
+                                setSchedule(`${item.period} - ${item.time}`)
+                              }
+                              className={`${
+                                schedule == item.period + " - " + item.time
+                                  ? "text-yellow-600 bg-yellow-50 border-yellow-300"
+                                  : "text-gray-600 hover:text-gray-900 border-gray-200 hover:bg-gray-50"
+                              } border rounded-lg p-3 text-center cursor-pointer transition-all duration-200`}
+                            >
+                              <div className="text-xs font-medium">{item.period}</div>
+                              <div className="font-bold text-sm mt-1">{item.time}</div>
+                            </div>
+                          </SwiperSlide>
+                        ))}
+                      </Swiper>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fornecedores */}
+                <div className="space-y-4 lg:space-y-6">
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
+                    Fornecedores
+                  </h2>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {stores.map((store: any, key: any) => (
+                      <div key={key}>
+                        <Partner params={store} />
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              <div className="w-full md:max-w-[28rem] md:mb-[2rem] relative">
-                <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
-                  <div className="font-title font-bold text-zinc-900 text-xl mb-6">
-                    Resumo
-                  </div>
-
-                  <div className="grid gap-2">
-                    <div className="flex items-start justify-between">
-                      <div className="font-bold text-sm text-zinc-900 flex items-center">
-                        <Icon
-                          icon="fa-calendar"
-                          className="text-sm mr-2 opacity-75"
-                        />
-                        Data da locação
-                      </div>
-                      <div className="whitespace-nowrap text-right text-sm">
-                        {dateBRFormat(resume.startDate)}{" "}
-                        {resume.endDate != resume.startDate
-                          ? `- ${dateBRFormat(resume.endDate)}`
-                          : ""}
-                        <div>{schedule}</div>
-                      </div>
-                    </div>
-                    <div className="border-t"></div>
-                    <div className="flex">
-                      <div className="w-full whitespace-nowrap">
-                        Subtotal ({listCart.length}{" "}
-                        {listCart.length == 1 ? "item" : "itens"})
-                      </div>
-                      <div className="whitespace-nowrap">
-                        R$ {moneyFormat(resume.subtotal)}
-                      </div>
+              {/* Sidebar - Resumo */}
+              <div className="w-full lg:w-1/3 xl:w-[55%] lg:max-w-md">
+                <div className="sticky top-4">
+                  <div className="rounded-2xl bg-gray-50 border border-gray-200 p-4 sm:p-6 lg:p-8">
+                    <div className="font-title font-bold text-zinc-900 text-xl lg:text-2xl mb-4 lg:mb-6">
+                      Resumo
                     </div>
 
-                    <div className="border-t"></div>
-
-                    <div className="flex items-start justify-between">
-                      <div className="text-sm text-zinc-900 flex items-start w-full">
-                        <Icon
-                          icon="fa-truck"
-                          className="text-sm mr-1 opacity-75"
-                        />
-                        {renderDeliveryPrice()}
-                      </div>
-                      {/* <div className="grid text-right">
-                        <div className="whitespace-nowrap font-semibold text-sm">
-                          {renderDeliveryPrice()}
+                    <div className="space-y-4">
+                      {/* Data da Locação */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="font-semibold text-sm text-zinc-900 flex items-center">
+                          <Icon
+                            icon="fa-calendar"
+                            className="text-sm mr-2 opacity-75 flex-shrink-0"
+                          />
+                          <span>Data da locação</span>
                         </div>
-                      </div> */}
-                    </div>
-
-                    <div className="border-t"></div>
-
-                    <div className="flex gap-4 md:mb-4">
-                      <div className="w-full pt-1 text-zinc-900 font-bold">
-                        TOTAL
+                        <div className="text-right text-sm">
+                          <div>
+                            {dateBRFormat(resume.startDate)}{" "}
+                            {resume.endDate != resume.startDate
+                              ? `- ${dateBRFormat(resume.endDate)}`
+                              : ""}
+                          </div>
+                          {schedule && <div className="text-yellow-600 font-medium">{schedule}</div>}
+                        </div>
                       </div>
-                      <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
-                        R$ {moneyFormat(resume.total)}
-                      </div>
-                    </div>
 
-                    {!!CheckoutPageContent?.terms_list?.length && (
-                      <div className="links-underline bg-zinc-200 rounded grid gap-2 p-3 text-[.85rem] leading-tight">
-                        {CheckoutPageContent?.terms_list.map(
-                          (term: any, key: any) => (
-                            <div key={key} className="flex gap-2 pb-1">
-                              <div className="pt-[2px]">
-                                <input type="checkbox" required />
+                      <div className="border-t border-gray-300"></div>
+
+                      {/* Subtotal */}
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm">
+                          Subtotal ({listCart.length}{" "}
+                          {listCart.length == 1 ? "item" : "itens"})
+                        </div>
+                        <div className="font-medium">
+                          R$ {moneyFormat(resume.subtotal)}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-gray-300"></div>
+
+                      {/* Frete */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="font-semibold text-sm text-zinc-900 flex items-center">
+                          <Icon
+                            icon="fa-truck"
+                            className="text-sm mr-2 opacity-75 flex-shrink-0"
+                          />
+                          <span>
+                            Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium text-sm">
+                            {!isCEPInRegion(address?.zipCode)
+                              ? "Entrega indisponível"
+                              : !!address?.zipCode
+                              ? `R$ ${moneyFormat(deliveryPrice)}`
+                              : "Informe um endereço"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-gray-300"></div>
+
+                      {/* Total */}
+                      <div className="flex justify-between items-center pt-2">
+                        <div className="text-lg font-bold text-zinc-900">
+                          TOTAL
+                        </div>
+                        <div className="text-2xl lg:text-3xl text-zinc-900 font-bold">
+                          R$ {moneyFormat(resume.total)}
+                        </div>
+                      </div>
+
+                      {/* Termos */}
+                      {!!CheckoutPageContent?.terms_list?.length && (
+                        <div className="bg-gray-100 rounded-lg p-4 space-y-3 text-sm">
+                          {CheckoutPageContent?.terms_list.map(
+                            (term: any, key: any) => (
+                              <div key={key} className="flex gap-3">
+                                <div className="pt-1">
+                                  <input 
+                                    type="checkbox" 
+                                    required 
+                                    className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                                  />
+                                </div>
+                                <div
+                                  className="text-sm leading-relaxed"
+                                  dangerouslySetInnerHTML={{
+                                    __html: term.term_description,
+                                  }}
+                                ></div>
                               </div>
-                              <div
-                                dangerouslySetInnerHTML={{
-                                  __html: term.term_description,
-                                }}
-                              ></div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    )}
-
-                    <div className="grid fixed z-10 md:relative bg-white md:bg-transparent bottom-0 left-0 w-full p-1 md:p-0">
-                      {!!address?.street &&
-                      !!address?.complement &&
-                      !!address?.number &&
-                      !!schedule &&
-                      !!address?.zipCode &&
-                      !!isCEPInRegion(address?.zipCode) &&
-                      isPhoneValid(phone) ? (
-                        <Button
-                          loading={form.loading}
-                          style="btn-success"
-                          className="py-6 mb-4 md:mb-0"
-                        >
-                          Confirmar e efetuar pagamento
-                        </Button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="btn bg-green-500 text-white border border-transparent opacity-40 py-6 mb-4 md:mb-0 text cursor-not-allowed"
-                        >
-                          Confirmar e efetuar pagamento
-                        </button>
+                            )
+                          )}
+                        </div>
                       )}
+
+                      {/* Botão de Confirmar */}
+                      <div className="pt-4">
+                        {!!address?.street &&
+                        !!address?.complement &&
+                        !!address?.number &&
+                        !!schedule &&
+                        !!address?.zipCode &&
+                        !!isCEPInRegion(address?.zipCode) &&
+                        isPhoneValid(phone) ? (
+                          <Button
+                            loading={form.loading}
+                            style="btn-success"
+                            className="w-full py-4 text-base font-semibold"
+                          >
+                            Confirmar e efetuar pagamento
+                          </Button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="w-full bg-green-500/40 text-white border border-transparent py-4 text-base font-semibold rounded-lg cursor-not-allowed"
+                          >
+                            Confirmar e efetuar pagamento
+                          </button>
+                        )}
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>

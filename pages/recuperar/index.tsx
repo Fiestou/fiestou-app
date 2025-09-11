@@ -63,7 +63,6 @@ export default function Recuperar({
     });
 
     if (request.response) {
-      console.log(request.response);
       setFormValue({ loading: false, sended: request.response });
     } else {
       setFormValue({ loading: false });

@@ -33,6 +33,7 @@ export function getUser() {
 
 export function getStore() {
   if (!!Cookies.get("fiestou.authtoken")) {
+    const teste= Cookies.get("fiestou.store") ?? "";
     return Cookies.get("fiestou.store");
   }
 }
@@ -80,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       url: "auth/checkin",
       data: { ref: email },
     }) as CheckMail;
-
+    
     if (checkEmail.response && !checkEmail.user){
       return {
         status: 422,
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { email: email, password: password },
     });
     
-    if (!!data.token) {
+    if (data && data.token) {
       const user: UserType = data.user;
 
       Cookies.set("fiestou.authtoken", data.token, expires);
@@ -148,16 +149,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }
 
-  async function UserLogout() {
-    const handleSignOut = await signOut({ redirect: false });
+async function UserLogout() {
+  // Remova todos os cookies de autenticação
+  Cookies.remove("fiestou.authtoken");
+  Cookies.remove("fiestou.user");
+  Cookies.remove("fiestou.store");
+  Cookies.remove("fiestou.region");
+  Cookies.remove("fiestou.cart");
+  // Adicione outros cookies que você usa, se necessário
 
+  // Redirecione para a página de logout ou home
     if (!!window) {
       window.location.href = "/logout";
     } else {
       Router.push("/logout");
     }
-  }
-
+}
   return (
     <AuthContext.Provider value={{ isAuthenticated, SignIn, UserLogout }}>
       {children}
