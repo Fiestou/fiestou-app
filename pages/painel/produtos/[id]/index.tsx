@@ -6,31 +6,20 @@ import { useEffect, useState } from "react";
 import { ProductType } from "@/src/models/product";
 import Api from "@/src/services/api";
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-  Button,
-  Input,
-  Label,
-  Select,
-  TextArea,
-} from "@/src/components/ui/form";
+import { Button, Label, Select, TextArea } from "@/src/components/ui/form";
 import {
   decimalNumber,
-  getImage,
   handleTags,
   justNumber,
-  justValidateNumber,
-  moneyFormat,
   realMoneyNumber,
   slugfy,
 } from "@/src/helper";
-import FileInput from "@/src/components/ui/form/FileInputUI";
 import HelpCard from "@/src/components/common/HelpCard";
 import Cookies from "js-cookie";
 import Colors from "@/src/components/ui/form/ColorsUI";
 import Options from "@/src/components/ui/form/OptionsUI";
 import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
-import Img from "@/src/components/utils/ImgBase";
 import router from "next/router";
 import Categories from "@/src/components/pages/painel/produtos/produto/Categories";
 import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
@@ -50,7 +39,7 @@ export async function getServerSideProps(
 
   const request: any = await api.call(
     {
-      method: 'post',
+      method: "post",
       url: "request/graph",
       data: [
         {
@@ -137,7 +126,7 @@ export default function Form({
   const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
   const SearchProducts = async (search: string) => {
     if (search.length >= 3) {
-      let request: any = await api.request({
+      let request: any = (await api.request({
         method: "get",
         url: "request/products",
         data: {
@@ -145,7 +134,7 @@ export default function Form({
           busca: search,
           limit: 10,
         },
-      }) as RelationType[];
+      })) as RelationType[];
 
       if (request.response && !!request?.data.length) {
         let handle = request?.data?.map((item: any) => {
@@ -166,7 +155,7 @@ export default function Form({
   const [product, setProduct] = useState({} as ProductType);
   const getProduct = async () => {
     let request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "products/form",
       data: { id: id },
     });
@@ -205,7 +194,7 @@ export default function Form({
     setSubimitStatus("register_content");
 
     let request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "products/register",
       data: data,
     });
@@ -875,15 +864,11 @@ export default function Form({
                         </div>
 
                         <div className="form-group">
-                          <Label>Taxa de entrega</Label>
+                          <Label>Valor de KM rodado</Label>
                           <input
-                            value={
-                              !!data?.freeTax
-                                ? realMoneyNumber(data?.freeTax)
-                                : ""
-                            }
+                            value={!!data?.freeTax ? data?.freeTax : ""}
                             type="text"
-                            name="taxa_entrega"
+                            name="freeTax"
                             onChange={(e: any) =>
                               handleData({
                                 freeTax: realMoneyNumber(e.target.value),

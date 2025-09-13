@@ -9,6 +9,7 @@ export default function AddressCheckoutForm(attrs: any) {
   const [mounted, setMounted] = useState(false as boolean);
 
   const [zipCode, setZipCode] = useState("" as string);
+  const [loadingZipCode, setLoadingZipCode] = useState(false as boolean);
   const [street, setStreet] = useState("" as string);
   const [number, setNumber] = useState("" as string);
   const [neighborhood, setNeighborhood] = useState("" as string);
@@ -61,8 +62,10 @@ export default function AddressCheckoutForm(attrs: any) {
   }, [attrs.address]);
 
   const handleZipCode = async () => {
+    setLoadingZipCode(true);
     const rawZipCode = justNumber(zipCode);
     const location = await getZipCode(rawZipCode);
+    setLoadingZipCode(false);
 
     setCountry("Brasil");
 
@@ -87,10 +90,15 @@ export default function AddressCheckoutForm(attrs: any) {
             value={zipCode ?? ""}
             placeholder="CEP"
             className="form-control pr-[3rem]"
-            onBlur={() => setZipCode(formatCep(zipCode))}
+            onBlur={() => {
+              setZipCode(formatCep(zipCode))
+              handleZipCode()
+            }}
           />
           <Button
             className="absolute top-1/2 -translate-y-1/2 right-0 p-3 mr-1"
+            loading={loadingZipCode}
+            disable={loadingZipCode}
             onClick={() => zipCode ? handleZipCode() : alert("Por favor, informe o CEP antes de buscar!")} 
           >
               <Icon icon="fa-search" />

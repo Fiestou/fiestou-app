@@ -8,6 +8,7 @@ export interface StoreType {
   id: number | string;
   name: string;
   slug?: string;
+  companyName?: string;
 }
 
 export interface ImageType {
