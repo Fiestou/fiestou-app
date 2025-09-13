@@ -26,7 +26,7 @@ export async function getServerSideProps(
 
   request = await api.call(
     {
-      method: 'post',
+      method: "post",
       url: "request/graph",
       data: [
         {
@@ -263,7 +263,7 @@ export default function Store({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -363,7 +363,7 @@ export default function Store({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -469,6 +469,28 @@ export default function Store({
       </button>
     );
   };
+
+  const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
+
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const response = await api.request({
+          method: "get",
+          url: "app/zipcode-cities-range",
+        });
+        setDeliveryRegionsOptions(
+          (response?.data?.data || []).map((region) => ({
+            value: region.id,
+            name: `${region.name} (${region.start} - ${region.finish})`,
+          }))
+        );
+      } catch (e) {
+        setDeliveryRegionsOptions([]);
+      }
+    };
+    fetchRegions();
+  }, []);
 
   useEffect(() => {
     if (!!window) {

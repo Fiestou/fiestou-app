@@ -1,17 +1,15 @@
 import Template from "@/src/template";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
-import Payment from "@/src/services/payment";
 import { useCallback, useEffect, useState } from "react";
 import {
   dateBRFormat,
   findDates,
-  getZipCode,
   isCEPInRegion,
   justNumber,
   moneyFormat,
 } from "@/src/helper";
-import { Button, Input } from "@/src/components/ui/form";
+import { Button } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
@@ -24,7 +22,6 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -32,10 +29,8 @@ import { CartType } from "@/src/models/cart";
 import { deliveryToName } from "@/src/models/delivery";
 import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
 import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
-import { Save } from 'lucide-react';
-import { ToastContainer, toast } from 'react-toastify';
-import { ApiResponse } from "@/src/types/response";
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const FormInitialType = {
   sended: false,
@@ -60,7 +55,7 @@ export async function getServerSideProps(ctx: any) {
 
   let request: any = await api.bridge(
     {
-      method: 'post',
+      method: "post",
       url: `checkout/create`,
       data: {
         products: cart.map((item: any) => item.product),
@@ -152,7 +147,7 @@ export default function Checkout({
   };
 
   const isPhoneValid = (phone: string): boolean => {
-    const digitsOnly = phone.replace(/\D/g, '');
+    const digitsOnly = phone.replace(/\D/g, "");
     return digitsOnly.length >= 10 && digitsOnly.length <= 11;
   };
 
@@ -163,18 +158,18 @@ export default function Checkout({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhone(e.target.value));
   };
-  
+
   const handleSavePhone = async () => {
     if (!isPhoneValid(phone)) {
       toast.error("Telefone inválido!");
       return;
     }
-  
+
     try {
       await api.bridge({
         method: "post",
         url: "users/update",
-        data: { phone: phone.replace(/\D/g, '') }
+        data: { phone: phone.replace(/\D/g, "") },
       });
       toast.success("Salvo com sucesso!");
     } catch (error) {
@@ -182,20 +177,10 @@ export default function Checkout({
     }
   };
 
-  const [deliveryPrice, setDeliveryPrice] = useState(0 as number);
-  const getCalculeDistancePrice = async () => {
-    const data = await api.internal({
-      method: "get",
-      url: "/maps",
-      data: {
-        cep: address?.zipCode,
-      },
-    });
-
-    const { distance } = data;
-
-    setDeliveryPrice(!!distance ? (distance / 1000) * deliveryTax : 0);
-  };
+  const [deliveryPrice, setDeliveryPrice] = useState<
+    { price: number; store_id: number }[]
+  >([]);
+  const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(false as boolean);
 
   useEffect(() => {
     if (user?.phone) {
@@ -205,7 +190,24 @@ export default function Checkout({
 
   useEffect(() => {
     if (!!address?.zipCode && justNumber(address?.zipCode).length >= 8) {
-      getCalculeDistancePrice();
+      const getShippingPrice = async () => {
+        setLoadingDeliveryPrice(true);
+        const data: any = await api.request({
+          method: "get",
+          url: `delivery-zipcodes/${address?.zipCode}`,
+          data: {
+            ids: products.map((product: ProductType) => product.id),
+          },
+        });
+        setLoadingDeliveryPrice(false);
+        console.log("Data", data);
+        if (data.data) {
+          setDeliveryPrice(data.data as { price: number; store_id: number }[]);
+        }
+        console.log("Delivery Price", deliveryPrice);
+      };
+
+      getShippingPrice();
     }
   }, [address?.zipCode]);
 
@@ -219,7 +221,7 @@ export default function Checkout({
 
     setResume({
       subtotal: subtotal,
-      total: subtotal + (!isCEPInRegion(address?.zipCode) ? 0 : deliveryPrice),
+      total: deliveryPrice.reduce((acc, item) => acc + item.price, subtotal),
       startDate: findDates(dates).minDate,
       endDate: findDates(dates).maxDate,
     });
@@ -242,7 +244,7 @@ export default function Checkout({
 
     setForm({ ...form, loading: true });
 
-    let total = deliveryPrice;
+    let total = deliveryPrice.reduce((acc, item) => acc + item.price, 0);
     let listItems: Array<ProductOrderType> = [];
 
     cart.map((item: any, key: any) => {
@@ -296,17 +298,21 @@ export default function Checkout({
       user: user,
       listItems: listItems,
       platformCommission: platformCommission,
-      total: total,
+      total: resume.total,
       deliverySchedule: schedule,
       deliveryAddress: address,
       deliveryTo: deliveryTo,
-      deliveryPrice: deliveryPrice,
+      deliveryPrice: deliveryPrice.reduce((acc, item) => acc + item.price, 0),
       deliveryStatus: "pending",
       status: -1,
+      freights: {
+        zipcode: address?.zipCode,
+        productsIds: listItems.map((item: any) => item.product.id),
+      },
     };
 
     const registerOrder: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "orders/register",
       data: order,
     });
@@ -325,6 +331,58 @@ export default function Checkout({
       setAddress({ zipCode: handle?.cep ?? "", number: "" });
     }
   }, []);
+
+  const renderDeliveryPrice = () => {
+    const renderFreteItem = (item: { price: number; store_id: number }) => {
+      const product = products.find(
+        (product: any) => product.store.id == item.store_id
+      );
+
+      return (
+        <div className="flex justify-between w-full">
+          <span className="font-bold">
+            Frete - {(product?.store as unknown as StoreType)?.companyName}
+          </span>
+          {loadingDeliveryPrice ? (
+            <span>Carregando...</span>
+          ) : (
+            <span className="ml-2">R$ {moneyFormat(item?.price)}</span>
+          )}
+        </div>
+      );
+    };
+    if (deliveryPrice.length == 0)
+      return (
+        <>
+          <span className="font-bold">
+            Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
+          </span>
+        </>
+      );
+
+    if ((address?.zipCode?.length ?? 0) < 8)
+      return (
+        <div className="flex justify-between w-full">
+          <span className="font-bold">
+            Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
+          </span>
+          {loadingDeliveryPrice ? (
+            <span>Carregando...</span>
+          ) : (
+            <span>Entrega indisponível</span>
+          )}
+        </div>
+      );
+    return (
+      <div className="w-full">
+        {deliveryPrice?.map((item: any, index: number) => (
+          <div key={index} className="text-sm flex justify-between">
+            {renderFreteItem(item)}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return !isFallback && !!token ? (
     <Template
@@ -502,7 +560,10 @@ export default function Checkout({
                     />
                     <Button
                       onClick={handleSavePhone}
-                      disable={!isPhoneValid(phone) || phone === formatPhone(user?.phone || "")}
+                      disable={
+                        !isPhoneValid(phone) ||
+                        phone === formatPhone(user?.phone || "")
+                      }
                       style="btn-yellow"
                       className="px-4 py-2 sm:px-6 whitespace-nowrap"
                     >
