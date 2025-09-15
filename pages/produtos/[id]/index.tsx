@@ -33,20 +33,12 @@ import { StoreType } from "@/src/models/store";
 import Newsletter from "@/src/components/common/Newsletter";
 import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
 import { Swiper, SwiperSlide } from "swiper/react";
-<<<<<<< HEAD:pages/produtos/[slug]/index.tsx
-import { Navigation, Pagination, Zoom } from "swiper";
+import {Autoplay, Navigation, Pagination, Zoom } from "swiper";
 import "swiper/css";
 import "swiper/css/zoom";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-=======
-import { Autoplay, Navigation, Pagination, Zoom } from "swiper";
-import 'swiper/css';
-import 'swiper/css/zoom';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
->>>>>>> 07dd1d8a67672451c8c814041c1cf9883f0a9226:pages/produtos/[id]/index.tsx
 import Calendar from "@/src/components/ui/form/CalendarUI";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Modal from "@/src/components/utils/Modal";
@@ -92,13 +84,8 @@ export async function getStaticProps(ctx: any) {
 
     request = await api.content(
       {
-<<<<<<< HEAD:pages/produtos/[slug]/index.tsx
-        method: "get",
-        url: "product",
-=======
         method: 'get',
         url: "products",
->>>>>>> 07dd1d8a67672451c8c814041c1cf9883f0a9226:pages/produtos/[id]/index.tsx
       },
       ctx
     );
