@@ -180,6 +180,7 @@ export default function Checkout({
   const [deliveryPrice, setDeliveryPrice] = useState<
     { price: number; store_id: number }[]
   >([]);
+  
   const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(false as boolean);
 
   useEffect(() => {
@@ -753,7 +754,7 @@ export default function Checkout({
                             {!isCEPInRegion(address?.zipCode)
                               ? "Entrega indisponível"
                               : !!address?.zipCode
-                              ? `R$ ${moneyFormat(deliveryPrice)}`
+                              ? `R$ ${moneyFormat(deliveryPrice.reduce((acc, item) => acc + item.price, 0))}`
                               : "Informe um endereço"}
                           </div>
                         </div>
