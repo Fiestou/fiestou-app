@@ -2,7 +2,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Template from "@/src/template";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductType } from "@/src/models/product";
 import Api from "@/src/services/api";
 import { NextApiRequest, NextApiResponse } from "next";
@@ -119,9 +119,6 @@ export default function Form({
   const [categories, setCategories] = useState([] as Array<any>);
   const [data, setData] = useState({} as ProductType);
 
-  const handleData = (value: Object) => {
-    setData({ ...data, ...value });
-  };
   const handleUnavailableDatesChange = (dates: string[]) => {
     handleData({ unavailableDates: dates });
   };
@@ -132,21 +129,142 @@ export default function Form({
     setColors(value);
   };
 
-const handleCategorie = useCallback((ids: (string | number)[]) => {
-  console.log(ids);
-  const joined = ids.map(String).join("|");
-  const current =
-    Array.isArray(data?.category)
-      ? data.category.map(String).join("|")
-      : typeof data?.category === "string"
-        ? data.category
-        : "";
+  const coerceIds = (raw: any): string[] => {
+    if (raw == null) return [];
+    let arr: any[] = [];
+    if (Array.isArray(raw)) arr = raw;
+    else if (typeof raw === "string") arr = raw.split(/[|,]/g);
+    else arr = [raw];
 
-  if (current === joined) return;
-  handleData({ category: joined });
-}, [data?.category, handleData]);
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const v of arr) {
+      const idRaw = v && typeof v === "object" ? (v.id ?? v.value ?? v.key ?? v.ID ?? v.Id) : v;
+      if (idRaw == null) continue;
+      const s = String(idRaw).trim();
+      if (!s || s === "undefined" || s === "null") continue;
+      if (!seen.has(s)) { seen.add(s); out.push(s); }
+    }
+    return out;
+  };
+
+
+  const categoryValueNums = useMemo(
+    () =>
+      coerceIds(data.category ?? [])
+        .map(Number)
+        .filter(Number.isFinite),
+    [data.category]
+  );
+
+  const setCategoryReplace = useCallback((ids: Array<number | string>) => {
+    const next = Array.from(new Set(coerceIds(ids)));
+    setData((prev) => {
+      const prevCat = coerceIds(prev.category ?? []);
+      return samePipe(prevCat, next) ? prev : { ...prev, category: next };
+    });
+    setCategories((prev) => {
+      const prevCat = coerceIds(prev ?? []);
+      return samePipe(prevCat, next) ? prev : next;
+    });
+  }, []);
+
+  // aplica add/remove pontual a partir do PÚBLICO-ALVO (usa selected)
+  const applyToggleFromPbl = useCallback((id: number | string, selected: boolean) => {
+    const token = coerceIds([id])[0];
+    if (!token) return;
+
+    setData((prev) => {
+      const prevCat = coerceIds(prev.category ?? []);
+      const has = prevCat.includes(token);
+      let next = prevCat;
+
+      if (selected && !has) next = [...prevCat, token];            // adiciona
+      if (!selected && has) next = prevCat.filter((x) => x !== token); // remove
+
+      return samePipe(prevCat, next) ? prev : { ...prev, category: next };
+    });
+
+    // se você ainda usa esse state auxiliar no <Categories />, mantém em sincronia:
+    setCategories((prev: any) => {
+      const prevCat = coerceIds(prev ?? []);
+      const has = prevCat.includes(token);
+      let next = prevCat;
+
+      if (selected && !has) next = [...prevCat, token];
+      if (!selected && has) next = prevCat.filter((x) => x !== token);
+
+      return samePipe(prevCat, next) ? prev : next;
+    });
+  }, []);
+
+  // compara estável
+  const samePipe = (a: string[], b: string[]) =>
+    a.length === b.length && a.every((v, i) => v === b[i]);
+
+  // --- HANDLER 1: público-alvo (1 id por clique)
+  const toIdArray = (raw: number | string | Array<number | string>): string[] => {
+    const arr = Array.isArray(raw) ? raw : [raw];
+    return Array.from(
+      new Set(
+        arr
+          .filter((v) => v !== null && v !== undefined)
+          .map((v) => String(v).trim())
+          .filter((s) => s && s !== "undefined" && s !== "null")
+      )
+    );
+  };
+
+
+
+  // blindagem extra: se alguém setar category "cru"
+  const handleData = useCallback((value: Record<string, any>) => {
+    setData((prev) => {
+      let next = { ...prev };
+
+      if ("category" in value) {
+        const incoming = coerceIds(value.category);
+
+        if (incoming.length) {
+          const prevCat = coerceIds(prev.category ?? []);
+          const merged = Array.from(new Set([...prevCat, ...incoming]));
+          next.category = merged;
+        }
+        // se vier vazio, IGNORA (não apaga o que já tinha)
+      }
+
+      // mescla o restante das chaves normalmente (sem tocar no category já tratado)
+      const { category: _ignored, ...rest } = value;
+      next = { ...next, ...rest };
+
+      // evita setState desnecessário
+      return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+    });
+  }, []);
+
+  const sanitize = (obj: Record<string, any>) => {
+    const out: Record<string, any> = {};
+    Object.entries(obj).forEach(([k, v]) => {
+      if (v === undefined || v === null) return;
+      if (typeof v === "string") {
+        const t = v.trim();
+        if (t === "") return; // opcional: manter strings vazias? remova se quiser enviar ""
+        out[k] = t;
+      } else {
+        out[k] = v;
+      }
+    });
+    return out;
+  };
+
+  const buildPayload = () => {
+    const categoryPipe = coerceIds(data.category ?? []).join("|");
+    return sanitize({ ...data, category: categoryPipe });
+  };
+
 
   const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
+
   const SearchProducts = async (search: string) => {
     if (search.length >= 3) {
       let request: any = await api.request({
@@ -173,35 +291,37 @@ const handleCategorie = useCallback((ids: (string | number)[]) => {
       }
     }
   };
-  useEffect(() => {
-    console.log(categories)
-  }, [categories]);
 
   const [showTooltip, setShowTooltip] = useState(false);
   const [product, setProduct] = useState({} as ProductType);
+
+
   const getProduct = async () => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "products/form",
-      data: { id: id },
+    const request: any = await api.bridge({
+      method: "get",
+      url: `stores/${Cookies.get("fiestou.store")}/products/${id}`,
     });
 
     let handle = request.data ?? {};
     handle = {
       ...handle,
-      assembly: !!handle.assembly ? handle.assembly : "on",
+      assembly: handle.assembly ? handle.assembly : "on",
       store: getStore(),
     };
 
-    setProduct(handle);
-    setData(handle);
-    setColors(
-      !!handle?.color && handle?.color?.split("|").length
-        ? handle?.color?.split("|")
-        : [handle?.color]
-    );
+    const categoryArr = coerceIds(handle.category ?? []); // normaliza aqui
 
-    setCategories(handle?.category ?? []);
+    setProduct(handle);
+    setData({ ...handle, category: categoryArr }); // ✅ NÃO faça outro setData depois!
+    setCategories(categoryArr);
+
+    setColors(
+      handle?.color && handle.color.split
+        ? handle.color.split("|")
+        : handle?.color
+          ? [handle.color]
+          : []
+    );
 
     setPlaceholder(false);
   };
@@ -212,33 +332,57 @@ const handleCategorie = useCallback((ids: (string | number)[]) => {
     }
   }, []);
 
-  const handleSubmit = async (e: any) => {
+  useEffect(() => {
+    console.log(data.category, "datinha");
+  }, [data]);
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    setFormValue({ loading: true });
+    // evita double-submit
+    if (form.loading) return;
 
-    setSubimitStatus("register_content");
+    try {
+      setFormValue({ loading: true });
+      setSubimitStatus("register_content");
 
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "products/register",
-      data: data,
-    });
+      const payload = buildPayload();
 
-    if (request.response) {
+      const request: any = await api.bridge({
+        method: "post",
+        url: "products/register",
+        data: payload,
+      });
+
+      if (!request?.response) {
+        // falhou de forma “limpa” (sem exception), trate como erro
+        setSubimitStatus("register_failed");
+        return;
+      }
+
       setFormValue({ sended: request.response });
-
       setSubimitStatus("clean_cache");
 
-      await axios.get(`/api/cache?route=/produtos/${request.data.slug}`);
+      // bust cache da página pública
+      await axios.get(`/api/cache?route=/produtos/${request?.data?.slug ?? payload.slug}`);
 
       setSubimitStatus("register_complete");
 
       setTimeout(() => {
         router.push({ pathname: "/painel/produtos" });
       }, 500);
+    } catch (err) {
+      console.error(err);
+      setSubimitStatus("register_failed");
+      // aqui você pode acionar um toast/alert
+    } finally {
+      // se quiser manter o loader até redirecionar, não desligue aqui.
+      // Se preferir desligar sempre, descomente a linha abaixo:
+      // setFormValue({ loading: false });
     }
   };
+
 
   return (
     <Template
@@ -788,13 +932,16 @@ const handleCategorie = useCallback((ids: (string | number)[]) => {
                       </div>
                     </div>
 
-                    <CategorieCreateProdutct
-                      onChange={(value: any[]) => handleCategorie(value)}
+                    <PblalvoCreateProdutct
+                      value={categoryValueNums}                        // 👈 usa o MESMO array
+                      onToggle={(id, selected) => applyToggleFromPbl(id, selected)}
                     />
 
-                    <PblalvoCreateProdutct
-                         onChange={(value: any[]) => handleCategorie(value)}
+                    <CategorieCreateProdutct
+                      value={categoryValueNums}                        // 👈 idem
+                      onChange={(ids) => setCategoryReplace(ids)}      // replace total
                     />
+
 
                     <div className="border-t pt-4 pb-2">
                       <h4 className="text-2xl text-zinc-900 pb-6">

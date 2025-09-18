@@ -11,6 +11,7 @@ interface FilterTagsProps {
   status: boolean;
   onFilter?: (categorie: Categorie[]) => void;
   onClose?: () => void;
+  groups?: Group[]; // novo
   clickedElements: Categorie[];
   maxSelected?: number; // novo
 }
@@ -18,17 +19,24 @@ interface FilterTagsProps {
 export default function FilterTags({
   status,
   onFilter,
+  groups,
   onClose,
   clickedElements,
   maxSelected = 6,
 }: FilterTagsProps) {
   const api = new Api();
-  const [allGroups, setAllGroups] = useState<Group[]>([]);
+  const [allGroups, setAllGroups] = useState<Group[]>(groups ?? []);
   const [activeElements, setActiveElements] = useState<number[]>([]);
 
   const { localGroups, appendRelatedGroup, removeRelatedOf, resetFirstGroup, expandFromSelection } =
     useCascadingGroups(allGroups);
 
+  useEffect(() => {
+    if (groups && groups.length) {
+      setAllGroups(groups);
+    }
+  }, [groups]);
+  
   // Sincroniza seleção externa
   useEffect(() => {
     const selectedIds = clickedElements.map((el) => el.id);
@@ -36,31 +44,6 @@ export default function FilterTags({
   }, [clickedElements]);
 
   // Carrega grupos ao abrir
-  useEffect(() => {
-    if (!status) return;
-
-    const getFilterData = async () => {
-      const request: any = await api.request({ method: "get", url: "group/list" });
-
-      if (Array.isArray(request.data)) {
-        const groups: Group[] = request.data.map((g: any) => ({
-          id: g.id,
-          name: g.name,
-          categories: (g.categories || []).map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            icon: c.icon,
-            element_related_id: c.element_related_id || [],
-            group_id: g.id,
-          })),
-        }));
-
-        setAllGroups(groups);
-      }
-    };
-
-    getFilterData();
-  }, [status]);
 
   // Assim que allGroups + seleção externa estiverem prontos, abre a hierarquia
   useEffect(() => {
@@ -118,11 +101,10 @@ export default function FilterTags({
                       type="button"
                       key={element.id}
                       disabled={isDisabled}
-                      className={`border cursor-pointer ease relative rounded p-2 ${
-                        isChecked
+                      className={`border cursor-pointer ease relative rounded p-2 ${isChecked
                           ? "border-zinc-800 hover:border-zinc-500"
                           : "hover:border-zinc-300"
-                      } ${isDisabled ? "opacity-60 cursor-not-allowed" : ""}`}
+                        } ${isDisabled ? "opacity-60 cursor-not-allowed" : ""}`}
                       onClick={() => onToggleElement(element)}
                     >
                       <div className="px-3 md:px-1 flex items-center gap-2">
