@@ -27,9 +27,9 @@ type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
 class Api {
   static request<T>(arg0: { method: string; url: string; }) {
-      throw new Error("Method not implemented.");
+    throw new Error("Method not implemented.");
   }
-  constructor() {}
+  constructor() { }
 
   async connect({ method = "get", url, data, opts }: ApiRequestType, ctx?: any) {
     return await new Promise((resolve, reject) => {
@@ -55,6 +55,7 @@ class Api {
       const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
         ? (method.toLowerCase() as HttpMethod)
         : "get";
+      
 
       api[requestMethod](url, data ?? {}, opts ?? {})
         .then((response: AxiosResponse) => {
@@ -85,12 +86,12 @@ class Api {
       url = `${url}?${queryString}`;
       data = {};
     }
-  
+
     const validMethods: HttpMethod[] = ["get", "post", "put", "patch", "delete"];
     const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
       ? (method.toLowerCase() as HttpMethod)
       : "get";
-  
+
     return await axios[requestMethod](`/api${url}`, data, opts ?? {})
       .then((response: AxiosResponse) => response.data)
       .catch((error: any) => {
@@ -113,7 +114,7 @@ class Api {
     return await this.connect({ method, url }, ctx);
   }
 
-  async call<T>({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) : Promise<T> {
+  async call<T>({ method = "post", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
     url = `${process.env.BASE_URL}/api/${url}`;
     data = { graphs: data };
     return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
@@ -139,7 +140,7 @@ class Api {
     overwrite?: Object;
   }) {
     let url = "";
-    let requestMethod = "post"; 
+    let requestMethod = "post";
 
     if (data?.method == "upload") {
       url = `app/files/upload-base64`;
@@ -147,7 +148,7 @@ class Api {
 
     if (data?.method == "remove") {
       url = `app/files/remove-medias`;
-      requestMethod = "delete"; 
+      requestMethod = "delete";
     }
 
     return this.request({ method: requestMethod, url, data });

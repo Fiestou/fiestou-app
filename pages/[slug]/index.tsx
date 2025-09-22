@@ -202,8 +202,8 @@ export default function Store({
 
   const baseUrl = `https://fiestou.com.br/${store?.slug}`;
 
-  if (isFallback || !mounted) {
-    return <></>;
+  if (isFallback) {
+    return null;
   }
 
 

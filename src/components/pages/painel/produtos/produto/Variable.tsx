@@ -1,27 +1,49 @@
-import { v4 as uid } from "uuid";
 import { AttributeType, ProductType } from "@/src/models/product";
-import { Button, Input, Label, Select } from "@/src/components/ui/form";
+import { Button, Label } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Variations from "./Variations";
-import { shortId } from "@/src/helper";
 import SelectDropdown from "@/src/components/ui/form/SelectDropdown";
+import { shortId } from "@/src/helper";
+
+// Normaliza qualquer formato vindo do back para AttributeType[]
+function normalizeAttributes(input: unknown): AttributeType[] {
+  if (!input) return [];
+  if (Array.isArray(input)) return input as AttributeType[];
+  if (typeof input === "string") {
+    try {
+      const parsed = JSON.parse(input);
+      return Array.isArray(parsed) ? (parsed as AttributeType[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
 
 export default function Variable({
   product,
   emitAttributes,
 }: {
   product: ProductType;
-  emitAttributes: Function;
+  emitAttributes: (attrs: AttributeType[]) => void;
 }) {
   const [modalAttrStatus, setModalAttrStatus] = useState("");
   const [collapseTrash, setCollapseTrash] = useState("");
+  const [attributes, setAttributes] = useState<AttributeType[]>([]);
 
-  const [attributes, setAttributes] = useState([] as Array<AttributeType>);
+  // Mantém o state SEMPRE como array
+  useEffect(() => {
+    const next = normalizeAttributes(product?.attributes ?? []);
+    // evita setar em loop se já estiver igual
+    if (JSON.stringify(next) !== JSON.stringify(attributes)) {
+      setAttributes(next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.attributes]);
 
   const addAttribute = () => {
-    let rebuilt = attributes;
-    let add: AttributeType = {
+    const add: AttributeType = {
       id: shortId(),
       title: `Rascunho ${attributes.length + 1}`,
       variations: [],
@@ -29,66 +51,55 @@ export default function Variable({
       limit: 0,
       priceType: "on",
     };
-    rebuilt.push(add);
-    emitAttributes(rebuilt);
+    setAttributes((prev) => {
+      const next = [...prev, add];
+      emitAttributes(next);
+      return next;
+    });
     setModalAttrStatus(add.id);
   };
 
   const removeAttribute = (id: string) => {
-    let removed = attributes.filter((attribute, key) => id != attribute.id);
-    emitAttributes(removed);
-  };
-
-  const updateAttribute = (value: Object, id: string) => {
-    let updated = attributes.map((attribute, key) => {
-      return id == attribute.id
-        ? {
-            ...attribute,
-            ...value,
-          }
-        : attribute;
+    setAttributes((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      emitAttributes(next);
+      return next;
     });
-    emitAttributes(updated);
   };
 
-  useEffect(() => {
-    if (JSON.stringify(attributes) !== JSON.stringify(product?.attributes ?? [])) {
-      setAttributes(product?.attributes ?? []);
-    }
-  }, [product?.attributes]);
+  const updateAttribute = (value: Partial<AttributeType>, id: string) => {
+    setAttributes((prev) => {
+      const next = prev.map((a) => (a.id === id ? { ...a, ...value } : a));
+      emitAttributes(next);
+      return next;
+    });
+  };
 
   return (
     <div className="border-t pt-4 pb-2">
-      <h4 className="text-2xl text-zinc-900 mb-2">
-        Grupo de variações/adicionais
-      </h4>
+      <h4 className="text-2xl text-zinc-900 mb-2">Grupo de variações/adicionais</h4>
 
       {!!attributes?.length &&
         attributes.map((attribute, key) => (
-          <div key={key}>
+          <div key={attribute.id ?? key}>
             <div className="border-b py-2">
               <div className="flex items-center">
                 <div className="w-full">
                   <h4
                     className="font-semibold text-sm text-zinc-900 cursor-pointer whitespace-nowrap"
                     onClick={() =>
-                      modalAttrStatus == attribute.id
-                        ? setModalAttrStatus("")
-                        : setModalAttrStatus(attribute.id)
+                      setModalAttrStatus((cur) => (cur === attribute.id ? "" : attribute.id))
                     }
                   >
                     {attribute.title}
                   </h4>
 
                   <div className="text-sm grid gap-1 opacity-70 w-full">
-                    {attribute?.variations?.length} opções
+                    {attribute?.variations?.length ?? 0} opções
                   </div>
                 </div>
-                <div
-                  className={`${
-                    collapseTrash == attribute.id ? "" : "hidden"
-                  } w-fit flex gap-2`}
-                >
+
+                <div className={`${collapseTrash === attribute.id ? "" : "hidden"} w-fit flex gap-2`}>
                   <Button
                     type="button"
                     style="btn-white"
@@ -106,22 +117,17 @@ export default function Variable({
                     remover
                   </Button>
                 </div>
-                <div
-                  className={`${
-                    collapseTrash == attribute.id ? "hidden" : ""
-                  } w-fit flex gap-2`}
-                >
+
+                <div className={`${collapseTrash === attribute.id ? "hidden" : ""} w-fit flex gap-2`}>
                   <Button
                     type="button"
                     style="btn-white"
                     className="font-semibold text-sm py-1 px-2 border"
                     onClick={() =>
-                      modalAttrStatus == attribute.id
-                        ? setModalAttrStatus("")
-                        : setModalAttrStatus(attribute.id)
+                      setModalAttrStatus((cur) => (cur === attribute.id ? "" : attribute.id))
                     }
                   >
-                    {modalAttrStatus == attribute.id ? "confirmar" : "editar"}
+                    {modalAttrStatus === attribute.id ? "confirmar" : "editar"}
                   </Button>
                   <Button
                     type="button"
@@ -133,36 +139,22 @@ export default function Variable({
                   </Button>
                 </div>
               </div>
-              {/* 
-            {!!attribute?.variations?.length && (
-              <div className="text-sm grid gap-1 opacity-70 w-full">
-                {attribute?.variations.map((item, key) => (
-                  <div key={key} className="">
-                    {item.title}
-                  </div>
-                ))}
-              </div>
-            )}
-            */}
             </div>
+
+            {/* Modal */}
             <div
               className={`fixed top-0 left-0 w-full z-10 ${
-                modalAttrStatus == attribute.id
-                  ? "h-screen overflow-y-scroll"
-                  : "h-0 overflow-hidden"
+                modalAttrStatus === attribute.id ? "h-screen overflow-y-scroll" : "h-0 overflow-hidden"
               }`}
             >
               <div className="absolute w-full min-h-full pt-10 md:pb-10 flex items-end md:items-start">
                 <div
                   onClick={() => setModalAttrStatus("")}
                   className="absolute inset-0 min-h-screen bg-zinc-900 bg-opacity-75"
-                ></div>
-
+                />
                 <div className="relative w-full max-w-2xl mx-auto rounded-t-xl md:rounded-xl bg-white p-4 pb-14 md:p-6">
                   <div className="flex items-center">
-                    <h4 className="text-xl text-zinc-900 w-full pb-2">
-                      Editando Grupo
-                    </h4>
+                    <h4 className="text-xl text-zinc-900 w-full pb-2">Editando Grupo</h4>
                     <Button
                       type="button"
                       style="btn-white"
@@ -172,95 +164,68 @@ export default function Variable({
                       concluir
                     </Button>
                   </div>
+
                   <div className="form-group">
                     <Label>Título</Label>
                     <input
                       value={attribute?.title ?? ""}
-                      onBlur={(e: any) =>
-                        !e.target.value
-                          ? updateAttribute(
-                              { title: `Grupo ${key + 1}` },
-                              attribute.id
-                            )
-                          : {}
+                      onBlur={(e) =>
+                        !e.currentTarget.value
+                          ? updateAttribute({ title: `Grupo ${key + 1}` }, attribute.id)
+                          : undefined
                       }
-                      onChange={(e: any) =>
-                        updateAttribute({ title: e.target.value }, attribute.id)
-                      }
+                      onChange={(e) => updateAttribute({ title: e.currentTarget.value }, attribute.id)}
                       name="titulo_atrbt"
                       placeholder="Ex: Tamanho, Cor, Material"
                       required
                       className="form-control"
                     />
                   </div>
+
                   <div className="flex gap-6">
                     <div className="w-full form-group">
                       <Label style="light">Tipo de seleção</Label>
                       <SelectDropdown
                         name="tipo_selecao"
-                        onChange={(value: any) =>
-                          updateAttribute({ selectType: value }, attribute.id)
-                        }
+                        onChange={(value: any) => updateAttribute({ selectType: value }, attribute.id)}
                         value={attribute.selectType ?? "radio"}
                         options={[
-                          {
-                            icon: "fa-dot-circle",
-                            value: "radio",
-                            name: "Seleção única",
-                          },
-                          {
-                            icon: "fa-check-square",
-                            value: "checkbox",
-                            name: "Seleção múltipla",
-                          },
-                          {
-                            icon: "fa-sort-numeric-up-alt",
-                            value: "quantity",
-                            name: "Por quandidade",
-                          },
+                          { icon: "fa-dot-circle", value: "radio", name: "Seleção única" },
+                          { icon: "fa-check-square", value: "checkbox", name: "Seleção múltipla" },
+                          { icon: "fa-sort-numeric-up-alt", value: "quantity", name: "Por quantidade" },
                         ]}
                       />
                     </div>
-                    {attribute?.selectType == "checkbox" && (
+
+                    {attribute?.selectType === "checkbox" && (
                       <div className="w-1/4 form-group">
                         <Label style="light">Limite de seleção</Label>
                         <input
                           type="number"
-                          value={attribute.limit ?? ""}
-                          onChange={(e: any) =>
-                            updateAttribute(
-                              { limit: e.target.value },
-                              attribute.id
-                            )
+                          value={attribute.limit ?? 0}
+                          onChange={(e) =>
+                            updateAttribute({ limit: Number(e.currentTarget.value) || 0 }, attribute.id)
                           }
                           name="limite_atrbt"
                           className="text-sm p-3 form-control"
                         />
                       </div>
                     )}
+
                     <div className="w-full form-group">
                       <Label style="light">Preços</Label>
                       <SelectDropdown
                         name="tipo_preco"
-                        onChange={(value: any) =>
-                          updateAttribute({ priceType: value }, attribute.id)
-                        }
-                        value={attribute.priceType ?? ""}
+                        onChange={(value: any) => updateAttribute({ priceType: value }, attribute.id)}
+                        value={attribute.priceType ?? "on"}
                         options={[
-                          {
-                            icon: "fa-usd-circle",
-                            value: "on",
-                            name: "Incluir valores",
-                          },
-                          {
-                            icon: "fa-check",
-                            value: "off",
-                            name: "Apenas seleção",
-                          },
+                          { icon: "fa-usd-circle", value: "on", name: "Incluir valores" },
+                          { icon: "fa-check", value: "off", name: "Apenas seleção" },
                         ]}
                       />
                     </div>
                   </div>
+
                   <div className="pt-6">
                     <Variations
                       product={product}
@@ -279,7 +244,7 @@ export default function Variable({
       <div className="grid pt-2">
         <Button
           type="button"
-          onClick={() => addAttribute()}
+          onClick={addAttribute}
           style="btn-white"
           className="text-sm whitespace-nowrap py-2 px-4"
         >
@@ -287,7 +252,8 @@ export default function Variable({
           Add grupo
         </Button>
       </div>
-      {/*  */}
+
+      {/* trava scroll quando modal está aberto */}
       <style global jsx>{`
         body,
         html {

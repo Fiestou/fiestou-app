@@ -155,9 +155,9 @@ export default function Parceiro({ content }: { content: any }) {
                       <div className="font-bold text-zinc-900 font-title text-base whitespace-nowrap lg:text-lg">
                         {item.name}
                       </div>
-                      {/* <div className="text-sm group-hover:text-zinc-900 ease">
+                      <div className="text-sm group-hover:text-zinc-900 ease">
                         {item.description}
-                      </div> */}
+                      </div>
                     </div>
                   </Link>
                 ))}
