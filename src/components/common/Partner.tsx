@@ -1,6 +1,4 @@
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import { StoreType } from "@/src/models/store";
-import Image from "next/image";
 import Link from "next/link";
 import Img from "@/src/components/utils/ImgBase";
 import Badge from "@/src/components/utils/Badge";
@@ -28,19 +26,15 @@ export default function Partner({ params }: { params: StoreType }) {
               {params?.title ?? params?.companyName}
             </h6>
           </div>
-          <div className="flex gap-1 items-center">
-            <Icon
-              icon="fa-star"
-              type="fa"
-              className="text-xs text-yellow-500"
-            />
-            <span className="font-bold text-xs md:text-sm text-zinc-900">
-              4,8
-            </span>
-          </div>
           <div>
             <Badge style="light" className="text-xs md:text-sm">
-              Decorações
+              {params?.segment}
+            </Badge>
+            <Badge style="light" className="text-xs md:text-sm">
+              {params?.city}
+            </Badge>
+            <Badge style="light" className="text-xs md:text-sm">
+              {params?.state}
             </Badge>
           </div>
         </div>

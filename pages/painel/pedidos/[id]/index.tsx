@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
@@ -7,8 +6,7 @@ import { OrderType } from "@/src/models/order";
 import {
   dateBRFormat,
   getExtenseData,
-  moneyFormat,
-  print_r,
+  moneyFormat
 } from "@/src/helper";
 import { Button, Label, Select } from "@/src/components/ui/form";
 import { useState } from "react";
