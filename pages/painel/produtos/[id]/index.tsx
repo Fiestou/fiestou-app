@@ -2,44 +2,34 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Template from "@/src/template";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductType } from "@/src/models/product";
 import Api from "@/src/services/api";
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-  Button,
-  Input,
-  Label,
-  Select,
-  TextArea,
-} from "@/src/components/ui/form";
+import { Button, Label, Select, TextArea } from "@/src/components/ui/form";
 import {
   decimalNumber,
-  getImage,
   handleTags,
   justNumber,
-  justValidateNumber,
-  moneyFormat,
   realMoneyNumber,
   slugfy,
 } from "@/src/helper";
-import FileInput from "@/src/components/ui/form/FileInputUI";
 import HelpCard from "@/src/components/common/HelpCard";
 import Cookies from "js-cookie";
 import Colors from "@/src/components/ui/form/ColorsUI";
 import Options from "@/src/components/ui/form/OptionsUI";
 import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
-import Img from "@/src/components/utils/ImgBase";
 import router from "next/router";
 import Categories from "@/src/components/pages/painel/produtos/produto/Categories";
 import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
-
 import { getStore, getUser } from "@/src/contexts/AuthContext";
 import axios from "axios";
 import Gallery from "@/src/components/pages/painel/produtos/produto/Gallery";
 import UnavailableDates from "@/src/components/ui/form/UnavailableDates";
 import React from "react";
+import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
+import { Console } from "console";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -50,7 +40,7 @@ export async function getServerSideProps(
 
   const request: any = await api.call(
     {
-      method: 'post',
+      method: "post",
       url: "request/graph",
       data: [
         {
@@ -110,34 +100,101 @@ export default function Form({
   const [subimitStatus, setSubimitStatus] = useState("" as string);
   const [placeholder, setPlaceholder] = useState(true as boolean);
   const [form, setForm] = useState(formInitial);
+  const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
+  const [colors, setColors] = useState([]);
   const setFormValue = (value: any) => {
     setForm((form) => ({ ...form, ...value }));
   };
   const [tags, setTags] = useState("" as string);
-  const [categories, setCategories] = useState([] as Array<any>);
   const [data, setData] = useState({} as ProductType);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [product, setProduct] = useState({} as ProductType);
 
-  const handleData = (value: Object) => {
-    setData({ ...data, ...value });
-  };
   const handleUnavailableDatesChange = (dates: string[]) => {
     handleData({ unavailableDates: dates });
   };
-  const [colors, setColors] = useState([]);
+
 
   const handleColors = (value: any) => {
     handleData({ color: value.join("|") });
     setColors(value);
   };
 
-  const handleCategorie = (value: any) => {
-    handleData({ category: value.join("|") });
+  const coerceIds = (raw: any): string[] => {
+    if (raw == null) return [];
+    let arr: any[] = [];
+    if (Array.isArray(raw)) arr = raw;
+    else if (typeof raw === "string") arr = raw.split(/[|,]/g);
+    else arr = [raw];
+
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const v of arr) {
+      const idRaw = v && typeof v === "object" ? (v.id ?? v.value ?? v.key ?? v.ID ?? v.Id) : v;
+      if (idRaw == null) continue;
+      const s = String(idRaw).trim();
+      if (!s || s === "undefined" || s === "null") continue;
+      if (!seen.has(s)) { seen.add(s); out.push(s); }
+    }
+    return out;
   };
 
-  const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
+  const handleData = useCallback((value: Record<string, any>) => {
+    setData((prev) => {
+      // ✅ blindagem: só aceita objeto plain
+      console.log(value);
+      if (
+        value == null ||
+        typeof value !== "object" ||
+        Array.isArray(value)
+      ) {
+        console.warn("handleData: valor inválido (esperado objeto):", value);
+        return prev;
+      }
+
+      let next = { ...prev };
+
+      if ("category" in value) {
+        const incoming = coerceIds(value.category);
+        if (incoming.length) {
+          const prevCat = coerceIds(prev.category ?? []);
+          const merged = Array.from(new Set([...prevCat, ...incoming]));
+          next.category = merged;
+        }
+        // se vier vazio, mantém o que já tinha
+      }
+
+      const { category: _ignored, ...rest } = value;
+      next = { ...next, ...rest };
+
+      return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+    });
+  }, []);
+
+  const sanitize = (obj: Record<string, any>) => {
+    const out: Record<string, any> = {};
+    Object.entries(obj).forEach(([k, v]) => {
+      if (v === undefined || v === null) return;
+      if (typeof v === "string") {
+        const t = v.trim();
+        if (t === "") return; // opcional: manter strings vazias? remova se quiser enviar ""
+        out[k] = t;
+      } else {
+        out[k] = v;
+      }
+    });
+    return out;
+  };
+
+  const buildPayload = () => {
+    const categoryPipe = coerceIds(data.category ?? []).join("|");
+    return sanitize({ ...data, category: categoryPipe });
+  };
+
+
   const SearchProducts = async (search: string) => {
     if (search.length >= 3) {
-      let request: any = await api.request({
+      let request: any = (await api.request({
         method: "get",
         url: "request/products",
         data: {
@@ -145,7 +202,7 @@ export default function Form({
           busca: search,
           limit: 10,
         },
-      }) as RelationType[];
+      })) as RelationType[];
 
       if (request.response && !!request?.data.length) {
         let handle = request?.data?.map((item: any) => {
@@ -162,31 +219,28 @@ export default function Form({
     }
   };
 
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [product, setProduct] = useState({} as ProductType);
   const getProduct = async () => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "products/form",
-      data: { id: id },
+    const request: any = await api.bridge({
+      method: "get",
+      url: `stores/${Cookies.get("fiestou.store")}/products/${id}`,
     });
 
     let handle = request.data ?? {};
     handle = {
       ...handle,
-      assembly: !!handle.assembly ? handle.assembly : "on",
+      assembly: handle.assembly ? handle.assembly : "on",
       store: getStore(),
     };
-
     setProduct(handle);
-    setData(handle);
-    setColors(
-      !!handle?.color && handle?.color?.split("|").length
-        ? handle?.color?.split("|")
-        : [handle?.color]
-    );
+    setData({ ...handle }); // ✅ NÃO faça outro setData depois!
 
-    setCategories(handle?.category ?? []);
+    setColors(
+      handle?.color && handle.color.split
+        ? handle.color.split("|")
+        : handle?.color
+          ? [handle.color]
+          : []
+    );
 
     setPlaceholder(false);
   };
@@ -197,33 +251,57 @@ export default function Form({
     }
   }, []);
 
-  const handleSubmit = async (e: any) => {
+  useEffect(() => {
+    console.log(data.category, "datinha");
+  }, [data]);
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    setFormValue({ loading: true });
+    // evita double-submit
+    if (form.loading) return;
 
-    setSubimitStatus("register_content");
+    try {
+      setFormValue({ loading: true });
+      setSubimitStatus("register_content");
 
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "products/register",
-      data: data,
-    });
+      const payload = buildPayload();
 
-    if (request.response) {
+      const request: any = await api.bridge({
+        method: "post",
+        url: "products/register",
+        data: payload,
+      });
+
+      if (!request?.response) {
+        // falhou de forma “limpa” (sem exception), trate como erro
+        setSubimitStatus("register_failed");
+        return;
+      }
+
       setFormValue({ sended: request.response });
-
       setSubimitStatus("clean_cache");
 
-      await axios.get(`/api/cache?route=/produtos/${request.data.slug}`);
+      // bust cache da página pública
+      await axios.get(`/api/cache?route=/produtos/${request?.data?.slug ?? payload.slug}`);
 
       setSubimitStatus("register_complete");
 
       setTimeout(() => {
         router.push({ pathname: "/painel/produtos" });
       }, 500);
+    } catch (err) {
+      console.error(err);
+      setSubimitStatus("register_failed");
+      // aqui você pode acionar um toast/alert
+    } finally {
+      // se quiser manter o loader até redirecionar, não desligue aqui.
+      // Se preferir desligar sempre, descomente a linha abaixo:
+      // setFormValue({ loading: false });
     }
   };
+
 
   return (
     <Template
@@ -477,11 +555,6 @@ export default function Form({
                       emitAttributes={(param: any) => {
                         handleData({ attributes: param });
                       }}
-                    />
-
-                    <Categories
-                      checked={categories}
-                      emit={(value: any) => handleData({ category: value })}
                     />
 
                     <div className="border-t pt-4 pb-2">
@@ -773,11 +846,34 @@ export default function Form({
                       </div>
                     </div>
 
-                    <CategorieCreateProdutct
-                      onChange={(value: any) => {
-                        handleCategorie(value);
+                    <PblalvoCreateProdutct
+                      value={coerceIds(data?.category ?? [])}
+                      onToggle={(id, selected) => {
+                        setData((prev) => {
+                          const prevCat = coerceIds(prev?.category ?? []);
+                          const s = new Set(prevCat.map(String));
+                          selected ? s.add(String(id)) : s.delete(String(id));
+                          return { ...prev, category: Array.from(s) };
+                        });
                       }}
                     />
+
+
+                    <CategorieCreateProdutct
+                      value={data?.category ?? []}
+                      onRemove={(id) => {
+                        setData((prev) => {
+                          const curr = (Array.isArray(prev?.category) ? prev.category : []).map(Number).filter(Number.isFinite);
+                          const next = curr.filter((x) => x !== Number(id));
+                          return curr.length === next.length ? prev : { ...prev, category: next };
+                        });
+                      }}
+                      onChange={(ids) => {
+                        // quando o usuário confirmar no modal de filtro, vem a LISTA completa
+                        setData((prev) => ({ ...prev, category: ids }));
+                      }}
+                    />
+
 
                     <div className="border-t pt-4 pb-2">
                       <h4 className="text-2xl text-zinc-900 pb-6">
@@ -875,15 +971,11 @@ export default function Form({
                         </div>
 
                         <div className="form-group">
-                          <Label>Taxa de entrega</Label>
+                          <Label>Valor de KM rodado</Label>
                           <input
-                            value={
-                              !!data?.freeTax
-                                ? realMoneyNumber(data?.freeTax)
-                                : ""
-                            }
+                            value={!!data?.freeTax ? data?.freeTax : ""}
                             type="text"
-                            name="taxa_entrega"
+                            name="freeTax"
                             onChange={(e: any) =>
                               handleData({
                                 freeTax: realMoneyNumber(e.target.value),
