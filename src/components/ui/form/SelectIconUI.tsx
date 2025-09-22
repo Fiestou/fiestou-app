@@ -3,11 +3,6 @@ import { iconsLib } from "@/src/icons/fontAwesome/fontAwesomeIcons";
 import { useState } from "react";
 import Button from "./ButtonUI";
 
-interface OptionType {
-  name?: string;
-  value: any;
-}
-
 interface SelectIconType {
   name: string;
   onChange?: Function;

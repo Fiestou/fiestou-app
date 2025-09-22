@@ -60,6 +60,10 @@ const menu = [
     title: "Regras de Negócio",
     endpoint: "/admin/sistema",
   },
+  {
+    title: "Configurações de Entrega",
+    endpoint: "/admin/configuracoes-entrega",
+  },
 ];
 
 export default function Admin({
