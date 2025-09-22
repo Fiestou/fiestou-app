@@ -45,6 +45,7 @@ export interface Categorie {
   id: number;
   name: string;
   icon: string;
+  title?: string;
   checked?: boolean;
   description?: string;
   groupName?: string;
