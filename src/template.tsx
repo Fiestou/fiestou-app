@@ -1,12 +1,9 @@
-import Image from "next/image";
 import { Header, HeaderType } from "@/src/default/header";
 import { Footer, FooterType } from "@/src/default/footer";
 import Head from "next/head";
-import { getImage } from "./helper";
 import Lgpd from "./default/alerts/lgpd";
 import { useEffect, useState } from "react";
 import React from "react";
-import Script from "next/script";
 
 interface MetaType {
   title?: string;
@@ -30,7 +27,7 @@ export default function Template({
 }) {
   const meta = {
     title: metaPage?.title ?? "",
-    image: metaPage?.image,
+    image: "/images/fiestou-logo.png",
     description: metaPage?.description ?? "",
     url: `https://www.fiestou.com.br/${metaPage?.url}`,
   };
@@ -69,31 +66,8 @@ export default function Template({
 
         <title>{meta.title}</title>
 
-        {!!header?.content?.header_icon &&
-          !!getImage(header?.content?.header_icon) && (
-            <>
-              <link
-                rel="shortcut icon"
-                href={getImage(header?.content?.header_icon, "lg")}
-              ></link>
-            </>
-          )}
-
-        {!!header?.content?.header_shortcut &&
-          !!getImage(header?.content?.header_shortcut) && (
-            <>
-              <link
-                rel="icon"
-                href={getImage(header?.content?.header_shortcut, "lg")}
-                type="image/x-icon"
-              />
-              <link
-                rel="apple-touch-icon"
-                sizes="180x180"
-                href={getImage(header?.content?.header_shortcut, "lg")}
-              />
-            </>
-          )}
+        <link rel="icon" href="/images/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png" />
 
         <meta name="theme-color" content="#2798c6" />
         <meta name="msapplication-navbutton-color" content="#2798c6" />

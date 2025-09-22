@@ -1,4 +1,3 @@
-import { HeaderFooterForm } from "@/src/components/pages/admin/conteudo/HeaderFooterForm";
 import { HomeForm } from "@/src/components/pages/admin/conteudo/HomeForm";
 import { AboutForm } from "@/src/components/pages/admin/conteudo/AboutForm";
 import { PartnerForm } from "@/src/components/pages/admin/conteudo/PartnerForm";
@@ -31,13 +30,6 @@ export interface FormType {
 }
 
 const site: Array<FormType> = [
-  {
-    title: "Menu e Rodapé",
-    slug: "menu",
-    publicUrl: "",
-    form: HeaderFooterForm,
-    origin: "global",
-  },
   {
     title: "Home",
     slug: "home",

@@ -4,7 +4,6 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useState } from "react";
 import Api from "@/src/services/api";
-import { send } from "process";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
