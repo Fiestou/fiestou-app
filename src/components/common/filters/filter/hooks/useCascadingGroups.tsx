@@ -1,23 +1,29 @@
 // hooks/useCascadingGroups.ts
-import { useEffect, useState, useCallback, use } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Categorie } from "@/src/types/filtros";
 import { Group } from "./useFiltersData";
 
 export function useCascadingGroups(allGroups: Group[]) {
   const [localGroups, setLocalGroups] = useState<Group[]>([]);
-  useEffect(() => { 
-    setLocalGroups(allGroups?.length ? [allGroups[0]] : []); 
+
+  // Sempre começa exibindo só o primeiro grupo
+  useEffect(() => {
+    setLocalGroups(allGroups?.length ? [allGroups[0]] : []);
   }, [allGroups]);
 
   const appendRelatedGroup = useCallback((clicked: Categorie) => {
     if (!clicked.element_related_id?.length) return;
-    const relatedEl = allGroups.flatMap(g => g.categories)
+
+    const relatedEl = allGroups
+      .flatMap(g => g.categories)
       .find(el => clicked.element_related_id!.includes(el.id));
+
     const relatedGroup = allGroups.find(g => g.id === relatedEl?.group_id);
     if (!relatedGroup) return;
 
     const filtered = relatedGroup.categories
       .filter(el => clicked.element_related_id!.includes(el.id));
+
     const filteredGroup: Group = { ...relatedGroup, categories: filtered };
 
     setLocalGroups(prev => {
@@ -30,6 +36,7 @@ export function useCascadingGroups(allGroups: Group[]) {
         ];
         return up;
       }
+
       const up = [...prev];
       const idxAll = allGroups.findIndex(g => g.id === relatedGroup.id);
       let insertAt = up.length;
@@ -41,19 +48,21 @@ export function useCascadingGroups(allGroups: Group[]) {
       return up;
     });
   }, [allGroups]);
-  useEffect(() => {console.log(localGroups)}, [localGroups]);
+
   const removeRelatedOf = useCallback((clicked: Categorie, keptSelectedIds: number[]) => {
     if (!clicked.element_related_id?.length) return;
+
     const otherRelIds = allGroups
       .flatMap(g => g.categories)
       .filter(el => keptSelectedIds.includes(el.id))
       .flatMap(el => el.element_related_id || []);
 
     setLocalGroups(prev => prev
-      .map(g => ({ 
-        ...g, 
+      .map(g => ({
+        ...g,
         categories: g.categories.filter(el =>
-          !clicked.element_related_id!.includes(el.id) || otherRelIds.includes(el.id))
+          !clicked.element_related_id!.includes(el.id) || otherRelIds.includes(el.id)
+        ),
       }))
       .filter(g => g.categories.length > 0)
     );
@@ -63,5 +72,22 @@ export function useCascadingGroups(allGroups: Group[]) {
     setLocalGroups(allGroups?.length ? [allGroups[0]] : []);
   }, [allGroups]);
 
-  return { localGroups, appendRelatedGroup, removeRelatedOf, resetFirstGroup };
+  // ✅ NOVO: expande a hierarquia com base numa seleção prévia (ex.: edição)
+  const expandFromSelection = useCallback((selectedIds: number[]) => {
+    if (!selectedIds?.length) return;
+    const selectedCats = allGroups
+      .flatMap(g => g.categories)
+      .filter(c => selectedIds.includes(c.id));
+
+    // chama o mesmo fluxo de clique para cada selecionado
+    selectedCats.forEach(c => appendRelatedGroup(c));
+  }, [allGroups, appendRelatedGroup]);
+
+  return {
+    localGroups,
+    appendRelatedGroup,
+    removeRelatedOf,
+    resetFirstGroup,
+    expandFromSelection, // <- aqui estava faltando
+  };
 }

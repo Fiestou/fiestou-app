@@ -1,11 +1,7 @@
 import Api from "@/src/services/api";
 import Template from "@/src/template";
-import Link from "next/link";
-import { useState } from "react";
 import Img from "@/src/components/utils/ImgBase";
-import { Button, Input, Label } from "@/src/components/ui/form";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import { cleanText, getExtenseData, getImage } from "@/src/helper";
+import { getExtenseData, getImage } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export const getStaticPaths = async (ctx: any) => {
