@@ -19,49 +19,49 @@ export const PARTNER_MENU: Array<{
     name: "Pedidos",
     icon: "fa-box-alt",
     description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+      "",
     url: "/painel/pedidos",
   },
   {
     name: "Produtos",
     icon: "fa-tag",
     description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+      "",
     url: "/painel/produtos",
   },
   {
     name: "Clientes",
     icon: "fa-users",
     description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+      "",
     url: "/painel/clientes",
   },
   // {
   //   name: "Chat",
   //   icon: "fa-comment-alt-dots",
   //   description:
-  //     "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+  //     "",
   //   url: "/painel/chat",
   // },
   {
     name: "Conta bancária",
     icon: "fa-university",
     description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+      "",
     url: "/painel/conta",
   },
   {
     name: "Seus dados",
     icon: "fa-user-circle",
     description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+      "",
     url: "/painel/meus-dados",
   },
   {
     name: "Personalizar loja",
     icon: "fa-palette",
     description:
-      "Lorem ipsum dolor sit amet consectetur. Sagittis lectus morbi.",
+      "",
     url: "/painel/loja",
   },
 ];

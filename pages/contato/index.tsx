@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import Template from "@/src/template";
-import Api, { defaultQuery } from "@/src/services/api";
-import { useRouter } from "next/router";
-import Content from "@/src/components/utils/Content";
+import Api from "@/src/services/api";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { Button } from "@/src/components/ui/form";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";

@@ -29,23 +29,29 @@ export function tagfy(str: string) {
 export function slugfy(str: string) {
   return !!str
     ? str
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w\-]+/g, "-")
-        .replace(/\-\-+/g, "-")
-        .replace(/(^-+|-+$)/g, "-")
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^\w\-]+/g, "-")
+      .replace(/\-\-+/g, "-")
+      .replace(/(^-+|-+$)/g, "-")
     : "";
 }
 
-export function moneyFormat(number?: number | string, separator?: string) {
-  if (!number) return 0;
+export function calcDeliveryTotal(dp: unknown): number {
+  if (Array.isArray(dp)) {
+    return dp.reduce((acc, it: any) => acc + (Number(it?.price) || 0), 0);
+  }
+  // fallback caso algum dia a API retorne objeto { total } ou número
+  const maybe = dp as any;
+  return Number(maybe?.total ?? maybe ?? 0) || 0;
+}
 
-  number = typeof number == "string" ? parseFloat(number) : number;
-  number = number.toFixed(2);
-
-  number = number.replace(".", separator ?? ",");
-
-  return number;
+export function moneyFormat(value?: number | string, separator = ","): string {
+  const n = Number(
+    typeof value === "string" ? value.replace(/[^\d.-]/g, "") : value
+  );
+  const fixed = Number.isFinite(n) ? n : 0;
+  return fixed.toFixed(2).replace(".", separator);
 }
 
 export function serializeParam(key: string, value: any): string {
@@ -200,7 +206,7 @@ export function phoneJustNumber(str?: string) {
 }
 
 export function justNumber(str: any): string {
-  if (!str) 
+  if (!str)
     return "";
 
   return str.toString().replace(/\D/g, "");
@@ -375,10 +381,10 @@ export function getExtenseData(data_informada = "", pos = "") {
     return pos == "m"
       ? parseInt(month_informado)
       : pos == "d"
-      ? day_informado.split("T")[0]
-      : pos == "Y"
-      ? year_informado
-      : data.split("T")[0];
+        ? day_informado.split("T")[0]
+        : pos == "Y"
+          ? year_informado
+          : data.split("T")[0];
   }
 
   return "";
@@ -413,9 +419,8 @@ export function getDate(date?: any, days = 0) {
   month = date_.getMonth();
   year = date_.getFullYear();
 
-  return `${year}-${month < 10 ? "0" + month : month}-${
-    day < 10 ? "0" + day : day
-  }`;
+  return `${year}-${month < 10 ? "0" + month : month}-${day < 10 ? "0" + day : day
+    }`;
 }
 
 export const getCurrentDate = (daysAhead = 0) => {
@@ -445,6 +450,7 @@ export async function getZipCode(zipCode: string) {
   var validacep = /^[0-9]{8}$/;
 
   if (validacep.test(justNumber(zipCode))) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return await fetch(`https://viacep.com.br/ws/${justNumber(zipCode)}/json/`)
       .then((data) => data.json())
       .then((data) => data);
