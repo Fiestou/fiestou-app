@@ -6,12 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductType } from "@/src/models/product";
 import Api from "@/src/services/api";
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-  Button,
-  Label,
-  Select,
-  TextArea,
-} from "@/src/components/ui/form";
+import { Button, Label, Select, TextArea } from "@/src/components/ui/form";
 import {
   decimalNumber,
   handleTags,
@@ -45,7 +40,7 @@ export async function getServerSideProps(
 
   const request: any = await api.call(
     {
-      method: 'post',
+      method: "post",
       url: "request/graph",
       data: [
         {
@@ -199,7 +194,7 @@ export default function Form({
 
   const SearchProducts = async (search: string) => {
     if (search.length >= 3) {
-      let request: any = await api.request({
+      let request: any = (await api.request({
         method: "get",
         url: "request/products",
         data: {
@@ -207,7 +202,7 @@ export default function Form({
           busca: search,
           limit: 10,
         },
-      }) as RelationType[];
+      })) as RelationType[];
 
       if (request.response && !!request?.data.length) {
         let handle = request?.data?.map((item: any) => {
@@ -976,15 +971,11 @@ export default function Form({
                         </div>
 
                         <div className="form-group">
-                          <Label>Taxa de entrega</Label>
+                          <Label>Valor de KM rodado</Label>
                           <input
-                            value={
-                              !!data?.freeTax
-                                ? realMoneyNumber(data?.freeTax)
-                                : ""
-                            }
+                            value={!!data?.freeTax ? data?.freeTax : ""}
                             type="text"
-                            name="taxa_entrega"
+                            name="freeTax"
                             onChange={(e: any) =>
                               handleData({
                                 freeTax: realMoneyNumber(e.target.value),
