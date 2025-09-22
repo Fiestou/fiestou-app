@@ -71,7 +71,7 @@ export interface ProductType {
   height?: string | number;
   attributes?: Array<AttributeType>;
   tags?: string;
-  category?: Array<any>;
+  category?: (string | number)[];
   color?: string | "sem cor";
   combinations?: Array<RelationType>;
   suggestions?: string;
