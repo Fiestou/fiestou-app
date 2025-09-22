@@ -1,17 +1,16 @@
 import Template from "@/src/template";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
-import Payment from "@/src/services/payment";
 import { useCallback, useEffect, useState } from "react";
 import {
+  calcDeliveryTotal,
   dateBRFormat,
   findDates,
-  getZipCode,
   isCEPInRegion,
   justNumber,
   moneyFormat,
 } from "@/src/helper";
-import { Button, Input } from "@/src/components/ui/form";
+import { Button } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
@@ -24,7 +23,6 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -32,10 +30,9 @@ import { CartType } from "@/src/models/cart";
 import { deliveryToName } from "@/src/models/delivery";
 import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
 import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
-import { Save } from 'lucide-react';
-import { ToastContainer, toast } from 'react-toastify';
-import { ApiResponse } from "@/src/types/response";
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { DeliveryItem } from "@/src/types/filtros";
 
 const FormInitialType = {
   sended: false,
@@ -60,7 +57,7 @@ export async function getServerSideProps(ctx: any) {
 
   let request: any = await api.bridge(
     {
-      method: 'post',
+      method: "post",
       url: `checkout/create`,
       data: {
         products: cart.map((item: any) => item.product),
@@ -152,7 +149,7 @@ export default function Checkout({
   };
 
   const isPhoneValid = (phone: string): boolean => {
-    const digitsOnly = phone.replace(/\D/g, '');
+    const digitsOnly = phone.replace(/\D/g, "");
     return digitsOnly.length >= 10 && digitsOnly.length <= 11;
   };
 
@@ -163,18 +160,18 @@ export default function Checkout({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhone(e.target.value));
   };
-  
+
   const handleSavePhone = async () => {
     if (!isPhoneValid(phone)) {
       toast.error("Telefone inválido!");
       return;
     }
-  
+
     try {
       await api.bridge({
         method: "post",
         url: "users/update",
-        data: { phone: phone.replace(/\D/g, '') }
+        data: { phone: phone.replace(/\D/g, "") },
       });
       toast.success("Salvo com sucesso!");
     } catch (error) {
@@ -182,20 +179,9 @@ export default function Checkout({
     }
   };
 
-  const [deliveryPrice, setDeliveryPrice] = useState(0 as number);
-  const getCalculeDistancePrice = async () => {
-    const data = await api.internal({
-      method: "get",
-      url: "/maps",
-      data: {
-        cep: address?.zipCode,
-      },
-    });
+  const [deliveryPrice, setDeliveryPrice] = useState<DeliveryItem[]>([]);
 
-    const { distance } = data;
-
-    setDeliveryPrice(!!distance ? (distance / 1000) * deliveryTax : 0);
-  };
+  const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(false as boolean);
 
   useEffect(() => {
     if (user?.phone) {
@@ -205,7 +191,33 @@ export default function Checkout({
 
   useEffect(() => {
     if (!!address?.zipCode && justNumber(address?.zipCode).length >= 8) {
-      getCalculeDistancePrice();
+      const getShippingPrice = async () => {
+        setLoadingDeliveryPrice(true);
+        const data: any = await api.request({
+          method: "get",
+          url: `delivery-zipcodes/${address?.zipCode}`,
+          data: {
+            ids: products.map((product: ProductType) => product.id),
+          },
+        });
+        setLoadingDeliveryPrice(false);
+        console.log("Data", data);
+        if (data?.data) {
+          const list: DeliveryItem[] = Array.isArray(data.data)
+            ? data.data.map((x: any): DeliveryItem => ({
+              price: Number(x?.price) || 0,
+              store_id: Number(x?.store_id) || 0,
+            }))
+            : [];
+
+          setDeliveryPrice(list.filter((x) => Number.isFinite(x.price)));
+        } else {
+          setDeliveryPrice([]);
+        }
+        console.log("Delivery Price", deliveryPrice);
+      };
+
+      getShippingPrice();
     }
   }, [address?.zipCode]);
 
@@ -218,8 +230,8 @@ export default function Checkout({
     }, 0);
 
     setResume({
-      subtotal: subtotal,
-      total: subtotal + (!isCEPInRegion(address?.zipCode) ? 0 : deliveryPrice),
+      subtotal,
+      total: subtotal + calcDeliveryTotal(deliveryPrice),
       startDate: findDates(dates).minDate,
       endDate: findDates(dates).maxDate,
     });
@@ -237,12 +249,14 @@ export default function Checkout({
     }
   }, [user, token]);
 
+  const deliveryTotal = calcDeliveryTotal(deliveryPrice);
+
   const submitOrder = async (e: any) => {
     e.preventDefault();
 
     setForm({ ...form, loading: true });
 
-    let total = deliveryPrice;
+    let total = deliveryPrice.reduce((acc, item) => acc + item.price, 0);
     let listItems: Array<ProductOrderType> = [];
 
     cart.map((item: any, key: any) => {
@@ -296,17 +310,21 @@ export default function Checkout({
       user: user,
       listItems: listItems,
       platformCommission: platformCommission,
-      total: total,
+      total: resume.total,
       deliverySchedule: schedule,
       deliveryAddress: address,
       deliveryTo: deliveryTo,
-      deliveryPrice: deliveryPrice,
+      deliveryPrice: deliveryPrice.reduce((acc, item) => acc + item.price, 0),
       deliveryStatus: "pending",
       status: -1,
+      freights: {
+        zipcode: address?.zipCode,
+        productsIds: listItems.map((item: any) => item.product.id),
+      },
     };
 
     const registerOrder: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "orders/register",
       data: order,
     });
@@ -326,6 +344,58 @@ export default function Checkout({
     }
   }, []);
 
+  const renderDeliveryPrice = () => {
+    const renderFreteItem = (item: { price: number; store_id: number }) => {
+      const product = products.find(
+        (product: any) => product.store.id == item.store_id
+      );
+
+      return (
+        <div className="flex justify-between w-full">
+          <span className="font-bold">
+            Frete - {(product?.store as unknown as StoreType)?.companyName}
+          </span>
+          {loadingDeliveryPrice ? (
+            <span>Carregando...</span>
+          ) : (
+            <span className="ml-2">R$ {moneyFormat(item?.price)}</span>
+          )}
+        </div>
+      );
+    };
+    if (deliveryPrice.length == 0)
+      return (
+        <>
+          <span className="font-bold">
+            Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
+          </span>
+        </>
+      );
+
+    if ((address?.zipCode?.length ?? 0) < 8)
+      return (
+        <div className="flex justify-between w-full">
+          <span className="font-bold">
+            Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
+          </span>
+          {loadingDeliveryPrice ? (
+            <span>Carregando...</span>
+          ) : (
+            <span>Entrega indisponível</span>
+          )}
+        </div>
+      );
+    return (
+      <div className="w-full">
+        {deliveryPrice?.map((item: any, index: number) => (
+          <div key={index} className="text-sm flex justify-between">
+            {renderFreteItem(item)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return !isFallback && !!token ? (
     <Template
       scripts={Scripts}
@@ -344,7 +414,7 @@ export default function Checkout({
       <section className="py-4 sm:py-6 lg:py-10 min-h-screen">
         <form autoComplete="off" onSubmit={(e: any) => submitOrder(e)}>
           <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-6xl">
-            
+
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 xr:gap-12">
               {/* Coluna Principal - Formulário */}
               <div className="w-full lg:w-2/3 xl:w-[68%] space-y-6 lg:space-y-8">
@@ -376,7 +446,7 @@ export default function Checkout({
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
                     Endereço de entrega
                   </h2>
-                  
+
                   {/* Alertas */}
                   {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
                     <div className="flex items-center bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
@@ -390,38 +460,36 @@ export default function Checkout({
                     !address?.number ||
                     !address?.city ||
                     !address?.state) && (
-                    <div className="flex items-start bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
-                      <Icon
-                        icon="fa-exclamation-triangle"
-                        className="mr-2 mt-0.5 flex-shrink-0"
-                      />
-                      <span>
-                        Preencha seu endereço corretamente. Não se esqueça de informar o complemento.
-                      </span>
-                    </div>
-                  )}
+                      <div className="flex items-start bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
+                        <Icon
+                          icon="fa-exclamation-triangle"
+                          className="mr-2 mt-0.5 flex-shrink-0"
+                        />
+                        <span>
+                          Preencha seu endereço corretamente. Não se esqueça de informar o complemento.
+                        </span>
+                      </div>
+                    )}
 
                   {/* Lista de Endereços */}
                   {!!locations.length && !customLocation && (
                     <div className="space-y-3">
                       {locations.map((addr: AddressType, key: any) => (
                         <div
-                          className={`${
-                            addr == address
-                              ? "border-yellow-400 bg-yellow-50"
-                              : "border-gray-200 hover:border-gray-300"
-                          } rounded-lg border cursor-pointer transition-all duration-200`}
+                          className={`${addr == address
+                            ? "border-yellow-400 bg-yellow-50"
+                            : "border-gray-200 hover:border-gray-300"
+                            } rounded-lg border cursor-pointer transition-all duration-200`}
                           key={key}
                           onClick={() => setAddress(addr)}
                         >
                           <div className="flex gap-3 p-3 sm:p-4 items-start">
                             <div className="pt-1">
                               <div
-                                className={`${
-                                  addr?.street == address?.street
-                                    ? "border-yellow-500"
-                                    : "border-gray-300"
-                                } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
+                                className={`${addr?.street == address?.street
+                                  ? "border-yellow-500"
+                                  : "border-gray-300"
+                                  } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
                               >
                                 {addr?.street == address?.street && (
                                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
@@ -492,17 +560,19 @@ export default function Checkout({
                       required
                       value={phone}
                       placeholder="Insira seu telefone aqui"
-                      className={`form-control flex-1 px-3 py-2 rounded-lg border text-sm sm:text-base ${
-                        phone && !isPhoneValid(phone) 
-                        ? 'border-red-500 focus:border-red-500' 
-                        : !hasChanged() 
-                          ? 'bg-gray-100 border-gray-300' 
+                      className={`form-control flex-1 px-3 py-2 rounded-lg border text-sm sm:text-base ${phone && !isPhoneValid(phone)
+                        ? 'border-red-500 focus:border-red-500'
+                        : !hasChanged()
+                          ? 'bg-gray-100 border-gray-300'
                           : 'border-green-500 focus:border-green-600'
-                      } focus:outline-none focus:ring-2 focus:ring-opacity-50`}
+                        } focus:outline-none focus:ring-2 focus:ring-opacity-50`}
                     />
                     <Button
                       onClick={handleSavePhone}
-                      disable={!isPhoneValid(phone) || phone === formatPhone(user?.phone || "")}
+                      disable={
+                        !isPhoneValid(phone) ||
+                        phone === formatPhone(user?.phone || "")
+                      }
                       style="btn-yellow"
                       className="px-4 py-2 sm:px-6 whitespace-nowrap"
                     >
@@ -517,7 +587,7 @@ export default function Checkout({
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
                     Detalhes de entrega
                   </h2>
-                  
+
                   {/* Opções de Entrega */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
@@ -528,18 +598,16 @@ export default function Checkout({
                       <div
                         key={key}
                         onClick={() => setDeliveryTo(option.type)}
-                        className={`border ${
-                          deliveryTo == option.type
-                            ? "border-yellow-400 bg-yellow-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        } p-3 lg:p-4 cursor-pointer rounded-lg transition-all duration-200 flex gap-3 items-center`}
+                        className={`border ${deliveryTo == option.type
+                          ? "border-yellow-400 bg-yellow-50"
+                          : "border-gray-200 hover:border-gray-300"
+                          } p-3 lg:p-4 cursor-pointer rounded-lg transition-all duration-200 flex gap-3 items-center`}
                       >
                         <div
-                          className={`${
-                            deliveryTo == option.type
-                              ? "border-yellow-500"
-                              : "border-gray-300"
-                          } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
+                          className={`${deliveryTo == option.type
+                            ? "border-yellow-500"
+                            : "border-gray-300"
+                            } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
                         >
                           {deliveryTo == option.type && (
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
@@ -563,7 +631,7 @@ export default function Checkout({
                     <div className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
                       Horário
                     </div>
-                    
+
                     <div className="mt-2">
                       <Swiper
                         spaceBetween={12}
@@ -601,11 +669,10 @@ export default function Checkout({
                               onClick={() =>
                                 setSchedule(`${item.period} - ${item.time}`)
                               }
-                              className={`${
-                                schedule == item.period + " - " + item.time
-                                  ? "text-yellow-600 bg-yellow-50 border-yellow-300"
-                                  : "text-gray-600 hover:text-gray-900 border-gray-200 hover:bg-gray-50"
-                              } border rounded-lg p-3 text-center cursor-pointer transition-all duration-200`}
+                              className={`${schedule == item.period + " - " + item.time
+                                ? "text-yellow-600 bg-yellow-50 border-yellow-300"
+                                : "text-gray-600 hover:text-gray-900 border-gray-200 hover:bg-gray-50"
+                                } border rounded-lg p-3 text-center cursor-pointer transition-all duration-200`}
                             >
                               <div className="text-xs font-medium">{item.period}</div>
                               <div className="font-bold text-sm mt-1">{item.time}</div>
@@ -692,8 +759,8 @@ export default function Checkout({
                             {!isCEPInRegion(address?.zipCode)
                               ? "Entrega indisponível"
                               : !!address?.zipCode
-                              ? `R$ ${moneyFormat(deliveryPrice)}`
-                              : "Informe um endereço"}
+                                ? `R$ ${moneyFormat(deliveryTotal)}`
+                                : "Informe um endereço"}
                           </div>
                         </div>
                       </div>
@@ -717,9 +784,9 @@ export default function Checkout({
                             (term: any, key: any) => (
                               <div key={key} className="flex gap-3">
                                 <div className="pt-1">
-                                  <input 
-                                    type="checkbox" 
-                                    required 
+                                  <input
+                                    type="checkbox"
+                                    required
                                     className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
                                   />
                                 </div>
@@ -738,12 +805,12 @@ export default function Checkout({
                       {/* Botão de Confirmar */}
                       <div className="pt-4">
                         {!!address?.street &&
-                        !!address?.complement &&
-                        !!address?.number &&
-                        !!schedule &&
-                        !!address?.zipCode &&
-                        !!isCEPInRegion(address?.zipCode) &&
-                        isPhoneValid(phone) ? (
+                          !!address?.complement &&
+                          !!address?.number &&
+                          !!schedule &&
+                          !!address?.zipCode &&
+                          !!isCEPInRegion(address?.zipCode) &&
+                          isPhoneValid(phone) ? (
                           <Button
                             loading={form.loading}
                             style="btn-success"
@@ -759,8 +826,8 @@ export default function Checkout({
                             Confirmar e efetuar pagamento
                           </button>
                         )}
+                      </div>
                     </div>
-                  </div>
                   </div>
                 </div>
               </div>
