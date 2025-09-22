@@ -4,8 +4,6 @@ import { ProductType } from "@/src/models/product";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper";
 import { useEffect, useState } from "react";
-import { useGroup } from "@/src/store/filter";
-import { GroupsResponse } from "../src/types/filtros/response";
 import Newsletter from "@/src/components/common/Newsletter";
 import Img from "@/src/components/utils/ImgBase";
 import Icon from "@/src/icons/fontAwesome/FIcon";
@@ -17,7 +15,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import Product from "@/src/components/common/Product";
 import PostItem from "@/src/components/common/PostItem";
-import Filter from "@/src/components/common/Filter";
+import Filter from "@/src/components/common/filters/Filter";
 
 
 export async function getStaticProps(ctx: any) {
