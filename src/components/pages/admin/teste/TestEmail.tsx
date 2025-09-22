@@ -67,7 +67,7 @@ export default function TestEmail({ page }: { page: any }) {
             country: "BRASIL",
           },
           status: 1,
-        } as OrderType,
+        } as unknown as OrderType,
         getContent("delivery")
       );
     }
@@ -94,7 +94,7 @@ export default function TestEmail({ page }: { page: any }) {
             country: "BRASIL",
           },
           status: 1,
-        } as OrderType,
+        } as unknown as OrderType,
         JSON.parse(
           `[{"attributes":[],"details":{"dateStart":"2024-03-17","dateEnd":"2024-03-17","days":0,"schedulingDiscount":"0"},"product":{"unavailable":["2024-03-17"],"title":"Ursinho Azul","id":136,"store":{"id":19,"slug":"circus-festas","title":"Circus Festas"},"vehicle":null,"freeTax":null,"fragility":"no","comercialType":"renting","schedulingTax":null,"schedulingPeriod":null},"quantity":1,"total":20},{"attributes":[],"details":{"dateStart":"2024-03-17","dateEnd":"2024-03-17","days":0,"schedulingDiscount":"0"},"product":{"unavailable":["2024-03-17"],"title":"Miney Kit","id":198,"store":{"id":19,"slug":"circus-festas","title":"Circus Festas"},"vehicle":"pickup","freeTax":null,"fragility":"no","comercialType":"renting","schedulingTax":null,"schedulingPeriod":null},"quantity":1,"total":290}]`
         ),
@@ -124,7 +124,7 @@ export default function TestEmail({ page }: { page: any }) {
             country: "BRASIL",
           },
           status: 1,
-        } as OrderType,
+        } as unknown as OrderType,
         getContent("order_complete")
       );
     }
