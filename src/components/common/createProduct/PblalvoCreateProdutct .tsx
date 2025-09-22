@@ -9,7 +9,7 @@ import { Categorie, Group } from "@/src/types/filtros";
 const MAX = 3;
 
 type Props = {
-  value?: number[];                          // ids pré-selecionados
+  value?: string[];                          // ids pré-selecionados
   onChange?: (id: number) => void;           // legado: emite só adição
   onToggle?: (id: number, selected: boolean) => void; // novo: add/remove
 };

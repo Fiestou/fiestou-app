@@ -41,6 +41,7 @@ import Gallery from "@/src/components/pages/painel/produtos/produto/Gallery";
 import UnavailableDates from "@/src/components/ui/form/UnavailableDates";
 import React from "react";
 import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
+import { Console } from "console";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -111,18 +112,20 @@ export default function Form({
   const [subimitStatus, setSubimitStatus] = useState("" as string);
   const [placeholder, setPlaceholder] = useState(true as boolean);
   const [form, setForm] = useState(formInitial);
+  const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
+  const [colors, setColors] = useState([]);
   const setFormValue = (value: any) => {
     setForm((form) => ({ ...form, ...value }));
   };
-
   const [tags, setTags] = useState("" as string);
-  const [categories, setCategories] = useState([] as Array<any>);
   const [data, setData] = useState({} as ProductType);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [product, setProduct] = useState({} as ProductType);
 
   const handleUnavailableDatesChange = (dates: string[]) => {
     handleData({ unavailableDates: dates });
   };
-  const [colors, setColors] = useState([]);
+
 
   const handleColors = (value: any) => {
     handleData({ color: value.join("|") });
@@ -148,96 +151,34 @@ export default function Form({
     return out;
   };
 
-
-  const categoryValueNums = useMemo(
-    () =>
-      coerceIds(data.category ?? [])
-        .map(Number)
-        .filter(Number.isFinite),
-    [data.category]
-  );
-
-  const setCategoryReplace = useCallback((ids: Array<number | string>) => {
-    const next = Array.from(new Set(coerceIds(ids)));
-    setData((prev) => {
-      const prevCat = coerceIds(prev.category ?? []);
-      return samePipe(prevCat, next) ? prev : { ...prev, category: next };
-    });
-    setCategories((prev) => {
-      const prevCat = coerceIds(prev ?? []);
-      return samePipe(prevCat, next) ? prev : next;
-    });
-  }, []);
-
-  // aplica add/remove pontual a partir do PÚBLICO-ALVO (usa selected)
-  const applyToggleFromPbl = useCallback((id: number | string, selected: boolean) => {
-    const token = coerceIds([id])[0];
-    if (!token) return;
-
-    setData((prev) => {
-      const prevCat = coerceIds(prev.category ?? []);
-      const has = prevCat.includes(token);
-      let next = prevCat;
-
-      if (selected && !has) next = [...prevCat, token];            // adiciona
-      if (!selected && has) next = prevCat.filter((x) => x !== token); // remove
-
-      return samePipe(prevCat, next) ? prev : { ...prev, category: next };
-    });
-
-    // se você ainda usa esse state auxiliar no <Categories />, mantém em sincronia:
-    setCategories((prev: any) => {
-      const prevCat = coerceIds(prev ?? []);
-      const has = prevCat.includes(token);
-      let next = prevCat;
-
-      if (selected && !has) next = [...prevCat, token];
-      if (!selected && has) next = prevCat.filter((x) => x !== token);
-
-      return samePipe(prevCat, next) ? prev : next;
-    });
-  }, []);
-
-  // compara estável
-  const samePipe = (a: string[], b: string[]) =>
-    a.length === b.length && a.every((v, i) => v === b[i]);
-
-  // --- HANDLER 1: público-alvo (1 id por clique)
-  const toIdArray = (raw: number | string | Array<number | string>): string[] => {
-    const arr = Array.isArray(raw) ? raw : [raw];
-    return Array.from(
-      new Set(
-        arr
-          .filter((v) => v !== null && v !== undefined)
-          .map((v) => String(v).trim())
-          .filter((s) => s && s !== "undefined" && s !== "null")
-      )
-    );
-  };
-
-
-
-  // blindagem extra: se alguém setar category "cru"
   const handleData = useCallback((value: Record<string, any>) => {
     setData((prev) => {
+      // ✅ blindagem: só aceita objeto plain
+      console.log(value);
+      if (
+        value == null ||
+        typeof value !== "object" ||
+        Array.isArray(value)
+      ) {
+        console.warn("handleData: valor inválido (esperado objeto):", value);
+        return prev;
+      }
+
       let next = { ...prev };
 
       if ("category" in value) {
         const incoming = coerceIds(value.category);
-
         if (incoming.length) {
           const prevCat = coerceIds(prev.category ?? []);
           const merged = Array.from(new Set([...prevCat, ...incoming]));
           next.category = merged;
         }
-        // se vier vazio, IGNORA (não apaga o que já tinha)
+        // se vier vazio, mantém o que já tinha
       }
 
-      // mescla o restante das chaves normalmente (sem tocar no category já tratado)
       const { category: _ignored, ...rest } = value;
       next = { ...next, ...rest };
 
-      // evita setState desnecessário
       return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
     });
   }, []);
@@ -262,8 +203,6 @@ export default function Form({
     return sanitize({ ...data, category: categoryPipe });
   };
 
-
-  const [productsFind, setProductsFind] = useState([] as Array<RelationType>);
 
   const SearchProducts = async (search: string) => {
     if (search.length >= 3) {
@@ -292,10 +231,6 @@ export default function Form({
     }
   };
 
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [product, setProduct] = useState({} as ProductType);
-
-
   const getProduct = async () => {
     const request: any = await api.bridge({
       method: "get",
@@ -308,12 +243,8 @@ export default function Form({
       assembly: handle.assembly ? handle.assembly : "on",
       store: getStore(),
     };
-
-    const categoryArr = coerceIds(handle.category ?? []); // normaliza aqui
-
     setProduct(handle);
-    setData({ ...handle, category: categoryArr }); // ✅ NÃO faça outro setData depois!
-    setCategories(categoryArr);
+    setData({ ...handle }); // ✅ NÃO faça outro setData depois!
 
     setColors(
       handle?.color && handle.color.split
@@ -638,11 +569,6 @@ export default function Form({
                       }}
                     />
 
-                    <Categories
-                      checked={categories}
-                      emit={(value: any) => handleData({ category: value })}
-                    />
-
                     <div className="border-t pt-4 pb-2">
                       <h4 className="text-2xl text-zinc-900 mb-2">Estoque</h4>
                       <div className="grid gap-2">
@@ -933,13 +859,31 @@ export default function Form({
                     </div>
 
                     <PblalvoCreateProdutct
-                      value={categoryValueNums}                        // 👈 usa o MESMO array
-                      onToggle={(id, selected) => applyToggleFromPbl(id, selected)}
+                      value={coerceIds(data?.category ?? [])}
+                      onToggle={(id, selected) => {
+                        setData((prev) => {
+                          const prevCat = coerceIds(prev?.category ?? []);
+                          const s = new Set(prevCat.map(String));
+                          selected ? s.add(String(id)) : s.delete(String(id));
+                          return { ...prev, category: Array.from(s) };
+                        });
+                      }}
                     />
 
+
                     <CategorieCreateProdutct
-                      value={categoryValueNums}                        // 👈 idem
-                      onChange={(ids) => setCategoryReplace(ids)}      // replace total
+                      value={data?.category ?? []}
+                      onRemove={(id) => {
+                        setData((prev) => {
+                          const curr = (Array.isArray(prev?.category) ? prev.category : []).map(Number).filter(Number.isFinite);
+                          const next = curr.filter((x) => x !== Number(id));
+                          return curr.length === next.length ? prev : { ...prev, category: next };
+                        });
+                      }}
+                      onChange={(ids) => {
+                        // quando o usuário confirmar no modal de filtro, vem a LISTA completa
+                        setData((prev) => ({ ...prev, category: ids }));
+                      }}
                     />
 
 
