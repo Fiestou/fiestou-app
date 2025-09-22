@@ -41,6 +41,11 @@ export interface Group {
   categories: Categorie[];
 }
 
+export type DeliveryItem = {
+  price: number;
+  store_id: number;
+};
+
 export interface Categorie {
   id: number;
   name: string;

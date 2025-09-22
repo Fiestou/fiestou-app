@@ -3,6 +3,7 @@ import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import { useCallback, useEffect, useState } from "react";
 import {
+  calcDeliveryTotal,
   dateBRFormat,
   findDates,
   isCEPInRegion,
@@ -31,6 +32,7 @@ import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckout
 import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { DeliveryItem } from "@/src/types/filtros";
 
 const FormInitialType = {
   sended: false,
@@ -177,10 +179,8 @@ export default function Checkout({
     }
   };
 
-  const [deliveryPrice, setDeliveryPrice] = useState<
-    { price: number; store_id: number }[]
-  >([]);
-  
+  const [deliveryPrice, setDeliveryPrice] = useState<DeliveryItem[]>([]);
+
   const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(false as boolean);
 
   useEffect(() => {
@@ -202,8 +202,17 @@ export default function Checkout({
         });
         setLoadingDeliveryPrice(false);
         console.log("Data", data);
-        if (data.data) {
-          setDeliveryPrice(data.data as { price: number; store_id: number }[]);
+        if (data?.data) {
+          const list: DeliveryItem[] = Array.isArray(data.data)
+            ? data.data.map((x: any): DeliveryItem => ({
+              price: Number(x?.price) || 0,
+              store_id: Number(x?.store_id) || 0,
+            }))
+            : [];
+
+          setDeliveryPrice(list.filter((x) => Number.isFinite(x.price)));
+        } else {
+          setDeliveryPrice([]);
         }
         console.log("Delivery Price", deliveryPrice);
       };
@@ -221,8 +230,8 @@ export default function Checkout({
     }, 0);
 
     setResume({
-      subtotal: subtotal,
-      total: deliveryPrice.reduce((acc, item) => acc + item.price, subtotal),
+      subtotal,
+      total: subtotal + calcDeliveryTotal(deliveryPrice),
       startDate: findDates(dates).minDate,
       endDate: findDates(dates).maxDate,
     });
@@ -239,6 +248,8 @@ export default function Checkout({
       window.location.href = "/acesso";
     }
   }, [user, token]);
+
+  const deliveryTotal = calcDeliveryTotal(deliveryPrice);
 
   const submitOrder = async (e: any) => {
     e.preventDefault();
@@ -403,7 +414,7 @@ export default function Checkout({
       <section className="py-4 sm:py-6 lg:py-10 min-h-screen">
         <form autoComplete="off" onSubmit={(e: any) => submitOrder(e)}>
           <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-6xl">
-            
+
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 xr:gap-12">
               {/* Coluna Principal - Formulário */}
               <div className="w-full lg:w-2/3 xl:w-[68%] space-y-6 lg:space-y-8">
@@ -435,7 +446,7 @@ export default function Checkout({
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
                     Endereço de entrega
                   </h2>
-                  
+
                   {/* Alertas */}
                   {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
                     <div className="flex items-center bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
@@ -449,38 +460,36 @@ export default function Checkout({
                     !address?.number ||
                     !address?.city ||
                     !address?.state) && (
-                    <div className="flex items-start bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
-                      <Icon
-                        icon="fa-exclamation-triangle"
-                        className="mr-2 mt-0.5 flex-shrink-0"
-                      />
-                      <span>
-                        Preencha seu endereço corretamente. Não se esqueça de informar o complemento.
-                      </span>
-                    </div>
-                  )}
+                      <div className="flex items-start bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
+                        <Icon
+                          icon="fa-exclamation-triangle"
+                          className="mr-2 mt-0.5 flex-shrink-0"
+                        />
+                        <span>
+                          Preencha seu endereço corretamente. Não se esqueça de informar o complemento.
+                        </span>
+                      </div>
+                    )}
 
                   {/* Lista de Endereços */}
                   {!!locations.length && !customLocation && (
                     <div className="space-y-3">
                       {locations.map((addr: AddressType, key: any) => (
                         <div
-                          className={`${
-                            addr == address
-                              ? "border-yellow-400 bg-yellow-50"
-                              : "border-gray-200 hover:border-gray-300"
-                          } rounded-lg border cursor-pointer transition-all duration-200`}
+                          className={`${addr == address
+                            ? "border-yellow-400 bg-yellow-50"
+                            : "border-gray-200 hover:border-gray-300"
+                            } rounded-lg border cursor-pointer transition-all duration-200`}
                           key={key}
                           onClick={() => setAddress(addr)}
                         >
                           <div className="flex gap-3 p-3 sm:p-4 items-start">
                             <div className="pt-1">
                               <div
-                                className={`${
-                                  addr?.street == address?.street
-                                    ? "border-yellow-500"
-                                    : "border-gray-300"
-                                } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
+                                className={`${addr?.street == address?.street
+                                  ? "border-yellow-500"
+                                  : "border-gray-300"
+                                  } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
                               >
                                 {addr?.street == address?.street && (
                                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
@@ -551,13 +560,12 @@ export default function Checkout({
                       required
                       value={phone}
                       placeholder="Insira seu telefone aqui"
-                      className={`form-control flex-1 px-3 py-2 rounded-lg border text-sm sm:text-base ${
-                        phone && !isPhoneValid(phone) 
-                        ? 'border-red-500 focus:border-red-500' 
-                        : !hasChanged() 
-                          ? 'bg-gray-100 border-gray-300' 
+                      className={`form-control flex-1 px-3 py-2 rounded-lg border text-sm sm:text-base ${phone && !isPhoneValid(phone)
+                        ? 'border-red-500 focus:border-red-500'
+                        : !hasChanged()
+                          ? 'bg-gray-100 border-gray-300'
                           : 'border-green-500 focus:border-green-600'
-                      } focus:outline-none focus:ring-2 focus:ring-opacity-50`}
+                        } focus:outline-none focus:ring-2 focus:ring-opacity-50`}
                     />
                     <Button
                       onClick={handleSavePhone}
@@ -579,7 +587,7 @@ export default function Checkout({
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
                     Detalhes de entrega
                   </h2>
-                  
+
                   {/* Opções de Entrega */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
@@ -590,18 +598,16 @@ export default function Checkout({
                       <div
                         key={key}
                         onClick={() => setDeliveryTo(option.type)}
-                        className={`border ${
-                          deliveryTo == option.type
-                            ? "border-yellow-400 bg-yellow-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        } p-3 lg:p-4 cursor-pointer rounded-lg transition-all duration-200 flex gap-3 items-center`}
+                        className={`border ${deliveryTo == option.type
+                          ? "border-yellow-400 bg-yellow-50"
+                          : "border-gray-200 hover:border-gray-300"
+                          } p-3 lg:p-4 cursor-pointer rounded-lg transition-all duration-200 flex gap-3 items-center`}
                       >
                         <div
-                          className={`${
-                            deliveryTo == option.type
-                              ? "border-yellow-500"
-                              : "border-gray-300"
-                          } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
+                          className={`${deliveryTo == option.type
+                            ? "border-yellow-500"
+                            : "border-gray-300"
+                            } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
                         >
                           {deliveryTo == option.type && (
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
@@ -625,7 +631,7 @@ export default function Checkout({
                     <div className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
                       Horário
                     </div>
-                    
+
                     <div className="mt-2">
                       <Swiper
                         spaceBetween={12}
@@ -663,11 +669,10 @@ export default function Checkout({
                               onClick={() =>
                                 setSchedule(`${item.period} - ${item.time}`)
                               }
-                              className={`${
-                                schedule == item.period + " - " + item.time
-                                  ? "text-yellow-600 bg-yellow-50 border-yellow-300"
-                                  : "text-gray-600 hover:text-gray-900 border-gray-200 hover:bg-gray-50"
-                              } border rounded-lg p-3 text-center cursor-pointer transition-all duration-200`}
+                              className={`${schedule == item.period + " - " + item.time
+                                ? "text-yellow-600 bg-yellow-50 border-yellow-300"
+                                : "text-gray-600 hover:text-gray-900 border-gray-200 hover:bg-gray-50"
+                                } border rounded-lg p-3 text-center cursor-pointer transition-all duration-200`}
                             >
                               <div className="text-xs font-medium">{item.period}</div>
                               <div className="font-bold text-sm mt-1">{item.time}</div>
@@ -754,8 +759,8 @@ export default function Checkout({
                             {!isCEPInRegion(address?.zipCode)
                               ? "Entrega indisponível"
                               : !!address?.zipCode
-                              ? `R$ ${moneyFormat(deliveryPrice.reduce((acc, item) => acc + item.price, 0))}`
-                              : "Informe um endereço"}
+                                ? `R$ ${moneyFormat(deliveryTotal)}`
+                                : "Informe um endereço"}
                           </div>
                         </div>
                       </div>
@@ -779,9 +784,9 @@ export default function Checkout({
                             (term: any, key: any) => (
                               <div key={key} className="flex gap-3">
                                 <div className="pt-1">
-                                  <input 
-                                    type="checkbox" 
-                                    required 
+                                  <input
+                                    type="checkbox"
+                                    required
                                     className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
                                   />
                                 </div>
@@ -800,12 +805,12 @@ export default function Checkout({
                       {/* Botão de Confirmar */}
                       <div className="pt-4">
                         {!!address?.street &&
-                        !!address?.complement &&
-                        !!address?.number &&
-                        !!schedule &&
-                        !!address?.zipCode &&
-                        !!isCEPInRegion(address?.zipCode) &&
-                        isPhoneValid(phone) ? (
+                          !!address?.complement &&
+                          !!address?.number &&
+                          !!schedule &&
+                          !!address?.zipCode &&
+                          !!isCEPInRegion(address?.zipCode) &&
+                          isPhoneValid(phone) ? (
                           <Button
                             loading={form.loading}
                             style="btn-success"
@@ -821,8 +826,8 @@ export default function Checkout({
                             Confirmar e efetuar pagamento
                           </button>
                         )}
+                      </div>
                     </div>
-                  </div>
                   </div>
                 </div>
               </div>
