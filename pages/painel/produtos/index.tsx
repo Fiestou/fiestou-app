@@ -212,8 +212,6 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                         </div>
                       </div>
                     </div>
-
-                    {/* espaço para outra ação se quiser */}
                     <div />
                   </div>
                 </div>
