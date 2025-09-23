@@ -21,6 +21,7 @@ interface ButtonType {
   disable?: boolean;
   othersAttrs?: any;
   children: ReactNode;
+  rel?: string;
 }
 
 export default function Button(attr: ButtonType) {
@@ -30,41 +31,32 @@ export default function Button(attr: ButtonType) {
   let title = !!attr?.title ? attr?.title : clean(String(attr?.children));
 
   const style: any = {
-    "btn-yellow": `btn bg-yellow-300 text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-yellow-400" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-success": `btn bg-green-500 text-white border border-transparent ${
-      !attr?.disable ? "hover:bg-green-600" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-white": `btn bg-white text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-zinc-100" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-light": `btn bg-zinc-100 text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-zinc-200" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-danger": `btn bg-red-500 text-white border border-transparent ${
-      !attr?.disable ? "hover:bg-red-700" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-dark": `btn bg-zinc-900 text-white border border-transparent ${
-      !attr?.disable ? "hover:bg-zinc-800" : "opacity-75 cursor-not-allowed"
-    }`,
+    "btn-yellow": `btn bg-yellow-300 text-zinc-900 border border-transparent ${!attr?.disable ? "hover:bg-yellow-400" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-success": `btn bg-green-500 text-white border border-transparent ${!attr?.disable ? "hover:bg-green-600" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-white": `btn bg-white text-zinc-900 border border-transparent ${!attr?.disable ? "hover:bg-zinc-100" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-light": `btn bg-zinc-100 text-zinc-900 border border-transparent ${!attr?.disable ? "hover:bg-zinc-200" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-danger": `btn bg-red-500 text-white border border-transparent ${!attr?.disable ? "hover:bg-red-700" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-dark": `btn bg-zinc-900 text-white border border-transparent ${!attr?.disable ? "hover:bg-zinc-800" : "opacity-75 cursor-not-allowed"
+      }`,
     "btn-link": `text-zinc-900 underline font-bold p-0 border border-transparent`,
     "btn-transparent": `font-bold p-0 border border-transparent`,
-    "btn-outline-light": `border text-zinc-900 ${
-      !attr?.disable
+    "btn-outline-light": `border text-zinc-900 ${!attr?.disable
         ? "hover:border-zinc-300 hover:bg-zinc-50"
         : "opacity-75 cursor-not-allowed"
-    }`,
+      }`,
   };
 
   const renderChildren = () => (
     <>
       <span
-        className={`${
-          !!attr?.loading || !!attr?.checked ? "opacity-0" : ""
-        } h-full flex items-center w-100 ${
-          attr?.between ? "justify-between" : "justify-center"
-        } gap-2`}
+        className={`${!!attr?.loading || !!attr?.checked ? "opacity-0" : ""
+          } h-full flex items-center w-100 ${attr?.between ? "justify-between" : "justify-center"
+          } gap-2`}
       >
         {attr?.children}
       </span>
@@ -90,9 +82,8 @@ export default function Button(attr: ButtonType) {
   const attrs = {
     ...(!!attr?.id ? { id: attr?.id } : {}),
     ...(!!attr?.name ? { id: attr?.name } : {}),
-    className: `btn ${style[attr?.style ?? "btn-yellow"]} ${
-      attr?.className ?? ""
-    }`,
+    className: `btn ${style[attr?.style ?? "btn-yellow"]} ${attr?.className ?? ""
+      }`,
     alt: alt ?? "",
     title: title ?? "",
     ...(!!alt || !!title ? { "aria-label": alt ?? title } : {}),
@@ -102,13 +93,12 @@ export default function Button(attr: ButtonType) {
     <button
       {...attrs}
       {...attr?.othersAttrs}
-      type={`${
-        !!attr?.loading || !!attr?.checked || !!attr?.disable
+      type={`${!!attr?.loading || !!attr?.checked || !!attr?.disable
           ? "button"
           : attr?.type ?? "submit"
-      }`}
+        }`}
       onClick={(e) =>
-        !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : {}
+        !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : console.log("Clique bloqueado ou sem função")
       }
     >
       {renderChildren()}

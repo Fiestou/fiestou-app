@@ -55,6 +55,10 @@ export default function Sms({ page }: { page: any }) {
           listItems: [],
           status: 1,
           deliveryTo: "",
+          freights: {
+            zipcode: "",
+            productsIds: []
+          }
         },
         getContent("delivery")
       );
@@ -72,6 +76,10 @@ export default function Sms({ page }: { page: any }) {
           listItems: [],
           status: 1,
           deliveryTo: "",
+          freights: {
+            zipcode: "",
+            productsIds: []
+          }
         },
         [],
         getContent("order")
@@ -90,6 +98,10 @@ export default function Sms({ page }: { page: any }) {
           listItems: [],
           status: 1,
           deliveryTo: "",
+          freights: {
+            zipcode: "",
+            productsIds: []
+          }
         },
         getContent("order_complete")
       );

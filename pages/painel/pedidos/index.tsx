@@ -2,7 +2,6 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
 import { getExtenseData, moneyFormat } from "@/src/helper";
 import Api from "@/src/services/api";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";

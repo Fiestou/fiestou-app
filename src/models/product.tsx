@@ -8,6 +8,7 @@ export interface StoreType {
   id: number | string;
   name: string;
   slug?: string;
+  companyName?: string;
 }
 
 export interface ImageType {
@@ -71,7 +72,7 @@ export interface ProductType {
   height?: string | number;
   attributes?: Array<AttributeType>;
   tags?: string;
-  category?: Array<any>;
+  category?: (string | number)[];
   color?: string | "sem cor";
   combinations?: Array<RelationType>;
   suggestions?: string;

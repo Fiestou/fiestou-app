@@ -5,8 +5,7 @@ import { UserType } from "@/src/models/user";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 
 export default function Clean({
-  params,
-  user,
+  params
 }: {
   params: HeaderType;
   user: UserType;

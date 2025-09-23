@@ -92,7 +92,8 @@ export default function Blog() {
       </section>
       <section className="pt-6">
         <div className="container-medium pb-12">
-          <div className="border">
+          <div className="border"
+          >
             <div className="flex bg-zinc-100 p-8 gap-8 font-bold text-zinc-900 font-title">
               <div className="w-full">Título</div>
               <div className="w-[48rem]">Última atualização</div>
