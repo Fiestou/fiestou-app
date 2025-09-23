@@ -80,4 +80,8 @@
       display: none;
     }
   }
+  .custom-swiper .swiper-button-next,
+  .custom-swiper .swiper-button-prev {
+  @apply text-yellow-400;
+  }
 }

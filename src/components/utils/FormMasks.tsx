@@ -49,6 +49,7 @@ export const validateCpfCnpj = (value: string): boolean => {
 
 /* Mask for CEP */
 export const formatCep = (value: string): string => {
+  if (!value) return "";
   value = value.replace(/\D/g, ""); /* Remove non-digit characters */
 
   if (value.length > 8) {

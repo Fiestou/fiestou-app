@@ -4,7 +4,6 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { UserType } from "@/src/models/user";
 import { StoreType } from "@/src/models/store";
 import { getZipCode, justNumber } from "@/src/helper";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
