@@ -28,6 +28,8 @@ import Gallery from "@/src/components/pages/painel/produtos/produto/Gallery";
 import UnavailableDates from "@/src/components/ui/form/UnavailableDates";
 import React from "react";
 import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
+import NameAndDescription from "../components/NameAndDescriptionProps/NameAndDescriptionProps";
+import { ProductGallery } from "../components/ProductGalleryProps/ProductGalleryProps";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -249,10 +251,12 @@ export default function Form({
     }
   }, []);
 
-  useEffect(() => {
-    console.log(data.category, "datinha");
-  }, [data]);
+  // useEffect(() => {
+  //   console.log(data.category, "datinha");
+  // }, [data]);
 
+
+  // NameAndDescription Props
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,75 +367,17 @@ export default function Form({
               ) : (
                 <div className="w-full grid gap-8">
                   <div className="grid gap-6">
-                    <div className="border-t pt-4 pb-2">
-                      <h4 className="text-2xl text-zinc-900 mb-2">
-                        Nome e descrição
-                      </h4>
-                      <div className="grid gap-2">
-                        <div className="form-group">
-                          <Label>Título</Label>
-                          <input
-                            type="text"
-                            name="titulo"
-                            onChange={(e: any) =>
-                              handleData({ title: e.target.value })
-                            }
-                            value={data?.title ?? ""}
-                            required
-                            placeholder="Digite o nome do produto"
-                            className="form-control"
-                          />
-                          <input
-                            type="text"
-                            name="slug"
-                            onChange={(e: any) =>
-                              handleData({ slug: slugfy(e.target.value) })
-                            }
-                            value={slugfy(data.slug ?? data.title)}
-                            required
-                            placeholder="Configure a slug para o link"
-                            className="mt-2 text-sm p-2 rounded-md bg-zinc-100 border-0"
-                          />
-                        </div>
 
-                        <div className="form-group">
-                          <Label>Subtítulo</Label>
-                          <input
-                            type="text"
-                            name="subtitulo"
-                            onChange={(e: any) =>
-                              handleData({ subtitle: e.target.value })
-                            }
-                            value={data?.subtitle ?? ""}
-                            required
-                            placeholder="Digite o subtítulo do produto"
-                            className="form-control"
-                          />
-                        </div>
+                    {/* NameAndDescriptionProps */}
+                    <NameAndDescription
+                      data={data}
+                      handleData={(updated: Partial<ProductType>) => {
+                        setData((prev) => ({ ...prev, ...updated }));
+                      }}
+                    />
 
-                        <div className="form-group">
-                          <Label>Descrição</Label>
-                          <TextArea
-                            name="descricao"
-                            onChange={(e: any) =>
-                              handleData({ description: e.target.value })
-                            }
-                            value={data.description}
-                            required
-                            placeholder="Adicione a descrição detalhada do produto"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <Gallery
-                            product={data.id}
-                            emitProduct={(productID: number) =>
-                              handleData({ id: productID })
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    {/* ProductGalleryProps */}
+                    <ProductGallery data={data} handleData={handleData} />
 
                     <div className="border-t pt-4 pb-2">
                       <h4 className="text-2xl text-zinc-900 mb-2">Preço</h4>
