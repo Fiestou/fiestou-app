@@ -15,7 +15,7 @@ export default function Gallery({
   product,
   emitProduct,
 }: {
-  product?: number;
+  product?: number | string;
   emitProduct: Function;
 }) {
   const api = new Api();
