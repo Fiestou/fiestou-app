@@ -21,7 +21,6 @@ import Options from "@/src/components/ui/form/OptionsUI";
 import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
 import router from "next/router";
-import Categories from "@/src/components/pages/painel/produtos/produto/Categories";
 import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
 import { getStore, getUser } from "@/src/contexts/AuthContext";
 import axios from "axios";
@@ -29,7 +28,6 @@ import Gallery from "@/src/components/pages/painel/produtos/produto/Gallery";
 import UnavailableDates from "@/src/components/ui/form/UnavailableDates";
 import React from "react";
 import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
-import { Console } from "console";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -846,6 +844,7 @@ export default function Form({
                       </div>
                     </div>
 
+                    {/* Mantém */}
                     <PblalvoCreateProdutct
                       value={coerceIds(data?.category ?? [])}
                       onToggle={(id, selected) => {
@@ -858,7 +857,7 @@ export default function Form({
                       }}
                     />
 
-
+                    {/* Mantém */}
                     <CategorieCreateProdutct
                       value={data?.category ?? []}
                       onRemove={(id) => {
