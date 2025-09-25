@@ -2,10 +2,9 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
 import { ProductType, getPrice } from "@/src/models/product";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/filters/Filter";
@@ -35,14 +34,11 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
     page: Number(params.page ?? 1),
   });
 
-
-
   const onFilterResults = (data: ProductPage<ProductType>) => {
     console.log("fetchProductsDoPainel retornou:", data);
     setProducts(data.items);
     setPlaceholder(false);
   };
-
 
   const RemoveProduct = async (item: ProductType) => {
     setPlaceholder(true);
