@@ -1,14 +1,12 @@
 "use client";
 
 import React from "react";
-import { Label } from "@/src/components/ui/form";
-import { Select } from "@/src/components/ui/form";
-import { justNumber } from "@/src/helper";
+import { Label, Select } from "@/src/components/ui/form";
 
 interface ProductType {
   comercialType?: string;
   schedulingPeriod?: string;
-  schedulingDiscount?: string | number;
+  schedulingDiscount?: number | "";
 }
 
 interface ProductCommercialTypeProps {
@@ -16,78 +14,90 @@ interface ProductCommercialTypeProps {
   handleData: (updated: Partial<ProductType>) => void;
 }
 
-const schedulingPeriod = [
-  {
-    value: "day",
-    name: "por dia",
-  },
-  {
-    value: "night",
-    name: "por noite",
-  },
-  {
-    value: "hour",
-    name: "por hora",
-  },
+const schedulingPeriodOptions = [
+  { value: "day", name: "Por dia" },
+  { value: "night", name: "Por noite" },
+  { value: "hour", name: "Por hora" },
 ];
 
 export const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
   data,
   handleData,
 }) => {
+  const handleComercialTypeChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const value = e.target.value;
+    if (value !== "renting") {
+      handleData({
+        comercialType: value,
+        schedulingPeriod: "",
+        schedulingDiscount: "",
+      });
+    } else {
+      handleData({ comercialType: value });
+    }
+  };
+
+  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleData({ schedulingPeriod: e.target.value });
+  };
+
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numberValue = value === "" ? "" : Number(value);
+    handleData({ schedulingDiscount: numberValue });
+  };
+
   return (
-    <div className="flex gap-2 items-start">
+    <div className="flex flex-col gap-4">
       {/* Tipo comercial */}
       <div className="w-full">
         <Label>Tipo comercial</Label>
         <Select
           name="tipo_comercial"
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-            handleData({ comercialType: e.target.value })
-          }
+          onChange={handleComercialTypeChange}
           value={data.comercialType || ""}
           options={[
             { value: "", name: "Selecione..." },
             { value: "selling", name: "Venda" },
             { value: "renting", name: "Aluguel" },
           ]}
+          required
         />
       </div>
 
-      {/* Se for aluguel, mostra campos extras */}
+      {/* Campos adicionais se for aluguel */}
       {data.comercialType === "renting" && (
-        <>
+        <div className="flex gap-4">
+          {/* Período */}
           <div className="w-full">
-            <Label>Tempo</Label>
+            <Label>Período de aluguel</Label>
             <Select
               name="periodo"
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                handleData({ schedulingPeriod: e.target.value })
-              }
-              value={data?.schedulingPeriod || ""}
-              options={schedulingPeriod}
-              required
+              onChange={handlePeriodChange}
+              value={data.schedulingPeriod || ""}
+              options={[{ value: "", name: "Selecione o período..." }, ...schedulingPeriodOptions]}
             />
           </div>
 
+          {/* Desconto */}
           <div className="w-full">
             <Label>
-              Desconto
-              <small className="font-medium pl-2">(em %)</small>
+              Desconto <small className="font-medium pl-2">(em %)</small>
             </Label>
             <input
               name="desconto_aluguel"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                handleData({ schedulingDiscount: justNumber(e.target.value) })
-              }
-              value={data?.schedulingDiscount ?? ""}
-              type="text"
-              placeholder="Ex: 10%"
-              required
+              onChange={handleDiscountChange}
+              value={data.schedulingDiscount}
+              type="number"
+              placeholder="Ex: 10"
               className="form-control"
+              min={0}
+              max={100}
             />
           </div>
-        </>
+        </div>
       )}
     </div>
   );

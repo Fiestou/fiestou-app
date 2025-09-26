@@ -3,7 +3,7 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
 import Api from "@/src/services/api";
-import { ProductType, getPrice } from "@/src/models/product";
+import { ProductType } from "@/src/models/product";
 import { useState } from "react";
 import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -35,7 +35,6 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
   });
 
   const onFilterResults = (data: ProductPage<ProductType>) => {
-    console.log("fetchProductsDoPainel retornou:", data);
     setProducts(data.items);
     setPlaceholder(false);
   };
@@ -166,7 +165,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
                   <div className="w-full lg:w-[32rem] text-center">
                     <div className="rounded-md bg-zinc-100">
-                      <div className="w-full py-2">R$ {getPrice(item).price}</div>
+                      <div className="w-full py-2">R$ {item.price}</div>
                     </div>
                   </div>
 
@@ -176,8 +175,9 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                     </div>
                   </div>
 
+                  {/* Aluguel ou venda */}
                   <div className="w-full lg:w-[32rem] text-center">
-                    <div className="rounded-md bg-zinc-100 py-2">Para alugar</div>
+                    <div className="rounded-md bg-zinc-100 py-2">{!!item?.comercialType ? "Aluguel" : "Venda"}</div>
                   </div>
 
                   <div className="col-span-2 w-full lg:w-[32rem] text-center grid grid-cols-3 gap-2">
