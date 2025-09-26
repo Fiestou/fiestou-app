@@ -225,7 +225,7 @@ export default function createProduct() {
       setFormValue({ sended: request.response });
       setSubimitStatus("clean_cache");
 
-      await axios.get(`/api/cache?route=/produtos/${request?.data?.slug ?? payload.slug}`);
+      await axios.get(`/api/cache?route=/products/${request?.data?.slug ?? payload.slug}`);
 
       setSubimitStatus("register_complete");
 
