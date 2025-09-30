@@ -79,7 +79,7 @@ export interface ProductType {
   fragility?: string;
   vehicle?: string;
   freeTax?: string;
-  comercialType?: string | "selling" | "renting";
+  comercialType?: string | "aluguel" | "venda";
   unavailableDates?: string[];
   schedulingPeriod?: string;
   schedulingTax?: number;
