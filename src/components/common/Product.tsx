@@ -4,7 +4,6 @@ import Link from "next/link";
 import Img from "@/src/components/utils/ImgBase";
 import { StoreType } from "@/src/models/store";
 import LikeButton from "../ui/LikeButton";
-import { useEffect } from "react";
 import { getImage } from "@/src/helper";
 
 export default function Product({ product }: { product: ProductType | any }) {
@@ -58,7 +57,7 @@ export default function Product({ product }: { product: ProductType | any }) {
               {!!product.rate && (
                 <div className="relative h-[.5rem]">
                   <div className="flex text-[.8rem] gap-1 text-zinc-200">
-                    {[1, 2, 3, 4, 5].map((item, key) => (
+                    {[1, 2, 3, 4, 5].map((key) => (
                       <Icon key={key * 2000} icon="fa-star" type="fa" />
                     ))}
                   </div>
@@ -66,7 +65,7 @@ export default function Product({ product }: { product: ProductType | any }) {
                     style={{ width: `${(product.rate * 100) / 5}%` }}
                     className="flex absolute top-0 left-0 text-[.8rem] gap-1 text-yellow-500 overflow-hidden"
                   >
-                    {[1, 2, 3, 4, 5].map((item, key) => (
+                    {[1, 2, 3, 4, 5].map((key) => (
                       <Icon key={key * 200} icon="fa-star" type="fa" />
                     ))}
                   </div>
@@ -87,7 +86,7 @@ export default function Product({ product }: { product: ProductType | any }) {
           <div className="whitespace-nowrap pt-4">
             <div className="text-[.8rem] h-[1rem]">
               {getPrice(product).priceFromFor &&
-              !!getPrice(product).priceLow ? (
+                !!getPrice(product).priceLow ? (
                 <>
                   de
                   <span className="line-through mx-1">

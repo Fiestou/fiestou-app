@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Label, Select } from "@/src/components/ui/form";
 
 interface ProductType {
@@ -28,7 +28,7 @@ export const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
     const value = e.target.value;
-    if (value !== "renting") {
+    if (value !== "aluguel") {
       handleData({
         comercialType: value,
         schedulingPeriod: "",
@@ -38,6 +38,9 @@ export const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
       handleData({ comercialType: value });
     }
   };
+  useEffect(() => {
+    console.log("data.comercialType changed:", data);
+  }, [data]);
 
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     handleData({ schedulingPeriod: e.target.value });
@@ -60,15 +63,15 @@ export const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
           value={data.comercialType || ""}
           options={[
             { value: "", name: "Selecione..." },
-            { value: "selling", name: "Venda" },
-            { value: "renting", name: "Aluguel" },
+            { value: "venda", name: "Venda" },
+            { value: "aluguel", name: "Aluguel" },
           ]}
           required
         />
       </div>
 
       {/* Campos adicionais se for aluguel */}
-      {data.comercialType === "renting" && (
+      {data.comercialType === "aluguel" && (
         <div className="flex gap-4">
           {/* Período */}
           <div className="w-full">
