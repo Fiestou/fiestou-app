@@ -785,9 +785,7 @@ export default function Produto({
                         </Badge>
                       )}
                       <Badge style="light">
-                        {product?.comercialType == "selling"
-                          ? "Para venda"
-                          : "Para alugar"}
+                        {(product?.comercialType as string).charAt(0).toUpperCase() + (product?.comercialType as string).slice(1)}
                       </Badge>
                     </div>
 
