@@ -48,9 +48,9 @@ export default function Variations({
     let update = variations.map((variation, key) =>
       id == variation.id
         ? {
-            ...variation,
-            ...value,
-          }
+          ...variation,
+          ...value,
+        }
         : variation
     );
     emitVariations(update);
@@ -86,9 +86,9 @@ export default function Variations({
                         onBlur={(e: any) =>
                           !e.target.value
                             ? updateVariation(
-                                { title: `Variação ${key + 1}` },
-                                variation.id
-                              )
+                              { title: `Variação ${key + 1}` },
+                              variation.id
+                            )
                             : {}
                         }
                         type="text"
@@ -116,9 +116,9 @@ export default function Variations({
                       </div>
                     </div>
                   )}
-                  <div className="w-fit relative group-focus-within:z-10">
+                  {/* <div className="w-fit relative group-focus-within:z-10">
                     {!!variation?.image && !!product?.gallery?.length ? (
-                      product?.gallery
+                      (product?.gallery ?? [])
                         .filter((item: any) => item.id == variation.image)
                         .map((image: any, index) => (
                           <div
@@ -162,33 +162,26 @@ export default function Variations({
                           className="fixed inset-0 z-[5]"
                         ></div>
                         <div className="absolute z-10 grid bg-white text-sm rounded-md shadow-md w-full p-1">
-                          {!!product?.gallery?.length &&
-                            product?.gallery.map((image: any, key) => (
+                          {Array.isArray(product?.gallery) &&
+                            product.gallery.map((image: any, key) => (
                               <div
                                 key={key}
                                 onClick={() => {
-                                  updateVariation(
-                                    { image: image.id },
-                                    variation.id
-                                  );
+                                  updateVariation({ image: image.id }, variation.id);
                                   setActive("");
                                 }}
-                                className={`p-1 flex items-center gap-1 cursor-pointer rounded ease hover:bg-gray-100`}
+                                className="p-1 flex items-center gap-1 cursor-pointer rounded ease hover:bg-gray-100"
                               >
-                                <img
-                                  src={getImage(image, "thumb")}
-                                  className="rounded"
-                                />
+                                <img src={getImage(image, "thumb")} className="rounded" />
                               </div>
                             ))}
                         </div>
                       </>
                     )}
-                  </div>
+                  </div> */}
                   <div
-                    className={`${
-                      collapseTrash == variation.id ? "hidden" : ""
-                    } w-fit`}
+                    className={`${collapseTrash == variation.id ? "hidden" : ""
+                      } w-fit`}
                   >
                     <Button
                       type="button"

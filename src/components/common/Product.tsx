@@ -21,6 +21,10 @@ export default function Product({ product }: { product: ProductType | any }) {
 
   let store: StoreType = product?.store ?? {};
 
+  const comercialType = product?.comercialType || '';
+  const capitalizedComercialType = comercialType ? comercialType.charAt(0).toUpperCase() + comercialType.slice(1) : '';
+  const isSelling = comercialType === 'selling';
+
   return (
     <div className="group w-full h-full flex flex-col relative rounded-xl overflow-hidden">
       <div>
@@ -48,19 +52,19 @@ export default function Product({ product }: { product: ProductType | any }) {
             </div>
             <div className="w-full pt-3 flex gap-2 md:gap-2 items-center">
               <div className="w-fit">
-                {product.comercialType == "selling" ? (
+                {isSelling ? (
                   <div className="flex items-center gap-1 bg-blue-100 whitespace-nowrap text-blue-900 rounded text-xs px-2 py-1">
                     <Icon
                       icon="fa-shopping-bag"
                       className="text-xs"
                       type="far"
                     />
-                    <span>Para venda</span>
+                    <span>{capitalizedComercialType}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 bg-lime-100 whitespace-nowrap text-lime-900 rounded text-xs px-2 py-1">
                     <Icon icon="fa-clock" className="text-xs" type="far" />
-                    <span>Para alugar</span>
+                    <span>{capitalizedComercialType || 'Para alugar'}</span>
                   </div>
                 )}
               </div>
