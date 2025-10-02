@@ -16,7 +16,7 @@ import { ProductType } from "@/src/models/product";
 import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
 import { getStore } from "@/src/contexts/AuthContext";
-import { realMoneyNumberValue } from "@/src/helper";  // Parser: string/any → number
+// import { realMoneyNumber } from "@/src/helper";  // Removed since it expects 0 arguments
 
 import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
 import NameAndDescription from "../components/name-and-description/NameAndDescriptionProps";
@@ -55,9 +55,21 @@ export default function createProduct() {
   const [data, setData] = useState({} as ProductType);
   const [product, setProduct] = useState({} as ProductType);
 
+  // Simple parser for Brazilian real money string to number
+  const parseRealMoneyNumber = (value: string): number => {
+    if (!value) return 0;
+    // Remove currency symbol and non-numeric chars except comma and dot
+    const cleaned = value.replace(/[^\d.,]/g, '');
+    // Replace dot with empty (thousands separator in BR is dot)
+    const withDotReplaced = cleaned.replace(/\./g, '');
+    // Replace comma with dot for decimal
+    const final = withDotReplaced.replace(',', '.');
+    return parseFloat(final) || 0;
+  };
+
   // Wrapper pra formatar: usa o parser e converte pra string monetária (R$)
   const formatRealMoney = (value: string): string => {
-    const numValue = realMoneyNumberValue(value);  // Parse pra number
+    const numValue = parseRealMoneyNumber(value);  // Parse pra number
     return numValue.toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL'
