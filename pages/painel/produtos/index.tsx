@@ -177,7 +177,9 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
                   {/* Aluguel ou venda */}
                   <div className="w-full lg:w-[32rem] text-center">
-                  <div className="rounded-md bg-zinc-100 py-2">{item.comercialType}</div>
+                    <div className="rounded-md bg-zinc-100 py-2">
+                      {(item.comercialType as string).charAt(0).toUpperCase() + (item.comercialType as string).slice(1)}
+                    </div>
                   </div>
 
                   <div className="col-span-2 w-full lg:w-[32rem] text-center grid grid-cols-3 gap-2">
