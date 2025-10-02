@@ -16,7 +16,6 @@ import {
   getImage,
   getSummary,
   isMobileDevice,
-  moneyFormat,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { useEffect, useRef, useState } from "react";
@@ -150,6 +149,16 @@ export default function Produto({
     details: {},
     total: getPriceValue(product).price,
   });
+
+  const formatMoney = (value: any): string => {
+    const num = typeof value === 'string' 
+      ? parseFloat(value.replace(/\./g, '').replace(',', '.')) 
+      : Number(value);
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  };
 
   useEffect(() => {
     setBlockdate(product.unavailableDates ?? []);
@@ -830,7 +839,7 @@ export default function Produto({
                         <div className="text-sm">
                           de
                           <span className="line-through mx-1">
-                            R$ {getPrice(product).priceHigh}
+                            R$ {formatMoney(getPrice(product).priceHigh)}
                           </span>
                           por
                         </div>
@@ -841,16 +850,16 @@ export default function Produto({
                         R${" "}
                         {!!product?.schedulingTax &&
                         product?.schedulingTax > getPriceValue(product).price
-                          ? moneyFormat(product?.schedulingTax)
-                          : moneyFormat(getPriceValue(product).price)}
+                          ? formatMoney(product?.schedulingTax)
+                          : formatMoney(getPriceValue(product).price)}
                       </h3>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid gap-6">
-                  {!!product?.attributes &&
-                    (product?.attributes ?? [])?.map((attribute, index) => (
+                  {Array.isArray(product?.attributes) &&
+                    product?.attributes.map((attribute, index) => (
                       <div key={index} className="md:pt-4">
                         <div className="font-title text-zinc-900 font-bold py-4 text-sm lg:text-lg">
                           {attribute.title}
@@ -944,7 +953,7 @@ export default function Produto({
 
                                 <div className="w-fit py-1 whitespace-nowrap">
                                   {!!item?.price
-                                    ? `R$ ${moneyFormat(item.price)}`
+                                    ? `R$ ${formatMoney(item.price)}`
                                     : ""}
                                 </div>
 
@@ -1053,7 +1062,7 @@ export default function Produto({
                         </div>
 
                         <span className="text-zinc-600 text-sm">
-                          Frete: R$ {moneyFormat(deliveryFee)}.
+                          Frete: R$ {formatMoney(deliveryFee)}.
                         </span>
                       </div>
                     )}
@@ -1135,7 +1144,7 @@ export default function Produto({
                             Total:
                           </div>
                           <div className="font-bold text-zinc-900 text-lg whitespace-nowrap">
-                            R$ {moneyFormat(productToCart.total)}
+                            R$ {formatMoney(productToCart.total)}
                           </div>
                         </div>
 

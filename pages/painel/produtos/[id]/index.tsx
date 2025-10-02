@@ -16,7 +16,7 @@ import { ProductType } from "@/src/models/product";
 import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
 import { getStore } from "@/src/contexts/AuthContext";
-import { realMoneyNumber } from "@/src/helper";
+import { realMoneyNumberValue } from "@/src/helper";  // Parser: string/any → number
 
 import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
 import NameAndDescription from "../components/name-and-description/NameAndDescriptionProps";
@@ -54,6 +54,15 @@ export default function createProduct() {
   const [tags, setTags] = useState("");
   const [data, setData] = useState({} as ProductType);
   const [product, setProduct] = useState({} as ProductType);
+
+  // Wrapper pra formatar: usa o parser e converte pra string monetária (R$)
+  const formatRealMoney = (value: string): string => {
+    const numValue = realMoneyNumberValue(value);  // Parse pra number
+    return numValue.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });  // Formata como "R$ 1.234,56"
+  };
 
   const setFormValue = (value: any) => setForm((prev) => ({ ...prev, ...value }));
 
@@ -310,7 +319,7 @@ export default function createProduct() {
                     onChange={(ids) => setData(prev => ({ ...prev, category: ids }))}
                   />
                   <ProductBundle data={data} handleData={handleData} productsFind={productsFind} SearchProducts={SearchProducts} />
-                  <TransportSection data={data} handleData={handleData} realMoneyNumber={realMoneyNumber} />
+                  <TransportSection data={data} handleData={handleData} realMoneyNumber={formatRealMoney} />  {/* <-- Passando o wrapper */}
                   <VisibilitySection data={data} handleData={handleData} />
                 </div>
 

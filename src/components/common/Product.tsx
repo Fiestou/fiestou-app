@@ -6,6 +6,16 @@ import { StoreType } from "@/src/models/store";
 import LikeButton from "../ui/LikeButton";
 import { getImage } from "@/src/helper";
 
+const formatMoney = (value: any): string => {
+  const num = typeof value === 'string' 
+    ? parseFloat(value.replace(/\./g, '').replace(',', '.')) 
+    : Number(value);
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num);
+};
+
 export default function Product({ product }: { product: ProductType | any }) {
   const imageCover = !!product?.gallery?.length ? product?.gallery[0] : {};
 
@@ -90,7 +100,7 @@ export default function Product({ product }: { product: ProductType | any }) {
                 <>
                   de
                   <span className="line-through mx-1">
-                    R$ {getPrice(product).priceHigh}
+                    R$ {formatMoney(getPrice(product).priceHigh)}
                   </span>
                   por
                 </>
@@ -99,7 +109,7 @@ export default function Product({ product }: { product: ProductType | any }) {
               )}
             </div>
             <h3 className="font-bold text-2xl text-zinc-800">
-              R$ {getPrice(product).price}
+              R$ {formatMoney(getPrice(product).price)}
             </h3>
           </div>
         </div>
