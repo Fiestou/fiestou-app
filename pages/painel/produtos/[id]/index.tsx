@@ -156,7 +156,7 @@ export default function CreateProduct() {
         data: {
           store: Cookies.get("fiestou.store"),
           busca: search,
-          limit: 10,
+          limit: 100,
         },
       });
 
@@ -394,11 +394,11 @@ export default function CreateProduct() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="w-full">
+                  <div className="w-full ">
                     <Link
                       passHref
                       href="/painel/produtos/"
-                      className="text-zinc-900"
+                      className="border border-red-500 py-4 px-[26px] rounded-[7px] bg-red-500 text-white hover:bg-red-600 transition duration-300"
                     >
                       Cancelar
                     </Link>
