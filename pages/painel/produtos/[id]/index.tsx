@@ -379,7 +379,6 @@ export default function CreateProduct() {
                       setData((prev) => ({ ...prev, category: ids }))
                     }
                   />
-                  asd
                   <ProductBundle
                     data={data}
                     handleData={handleData}
