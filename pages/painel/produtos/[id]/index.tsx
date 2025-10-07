@@ -84,8 +84,8 @@ export default function CreateProduct() {
     let arr: any[] = Array.isArray(raw)
       ? raw
       : typeof raw === "string"
-        ? raw.split(/[|,]/g)
-        : [raw];
+      ? raw.split(/[|,]/g)
+      : [raw];
 
     const out: string[] = [];
     const seen = new Set<string>();
@@ -182,7 +182,11 @@ export default function CreateProduct() {
     });
 
     let handle = request.data ?? {};
-    handle = { ...handle, assembly: handle.assembly ?? "on", store: getStore() };
+    handle = {
+      ...handle,
+      assembly: handle.assembly ?? "on",
+      store: getStore(),
+    };
 
     setProduct(handle);
     setData({ ...handle, color: handle.color });
@@ -190,8 +194,8 @@ export default function CreateProduct() {
       handle?.color?.split
         ? handle.color.split("|")
         : handle?.color
-          ? [handle.color]
-          : []
+        ? [handle.color]
+        : []
     );
     setPlaceholder(false);
   };
@@ -269,7 +273,10 @@ export default function CreateProduct() {
     return <div className="container-medium py-6">Carregando...</div>;
 
   return (
-    <Template header={{ template: "painel", position: "solid" }} footer={{ template: "clean" }}>
+    <Template
+      header={{ template: "painel", position: "solid" }}
+      footer={{ template: "clean" }}
+    >
       <section className="container-medium py-6 lg:py-12">
         <div className="flex justify-between pb-4">
           <Breadcrumbs
@@ -329,12 +336,14 @@ export default function CreateProduct() {
                   <ProductCommercialType data={data} handleData={handleData} />
                   <Variable
                     product={data}
-                    emitAttributes={(param) => handleData({ attributes: param })}
+                    emitAttributes={(param) =>
+                      handleData({ attributes: param })
+                    }
                   />
                   <ProductStock
-                    data={product}
+                    data={data}
                     handleData={(updated) =>
-                      setProduct((prev) => ({ ...prev, ...updated }))
+                      setData((prev) => ({ ...prev, ...updated }))
                     }
                   />
                   <UnavailablePeriods data={data} handleData={handleData} />
@@ -356,9 +365,7 @@ export default function CreateProduct() {
                     onRemove={(id) =>
                       setData((prev) => {
                         const curr = (
-                          Array.isArray(prev?.category)
-                            ? prev.category
-                            : []
+                          Array.isArray(prev?.category) ? prev.category : []
                         )
                           .map(Number)
                           .filter(Number.isFinite);
@@ -368,8 +375,11 @@ export default function CreateProduct() {
                           : { ...prev, category: next };
                       })
                     }
-                    onChange={(ids) => setData((prev) => ({ ...prev, category: ids }))}
+                    onChange={(ids) =>
+                      setData((prev) => ({ ...prev, category: ids }))
+                    }
                   />
+                  asd
                   <ProductBundle
                     data={data}
                     handleData={handleData}
@@ -386,7 +396,11 @@ export default function CreateProduct() {
 
                 <div className="flex items-center gap-4">
                   <div className="w-full">
-                    <Link passHref href="/painel/produtos/" className="text-zinc-900">
+                    <Link
+                      passHref
+                      href="/painel/produtos/"
+                      className="text-zinc-900"
+                    >
                       Cancelar
                     </Link>
                   </div>
@@ -413,18 +427,21 @@ export default function CreateProduct() {
               {subimitStatus === "upload_images"
                 ? "Enviando imagens..."
                 : subimitStatus === "register_content"
-                  ? "Salvando produto..."
-                  : subimitStatus === "clean_cache"
-                    ? "Limpando cache..."
-                    : subimitStatus === "register_complete"
-                      ? "Salvo com sucesso!"
-                      : ""}
+                ? "Salvando produto..."
+                : subimitStatus === "clean_cache"
+                ? "Limpando cache..."
+                : subimitStatus === "register_complete"
+                ? "Salvo com sucesso!"
+                : ""}
             </div>
             <div className="text-2xl">
               {subimitStatus === "register_complete" ? (
                 <Icon icon="fa-check-circle" className="text-green-500" />
               ) : (
-                <Icon icon="fa-spinner-third" className="animate-spin text-yellow-500" />
+                <Icon
+                  icon="fa-spinner-third"
+                  className="animate-spin text-yellow-500"
+                />
               )}
             </div>
           </div>
