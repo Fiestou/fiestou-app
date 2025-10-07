@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import { Label } from "@/src/components/ui/form"; // ajuste o caminho se necessário
-import { Select } from "@/src/components/ui/form"; // ajuste o caminho se necessário
-import { justNumber } from "@/src/helper"; // ajuste o caminho se necessário
+import { Label, Select } from "@/src/components/ui/form";
+import { justNumber } from "@/src/helper";
 import { ProductType } from "@/src/models/product";
 
 interface ProductStockProps {
@@ -12,6 +11,31 @@ interface ProductStockProps {
 }
 
 export const ProductStock: React.FC<ProductStockProps> = ({ data, handleData }) => {
+  // SKU (somente números e até 9 dígitos)
+  const handleSkuChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, ""); // só números
+    if (value.length > 9) value = value.slice(0, 9); // corta se passar de 9
+    handleData({ sku: value });
+  };
+
+  // Disponibilidade (1 a 31 dias)
+  const handleAvailabilityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = Number(e.target.value);
+    if (isNaN(value)) value = 1;
+    if (value > 31) value = 31;
+    if (value < 1) value = 1;
+    handleData({ availability: value });
+  };
+
+  // Quantidade (0 a 9999)
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = Number(justNumber(e.target.value)); // converte para number
+    if (isNaN(value)) value = 0;
+    if (value > 9999) value = 9999;
+    if (value < 0) value = 0;
+    handleData({ quantity: value });
+  };
+
   return (
     <div className="border-t pt-4 pb-2">
       <h4 className="text-2xl text-zinc-900 mb-2">Estoque</h4>
@@ -24,17 +48,16 @@ export const ProductStock: React.FC<ProductStockProps> = ({ data, handleData }) 
             <div className="form-group">
               <div className="flex items-center">
                 <Label>SKU</Label>
-                <span className="pl-2 text-xs">(código do produto)</span>
+                <span className="pl-2 text-xs">(até 9 dígitos)</span>
               </div>
               <input
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleData({ availability: Number(e.target.value) })
-                }
+                onChange={handleSkuChange}
                 value={data?.sku ?? ""}
                 type="text"
                 name="sku"
                 placeholder="#0000"
                 className="form-control"
+                maxLength={9}
               />
             </div>
 
@@ -42,14 +65,13 @@ export const ProductStock: React.FC<ProductStockProps> = ({ data, handleData }) 
             <div className="form-group">
               <div className="flex items-center">
                 <Label>Disponibilidade</Label>
-                <span className="pl-2 text-xs">(em dias)</span>
+                <span className="pl-2 text-xs">(1 a 31 dias)</span>
               </div>
               <input
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleData({ quantity: Number(e.target.value) })
-                }
+                onChange={handleAvailabilityChange}
                 value={data?.availability ?? 1}
                 min={1}
+                max={31}
                 type="number"
                 name="disponibilidade"
                 placeholder="Em dias"
@@ -83,15 +105,14 @@ export const ProductStock: React.FC<ProductStockProps> = ({ data, handleData }) 
             {(!data?.quantityType || data?.quantityType === "manage") && (
               <div className="w-full">
                 <input
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleData({ quantity: justNumber(e.target.value) })
-                  }
-                  value={justNumber(data?.quantity) ?? ""}
+                  onChange={handleQuantityChange}
+                  value={data?.quantity ?? ""}
                   min={0}
+                  max={9999}
                   className="form-control text-center"
                   type="number"
                   name="quantidade"
-                  placeholder="Digite a quantidade"
+                  placeholder="Digite a quantidade (máx. 9999)"
                   required
                 />
               </div>
