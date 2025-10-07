@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Label } from "@/src/components/ui/form"; // ajuste conforme sua estrutura
-import { decimalNumber } from "@/src/helper"; // ajuste conforme onde essa função está
+import { Label } from "@/src/components/ui/form";
+import { decimalNumber } from "@/src/helper";
 
 interface ProductType {
   weight?: number | string;
@@ -30,7 +30,7 @@ export const ProductDimensions: React.FC<ProductDimensionsProps> = ({
           <Label>Peso</Label>
           <input
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleData({ weight: decimalNumber(e.target.value) })
+              handleData({ weight: e.target.value })
             }
             value={data?.weight ?? ""}
             type="text"

@@ -13,7 +13,7 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
   onChange,
   minDate = new Date()
 }) => {
-  const [selectedDates, setSelectedDates] = useState<string[]>(initialDates);
+  const [selectedDates, setSelectedDates] = useState<string[]>(initialDates ?? []);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -70,8 +70,9 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
   };
 
   const isDateSelected = (dateString: string): boolean => {
-    return selectedDates.includes(dateString);
+    return Array.isArray(selectedDates) && selectedDates.includes(dateString);
   };
+  console.log("initialDates recebido:", initialDates);
 
   const isDateDisabled = (date: Date): boolean => {
     return date < minDate;
@@ -117,9 +118,9 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
 
   const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
-   const displayText = (selectedDates?.length ?? 0) > 0
-  ? `${selectedDates.length} data${selectedDates.length > 1 ? 's' : ''} selecionada${selectedDates.length > 1 ? 's' : ''}`
-  : 'Selecione as datas indisponíveis';
+  const displayText = (selectedDates?.length ?? 0) > 0
+    ? `${selectedDates.length} data${selectedDates.length > 1 ? 's' : ''} selecionada${selectedDates.length > 1 ? 's' : ''}`
+    : 'Selecione as datas indisponíveis';
 
 
 

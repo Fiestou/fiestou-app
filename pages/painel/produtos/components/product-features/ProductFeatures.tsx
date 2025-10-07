@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Label } from "@/src/components/ui/form";
-import { Button } from "@/src/components/ui/form";
+import { Label, Button } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Colors from "@/src/components/ui/form/ColorsUI";
 import { handleTags as handleTagsUtil } from "@/src/helper";
 
 interface ProductType {
-  colors?: string[];
+  color?: string;
   tags?: string;
 }
 
@@ -21,31 +20,35 @@ export const ProductFeatures: React.FC<ProductFeaturesProps> = ({
   data,
   handleData,
 }) => {
-  const [colors, setColors] = useState<string[]>(data?.colors ?? []);
-  const [tags, setTags] = useState<string>("");
+  const [colors, setColors] = useState<string[]>(
+    data.color ? data.color.split("|") : []
+  );
+  const [tagInput, setTagInput] = useState<string>("");
 
   // Atualiza cores
   const handleColorsChange = (newColors: string[]) => {
     setColors(newColors);
-    handleData({ colors: newColors });
+    handleData({ color: newColors.join("|") }); // 👈 volta a ser string
   };
 
-  // Adiciona ou remove tags
+  // Adiciona uma nova tag
   const handleAddTag = () => {
-    const updatedTags = handleTagsUtil(data?.tags ?? "", tags);
+    if (!tagInput.trim()) return;
+
+    const updatedTags = handleTagsUtil(data?.tags ?? "", tagInput.trim());
     handleData({ tags: updatedTags });
-    setTags("");
+    setTagInput("");
   };
 
+  // Remove tag existente
   const handleRemoveTag = (tagToRemove: string) => {
-    const updatedTags = handleTagsUtil(
-      data?.tags?.replace(tagToRemove, "") ?? "",
-      ""
-    );
+    const tagsArray = data?.tags?.split(",").map(t => t.trim()).filter(Boolean) ?? [];
+    const updatedTags = tagsArray.filter(tag => tag !== tagToRemove).join(",");
     handleData({ tags: updatedTags });
   };
 
-  const tagList = (data?.tags?.split(",").filter(Boolean) ?? []).slice(0, 6);
+  // Lista de tags limitadas a 6
+  const tagList = (data?.tags?.split(",").map(t => t.trim()).filter(Boolean) ?? []).slice(0, 6);
 
   return (
     <div className="border-t pt-4 pb-2">
@@ -55,9 +58,9 @@ export const ProductFeatures: React.FC<ProductFeaturesProps> = ({
         {/* Cores */}
         <div>
           <Label>Cor</Label>
-          <Colors value={colors} onChange={handleColorsChange} />
+          <Colors value={colors} onChange={handleColorsChange} maxSelect={3} />
           <div className="text-sm text-zinc-400 whitespace-nowrap">
-            {colors.filter(Boolean).length} de 3
+            {colors.length} de 3
           </div>
         </div>
 
@@ -69,17 +72,14 @@ export const ProductFeatures: React.FC<ProductFeaturesProps> = ({
           </div>
 
           <div className="relative">
-            <div className="w-full">
-              <input
-                type="text"
-                name="tags"
-                value={tags ?? ""}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="Exemplo: Fazenda, Desenho animado, Galinha"
-                className="form-control pr-28"
-              />
-            </div>
-
+            <input
+              type="text"
+              name="tags"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              placeholder="Exemplo: Fazenda, Desenho animado, Galinha"
+              className="form-control pr-28 w-full"
+            />
             <div className="absolute right-0 top-1/2 -translate-y-1/2">
               <Button
                 type="button"
@@ -98,7 +98,7 @@ export const ProductFeatures: React.FC<ProductFeaturesProps> = ({
               {tagList.map((item, key) => (
                 <div
                   key={key}
-                  className="bg-zinc-100 border border-zinc-300 px-4 py-2 rounded-md items-center flex gap-3"
+                  className="bg-zinc-100 border border-zinc-300 px-4 py-2 rounded-md flex items-center gap-3"
                 >
                   <span className="text-sm md:text-base">{item}</span>
                   <div
