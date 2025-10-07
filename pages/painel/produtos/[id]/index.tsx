@@ -16,9 +16,10 @@ import { ProductType } from "@/src/models/product";
 import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
 import { getStore } from "@/src/contexts/AuthContext";
-// import { realMoneyNumber } from "@/src/helper";  // Removed since it expects 0 arguments
+import { realMoneyNumber } from "@/src/helper";
 
 import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
+
 import NameAndDescription from "../components/name-and-description/NameAndDescriptionProps";
 import { ProductGallery } from "../components/product-image/ProductGalleryProps";
 import { ProductPrice } from "../components/product-price/ProductPrice";
@@ -38,10 +39,9 @@ const formInitial = {
   dropdown: 0,
 };
 
-export default function createProduct() {
+export default function CreateProduct() {
   const router = useRouter();
   const { id } = router.query;
-
   const api = new Api();
 
   const [content, setContent] = useState<any>({});
@@ -55,28 +55,29 @@ export default function createProduct() {
   const [data, setData] = useState({} as ProductType);
   const [product, setProduct] = useState({} as ProductType);
 
-  // Simple parser for Brazilian real money string to number
+  // Parser para converter string de dinheiro brasileiro para número
   const parseRealMoneyNumber = (value: string): number => {
     if (!value) return 0;
-    // Remove currency symbol and non-numeric chars except comma and dot
-    const cleaned = value.replace(/[^\d.,]/g, '');
-    // Replace dot with empty (thousands separator in BR is dot)
-    const withDotReplaced = cleaned.replace(/\./g, '');
-    // Replace comma with dot for decimal
-    const final = withDotReplaced.replace(',', '.');
+    const cleaned = value.replace(/[^\d.,]/g, "");
+    const withDotReplaced = cleaned.replace(/\./g, "");
+    const final = withDotReplaced.replace(",", ".");
     return parseFloat(final) || 0;
   };
 
-  // Wrapper pra formatar: usa o parser e converte pra string monetária (R$)
+  // Formatar número para string monetária
   const formatRealMoney = (value: string): string => {
-    const numValue = parseRealMoneyNumber(value);  // Parse pra number
-    return numValue.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    });  // Formata como "R$ 1.234,56"
+    const numValue = parseRealMoneyNumber(value);
+    return numValue.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
   };
 
-  const setFormValue = (value: any) => setForm((prev) => ({ ...prev, ...value }));
+  const setFormValue = (value: any) =>
+    setForm((prev) => ({
+      ...prev,
+      ...value,
+    }));
 
   const coerceIds = (raw: any): string[] => {
     if (raw == null) return [];
@@ -88,6 +89,7 @@ export default function createProduct() {
 
     const out: string[] = [];
     const seen = new Set<string>();
+
     for (const v of arr) {
       const idRaw =
         v && typeof v === "object"
@@ -106,7 +108,8 @@ export default function createProduct() {
 
   const handleData = useCallback((value: Record<string, any>) => {
     setData((prev) => {
-      if (!value || typeof value !== "object" || Array.isArray(value)) return prev;
+      if (!value || typeof value !== "object" || Array.isArray(value))
+        return prev;
 
       let next = { ...prev };
 
@@ -164,7 +167,6 @@ export default function createProduct() {
           image: [],
           title: item.title,
         }));
-
         setProductsFind(handle);
         return handle;
       }
@@ -181,24 +183,26 @@ export default function createProduct() {
 
     let handle = request.data ?? {};
     handle = { ...handle, assembly: handle.assembly ?? "on", store: getStore() };
+
     setProduct(handle);
-    setData({ ...handle });
-
+    setData({ ...handle, color: handle.color });
     setColors(
-      handle?.color?.split ? handle.color.split("|") : handle?.color ? [handle.color] : []
+      handle?.color?.split
+        ? handle.color.split("|")
+        : handle?.color
+          ? [handle.color]
+          : []
     );
-
     setPlaceholder(false);
   };
 
-  // Fetch content e product
+  // Carregar conteúdo e produto
   useEffect(() => {
     if (!id) return;
 
     (async () => {
       try {
         setLoadingContent(true);
-
         const request: any = await api.call({
           method: "post",
           url: "request/graph",
@@ -246,7 +250,9 @@ export default function createProduct() {
       setFormValue({ sended: request.response });
       setSubimitStatus("clean_cache");
 
-      await axios.get(`/api/cache?route=/products/${request?.data?.slug ?? payload.slug}`);
+      await axios.get(
+        `/api/cache?route=/products/${request?.data?.slug ?? payload.slug}`
+      );
 
       setSubimitStatus("register_complete");
 
@@ -259,7 +265,8 @@ export default function createProduct() {
     }
   };
 
-  if (loadingContent) return <div className="container-medium py-6">Carregando...</div>;
+  if (loadingContent)
+    return <div className="container-medium py-6">Carregando...</div>;
 
   return (
     <Template header={{ template: "painel", position: "solid" }} footer={{ template: "clean" }}>
@@ -272,7 +279,11 @@ export default function createProduct() {
             ]}
           />
           {!!data?.id && (
-            <Link href={`/produtos/${data.slug}`} target="_blank" className="flex items-center gap-2 font-semibold hover:text-zinc-950">
+            <Link
+              href={`/produtos/${data.slug}`}
+              target="_blank"
+              className="flex items-center gap-2 font-semibold hover:text-zinc-950"
+            >
               Acessar produto
               <Icon icon="fa-link" className="text-xs mt-1" />
             </Link>
@@ -281,7 +292,10 @@ export default function createProduct() {
 
         <div className="flex items-center">
           <Link passHref href="/painel/produtos">
-            <Icon icon="fa-long-arrow-left" className="mr-4 md:mr-6 text-2xl text-zinc-900" />
+            <Icon
+              icon="fa-long-arrow-left"
+              className="mr-4 md:mr-6 text-2xl text-zinc-900"
+            />
           </Link>
           <div className="font-title font-bold text-2xl md:text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
             {data.id ? "Editar produto" : "Novo produto"}
@@ -295,25 +309,41 @@ export default function createProduct() {
             {placeholder ? (
               <div className="w-full grid gap-4 cursor-wait">
                 {[1, 2, 3, 4, 5, 6].map((key) => (
-                  <div key={key} className="bg-zinc-200 rounded-md animate-pulse py-8" />
+                  <div
+                    key={key}
+                    className="bg-zinc-200 rounded-md animate-pulse py-8"
+                  />
                 ))}
               </div>
             ) : (
               <div className="w-full grid gap-8">
                 <div className="grid gap-6">
-                  <NameAndDescription data={data} handleData={(updated) => setData((prev) => ({ ...prev, ...updated }))} />
+                  <NameAndDescription
+                    data={data}
+                    handleData={(updated) =>
+                      setData((prev) => ({ ...prev, ...updated }))
+                    }
+                  />
                   <ProductGallery data={data} handleData={handleData} />
                   <ProductPrice data={data} handleData={handleData} />
                   <ProductCommercialType data={data} handleData={handleData} />
-                  <Variable product={data} emitAttributes={(param) => handleData({ attributes: param })} />
-                  <ProductStock data={product} handleData={(updated) => setProduct(prev => ({ ...prev, ...updated }))} />
+                  <Variable
+                    product={data}
+                    emitAttributes={(param) => handleData({ attributes: param })}
+                  />
+                  <ProductStock
+                    data={product}
+                    handleData={(updated) =>
+                      setProduct((prev) => ({ ...prev, ...updated }))
+                    }
+                  />
                   <UnavailablePeriods data={data} handleData={handleData} />
                   <ProductDimensions data={data} handleData={handleData} />
                   <ProductFeatures data={data} handleData={handleData} />
                   <PblalvoCreateProdutct
                     value={coerceIds(data?.category ?? [])}
                     onToggle={(id: number, selected: boolean) => {
-                      setData(prev => {
+                      setData((prev) => {
                         const prevCat = coerceIds(prev?.category ?? []);
                         const s = new Set(prevCat.map(String));
                         selected ? s.add(String(id)) : s.delete(String(id));
@@ -323,24 +353,47 @@ export default function createProduct() {
                   />
                   <CategorieCreateProdutct
                     value={data?.category ?? []}
-                    onRemove={(id) => setData(prev => {
-                      const curr = (Array.isArray(prev?.category) ? prev.category : []).map(Number).filter(Number.isFinite);
-                      const next = curr.filter((x) => x !== Number(id));
-                      return curr.length === next.length ? prev : { ...prev, category: next };
-                    })}
-                    onChange={(ids) => setData(prev => ({ ...prev, category: ids }))}
+                    onRemove={(id) =>
+                      setData((prev) => {
+                        const curr = (
+                          Array.isArray(prev?.category)
+                            ? prev.category
+                            : []
+                        )
+                          .map(Number)
+                          .filter(Number.isFinite);
+                        const next = curr.filter((x) => x !== Number(id));
+                        return curr.length === next.length
+                          ? prev
+                          : { ...prev, category: next };
+                      })
+                    }
+                    onChange={(ids) => setData((prev) => ({ ...prev, category: ids }))}
                   />
-                  <ProductBundle data={data} handleData={handleData} productsFind={productsFind} SearchProducts={SearchProducts} />
-                  <TransportSection data={data} handleData={handleData} realMoneyNumber={formatRealMoney} />  {/* <-- Passando o wrapper */}
+                  <ProductBundle
+                    data={data}
+                    handleData={handleData}
+                    productsFind={productsFind}
+                    SearchProducts={SearchProducts}
+                  />
+                  <TransportSection
+                    data={data}
+                    handleData={handleData}
+                    realMoneyNumber={formatRealMoney}
+                  />
                   <VisibilitySection data={data} handleData={handleData} />
                 </div>
 
                 <div className="flex items-center gap-4">
                   <div className="w-full">
-                    <Link passHref href="/painel/produtos/" className="text-zinc-900">Cancelar</Link>
+                    <Link passHref href="/painel/produtos/" className="text-zinc-900">
+                      Cancelar
+                    </Link>
                   </div>
                   <div>
-                    <Button loading={form.loading} className="px-10">Salvar</Button>
+                    <Button loading={form.loading} className="px-10">
+                      Salvar
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -357,10 +410,14 @@ export default function createProduct() {
         <div className="fixed inset-0 bg-white flex justify-center items-center">
           <div className="grid text-center gap-4">
             <div className="text-zinc-900">
-              {subimitStatus === "upload_images" ? "Enviando imagens..."
-                : subimitStatus === "register_content" ? "Salvando produto..."
-                  : subimitStatus === "clean_cache" ? "Limpando cache..."
-                    : subimitStatus === "register_complete" ? "Salvo com sucesso!"
+              {subimitStatus === "upload_images"
+                ? "Enviando imagens..."
+                : subimitStatus === "register_content"
+                  ? "Salvando produto..."
+                  : subimitStatus === "clean_cache"
+                    ? "Limpando cache..."
+                    : subimitStatus === "register_complete"
+                      ? "Salvo com sucesso!"
                       : ""}
             </div>
             <div className="text-2xl">
