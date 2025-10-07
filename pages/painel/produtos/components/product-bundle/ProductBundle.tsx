@@ -1,20 +1,20 @@
 "use client";
 
 import React from "react";
-import { Label } from "@/src/components/ui/form";
-import { Select } from "@/src/components/ui/form";
+import { Label, Select } from "@/src/components/ui/form";
 import Options from "@/src/components/ui/form/OptionsUI";
+import { RelationType } from "@/src/models/relation";
 
 interface ProductType {
-  combinations?: any[];
+  combinations?: RelationType[];
   suggestions?: string;
 }
 
 interface ProductBundleProps {
   data: ProductType;
   handleData: (updated: Partial<ProductType>) => void;
-  productsFind: any[];
-  SearchProducts: (search: string) => Promise<any[]>;
+  productsFind: RelationType[];
+  SearchProducts: (search: string) => Promise<RelationType[]>;
 }
 
 export const ProductBundle: React.FC<ProductBundleProps> = ({
@@ -36,7 +36,9 @@ export const ProductBundle: React.FC<ProductBundleProps> = ({
             value={data?.combinations ?? []}
             onSearch={SearchProducts}
             list={productsFind}
-            onChange={(emit: any) => handleData({ combinations: emit })}
+            onChange={(emit: RelationType[]) => {
+              handleData({ combinations: emit });
+            }}
           />
         </div>
 
@@ -51,7 +53,7 @@ export const ProductBundle: React.FC<ProductBundleProps> = ({
               { name: "Não", value: "no" },
             ]}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              handleData({ suggestions: e.target.value as "yes" | "no" })
+              handleData({ suggestions: e.target.value })
             }
           />
         </div>

@@ -16,6 +16,7 @@ interface OptionsType {
   value?: Array<RelationType>;
   list?: Array<RelationType>;
   childs?: string;
+  combinations?: string;
 }
 
 export default function Options(attrs: OptionsType) {
