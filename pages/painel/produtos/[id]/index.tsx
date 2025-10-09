@@ -228,14 +228,9 @@ export default function CreateProduct() {
     getProduct();
   }, [id]);
 
-  useEffect(() => {
-    console.log("subimitStatus", subimitStatus);
-  }, [subimitStatus]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.loading) return;
-    console.log("Dados enviados:", form);
 
     try {
       setFormValue({ loading: true });
@@ -247,7 +242,7 @@ export default function CreateProduct() {
         url: "products/register",
         data: payload,
       });
-      console.log("Resposta da API:", request);
+
       if (!request?.success) {
         setSubimitStatus("register_failed");
         return;
