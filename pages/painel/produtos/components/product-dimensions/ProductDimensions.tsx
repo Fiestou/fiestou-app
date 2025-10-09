@@ -23,7 +23,6 @@ export const ProductDimensions: React.FC<ProductDimensionsProps> = ({
   return (
     <div className="border-t pt-4 pb-2">
       <h4 className="text-2xl text-zinc-900 mb-2">Peso e dimensões</h4>
-
       <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
         {/* Peso */}
         <div className="form-group">
