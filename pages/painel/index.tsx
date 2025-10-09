@@ -100,6 +100,7 @@ export default function Parceiro({ content }: { content: any }) {
         template: "clean",
       }}
     >
+      {/* Painel do lojista a o acessar a loja */}
       <section className="">
         <div className="container-medium py-6 lg:py-16">
           <div className="grid sm:flex items-center gap-8 lg:gap-20 pb-8 lg:pb-10">
@@ -107,9 +108,7 @@ export default function Parceiro({ content }: { content: any }) {
               <div className="font-title max-w-[38rem] font-bold text-2xl md:text-5xl flex gap-4 items-center mb-2 text-zinc-900">
                 Olá, {user.name}
               </div>
-              <div
-                dangerouslySetInnerHTML={{ __html: content.main_text }}
-              ></div>
+              <div>Bem-vindo ao portal do lojista no Fiestou!</div>
             </div>
             <div className="w-fit">
               <div className="flex gap-4 items-center justify-center">
