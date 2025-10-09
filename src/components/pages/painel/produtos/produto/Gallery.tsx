@@ -15,7 +15,7 @@ export default function Gallery({
   product,
   emitProduct,
 }: {
-  product?: number;
+  product?: number | string;
   emitProduct: Function;
 }) {
   const api = new Api();
@@ -62,10 +62,10 @@ export default function Gallery({
       },
     });
 
-    const handle = request.data;
+    const handle = request?.data;
 
-    emitProduct(handle.product);
-    setHandleGallery([...handleGallery, ...(handle.medias || [])]);
+    emitProduct(handle?.product);
+    setHandleGallery([...handleGallery, ...(handle?.medias || [])]);
     setPlaceholders(0);
   };
 
