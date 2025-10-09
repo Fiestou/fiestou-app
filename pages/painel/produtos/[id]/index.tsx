@@ -16,8 +16,6 @@ import { ProductType } from "@/src/models/product";
 import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
 import { getStore } from "@/src/contexts/AuthContext";
-import { realMoneyNumber } from "@/src/helper";
-
 import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
 
 import NameAndDescription from "../components/name-and-description/NameAndDescriptionProps";
@@ -230,23 +228,27 @@ export default function CreateProduct() {
     getProduct();
   }, [id]);
 
+  useEffect(() => {
+    console.log("subimitStatus", subimitStatus);
+  }, [subimitStatus]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.loading) return;
+    console.log("Dados enviados:", form);
 
     try {
       setFormValue({ loading: true });
       setSubimitStatus("register_content");
 
       const payload = buildPayload();
-
       const request: any = await api.bridge({
         method: "post",
         url: "products/register",
         data: payload,
       });
-
-      if (!request?.response) {
+      console.log("Resposta da API:", request);
+      if (!request?.success) {
         setSubimitStatus("register_failed");
         return;
       }
@@ -259,7 +261,7 @@ export default function CreateProduct() {
       );
 
       setSubimitStatus("register_complete");
-
+      setLoadingContent(false);
       setTimeout(() => {
         router.push({ pathname: "/painel/produtos" });
       }, 500);

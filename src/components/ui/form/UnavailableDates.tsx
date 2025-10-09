@@ -72,7 +72,6 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
   const isDateSelected = (dateString: string): boolean => {
     return Array.isArray(selectedDates) && selectedDates.includes(dateString);
   };
-  console.log("initialDates recebido:", initialDates);
 
   const isDateDisabled = (date: Date): boolean => {
     return date < minDate;

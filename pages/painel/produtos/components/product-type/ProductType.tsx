@@ -38,9 +38,6 @@ export const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
       handleData({ comercialType: value });
     }
   };
-  useEffect(() => {
-    console.log("data.comercialType changed:", data);
-  }, [data]);
 
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     handleData({ schedulingPeriod: e.target.value });
