@@ -201,7 +201,6 @@ export default function Checkout({
           },
         });
         setLoadingDeliveryPrice(false);
-        console.log("Data", data);
         if (data?.data) {
           const list: DeliveryItem[] = Array.isArray(data.data)
             ? data.data.map((x: any): DeliveryItem => ({
@@ -214,7 +213,6 @@ export default function Checkout({
         } else {
           setDeliveryPrice([]);
         }
-        console.log("Delivery Price", deliveryPrice);
       };
 
       getShippingPrice();

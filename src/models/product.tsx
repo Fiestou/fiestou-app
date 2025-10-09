@@ -75,11 +75,11 @@ export interface ProductType {
   category?: (string | number)[];
   color?: string | "sem cor";
   combinations?: Array<RelationType>;
-  suggestions?: string;
+  suggestions?: string | "yes" | "no";
   fragility?: string;
   vehicle?: string;
   freeTax?: string;
-  comercialType?: string | "selling" | "renting";
+  comercialType?: string | "aluguel" | "venda";
   unavailableDates?: string[];
   schedulingPeriod?: string;
   schedulingTax?: number;
