@@ -32,7 +32,7 @@ export const NameAndDescription: React.FC<NameAndDescriptionProps> = ({
             type="text"
             name="title"
             onChange={(e) => handleData({ title: e.target.value })}
-            value={data.title ?? ""}
+            value={data?.title ?? ""}
             required
             placeholder="Digite o nome do produto"
             className="form-control"
@@ -42,7 +42,7 @@ export const NameAndDescription: React.FC<NameAndDescriptionProps> = ({
             type="text"
             name="slug"
             onChange={(e) => handleData({ slug: slugfy(e.target.value) })}
-            value={slugfy(data.slug ?? data.title ?? "")}
+            value={slugfy(data?.slug ?? data?.title ?? "")}
             required
             placeholder="Configure a slug para o link"
             className="mt-2 text-sm p-2 rounded-md bg-zinc-100 border-0 w-full"
@@ -56,7 +56,7 @@ export const NameAndDescription: React.FC<NameAndDescriptionProps> = ({
             type="text"
             name="subtitle"
             onChange={(e) => handleData({ subtitle: e.target.value })}
-            value={data.subtitle ?? ""}
+            value={data?.subtitle ?? ""}
             required
             placeholder="Digite o subtítulo do produto"
             className="form-control"
@@ -69,7 +69,7 @@ export const NameAndDescription: React.FC<NameAndDescriptionProps> = ({
           <textarea
             name="description"
             onChange={(e) => handleData({ description: e.target.value })}
-            value={data.description ?? ""}
+            value={data?.description ?? ""}
             required
             placeholder="Adicione a descrição detalhada do produto"
             className="w-full p-2 border rounded-md resize-y min-h-[100px]"
