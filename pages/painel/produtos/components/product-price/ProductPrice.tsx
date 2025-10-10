@@ -13,7 +13,7 @@ interface ProductPriceProps {
   handleData: (updated: Partial<ProductType>) => void;
 }
 
-export const ProductPrice: React.FC<ProductPriceProps> = ({ data, handleData }) => {
+const ProductPrice: React.FC<ProductPriceProps> = ({ data, handleData }) => {
   const formatCurrency = (value?: number) => {
     if (value == null || isNaN(value)) return "";
     return value.toLocaleString("pt-BR", {
@@ -62,3 +62,4 @@ export const ProductPrice: React.FC<ProductPriceProps> = ({ data, handleData }) 
     </div>
   );
 };
+export default ProductPrice;

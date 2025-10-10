@@ -17,7 +17,7 @@ interface ProductGalleryProps {
   handleData: (updated: Partial<ProductType>) => void;
 }
 
-export const ProductGallery: React.FC<ProductGalleryProps> = ({
+const ProductGallery: React.FC<ProductGalleryProps> = ({
   data,
   handleData,
 }) => {
@@ -32,3 +32,4 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
     </div>
   );
 };
+export default ProductGallery;

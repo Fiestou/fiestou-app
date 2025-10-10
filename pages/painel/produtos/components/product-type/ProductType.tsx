@@ -20,7 +20,7 @@ const schedulingPeriodOptions = [
   { value: "hour", name: "Por hora" },
 ];
 
-export const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
+const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
   data,
   handleData,
 }) => {
@@ -102,3 +102,4 @@ export const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
     </div>
   );
 };
+export default ProductCommercialType;
