@@ -17,7 +17,7 @@ interface ProductBundleProps {
   SearchProducts: (search: string) => Promise<RelationType[]>;
 }
 
-export const ProductBundle: React.FC<ProductBundleProps> = ({
+const ProductBundle: React.FC<ProductBundleProps> = ({
   data,
   handleData,
   productsFind,
@@ -61,3 +61,4 @@ export const ProductBundle: React.FC<ProductBundleProps> = ({
     </div>
   );
 };
+export default ProductBundle;
