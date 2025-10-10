@@ -14,7 +14,7 @@ interface UnavailablePeriodsProps {
   handleData: (updated: Partial<ProductType>) => void;
 }
 
-export const UnavailablePeriods: React.FC<UnavailablePeriodsProps> = ({
+const UnavailablePeriods: React.FC<UnavailablePeriodsProps> = ({
   data,
   handleData,
 }) => {
@@ -59,7 +59,7 @@ export const UnavailablePeriods: React.FC<UnavailablePeriodsProps> = ({
           </Label>
 
           <UnavailableDates
-            initialDates={data.unavailableDates}
+            initialDates={data?.unavailableDates}
             onChange={handleUnavailableDatesChange}
             minDate={new Date()}
           />
@@ -68,3 +68,4 @@ export const UnavailablePeriods: React.FC<UnavailablePeriodsProps> = ({
     </div>
   );
 };
+export default UnavailablePeriods;
