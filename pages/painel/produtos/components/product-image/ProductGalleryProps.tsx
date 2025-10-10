@@ -25,7 +25,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({
     <div className="border-t pt-4 pb-2">
       <div className="form-group">
         <Gallery
-          product={data.id}
+          product={data?.id}
           emitProduct={(productID: number) => handleData({ id: productID })}
         />
       </div>

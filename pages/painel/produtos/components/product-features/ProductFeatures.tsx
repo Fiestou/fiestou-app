@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Label, Button } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Colors from "@/src/components/ui/form/ColorsUI";
@@ -12,29 +12,31 @@ interface ProductType {
 }
 
 interface ProductFeaturesProps {
-  data: ProductType;
-  handleData: (updated: Partial<ProductType>) => void;
+  data?: ProductType; // <- opcional
+  handleData?: (updated: Partial<ProductType>) => void; // <- opcional
 }
 
 const ProductFeatures: React.FC<ProductFeaturesProps> = ({
-  data,
-  handleData,
+  data = {}, // <- default vazio
+  handleData = () => {}, // <- função vazia
 }) => {
-  const [colors, setColors] = useState<string[]>(
-    data.color ? data.color.split("|") : []
-  );
+  const [colors, setColors] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState<string>("");
+
+  // Atualiza cores iniciais se data mudar
+  useEffect(() => {
+    setColors(data?.color ? data.color.split("|") : []);
+  }, [data?.color]);
 
   // Atualiza cores
   const handleColorsChange = (newColors: string[]) => {
     setColors(newColors);
-    handleData({ color: newColors.join("|") }); // 👈 volta a ser string
+    handleData({ color: newColors.join("|") });
   };
 
   // Adiciona uma nova tag
   const handleAddTag = () => {
     if (!tagInput.trim()) return;
-
     const updatedTags = handleTagsUtil(data?.tags ?? "", tagInput.trim());
     handleData({ tags: updatedTags });
     setTagInput("");
@@ -42,13 +44,18 @@ const ProductFeatures: React.FC<ProductFeaturesProps> = ({
 
   // Remove tag existente
   const handleRemoveTag = (tagToRemove: string) => {
-    const tagsArray = data?.tags?.split(",").map(t => t.trim()).filter(Boolean) ?? [];
-    const updatedTags = tagsArray.filter(tag => tag !== tagToRemove).join(",");
+    const tagsArray =
+      data?.tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
+    const updatedTags = tagsArray
+      .filter((tag) => tag !== tagToRemove)
+      .join(",");
     handleData({ tags: updatedTags });
   };
 
   // Lista de tags limitadas a 6
-  const tagList = (data?.tags?.split(",").map(t => t.trim()).filter(Boolean) ?? []).slice(0, 6);
+  const tagList =
+    data?.tags?.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 6) ??
+    [];
 
   return (
     <div className="border-t pt-4 pb-2">
@@ -60,7 +67,7 @@ const ProductFeatures: React.FC<ProductFeaturesProps> = ({
           <Label>Cor</Label>
           <Colors value={colors} onChange={handleColorsChange} maxSelect={3} />
           <div className="text-sm text-zinc-400 whitespace-nowrap">
-            {colors.length} de 3
+            {colors?.length} de 3
           </div>
         </div>
 
@@ -116,4 +123,5 @@ const ProductFeatures: React.FC<ProductFeaturesProps> = ({
     </div>
   );
 };
+
 export default ProductFeatures;

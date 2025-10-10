@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Label, Select } from "@/src/components/ui/form";
 
 interface ProductType {
@@ -10,8 +10,8 @@ interface ProductType {
 }
 
 interface ProductCommercialTypeProps {
-  data: ProductType;
-  handleData: (updated: Partial<ProductType>) => void;
+  data?: ProductType; // <- torna opcional
+  handleData?: (updated: Partial<ProductType>) => void; // <- também opcional no SSR
 }
 
 const schedulingPeriodOptions = [
@@ -21,8 +21,8 @@ const schedulingPeriodOptions = [
 ];
 
 const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
-  data,
-  handleData,
+  data = {}, // <- garante objeto vazio como default
+  handleData = () => {}, // <- função vazia default
 }) => {
   const handleComercialTypeChange = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -57,7 +57,7 @@ const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
         <Select
           name="tipo_comercial"
           onChange={handleComercialTypeChange}
-          value={data.comercialType || ""}
+          value={data?.comercialType || ""}
           options={[
             { value: "", name: "Selecione..." },
             { value: "venda", name: "Venda" },
@@ -68,7 +68,7 @@ const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
       </div>
 
       {/* Campos adicionais se for aluguel */}
-      {data.comercialType === "aluguel" && (
+      {data?.comercialType === "aluguel" && (
         <div className="flex gap-4">
           {/* Período */}
           <div className="w-full">
@@ -76,8 +76,11 @@ const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
             <Select
               name="periodo"
               onChange={handlePeriodChange}
-              value={data.schedulingPeriod || ""}
-              options={[{ value: "", name: "Selecione o período..." }, ...schedulingPeriodOptions]}
+              value={data?.schedulingPeriod || ""}
+              options={[
+                { value: "", name: "Selecione o período..." },
+                ...schedulingPeriodOptions,
+              ]}
             />
           </div>
 
@@ -89,7 +92,7 @@ const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
             <input
               name="desconto_aluguel"
               onChange={handleDiscountChange}
-              value={data.schedulingDiscount}
+              value={data?.schedulingDiscount ?? ""}
               type="number"
               placeholder="Ex: 10"
               className="form-control"
@@ -102,4 +105,5 @@ const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
     </div>
   );
 };
+
 export default ProductCommercialType;

@@ -59,7 +59,7 @@ const UnavailablePeriods: React.FC<UnavailablePeriodsProps> = ({
           </Label>
 
           <UnavailableDates
-            initialDates={data.unavailableDates}
+            initialDates={data?.unavailableDates}
             onChange={handleUnavailableDatesChange}
             minDate={new Date()}
           />
