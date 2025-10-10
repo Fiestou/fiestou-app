@@ -10,7 +10,7 @@ interface ProductStockProps {
   handleData: (updated: Partial<ProductType>) => void;
 }
 
-export const ProductStock: React.FC<ProductStockProps> = ({ data, handleData }) => {
+const ProductStock: React.FC<ProductStockProps> = ({ data, handleData }) => {
   // SKU (somente números e até 9 dígitos)
   const handleSkuChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, ""); // só números
@@ -123,3 +123,4 @@ export const ProductStock: React.FC<ProductStockProps> = ({ data, handleData }) 
     </div>
   );
 };
+export default ProductStock;

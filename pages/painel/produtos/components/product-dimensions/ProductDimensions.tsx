@@ -16,7 +16,7 @@ interface ProductDimensionsProps {
   handleData: (updated: Partial<ProductType>) => void;
 }
 
-export const ProductDimensions: React.FC<ProductDimensionsProps> = ({
+const ProductDimensions: React.FC<ProductDimensionsProps> = ({
   data,
   handleData,
 }) => {
@@ -87,3 +87,4 @@ export const ProductDimensions: React.FC<ProductDimensionsProps> = ({
     </div>
   );
 };
+export default ProductDimensions;
