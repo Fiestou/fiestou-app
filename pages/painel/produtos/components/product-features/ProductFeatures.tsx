@@ -16,7 +16,7 @@ interface ProductFeaturesProps {
   handleData: (updated: Partial<ProductType>) => void;
 }
 
-export const ProductFeatures: React.FC<ProductFeaturesProps> = ({
+const ProductFeatures: React.FC<ProductFeaturesProps> = ({
   data,
   handleData,
 }) => {
@@ -116,3 +116,4 @@ export const ProductFeatures: React.FC<ProductFeaturesProps> = ({
     </div>
   );
 };
+export default ProductFeatures;
