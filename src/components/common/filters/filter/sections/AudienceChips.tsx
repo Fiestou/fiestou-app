@@ -10,7 +10,7 @@ export default function AudienceChips({
   return (
     <div className="pb-6">
       <Label>Público-Alvo</Label>
-      <div className="flex gap-2 pt-1 pb-2">
+      <div className="flex gap-2 pt-1 pb-2 flex-wrap">
         {list.map((c) => (
           <div
             key={c.id}
