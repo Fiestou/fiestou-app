@@ -115,8 +115,8 @@ export default function Parceiro({ content }: { content: any }) {
                 <div>
                   <DobleIcon icon="fa-piggy-bank" />
                 </div>
-                <div className="pl-2">
-                  <div className="text-xs md:text-base">Em caixa</div>
+                <div className="pl-2 flex flex-col items-center">
+                  <div className="text-xs md:text-base">Valor em caixa:</div>
                   <h4 className="text-zinc-900 -mb-1 font-bold text-2xl lg:text-5xl leading-none whitespace-nowrap">
                     <span className="text-base lg:text-2xl">R$</span>{" "}
                     {moneyFormat(balance.cash)}

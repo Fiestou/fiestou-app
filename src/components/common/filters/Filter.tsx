@@ -79,7 +79,7 @@ export default function Filter<T = any>({
   };
 
   const [count, setCount] = useState<number>(0);
-
+  
   useEffect(() => {
     let handle = 0;
     handle += query.categories.length;
@@ -196,7 +196,6 @@ export default function Filter<T = any>({
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     if (context === "panel" || context === "store") {

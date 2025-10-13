@@ -37,8 +37,9 @@ export default function InputserachStore({
       <div className="w-full relative">
         <Input
           value={search}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-         
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setSearch(e.target.value)
+          }
           placeholder="Pesquisar..."
           className="h-full w-full"
         />

@@ -26,6 +26,9 @@ interface ApiRequestType {
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
 class Api {
+  static bridge(arg0: { method: string; url: string; }): any {
+    throw new Error("Method not implemented.");
+  }
   static request<T>(arg0: { method: string; url: string; }) {
     throw new Error("Method not implemented.");
   }

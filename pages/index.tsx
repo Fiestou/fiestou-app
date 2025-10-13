@@ -17,12 +17,11 @@ import Product from "@/src/components/common/Product";
 import PostItem from "@/src/components/common/PostItem";
 import Filter from "@/src/components/common/filters/Filter";
 
-
 export async function getStaticProps(ctx: any) {
   const api = new Api();
 
   let request: any = await api.content({
-    method: 'get',
+    method: "get",
     url: `home`,
   });
 
@@ -90,7 +89,6 @@ export default function Home({
       </>
     );
   };
-
 
   const [imgLinks] = useState<string[]>(
     Array.isArray(Home?.main_slide)
@@ -193,11 +191,14 @@ export default function Home({
           ))}
         </Swiper>
 
-
         {(Home?.main_slide ?? []).length > 1 && (
           <div className="opacity-0 group-hover:opacity-100 hidden sm:flex ease absolute px-4 top-1/2 left-0 w-full -translate-y-1/2 items-center h-0 justify-between z-10">
             <div>
-              <Button className="swiper-main-prev p-6 rounded-full" alt="Seta para esquerda" title="Seta para esquerda">
+              <Button
+                className="swiper-main-prev p-6 rounded-full"
+                alt="Seta para esquerda"
+                title="Seta para esquerda"
+              >
                 <Icon
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -ml-[2px]"
                   icon="fa-chevron-left"
@@ -208,7 +209,11 @@ export default function Home({
               </Button>
             </div>
             <div>
-              <Button className="swiper-main-next p-6 rounded-full" alt="Seta para direita" title="Seta para direita">
+              <Button
+                className="swiper-main-next p-6 rounded-full"
+                alt="Seta para direita"
+                title="Seta para direita"
+              >
                 <Icon
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ml-[1px]"
                   icon="fa-chevron-right"
@@ -233,9 +238,9 @@ export default function Home({
       <section className="py-14">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-8">
-            <h2
-              className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-            >Encontre a decoração perfeita para você</h2>
+            <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
+              Encontre a decoração perfeita para você
+            </h2>
           </div>
           <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6">
             <div className="order-3 md:order-2 grid md:grid-cols-2 lg:grid-cols-4 gap-4 w-full relative overflow-hidden">
@@ -257,13 +262,17 @@ export default function Home({
       <section className="py-12 md:py-20">
         <div className="container-medium">
           <div className="max-w-2xl mx-auto text-center pb-6 md:pb-14">
-            <h2
-              className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-            >Veja como é muito fácil montar sua festa!</h2>
+            <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
+              Veja como é muito fácil montar sua festa!
+            </h2>
           </div>
           <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6 -mx-[1rem] xl:-mx-[4rem]">
             <div className="hidden md:block order-1 w-1/2 text-right md:text-center md:w-fit p-2">
-              <Button className="swiper-prev p-5 rounded-full" alt="Seta para esquerda" title="Seta para esquerda">
+              <Button
+                className="swiper-prev p-5 rounded-full"
+                alt="Seta para esquerda"
+                title="Seta para esquerda"
+              >
                 <Icon
                   icon="fa-arrow-left"
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -308,7 +317,9 @@ export default function Home({
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
-                      <h4 className="font-title text-zinc-900 font-bold">1 - Peça pelo site</h4>
+                      <h4 className="font-title text-zinc-900 font-bold">
+                        1 - Peça pelo site
+                      </h4>
                     </div>
                   </div>
                 </SwiperSlide>
@@ -325,7 +336,9 @@ export default function Home({
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
-                      <h4 className="font-title text-zinc-900 font-bold">2 - Recebemos o seu pedido</h4>
+                      <h4 className="font-title text-zinc-900 font-bold">
+                        2 - Recebemos o seu pedido
+                      </h4>
                     </div>
                   </div>
                 </SwiperSlide>
@@ -342,7 +355,9 @@ export default function Home({
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
-                      <h4 className="font-title text-zinc-900 font-bold">3 - Preparamos para o envio</h4>
+                      <h4 className="font-title text-zinc-900 font-bold">
+                        3 - Preparamos para o envio
+                      </h4>
                     </div>
                   </div>
                 </SwiperSlide>
@@ -359,7 +374,9 @@ export default function Home({
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
-                      <h4 className="font-title text-zinc-900 font-bold">4 - Entregamos sem atraso</h4>
+                      <h4 className="font-title text-zinc-900 font-bold">
+                        4 - Entregamos sem atraso
+                      </h4>
                     </div>
                   </div>
                 </SwiperSlide>
@@ -376,7 +393,9 @@ export default function Home({
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
-                      <h4 className="font-title text-zinc-900 font-bold">5 - Fiestouuu!</h4>
+                      <h4 className="font-title text-zinc-900 font-bold">
+                        5 - Fiestouuu!
+                      </h4>
                     </div>
                   </div>
                 </SwiperSlide>
@@ -393,16 +412,21 @@ export default function Home({
                       />
                     </div>
                     <div className="p-4 md:p-5 text-center">
-                      <h4 className="font-title text-zinc-900 font-bold">6 - Recolhemos</h4>
+                      <h4 className="font-title text-zinc-900 font-bold">
+                        6 - Recolhemos
+                      </h4>
                     </div>
                   </div>
                 </SwiperSlide>
               </Swiper>
             </div>
 
-
             <div className="hidden md:block order-2 md:order-3 w-1/2 text-left md:text-center md:w-fit p-2">
-              <Button className="swiper-next p-5 rounded-full" alt="Seta para direita" title="Seta para direita">
+              <Button
+                className="swiper-next p-5 rounded-full"
+                alt="Seta para direita"
+                title="Seta para direita"
+              >
                 <Icon
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                   icon="fa-arrow-right"
@@ -421,12 +445,17 @@ export default function Home({
           <div className="container-medium">
             <div className="max-w-4xl mx-auto text-center pb-8 md:pb-14">
               <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">
-                Confira os parceiros já cadastrados</h2>
+                Confira os parceiros já cadastrados
+              </h2>
             </div>
             {/* Confira nosso parceiros cadastrados */}
             <div className="flex justify-center gap-2 md:gap-12">
               <div className="flex flex-col gap-4 aspect-square text-center">
-                <a href="https://www.fiestou.com.br/circus-festas/" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://www.fiestou.com.br/circus-festas/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Img
                     className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
                     src="/images/circus.png"
@@ -437,7 +466,11 @@ export default function Home({
                 <h4 className="font-bold">Circus Festas</h4>
               </div>
               <div className="flex flex-col gap-4 aspect-square text-center">
-                <a href="https://www.fiestou.com.br/fiori/" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://www.fiestou.com.br/fiori/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Img
                     className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
                     src="/images/fiori.png"
@@ -449,7 +482,11 @@ export default function Home({
               </div>
               <div className="flex flex-col gap-4 aspect-square text-center">
                 <div className="aspect-square">
-                  <a href="https://www.fiestou.com.br/flavia-fagundes-cerimonial/" target="_blank" rel="noopener noreferrer">
+                  <a
+                    href="https://www.fiestou.com.br/flavia-fagundes-cerimonial/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Img
                       className="w-full h-full rounded-[10px] border border-solid border-yellow shadow-md"
                       src="/images/flavia.png"
@@ -465,13 +502,13 @@ export default function Home({
             {/* Faça para do fiestou */}
             <div className="bg-white mt-6 lg:mt-20 rounded-xl grid lg:flex items-center relative overflow-hidden">
               <div className="w-full grid gap-6 p-6 md:p-16">
-                <h4
-                  className="font-title font-bold max-w-[30rem] text-zinc-900 text-5xl">
-                  Faça parte do Fiestou</h4>
-                <div
-                  className="max-w-[20rem]">
+                <h4 className="font-title font-bold max-w-[30rem] text-zinc-900 text-5xl">
+                  Faça parte do Fiestou
+                </h4>
+                <div className="max-w-[20rem]">
                   <span>
-                    Atua no setor de eventos e quer alcançar mais clientes, em João Pessoa? Entre no nosso time criando sua conta agora!
+                    Atua no setor de eventos e quer alcançar mais clientes, em
+                    João Pessoa? Entre no nosso time criando sua conta agora!
                   </span>
                 </div>
                 <div className="md:pt-4">
@@ -502,10 +539,9 @@ export default function Home({
           <div className="lg:flex justify-center">
             <div className="w-full">
               <div className="max-w-xl pb-14">
-                <h2
-                  className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4"
-
-                >Veja quem recomenda</h2>
+                <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4">
+                  Veja quem recomenda
+                </h2>
                 <div className="pt-10">
                   <Img
                     src="/images/loop-arrow.png"
@@ -560,9 +596,9 @@ export default function Home({
                       </div>
                       <div className="text-xl py-8">
                         <p>
-                          Tem diversas opções de decoração. Trabalhei no ramo em mais de
-                          25 anos, e agora tem uma solução mais prática para decorar sua
-                          festa em João Pessoa.
+                          Tem diversas opções de decoração. Trabalhei no ramo em
+                          mais de 25 anos, e agora tem uma solução mais prática
+                          para decorar sua festa em João Pessoa.
                         </p>
                       </div>
                     </div>
@@ -589,7 +625,9 @@ export default function Home({
                       </div>
                       <div className="text-xl py-8">
                         <p>
-                          Uma nova maneira de realizar festa na capital João pessoa, facilidade de encontrar os itens que precisa para complementar na decoração.
+                          Uma nova maneira de realizar festa na capital João
+                          pessoa, facilidade de encontrar os itens que precisa
+                          para complementar na decoração.
                         </p>
                       </div>
                     </div>
@@ -613,7 +651,6 @@ export default function Home({
                 </Button>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -628,9 +665,7 @@ export default function Home({
           </div>
           <div className="grid md:grid-cols-3 gap-10 md:gap-6">
             {!!Blog?.length &&
-              Blog.sort(
-                (a, b) => b.id - a.id
-              ).map((post: any, key: any) => (
+              Blog.sort((a, b) => b.id - a.id).map((post: any, key: any) => (
                 <div key={key}>
                   <PostItem post={post} />
                 </div>

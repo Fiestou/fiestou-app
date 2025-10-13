@@ -23,17 +23,45 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
   const [placeholder, setPlaceholder] = useState<boolean>(true);
   const [products, setProducts] = useState<ProductType[]>([]);
 
-  // --------- helpers para o fetch do painel ---------
-  const normalizeParams = (params: Record<string, any>) => ({
-    search: params.busca ?? "",
-    order: params.ordem ?? "desc",
-    range: Number(params.range ?? 1000),
-    colors: params.cores ?? [],
-    categories: params["categoria[]"] ?? [],
-    storeId: params.store ?? undefined,
-    page: Number(params.page ?? 1),
-  });
+  // --------- função assíncrona para buscar produtos ---------
+  const fetchProductsDoPainel = async (
+    params: Record<string, any>
+  ): Promise<ProductPage<ProductType>> => {
+    try {
+      const request: any = await api.bridge({
+        method: "get",
+        url: "products",
+        data: {
+          search: params.busca ?? "",
+          order: params.ordem ?? "desc",
+          range: Number(params.range ?? 1000),
+          colors: params.cores ?? [],
+          categories: params["categoria[]"] ?? [],
+          storeId: params.store ?? undefined,
+          page: Number(params.page ?? 1),
+        },
+      });
 
+      return {
+        items: request?.items ?? [],
+        total: request?.total ?? 0,
+        page: request?.page ?? 1,
+        pageSize: request?.pageSize ?? 20,
+        pages: request?.pages ?? 1,
+      };
+    } catch (error) {
+      console.error("Erro ao buscar produtos:", error);
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: 20,
+        pages: 1,
+      };
+    }
+  };
+
+  // callback que recebe os resultados do filtro
   const onFilterResults = (data: ProductPage<ProductType>) => {
     setProducts(data.items);
     setPlaceholder(false);
@@ -41,7 +69,6 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
   const RemoveProduct = async (item: ProductType) => {
     setPlaceholder(true);
-
     const request: any = await api.bridge({
       method: "post",
       url: "products/remove",
@@ -85,12 +112,14 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                 <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
                   Produtos
                 </div>
-                {/* <div className="text-sm">{total} resultados</div> // se quiser exibir */}
               </div>
 
               <div className="flex items-center gap-4 w-full md:w-fit">
                 <div className="w-full grid">
-                  <Button className="whitespace-nowrap" href="/painel/produtos/novo">
+                  <Button
+                    className="whitespace-nowrap"
+                    href="/painel/produtos/novo"
+                  >
                     Novo produto
                   </Button>
                 </div>
@@ -100,7 +129,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
               <Filter
                 context="panel"
                 storeView
-                // fetchProducts={fetchProductsDoPainel}
+                fetchProducts={fetchProductsDoPainel}
                 onResults={onFilterResults}
               />
             </div>
@@ -155,7 +184,9 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
                   <div className="w-full lg:w-[32rem] lg:max-w-[6rem] text-center">
                     {!!item?.quantity ? (
-                      <div className="rounded-md bg-zinc-100 py-2">{item?.quantity}</div>
+                      <div className="rounded-md bg-zinc-100 py-2">
+                        {item?.quantity}
+                      </div>
                     ) : (
                       <div className="rounded-md bg-zinc-100 py-3 px-2 text-xs whitespace-nowrap">
                         sem estoque
@@ -178,7 +209,8 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                   {/* Aluguel ou venda */}
                   <div className="w-full lg:w-[32rem] text-center">
                     <div className="rounded-md bg-zinc-100 py-2">
-                      {(item.comercialType as string).charAt(0).toUpperCase() + (item.comercialType as string).slice(1)}
+                      {(item.comercialType as string).charAt(0).toUpperCase() +
+                        (item.comercialType as string).slice(1)}
                     </div>
                   </div>
 
