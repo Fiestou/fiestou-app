@@ -52,9 +52,6 @@ export default function Filter<T = any>({
   const filterArea = useRef<HTMLDivElement>(null);
   const searchRef = useRef<InputSearchStoreRef>(null);
 
-  // ===============================
-  // Inicializa filtros da query URL
-  // ===============================
   const startQueryHandle = () => {
     const routerQuery = router.query as {
       categorias?: string | string[];
@@ -120,9 +117,6 @@ export default function Filter<T = any>({
     }
   }, [router.query]);
 
-  // ===============================
-  // Construção de parâmetros de busca
-  // ===============================
   const buildParams = (overrides?: Record<string, any>) => {
     const params: Record<string, any> = {
       ...(busca ? { busca } : {}),
@@ -158,9 +152,6 @@ export default function Filter<T = any>({
     }
   };
 
-  // ===============================
-  // Busca por texto
-  // ===============================
   const handleTextSearch = (value: string) => {
     const params = buildParams({ busca: value || "", page: 1 });
     act(params);
@@ -177,9 +168,6 @@ export default function Filter<T = any>({
     setTimeout(() => setFilterModal(false), 0);
   };
 
-  // ===============================
-  // Carrega produtos no painel/loja
-  // ===============================
   const loadPanelProducts = async (page = 1) => {
     try {
       setLoading(true);
@@ -216,9 +204,6 @@ export default function Filter<T = any>({
     }
   }, []);
 
-  // ===============================
-  // Render
-  // ===============================
   return (
     <div className="w-full">
       {store && <input type="hidden" value={store} name="store" />}
@@ -230,7 +215,7 @@ export default function Filter<T = any>({
           stick={stick}
           filterAreaRef={filterArea}
           onOpenFilters={() => setFilterModal(true)}
-          onSearch={handleTextSearch} // ✅ agora busca de verdade
+          onSearch={handleTextSearch}
         />
       ) : (
         <Inputsearchhome

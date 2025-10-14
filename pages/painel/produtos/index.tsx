@@ -21,11 +21,9 @@ type ProductPage<T = any> = {
 
 export default function Produtos({ hasStore }: { hasStore: boolean }) {
   const api = new Api();
-
   const [placeholder, setPlaceholder] = useState<boolean>(true);
   const [products, setProducts] = useState<ProductType[]>([]);
 
-  // --------- Função chamada pelo Filter ---------
   const fetchProducts = async (
     params: Record<string, any>
   ): Promise<ProductPage<ProductType>> => {
@@ -126,7 +124,6 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                 </div>
               </div>
 
-              {/* Filter headless: painel NÃO navega */}
               <Filter
                 context="panel"
                 storeView
