@@ -6,7 +6,7 @@ import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
 import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
-import { useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/filters/Filter";
@@ -21,9 +21,17 @@ type ProductPage<T = any> = {
 
 export default function Produtos({ hasStore }: { hasStore: boolean }) {
   const api = new Api();
+
   const [placeholder, setPlaceholder] = useState<boolean>(true);
   const [products, setProducts] = useState<ProductType[]>([]);
 
+  // 👇 novos estados para scroll infinito
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const observerRef = useRef<HTMLDivElement | null>(null);
+
+  // --------- Função chamada pelo Filter ---------
   const fetchProducts = async (
     params: Record<string, any>
   ): Promise<ProductPage<ProductType>> => {
@@ -38,7 +46,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
     };
 
     try {
-      setPlaceholder(true);
+      if (normalized.page === 1) setPlaceholder(true);
       const queryString = new URLSearchParams(normalized as any).toString();
       const res: any = await api.bridge({
         method: "get",
@@ -52,18 +60,54 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
       const pageSize = Number(
         (raw.pageSize ?? raw.per_page ?? items.length) || 20
       );
-      const pages = Number(raw.pages ?? Math.ceil(total / (pageSize || 1)));
+      const pages = Number(raw.pages ?? Math.ceil(total / (pageSize || 10)));
 
       return { items, total, page: currentPage, pageSize, pages };
     } finally {
-      setPlaceholder(false);
+      if (normalized.page === 1) setPlaceholder(false);
     }
   };
 
   const onFilterResults = (data: ProductPage<ProductType>) => {
     setProducts(data.items);
+    setPage(1);
+    setHasMore(data.page < data.pages);
     setPlaceholder(false);
   };
+
+  // 👇 carregar mais produtos
+  const loadMoreProducts = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+
+    const nextPage = page + 1;
+    const data = await fetchProducts({ page: nextPage });
+
+    setProducts((prev) => [...prev, ...data.items]);
+    setPage(nextPage);
+    setHasMore(data.page < data.pages);
+    setLoadingMore(false);
+  }, [page, hasMore, loadingMore]);
+
+  // 👇 observar o fim da lista
+  useEffect(() => {
+    if (!observerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreProducts();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    observer.observe(observerRef.current);
+
+    return () => {
+      if (observerRef.current) observer.unobserve(observerRef.current);
+    };
+  }, [loadMoreProducts]);
 
   const RemoveProduct = async (item: ProductType) => {
     setPlaceholder(true);
@@ -83,10 +127,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
   };
 
   return (
-    <Template
-      header={{ template: "painel", position: "solid" }}
-      footer={{ template: "clean" }}
-    >
+    <Template header={{ template: "painel", position: "solid" }}>
       <section>
         <div className="container-medium pt-12">
           <div className="pb-4">
@@ -138,6 +179,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
       <section className="pt-6">
         <div className="container-medium pb-12">
           <div className="border border-t-0 grid md:grid-cols-2 lg:block w-full">
+            {/* Cabeçalho */}
             <div className="hidden lg:flex border-t bg-zinc-100 p-4 lg:p-8 gap-4 lg:gap-8 font-bold text-zinc-900 font-title">
               <div className="w-full">Produto</div>
               <div className="w-[32rem] max-w-[7rem]">Estoque</div>
@@ -154,97 +196,117 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                 </div>
               ))
             ) : products.length ? (
-              products.map((item, key) => (
-                <div
-                  key={key}
-                  className="grid grid-cols-2 lg:flex border-t p-4 lg:p-8 gap-2 lg:gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 items-center"
-                >
-                  <div className="col-span-2 w-full flex items-center gap-4">
-                    <div className="aspect-square relative overflow-hidden w-[4rem] rounded-md bg-zinc-100">
-                      {!!item?.gallery?.length ? (
-                        <Img
-                          src={
-                            item?.gallery[0]?.base_url +
-                            item?.gallery[0]?.details?.sizes["sm"]
-                          }
-                          size="xs"
-                          className="absolute object-cover h-full inset-0 w-full"
-                        />
+              <>
+                {products.map((item, key) => (
+                  <div
+                    key={key}
+                    className="grid grid-cols-2 lg:flex border-t p-4 lg:p-8 gap-2 lg:gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 items-center"
+                  >
+                    {/* conteúdo do item */}
+                    <div className="col-span-2 w-full flex items-center gap-4">
+                      <div className="aspect-square relative overflow-hidden w-[4rem] rounded-md bg-zinc-100">
+                        {!!item?.gallery?.length ? (
+                          <Img
+                            src={
+                              item?.gallery[0]?.base_url +
+                              item?.gallery[0]?.details?.sizes["sm"]
+                            }
+                            size="xs"
+                            className="absolute object-cover h-full inset-0 w-full"
+                          />
+                        ) : (
+                          <Icon
+                            icon="fa-image"
+                            className="text-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-25"
+                          />
+                        )}
+                      </div>
+                      <div className="font-semibold">{item.title}</div>
+                    </div>
+
+                    <div className="w-full lg:w-[32rem] lg:max-w-[6rem] text-center">
+                      {!!item?.quantity ? (
+                        <div className="rounded-md bg-zinc-100 py-2">
+                          {item?.quantity}
+                        </div>
                       ) : (
-                        <Icon
-                          icon="fa-image"
-                          className="text-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-25"
-                        />
+                        <div className="rounded-md bg-zinc-100 py-3 px-2 text-xs whitespace-nowrap">
+                          sem estoque
+                        </div>
                       )}
                     </div>
-                    <div className="font-semibold">{item.title}</div>
-                  </div>
 
-                  <div className="w-full lg:w-[32rem] lg:max-w-[6rem] text-center">
-                    {!!item?.quantity ? (
+                    <div className="w-full lg:w-[32rem] text-center">
+                      <div className="rounded-md bg-zinc-100">
+                        <div className="w-full py-2">R$ {item.price}</div>
+                      </div>
+                    </div>
+
+                    <div className="w-full lg:w-[32rem] text-center">
                       <div className="rounded-md bg-zinc-100 py-2">
-                        {item?.quantity}
+                        {!!item.status ? "Exibindo" : "Oculto"}
                       </div>
-                    ) : (
-                      <div className="rounded-md bg-zinc-100 py-3 px-2 text-xs whitespace-nowrap">
-                        sem estoque
+                    </div>
+
+                    <div className="w-full lg:w-[32rem] text-center">
+                      <div className="rounded-md bg-zinc-100 py-2">
+                        {item?.comercialType
+                          ? item.comercialType.charAt(0).toUpperCase() +
+                            item.comercialType.slice(1)
+                          : "—"}
                       </div>
-                    )}
-                  </div>
-
-                  <div className="w-full lg:w-[32rem] text-center">
-                    <div className="rounded-md bg-zinc-100">
-                      <div className="w-full py-2">R$ {item.price}</div>
                     </div>
-                  </div>
 
-                  <div className="w-full lg:w-[32rem] text-center">
-                    <div className="rounded-md bg-zinc-100 py-2">
-                      {!!item.status ? "Exibindo" : "Oculto"}
-                    </div>
-                  </div>
-
-                  <div className="w-full lg:w-[32rem] text-center">
-                    <div className="rounded-md bg-zinc-100 py-2">
-                      {item?.comercialType
-                        ? item.comercialType.charAt(0).toUpperCase() +
-                          item.comercialType.slice(1)
-                        : "—"}
-                    </div>
-                  </div>
-
-                  <div className="col-span-2 w-full lg:w-[32rem] text-center grid grid-cols-3 gap-2">
-                    <Link
-                      href={`/painel/produtos/${item.id}`}
-                      className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
-                    >
-                      <Icon icon="fa-pen" type="far" />
-                    </Link>
-
-                    <div className="group relative">
-                      <button
-                        type="button"
-                        className="rounded-md bg-zinc-100 group-hover:bg-yellow-300 ease py-2 px-3"
+                    <div className="col-span-2 w-full lg:w-[32rem] text-center grid grid-cols-3 gap-2">
+                      <Link
+                        href={`/painel/produtos/${item.id}`}
+                        className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
                       >
-                        <Icon icon="fa-trash" type="far" />
-                      </button>
-                      <input className="cursor-pointer absolute h-full w-full top-0 left-0 opacity-0" />
-                      <div className="absolute w-full bottom-0 left-0 hidden group-focus-within:block">
-                        <div className="absolute border top-0 -mt-1 left-1/2 -translate-x-1/2 flex bg-white py-2 px-4 text-sm rounded-md gap-5">
-                          <div className="cursor-pointer">cancelar</div>
-                          <button
-                            onClick={() => RemoveProduct(item)}
-                            className="cursor-pointer underline font-semibold text-zinc-900 hover:text-red-600"
-                          >
-                            confirmar
-                          </button>
+                        <Icon icon="fa-pen" type="far" />
+                      </Link>
+
+                      <div className="group relative">
+                        <button
+                          type="button"
+                          className="rounded-md bg-zinc-100 group-hover:bg-yellow-300 ease py-2 px-3"
+                        >
+                          <Icon icon="fa-trash" type="far" />
+                        </button>
+                        <input className="cursor-pointer absolute h-full w-full top-0 left-0 opacity-0" />
+                        <div className="absolute w-full bottom-0 left-0 hidden group-focus-within:block">
+                          <div className="absolute border top-0 -mt-1 left-1/2 -translate-x-1/2 flex bg-white py-2 px-4 text-sm rounded-md gap-5">
+                            <div className="cursor-pointer">cancelar</div>
+                            <button
+                              onClick={() => RemoveProduct(item)}
+                              className="cursor-pointer underline font-semibold text-zinc-900 hover:text-red-600"
+                            >
+                              confirmar
+                            </button>
+                          </div>
                         </div>
                       </div>
+                      <div />
                     </div>
-                    <div />
                   </div>
+                ))}
+
+                {/* 👇 Sentinela pra ativar scroll infinito */}
+                <div
+                  ref={observerRef}
+                  className="h-12 flex items-center justify-center"
+                >
+                  {loadingMore && (
+                    <div className="text-sm text-zinc-500">
+                      Carregando mais...
+                    </div>
+                  )}
+                  {!hasMore && (
+                    <div className="text-sm text-zinc-400">
+                      Todos os produtos carregados
+                    </div>
+                  )}
                 </div>
-              ))
+              </>
             ) : (
               <div className="text-center px-4 py-10">
                 Não encontramos resultados para essa busca
