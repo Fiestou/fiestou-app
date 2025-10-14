@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
@@ -23,16 +25,42 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
   const [placeholder, setPlaceholder] = useState<boolean>(true);
   const [products, setProducts] = useState<ProductType[]>([]);
 
-  // --------- helpers para o fetch do painel ---------
-  const normalizeParams = (params: Record<string, any>) => ({
-    search: params.busca ?? "",
-    order: params.ordem ?? "desc",
-    range: Number(params.range ?? 1000),
-    colors: params.cores ?? [],
-    categories: params["categoria[]"] ?? [],
-    storeId: params.store ?? undefined,
-    page: Number(params.page ?? 1),
-  });
+  // --------- Função chamada pelo Filter ---------
+  const fetchProducts = async (
+    params: Record<string, any>
+  ): Promise<ProductPage<ProductType>> => {
+    const normalized = {
+      search: params.busca ?? "",
+      order: params.ordem ?? "desc",
+      range: Number(params.range ?? 100),
+      colors: params.cores ?? [],
+      categories: params["categoria[]"] ?? [],
+      storeId: params.store ?? undefined,
+      page: Number(params.page ?? 1),
+    };
+
+    try {
+      setPlaceholder(true);
+      const queryString = new URLSearchParams(normalized as any).toString();
+      const res: any = await api.bridge({
+        method: "get",
+        url: "stores/products?" + queryString,
+      });
+
+      const raw = res?.data ?? res ?? {};
+      const items = raw.items ?? raw.data ?? (Array.isArray(raw) ? raw : []);
+      const total = Number(raw.total ?? items.length ?? 0);
+      const currentPage = Number(raw.page ?? normalized.page);
+      const pageSize = Number(
+        (raw.pageSize ?? raw.per_page ?? items.length) || 20
+      );
+      const pages = Number(raw.pages ?? Math.ceil(total / (pageSize || 1)));
+
+      return { items, total, page: currentPage, pageSize, pages };
+    } finally {
+      setPlaceholder(false);
+    }
+  };
 
   const onFilterResults = (data: ProductPage<ProductType>) => {
     setProducts(data.items);
@@ -85,12 +113,14 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                 <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
                   Produtos
                 </div>
-                {/* <div className="text-sm">{total} resultados</div> // se quiser exibir */}
               </div>
 
               <div className="flex items-center gap-4 w-full md:w-fit">
                 <div className="w-full grid">
-                  <Button className="whitespace-nowrap" href="/painel/produtos/novo">
+                  <Button
+                    className="whitespace-nowrap"
+                    href="/painel/produtos/novo"
+                  >
                     Novo produto
                   </Button>
                 </div>
@@ -100,7 +130,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
               <Filter
                 context="panel"
                 storeView
-                // fetchProducts={fetchProductsDoPainel}
+                fetchProducts={fetchProducts}
                 onResults={onFilterResults}
               />
             </div>
@@ -155,7 +185,9 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
                   <div className="w-full lg:w-[32rem] lg:max-w-[6rem] text-center">
                     {!!item?.quantity ? (
-                      <div className="rounded-md bg-zinc-100 py-2">{item?.quantity}</div>
+                      <div className="rounded-md bg-zinc-100 py-2">
+                        {item?.quantity}
+                      </div>
                     ) : (
                       <div className="rounded-md bg-zinc-100 py-3 px-2 text-xs whitespace-nowrap">
                         sem estoque
@@ -175,10 +207,12 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                     </div>
                   </div>
 
-                  {/* Aluguel ou venda */}
                   <div className="w-full lg:w-[32rem] text-center">
                     <div className="rounded-md bg-zinc-100 py-2">
-                      {(item.comercialType as string).charAt(0).toUpperCase() + (item.comercialType as string).slice(1)}
+                      {item?.comercialType
+                        ? item.comercialType.charAt(0).toUpperCase() +
+                          item.comercialType.slice(1)
+                        : "—"}
                     </div>
                   </div>
 
