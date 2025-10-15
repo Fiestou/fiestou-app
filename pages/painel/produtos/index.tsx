@@ -25,7 +25,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
   const [placeholder, setPlaceholder] = useState<boolean>(true);
   const [products, setProducts] = useState<ProductType[]>([]);
 
-  // 👇 novos estados para scroll infinito
+  // novos estados para scroll infinito
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
@@ -89,7 +89,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
     setLoadingMore(false);
   }, [page, hasMore, loadingMore]);
 
-  // 👇 observar o fim da lista
+  // observar o fim da lista
   useEffect(() => {
     if (!observerRef.current) return;
 
@@ -290,7 +290,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                   </div>
                 ))}
 
-                {/* 👇 Sentinela pra ativar scroll infinito */}
+                {/* Sentinela pra ativar scroll infinito */}
                 <div
                   ref={observerRef}
                   className="h-12 flex items-center justify-center"

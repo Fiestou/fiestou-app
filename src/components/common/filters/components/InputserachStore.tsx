@@ -1,4 +1,9 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useEffect,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { Input, Button } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 
@@ -27,6 +32,12 @@ const InputSearchStore = forwardRef<InputSearchStoreRef, Props>(
       onSearch(search.trim());
     };
 
+    useEffect(() => {
+      if (search.trim() === "") {
+        onSearch("");
+      }
+    }, [search]);
+
     useImperativeHandle(ref, () => ({
       triggerSearch: (value?: string) => {
         if (value) setSearch(value);
@@ -39,7 +50,15 @@ const InputSearchStore = forwardRef<InputSearchStoreRef, Props>(
         <div className="w-full relative">
           <Input
             value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSearch(e.target.value)
+            }
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
             placeholder="Pesquisar..."
             className="h-full w-full"
           />
