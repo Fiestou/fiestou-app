@@ -2,7 +2,6 @@ import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { FilterQueryType } from "@/src/types/filtros";
 import ModalFilter from "./filter/ModalFilter";
-import { StoreType } from "@/src/models/product";
 import InputSearchStore, {
   InputSearchStoreRef,
 } from "./components/InputserachStore";
@@ -153,7 +152,9 @@ export default function Filter<T = any>({
   };
 
   const handleTextSearch = (value: string) => {
-    const params = buildParams({ busca: value || "", page: 1 });
+    const params = buildParams(
+      value ? { busca: value, page: 1 } : { busca: "", page: 1 }
+    );
     act(params);
   };
 
