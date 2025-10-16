@@ -1,4 +1,3 @@
-// components/search/Inputsearchhome.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -28,10 +27,21 @@ export default function Inputsearchhome({
   return (
     <section ref={filterAreaRef} className="w-full relative">
       <div className="h-[56px]" />
-      <div className={`w-full z-[20] top-0 left-0 ${stick ? "fixed mt-[62px] md:mt-[70px]" : "absolute"}`}>
-        <div className={`bg-cyan-500 ${stick ? "h-1/2" : "h-0"} w-full absolute top-0 left-0`} />
+      <div
+        className={`w-full z-[20] top-0 left-0 ${
+          stick ? "fixed mt-[62px] md:mt-[70px]" : "absolute"
+        }`}
+      >
+        <div
+          className={`bg-cyan-500 ${
+            stick ? "h-1/2" : "h-0"
+          } w-full absolute top-0 left-0`}
+        />
         <div className="container-medium">
-          <form onSubmit={handleSubmit} className="flex border rounded-lg bg-white overflow-hidden relative">
+          <form
+            onSubmit={handleSubmit}
+            className="flex border rounded-lg bg-white overflow-hidden relative"
+          >
             <div className="w-fit relative p-1">
               <Button
                 type="button"
@@ -46,7 +56,10 @@ export default function Inputsearchhome({
                     </div>
                   </div>
                 ) : (
-                  <Icon icon="fa-sliders-h" className="text-zinc-900 text-xl md:text-base" />
+                  <Icon
+                    icon="fa-sliders-h"
+                    className="text-zinc-900 text-xl md:text-base"
+                  />
                 )}
               </Button>
             </div>
@@ -62,7 +75,11 @@ export default function Inputsearchhome({
 
             <div className="p-1">
               <Button className="px-3 py-2 h-full" type="submit">
-                <Icon icon="fa-search" type="far" className="md:text-lg rounded-none" />
+                <Icon
+                  icon="fa-search"
+                  type="far"
+                  className="md:text-lg rounded-none"
+                />
               </Button>
             </div>
           </form>
