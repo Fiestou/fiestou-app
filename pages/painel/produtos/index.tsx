@@ -24,6 +24,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
   const [placeholder, setPlaceholder] = useState<boolean>(true);
   const [products, setProducts] = useState<ProductType[]>([]);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // scroll infinito
   const [page, setPage] = useState<number>(1);
@@ -133,6 +134,16 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
     setLoadingMore(false);
   }, [page, hasMore, loadingMore, filters]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      // Exibe o botão se o usuário rolou mais de 400px
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // --- Adiciona este useEffect logo após a declaração dos states ---
   useEffect(() => {
     if (!observerRef.current || !hasMore) return;
@@ -166,6 +177,10 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
     observer.observe(observerRef.current);
     return () => observer.disconnect();
   }, [loadingMore, hasMore]);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // --------- Remover produto ---------
   const RemoveProduct = async (item: ProductType) => {
@@ -361,17 +376,26 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                   )}
                   {!hasMore && (
                     <div className="text-sm text-zinc-400">
-                      Todos os produtos carregados
+                      Todos os produtos carregados!
                     </div>
                   )}
                 </div>
               </>
             ) : (
               <div className="text-center px-4 py-10">
-                Não encontramos resultados para essa busca
+                Não encontramos resultados para essa busca!
               </div>
             )}
           </div>
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className="fixed bottom-6 right-6 z-50 bg-yellow-300 text-black rounded-full p-3 shadow-lg hover:bg-yellow-400 transition-all duration-200"
+              aria-label="Voltar ao topo"
+            >
+              <Icon icon="fa-arrow-up" type="fas" className="text-lg" />
+            </button>
+          )}
         </div>
       </section>
     </Template>
