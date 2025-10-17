@@ -29,11 +29,11 @@ export function tagfy(str: string) {
 export function slugfy(str: string) {
   return !!str
     ? str
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w\-]+/g, "-")
-      .replace(/\-\-+/g, "-")
-      .replace(/(^-+|-+$)/g, "-")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w\-]+/g, "-")
+        .replace(/\-\-+/g, "-")
+        .replace(/(^-+|-+$)/g, "-")
     : "";
 }
 
@@ -51,7 +51,15 @@ export function moneyFormat(value?: number | string, separator = ","): string {
     typeof value === "string" ? value.replace(/[^\d.-]/g, "") : value
   );
   const fixed = Number.isFinite(n) ? n : 0;
-  return fixed.toFixed(2).replace(".", separator);
+
+  // transforma em string com duas casas decimais
+  const [intPart, decPart] = fixed.toFixed(2).split(".");
+
+  // adiciona ponto a cada milhar
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  // junta de novo com o separador decimal
+  return `${formattedInt}${separator}${decPart}`;
 }
 
 export function serializeParam(key: string, value: any): string {
@@ -73,10 +81,21 @@ export function serializeParam(key: string, value: any): string {
 
 export function getQueryUrlParams() {
   const searchParams = new URLSearchParams(window.location.search);
-  const paramsObj: any = {};
+  const paramsObj: Record<string, string | string[]> = {};
 
-  searchParams.forEach((value, key) => {
-    paramsObj[key] = value;
+  searchParams.forEach((value, rawKey) => {
+    const key = rawKey.replace(/\[\]$/, "");
+    if (paramsObj[key] === undefined) {
+      paramsObj[key] = value;
+      return;
+    }
+
+    if (Array.isArray(paramsObj[key])) {
+      (paramsObj[key] as string[]).push(value);
+      return;
+    }
+
+    paramsObj[key] = [paramsObj[key] as string, value];
   });
 
   return paramsObj;
@@ -206,8 +225,7 @@ export function phoneJustNumber(str?: string) {
 }
 
 export function justNumber(str: any): string {
-  if (!str)
-    return "";
+  if (!str) return "";
 
   return str.toString().replace(/\D/g, "");
 }
@@ -381,10 +399,10 @@ export function getExtenseData(data_informada = "", pos = "") {
     return pos == "m"
       ? parseInt(month_informado)
       : pos == "d"
-        ? day_informado.split("T")[0]
-        : pos == "Y"
-          ? year_informado
-          : data.split("T")[0];
+      ? day_informado.split("T")[0]
+      : pos == "Y"
+      ? year_informado
+      : data.split("T")[0];
   }
 
   return "";
@@ -419,8 +437,9 @@ export function getDate(date?: any, days = 0) {
   month = date_.getMonth();
   year = date_.getFullYear();
 
-  return `${year}-${month < 10 ? "0" + month : month}-${day < 10 ? "0" + day : day
-    }`;
+  return `${year}-${month < 10 ? "0" + month : month}-${
+    day < 10 ? "0" + day : day
+  }`;
 }
 
 export const getCurrentDate = (daysAhead = 0) => {
@@ -450,7 +469,7 @@ export async function getZipCode(zipCode: string) {
   var validacep = /^[0-9]{8}$/;
 
   if (validacep.test(justNumber(zipCode))) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     return await fetch(`https://viacep.com.br/ws/${justNumber(zipCode)}/json/`)
       .then((data) => data.json())
       .then((data) => data);
