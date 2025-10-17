@@ -985,7 +985,7 @@ export default function Produto({
                       <Icon
                         type="far"
                         icon="fa-box"
-                        className="text-yellow-600"
+                        className="text-yellow-400"
                       />
                       <span className="font-bold text-zinc-900">
                         Consulte o frete
