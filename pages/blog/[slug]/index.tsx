@@ -14,11 +14,11 @@ export const getStaticPaths = async () => {
     const request: any = await api.content({ url: "post" });
     const posts = request?.data ?? [];
 
-    const paths = posts
-      .filter((post: any) => !!post?.slug)
-      .map((post: any) => ({
-        params: { slug: post.slug },
-      }));
+  const slugs = Array.isArray(request?.data) ? request.data : [];
+
+  const paths = slugs
+    .filter((slug: any) => !!slug)
+    .map((slug: any) => ({ params: { slug } }));
 
     return {
       paths,

@@ -9,7 +9,7 @@ import { ProductType } from "@/src/models/product";
 import Api from "@/src/services/api";
 import Template from "@/src/template";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 let limit = 15;
 
@@ -54,12 +54,15 @@ export default function Listagem({
 }) {
   const router = useRouter();
 
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
 
   const [page, setPage] = useState(0 as number);
+  const [hasMore, setHasMore] = useState(true as boolean);
+  const [loading, setLoading] = useState(false as boolean);
   const [placeholder, setPlaceholder] = useState(true as boolean);
-  const [params, setParams] = useState({} as any);
+  const [filters, setFilters] = useState<any>({});
   const [products, setProducts] = useState([] as Array<ProductType>);
+  const activeRequest = useRef(0);
 
   function toQuery(params: Record<string, any>) {
     const qs = new URLSearchParams();
@@ -74,70 +77,111 @@ export default function Listagem({
     return qs.toString();
   }
 
-  const getProducts = async () => {
-    const handleParams: any = getQueryUrlParams();
-    const normalized: any = {};
+  const normalizeFilters = useCallback(() => {
+    const params = getQueryUrlParams();
+    const normalized: Record<string, any> = {};
 
-    const passthroughKeys = ["busca", "range", "tags", "store", "ordem", "whereIn"];
-    for (const k of passthroughKeys) {
-      if (handleParams[k] !== undefined && handleParams[k] !== "") normalized[k] = handleParams[k];
-    }
-
-    const rawCategory =
-      handleParams["category"] ??
-      handleParams["categoria"] ??
-      handleParams["categorias"] ??
-      handleParams["categoria[]"] ??
-      handleParams["categories"];
-    if (rawCategory !== undefined && rawCategory !== "")
-      normalized["category"] = Array.isArray(rawCategory) ? rawCategory : [rawCategory];
-
-    const rawColors =
-      handleParams["colors"] ??
-      handleParams["color"] ??
-      handleParams["cores"] ??
-      handleParams["cor"] ??
-      handleParams["cor[]"];
-    if (rawColors !== undefined && rawColors !== "")
-      normalized["colors"] = Array.isArray(rawColors) ? rawColors : [rawColors];
-
-    setParams(normalized);
-
-    const offset = page * limit;
-
-    const qs = toQuery({ ...normalized, limit, offset });
-    
-    const request: any = await api.request(
-      {
-      method: "get",
-      url: `request/products?${qs}`,
+    const passthroughKeys = ["busca", "range", "tags", "store", "whereIn", "order"];
+    passthroughKeys.forEach((key) => {
+      const value = (params as any)[key];
+      if (value !== undefined && value !== "") {
+        normalized[key] = value;
+      }
     });
 
-    const handle = request.data;
+    if (normalized.order === undefined && (params as any).ordem) {
+      normalized.order = (params as any).ordem;
+    }
 
-    if (!handle?.length) {
-      setPage(-1);
-    } else {
-      setPage((p) => p + 1);
-      setProducts((prev) => [...prev, ...handle]);
+    const ensureSingleValue = (value: any) =>
+      Array.isArray(value) ? value[value.length - 1] : value;
+
+    ["busca", "range", "store", "order"].forEach((key) => {
+      if (normalized[key] !== undefined) {
+        normalized[key] = ensureSingleValue(normalized[key]);
+      }
+    });
+
+    const resolveArray = (value: unknown) => {
+      if (Array.isArray(value)) return value.filter(Boolean).map((item) => String(item));
+      if (value === undefined || value === null || value === "") return undefined;
+      return [String(value)];
+    };
+
+    const colorKeys = ["colors", "color", "cores", "cor"];
+    const colorsValue = colorKeys
+      .map((key) => (params as any)[key])
+      .find((value) => value !== undefined && value !== "");
+    const colors = resolveArray(colorsValue);
+    if (colors?.length) normalized.colors = colors;
+
+    const categoryKeys = ["category", "categories", "categoria", "categorias"];
+    const categoriesValue = categoryKeys
+      .map((key) => (params as any)[key])
+      .find((value) => value !== undefined && value !== "");
+    const categories = resolveArray(categoriesValue);
+    if (categories?.length) normalized.category = categories;
+
+    if (normalized.order && Array.isArray(normalized.order)) {
+      normalized.order = normalized.order[0];
     }
-    setPlaceholder(false);
-  };
-  
-  useEffect(() => {
-    if (!!window) {
-      getProducts();
-    }
+
+    return normalized;
   }, []);
 
+  const fetchProducts = useCallback(
+    async (activeFilters: Record<string, any>, nextPage: number, replace = false) => {
+      const requestId = ++activeRequest.current;
+      setLoading(true);
+
+      try {
+        const offset = nextPage * limit;
+        const qs = toQuery({ ...activeFilters, limit, offset });
+
+        const response: any = await api.request({
+          method: "get",
+          url: `request/products?${qs}`,
+        });
+
+        if (requestId !== activeRequest.current) {
+          return;
+        }
+
+        const items = (response?.data ?? []) as ProductType[];
+
+        setProducts((prev) => (replace ? items : [...prev, ...items]));
+
+        if (items.length >= limit) {
+          setPage(nextPage + 1);
+          setHasMore(true);
+        } else {
+          setPage(nextPage);
+          setHasMore(false);
+        }
+      } finally {
+        if (requestId === activeRequest.current) {
+          setLoading(false);
+          setPlaceholder(false);
+        }
+      }
+    },
+    [api]
+  );
+
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    const normalized = normalizeFilters();
+    setFilters(normalized);
     setProducts([]);
     setPage(0);
+    setHasMore(true);
     setPlaceholder(true);
-    getProducts();
-    
-  }, [router.asPath]);
+    fetchProducts(normalized, 0, true);
+  }, [router.asPath, normalizeFilters, fetchProducts]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!hasMore || loading) return;
+    fetchProducts(filters, page);
+  }, [fetchProducts, filters, hasMore, loading, page]);
 
   return (
     <Template
@@ -179,7 +223,7 @@ export default function Listagem({
             <div className="animate-pulse py-8 rounded-lg overflow-hidden bg-zinc-200"></div>
           </div>
         ) : (
-          <Filter {...params} />
+          <Filter {...filters} />
         )}
       </div>
 
@@ -213,14 +257,14 @@ export default function Listagem({
               </div>
             )}
 
-            {page != -1 && (
+            {hasMore && (
               <div className="text-center">
                 <Button
-                  onClick={() => {
-                    getProducts();
-                  }}
+                  disable={loading}
+                  loading={loading}
+                  onClick={handleLoadMore}
                 >
-                  Carregar mais
+                  {loading ? "Carregando..." : "Carregar mais"}
                 </Button>
               </div>
             )}
