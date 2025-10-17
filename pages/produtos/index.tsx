@@ -16,13 +16,11 @@ export default function Produtos() {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
-
   const [content, setContent] = useState<any>({});
   const [HeaderFooter, setHeaderFooter] = useState<any>({});
   const [DataSeo, setDataSeo] = useState<any>({});
   const [Scripts, setScripts] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(true);
-
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -81,7 +79,6 @@ export default function Produtos() {
         setLoading(false);
       }
     }
-
 
     loadProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps

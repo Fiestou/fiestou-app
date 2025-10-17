@@ -163,7 +163,7 @@ export default function Parceiro({ content }: { content: any }) {
                 <div className="text-center self-center pt-4">
                   <div
                     onClick={() => UserLogout()}
-                    className="cursor-pointer underline text-zinc-900 p-5 font-semibold whitespace-nowrap"
+                    className="cursor-pointer  p-5 font-semibold whitespace-nowrap border border-red-500 py-4 px-[26px] rounded-[7px] bg-red-500 text-white hover:bg-red-600 transition duration-300"
                   >
                     Sair da conta
                   </div>
