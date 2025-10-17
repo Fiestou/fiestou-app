@@ -11,11 +11,11 @@ export const getStaticPaths = async () => {
     const request: any = await api.content({ method: "get", url: "communicate" });
     const comunicados = request?.data ?? [];
 
-    const paths = comunicados
-      .filter((item: any) => !!item?.slug)
-      .map((item: any) => ({
-        params: { slug: item.slug },
-      }));
+  const slugs = Array.isArray(request?.data) ? request.data : [];
+
+  const paths = slugs
+    .filter((slug: any) => !!slug)
+    .map((slug: any) => ({ params: { slug } }));
 
     return {
       paths,

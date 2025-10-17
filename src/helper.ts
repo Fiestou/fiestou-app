@@ -73,10 +73,21 @@ export function serializeParam(key: string, value: any): string {
 
 export function getQueryUrlParams() {
   const searchParams = new URLSearchParams(window.location.search);
-  const paramsObj: any = {};
+  const paramsObj: Record<string, string | string[]> = {};
 
-  searchParams.forEach((value, key) => {
-    paramsObj[key] = value;
+  searchParams.forEach((value, rawKey) => {
+    const key = rawKey.replace(/\[\]$/, "");
+    if (paramsObj[key] === undefined) {
+      paramsObj[key] = value;
+      return;
+    }
+
+    if (Array.isArray(paramsObj[key])) {
+      (paramsObj[key] as string[]).push(value);
+      return;
+    }
+
+    paramsObj[key] = [paramsObj[key] as string, value];
   });
 
   return paramsObj;
