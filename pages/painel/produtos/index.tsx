@@ -6,7 +6,7 @@ import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
 import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, use } from "react";
 import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/filters/Filter";
@@ -25,13 +25,16 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
   const [placeholder, setPlaceholder] = useState<boolean>(true);
   const [products, setProducts] = useState<ProductType[]>([]);
 
-  // novos estados para scroll infinito
+  // scroll infinito
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [filters, setFilters] = useState<Record<string, any>>({});
   const observerRef = useRef<HTMLDivElement | null>(null);
 
-  // --------- Função chamada pelo Filter ---------
+  // --------- Buscar produtos ---------
+  const DEFAULT_PAGE_SIZE = 20; // mesma default do backend
+
   const fetchProducts = async (
     params: Record<string, any>
   ): Promise<ProductPage<ProductType>> => {
@@ -40,13 +43,16 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
       order: params.ordem ?? "desc",
       range: Number(params.range ?? 100),
       colors: params.cores ?? [],
-      categories: params["categoria[]"] ?? [],
-      storeId: params.store ?? undefined,
+      // envia 'category[]' e 'category' para compatibilidade com backends diferentes
+      "category[]": params["categoria[]"] ?? params.categories ?? [],
+      category: params.category ?? params["categoria[]"] ?? [],
       page: Number(params.page ?? 1),
+      limit: Number(params.limit ?? DEFAULT_PAGE_SIZE), // garante que enviamos limit
     };
 
     try {
       if (normalized.page === 1) setPlaceholder(true);
+
       const queryString = new URLSearchParams(normalized as any).toString();
       const res: any = await api.bridge({
         method: "get",
@@ -54,13 +60,33 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
       });
 
       const raw = res?.data ?? res ?? {};
+
       const items = raw.items ?? raw.data ?? (Array.isArray(raw) ? raw : []);
-      const total = Number(raw.total ?? items.length ?? 0);
-      const currentPage = Number(raw.page ?? normalized.page);
-      const pageSize = Number(
-        (raw.pageSize ?? raw.per_page ?? items.length) || 20
+      const total = Number(raw.total ?? raw.count ?? 0);
+
+      const currentPage = Number(
+        raw.page ?? raw.current_page ?? normalized.page
       );
-      const pages = Number(raw.pages ?? Math.ceil(total / (pageSize || 10)));
+
+      const pageSize =
+        Number(
+          raw.pageSize ??
+            raw.per_page ??
+            raw.perPage ??
+            raw.limit ??
+            normalized.limit
+        ) || DEFAULT_PAGE_SIZE;
+
+      const pages =
+        Number(
+          raw.pages ??
+            raw.last_page ??
+            (total > 0
+              ? Math.ceil(total / pageSize)
+              : items.length
+              ? Math.ceil(items.length / pageSize)
+              : 1)
+        ) || 1;
 
       return { items, total, page: currentPage, pageSize, pages };
     } finally {
@@ -68,47 +94,80 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
     }
   };
 
-  const onFilterResults = (data: ProductPage<ProductType>) => {
+  // --------- Quando filtro muda ---------
+  const onFilterResults = (data: ProductPage<ProductType>, params?: any) => {
     setProducts(data.items);
     setPage(1);
-    setHasMore(data.page < data.pages);
+    // usa pages quando disponível, senão confia no pageSize/items
+    setHasMore(data.page < data.pages || data.items.length === data.pageSize);
     setPlaceholder(false);
+
+    // salva filtros e força que exista limit nos próximos requests
+    const saved = {
+      ...(params ?? {}),
+      limit: params?.limit ?? DEFAULT_PAGE_SIZE,
+    };
+    setFilters(saved);
   };
 
-  // 👇 carregar mais produtos
+  // --------- Carregar mais produtos ---------
+  // --------- Carregar mais produtos ---------
   const loadMoreProducts = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
 
     const nextPage = page + 1;
-    const data = await fetchProducts({ page: nextPage });
+    const data = await fetchProducts({
+      ...filters,
+      page: nextPage,
+      limit: DEFAULT_PAGE_SIZE,
+    });
 
     setProducts((prev) => [...prev, ...data.items]);
     setPage(nextPage);
-    setHasMore(data.page < data.pages);
-    setLoadingMore(false);
-  }, [page, hasMore, loadingMore]);
 
-  // observar o fim da lista
+    const nextHasMore =
+      data.page < data.pages || data.items.length === data.pageSize;
+
+    setHasMore(Boolean(nextHasMore));
+    setLoadingMore(false);
+  }, [page, hasMore, loadingMore, filters]);
+
+  // --- Adiciona este useEffect logo após a declaração dos states ---
   useEffect(() => {
-    if (!observerRef.current) return;
+    if (!observerRef.current || !hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0].isIntersecting && !loadingMore) {
           loadMoreProducts();
         }
       },
-      { threshold: 1.0 }
+      { threshold: 0.5 }
     );
 
     observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [loadingMore, hasMore, loadMoreProducts]);
 
-    return () => {
-      if (observerRef.current) observer.unobserve(observerRef.current);
-    };
-  }, [loadMoreProducts]);
+  // --------- Observer: detecta fim da lista ---------
+  useEffect(() => {
+    if (!observerRef.current || !hasMore) return;
 
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.5 } // mais sensível que 1.0
+    );
+
+    observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [loadingMore, hasMore]);
+
+  // --------- Remover produto ---------
   const RemoveProduct = async (item: ProductType) => {
     setPlaceholder(true);
 
@@ -169,7 +228,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                 context="panel"
                 storeView
                 fetchProducts={fetchProducts}
-                onResults={onFilterResults}
+                onResults={(data, params) => onFilterResults(data, params)}
               />
             </div>
           </div>
@@ -290,7 +349,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                   </div>
                 ))}
 
-                {/* Sentinela pra ativar scroll infinito */}
+                {/* Sentinela */}
                 <div
                   ref={observerRef}
                   className="h-12 flex items-center justify-center"
