@@ -180,7 +180,7 @@ export default function Store({
       },
     });
 
-    const handle = request.data;
+    const handle = request?.data;
 
     if (!handle?.length) {
       setPage(-1);
