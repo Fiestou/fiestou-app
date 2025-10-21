@@ -69,7 +69,6 @@ const formInitial = {
 };
 
 export default function Saque({
-  user,
   content,
   bankAccounts,
 }: {

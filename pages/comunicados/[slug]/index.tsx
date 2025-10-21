@@ -4,46 +4,64 @@ import Img from "@/src/components/utils/ImgBase";
 import { getExtenseData, getImage } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
-export const getStaticPaths = async (ctx: any) => {
+export const getStaticPaths = async () => {
   const api = new Api();
 
-  let request: any = await api.content({method: 'get', url: `communicate` });
+  try {
+    const request: any = await api.content({ method: "get", url: "communicate" });
+    const comunicados = request?.data ?? [];
 
-  const paths = request.data
+  const slugs = Array.isArray(request?.data) ? request.data : [];
+
+  const paths = slugs
     .filter((slug: any) => !!slug)
-    .map((slug: any) => {
-      return { params: { slug: slug } };
-    });
+    .map((slug: any) => ({ params: { slug } }));
 
-  return {
-    paths: paths,
-    fallback: true,
-  };
+    return {
+      paths,
+      fallback: "blocking",
+    };
+  } catch (error) {
+    console.error("Erro em getStaticPaths (communicate):", error);
+    return {
+      paths: [],
+      fallback: "blocking",
+    };
+  }
 };
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-
   const { slug } = ctx.params;
 
-  let request: any = await api.content({method: 'get', url: `communicate/${slug}` });
+  try {
+    const request: any = await api.content({ method: "get", url: `communicate/${slug}` });
 
-  const Communicate = request?.data?.Communicate ?? {};
-  const HeaderFooter = request?.data?.HeaderFooter ?? {};
-  const DataSeo = request?.data?.DataSeo ?? {};
-  const Scripts = request?.data?.Scripts ?? {};
+    const Communicate = request?.data?.Communicate ?? {};
+    const HeaderFooter = request?.data?.HeaderFooter ?? {};
+    const DataSeo = request?.data?.DataSeo ?? {};
+    const Scripts = request?.data?.Scripts ?? {};
 
-  return {
-    props: {
-      Communicate: Communicate,
-      HeaderFooter: HeaderFooter,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
-    },
-  };
+    if (!Communicate?.slug) {
+      return { notFound: true };
+    }
+
+    return {
+      props: {
+        Communicate,
+        HeaderFooter,
+        DataSeo,
+        Scripts,
+      },
+      revalidate: 60, // Rebuild automático a cada 1 min
+    };
+  } catch (error) {
+    console.error("Erro em getStaticProps (communicate):", error);
+    return { notFound: true };
+  }
 }
 
-export default function Communicate({
+export default function CommunicatePage({
   Communicate,
   HeaderFooter,
   DataSeo,
@@ -58,11 +76,9 @@ export default function Communicate({
     <Template
       scripts={Scripts}
       metaPage={{
-        title: `${Communicate?.title} | ${DataSeo?.site_text}`,
-        image: !!getImage(DataSeo?.site_image)
-          ? getImage(DataSeo?.site_image)
-          : "",
-        url: `comunicados/${Communicate?.slug}`,
+        title: `${Communicate?.title ?? "Comunicado"} | ${DataSeo?.site_text ?? ""}`,
+        image: getImage(DataSeo?.site_image) || "",
+        url: `comunicados/${Communicate?.slug ?? ""}`,
       }}
       header={{
         template: "default",
@@ -74,7 +90,7 @@ export default function Communicate({
         content: HeaderFooter,
       }}
     >
-      <section className="bg-cyan-500  pt-24 md:pt-40 relative">
+      <section className="bg-cyan-500 pt-24 md:pt-40 relative">
         <div className="container-medium relative pb-4 md:pb-10 text-white">
           <div className="grid text-center">
             <div className="pb-4">
@@ -82,7 +98,7 @@ export default function Communicate({
                 justify="justify-center"
                 links={[
                   {
-                    url: "/comunicados/" + Communicate?.slug,
+                    url: "/comunicados",
                     name: "Comunicados",
                   },
                 ]}
@@ -100,7 +116,7 @@ export default function Communicate({
 
       {!!getImage(Communicate?.image) && (
         <section className="relative">
-          <div className="absolute w-full h-1/2 bg-cyan-500 "></div>
+          <div className="absolute w-full h-1/2 bg-cyan-500"></div>
           <div className="w-full mx-auto max-w-[56rem] relative rounded-xl overflow-hidden">
             <div className="aspect-[4/2] bg-zinc-100">
               <Img
@@ -116,12 +132,13 @@ export default function Communicate({
       <section className="my-10 pb-20">
         <div className="container-medium">
           <div className="mx-auto max-w-[40rem] grid gap-4">
-            {Communicate?.blocks.map((item: any, key: any) => (
-              <div
-                key={key}
-                dangerouslySetInnerHTML={{ __html: item.content }}
-              ></div>
-            ))}
+            {!!Communicate?.blocks?.length &&
+              Communicate.blocks.map((item: any, key: number) => (
+                <div
+                  key={key}
+                  dangerouslySetInnerHTML={{ __html: item.content }}
+                ></div>
+              ))}
           </div>
         </div>
       </section>
