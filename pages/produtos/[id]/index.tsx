@@ -32,7 +32,7 @@ import { StoreType } from "@/src/models/store";
 import Newsletter from "@/src/components/common/Newsletter";
 import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
 import { Swiper, SwiperSlide } from "swiper/react";
-import {Autoplay, Navigation, Pagination, Zoom } from "swiper";
+import { Autoplay, Navigation, Pagination, Zoom } from "swiper";
 import "swiper/css";
 import "swiper/css/zoom";
 import "swiper/css/navigation";
@@ -83,7 +83,7 @@ export async function getStaticProps(ctx: any) {
 
     request = await api.content(
       {
-        method: 'get',
+        method: "get",
         url: "products",
       },
       ctx
@@ -127,20 +127,25 @@ export default function Produto({
   Scripts: any;
 }) {
   const api = new Api();
-
   const { isFallback } = useRouter();
-
   const [swiperInstance, setSwiperInstance] = useState(null as any);
-
-  const imageCover =
-    !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
 
   const [share, setShare] = useState(false as boolean);
   const baseUrl = `https://fiestou.com.br/produtos/${product?.id}`;
-
   const [loadCart, setLoadCart] = useState(false as boolean);
   const [resume, setResume] = useState(false as boolean);
   const [blockdate, setBlockdate] = useState(Array<string>());
+
+  const [days, setDays] = useState(1);
+  const [cep, setCep] = useState("");
+  const [cepError, setCepError] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
+  const [cartModal, setCartModal] = useState(false as boolean);
+  const [inCart, setInCart] = useState(false as boolean);
+  const [unavailable, setUnavailable] = useState([] as Array<string>);
+  const [activeVariations, setActiveVariations] = useState([] as Array<any>);
+  const [layout, setLayout] = useState({} as any);
 
   const [productToCart, setProductToCart] = useState<ProductOrderType>({
     product: product?.id,
@@ -150,11 +155,15 @@ export default function Produto({
     total: getPriceValue(product).price,
   });
 
+  const imageCover =
+    !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
+
   const formatMoney = (value: any): string => {
-    const num = typeof value === 'string' 
-      ? parseFloat(value.replace(/\./g, '').replace(',', '.')) 
-      : Number(value);
-    return new Intl.NumberFormat('pt-BR', {
+    const num =
+      typeof value === "string"
+        ? parseFloat(value.replace(/\./g, "").replace(",", "."))
+        : Number(value);
+    return new Intl.NumberFormat("pt-BR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num);
@@ -163,12 +172,6 @@ export default function Produto({
   useEffect(() => {
     setBlockdate(product.unavailableDates ?? []);
   }, [product]);
-
-  const [days, setDays] = useState(1);
-  const [cep, setCep] = useState("");
-  const [cepError, setCepError] = useState(false);
-  const [loadingCep, setLoadingCep] = useState(false);
-  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
 
   const handleQuantity = (q: any) => {
     const qtd = Number(q);
@@ -213,7 +216,6 @@ export default function Produto({
     setProductToCart(handle);
   };
 
-  const [activeVariations, setActiveVariations] = useState([] as Array<any>);
   const updateOrder = (
     value: VariationProductOrderType,
     attr: AttributeType
@@ -280,11 +282,6 @@ export default function Produto({
     updateOrderTotal(orderUpdate);
   };
 
-  const [cartModal, setCartModal] = useState(false as boolean);
-
-  const [inCart, setInCart] = useState(false as boolean);
-  const [unavailable, setUnavailable] = useState([] as Array<string>);
-
   const handleCart = (dates?: Array<string>) => {
     let handle = GetCart()
       .filter((item: any) => item.product == product.id)
@@ -319,9 +316,8 @@ export default function Produto({
     setUnavailable(handleDates);
   };
 
-  const sendToCart = (e: any) => {
+  const sendToCart = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     setLoadCart(true);
 
     if (AddToCart(productToCart)) {
@@ -359,8 +355,6 @@ export default function Produto({
       },
     });
   };
-
-  const [layout, setLayout] = useState({} as any);
 
   const renderComments = () => (
     <>
@@ -418,7 +412,7 @@ export default function Produto({
       });
       const priceValue = response?.data?.price ?? null;
       setDeliveryFee(priceValue);
-      if(priceValue != 0){
+      if (priceValue != 0) {
         setCepError(!priceValue);
       }
     } catch (e) {
@@ -675,7 +669,9 @@ export default function Produto({
     >
       <section className="">
         <div className="container-medium py-4 md:py-6">
-          <Breadcrumbs links={[{ url: `/produtos/${product?.id}`, name: "Produtos" }]} />
+          <Breadcrumbs
+            links={[{ url: `/produtos/${product?.id}`, name: "Produtos" }]}
+          />
         </div>
       </section>
       <section className="">
@@ -755,7 +751,13 @@ export default function Produto({
               </div>
             </div>
             <div className="w-full md:w-1/2">
-              <form onSubmit={(e: any) => sendToCart(e)} method="POST">
+              <form
+                onSubmit={(e: React.FormEvent<HTMLFormElement>) =>
+                  sendToCart(e)
+                }
+                method="POST"
+              >
+                chama aqui
                 <div className="grid md:flex gap-4 pb-4 lg:gap-10">
                   <div className="w-full pt-2 md:pt-0">
                     <h1 className="font-title font-bold text-zinc-900 text-3xl">
@@ -785,7 +787,10 @@ export default function Produto({
                         </Badge>
                       )}
                       <Badge style="light">
-                        {(product?.comercialType as string).charAt(0).toUpperCase() + (product?.comercialType as string).slice(1)}
+                        {(product?.comercialType as string)
+                          .charAt(0)
+                          .toUpperCase() +
+                          (product?.comercialType as string).slice(1)}
                       </Badge>
                     </div>
 
@@ -854,7 +859,6 @@ export default function Produto({
                     </div>
                   </div>
                 </div>
-
                 <div className="grid gap-6">
                   {Array.isArray(product?.attributes) &&
                     product?.attributes.map((attribute, index) => (
@@ -1138,9 +1142,7 @@ export default function Produto({
                     {!!productToCart?.total && (
                       <>
                         <div className="leading-tight self-center w-full px-4">
-                          <div className="text-sm text-zinc-900">
-                            Total:
-                          </div>
+                          <div className="text-sm text-zinc-900">Total:</div>
                           <div className="font-bold text-zinc-900 text-lg whitespace-nowrap">
                             R$ {formatMoney(productToCart.total)}
                           </div>
@@ -1309,8 +1311,10 @@ export default function Produto({
         </div>
       </section>
 
+      {/* Combina com */}
       {!!product?.combinations && (
         <section className="pt-8 md:pt-16 ">
+          estou aqui
           <div className="container-medium relative ">
             <div className="grid md:flex items-center justify-between gap-2">
               <div className="flex w-full items-center gap-2">
@@ -1335,6 +1339,8 @@ export default function Produto({
         </section>
       )}
 
+      {/* Veja também */}
+
       {!!match.length && (
         <section className="pt-8 md:pt-16  ">
           <div className="container-medium relative">
@@ -1358,13 +1364,15 @@ export default function Produto({
         </section>
       )}
 
-      <div className="pt-16 "></div>
+      <div className="pt-16 ">div vazia</div>
 
+      <span>Sidebar inutil</span>
       <SidebarCart
         status={cartModal}
         close={() => setCartModal(false as boolean)}
       />
 
+      {/* Receba novidades e promoções */}
       <Newsletter />
 
       {layout.isMobile && (
