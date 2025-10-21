@@ -2,12 +2,12 @@ import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { FilterQueryType } from "@/src/types/filtros";
 import ModalFilter from "./filter/ModalFilter";
-import { StoreType } from "@/src/models/product";
-import InputserachStore from "./components/InputserachStore";
+import InputSearchStore, {
+  InputSearchStoreRef,
+} from "./components/InputserachStore";
 import Inputsearchhome from "./components/Inputsearchhome";
-import Api from "@/src/services/api"; // <- ADD: vamos usar no auto-load do painel
+import Api from "@/src/services/api";
 
-// se quiser, tipa a sua paginação certinho
 export type ProductPage<T = any> = {
   items: T[];
   total: number;
@@ -44,10 +44,12 @@ export default function Filter<T = any>({
   });
 
   const [loading, setLoading] = useState(false);
+  const [count, setCount] = useState<number>(0);
+  const [filterModal, setFilterModal] = useState<boolean>(false);
+  const [stick, setStick] = useState<boolean>(false);
 
-  const handleQueryValues = (value: Partial<FilterQueryType>) => {
-    setQuery((prev) => ({ ...prev, ...value }));
-  };
+  const filterArea = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<InputSearchStoreRef>(null);
 
   const startQueryHandle = () => {
     const routerQuery = router.query as {
@@ -59,11 +61,15 @@ export default function Filter<T = any>({
     };
 
     setQuery((prev) => {
-      const next: Partial<FilterQueryType> = { categories: prev.categories ?? [] };
+      const next: Partial<FilterQueryType> = {
+        categories: prev.categories ?? [],
+      };
 
       if (routerQuery?.colors?.length) {
         next.colors =
-          typeof routerQuery.colors === "string" ? [routerQuery.colors] : routerQuery.colors;
+          typeof routerQuery.colors === "string"
+            ? [routerQuery.colors]
+            : routerQuery.colors;
       }
 
       if (routerQuery?.range) {
@@ -78,8 +84,6 @@ export default function Filter<T = any>({
     });
   };
 
-  const [count, setCount] = useState<number>(0);
-
   useEffect(() => {
     let handle = 0;
     handle += query.categories.length;
@@ -89,9 +93,9 @@ export default function Filter<T = any>({
     setCount(handle);
   }, [query]);
 
-  const [filterModal, setFilterModal] = useState<boolean>(false);
-  const filterArea = useRef<HTMLDivElement>(null);
-  const [stick, setStick] = useState<boolean>(false);
+  const handleQueryValues = (value: Partial<FilterQueryType>) => {
+    setQuery((prev) => ({ ...prev, ...value }));
+  };
 
   const handleStick = () => {
     const element = filterArea.current;
@@ -112,19 +116,18 @@ export default function Filter<T = any>({
     }
   }, [router.query]);
 
-
   const buildParams = (overrides?: Record<string, any>) => {
     const params: Record<string, any> = {
       ...(busca ? { busca } : {}),
       order: query.order,
       range: String(query.range),
-      page: 1,
+      page: 10,
       ...overrides,
     };
 
     if (store) params.store = store;
     if (query.colors.length) params.colors = query.colors;
-    if (query.categories.length) params.category = query.categories; // <-- aqui!
+    if (query.categories.length) params.category = query.categories;
 
     return params;
   };
@@ -148,9 +151,10 @@ export default function Filter<T = any>({
     }
   };
 
-  // busca do header
   const handleTextSearch = (value: string) => {
-    const params = buildParams({ busca: value || "", page: 1 });
+    const params = buildParams(
+      value ? { busca: value, page: 1 } : { busca: "", page: 1 }
+    );
     act(params);
   };
 
@@ -159,7 +163,6 @@ export default function Filter<T = any>({
     act(params);
 
     if (context === "panel") {
-      // dispara o fetch manualmente
       loadPanelProducts(1);
     }
 
@@ -169,40 +172,37 @@ export default function Filter<T = any>({
   const loadPanelProducts = async (page = 1) => {
     try {
       setLoading(true);
-
-      // Monta todos os parâmetros selecionados
       const params = buildParams({ page });
-
-      // Converte para query string
       const queryString = new URLSearchParams(params).toString();
-
       const res: any = await api.bridge({
         method: "get",
         url:
-          (context === "panel"
-            ? "stores/products?"
-            : "request/products?") + queryString,
+          (context === "panel" ? "stores/products?" : "request/products?") +
+          queryString,
       });
-      
+
       const raw = res?.data ?? res ?? {};
       const items = raw.items ?? raw.data ?? (Array.isArray(raw) ? raw : []);
       const total = Number(raw.total ?? items.length ?? 0);
       const currentPage = Number(raw.page ?? page);
-      const pageSize = Number((raw.pageSize ?? raw.per_page ?? items.length) || 20);
+      const pageSize = Number(
+        (raw.pageSize ?? raw.per_page ?? items.length) || 20
+      );
       const pages = Number(raw.pages ?? Math.ceil(total / (pageSize || 1)));
 
-      onResults?.({ items, total, page: currentPage, pageSize, pages }, { page: currentPage });
+      onResults?.(
+        { items, total, page: currentPage, pageSize, pages },
+        { page: currentPage }
+      );
     } finally {
       setLoading(false);
     }
   };
 
-
   useEffect(() => {
     if (context === "panel" || context === "store") {
       loadPanelProducts(1);
     }
-
   }, []);
 
   return (
@@ -210,10 +210,10 @@ export default function Filter<T = any>({
       {store && <input type="hidden" value={store} name="store" />}
 
       {storeView ? (
-        <InputserachStore
+        <InputSearchStore
+          ref={searchRef}
           count={count}
           stick={stick}
-          busca={busca}
           filterAreaRef={filterArea}
           onOpenFilters={() => setFilterModal(true)}
           onSearch={handleTextSearch}

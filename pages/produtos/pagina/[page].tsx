@@ -20,27 +20,27 @@ import Filter from "@/src/components/common/filters/Filter";
 let limit = 15;
 
 export const getStaticPaths = async (ctx: any) => {
-  // const api = new Api();
-  // const request: any = await api.request(
-  //   {
-  //     method: "get",
-  //     url: "request/products",
-  //   },
-  //   ctx
-  // );
+  const api = new Api();
+  const request: any = await api.request(
+    {
+      method: "get",
+      url: "request/products",
+    },
+    ctx
+  );
 
-  // let metadata: any = request?.metadata ?? {};
+  let metadata: any = request?.metadata ?? {};
 
-  // const pages: any = new Array(Math.ceil((metadata?.count ?? limit) / limit))
-  //   .fill(true)
-  //   .filter((item, key) => !!key)
-  //   .map((item, key) => {
-  //     return key + 1;
-  //   });
+  const pages: any = new Array(Math.ceil((metadata?.count ?? limit) / limit))
+    .fill(true)
+    .filter((item, key) => !!key)
+    .map((item, key) => {
+      return key + 1;
+    });
 
-  // const paths = pages.map((item: any) => {
-  //   return { params: { page: item.toString() } };
-  // });
+  const paths = pages.map((item: any) => {
+    return { params: { page: item.toString() } };
+  });
 
   return {
     paths: [],

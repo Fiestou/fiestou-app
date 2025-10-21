@@ -22,7 +22,7 @@ export default function Newsletter() {
             </div>
             <div className="max-w-[40rem] mx-auto grid gap-2 md:gap-4 ">
               <div className="">
-                <Label>Email</Label>
+                <Label>E-mail:</Label>
                 <Input placeholder="Insira seu melhor e-mail" />
               </div>
               <Button>Cadastrar agora</Button>

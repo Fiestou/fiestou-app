@@ -98,7 +98,7 @@ export default function Button(attr: ButtonType) {
           : attr?.type ?? "submit"
         }`}
       onClick={(e) =>
-        !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : console.log("Clique bloqueado ou sem função")
+        !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : {}
       }
     >
       {renderChildren()}

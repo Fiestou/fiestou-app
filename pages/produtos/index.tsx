@@ -1,94 +1,108 @@
+import { useEffect, useState, useRef } from "react";
 import Product from "@/src/components/common/Product";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
-import Img from "@/src/components/utils/ImgBase";
 import { getImage } from "@/src/helper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { useRouter } from "next/router";
-import Paginate from "@/src/components/utils/Paginate";
-import { Footer } from "@/src/default/footer";
 import Filter from "@/src/components/common/filters/Filter";
 
 let limit = 15;
 
-export async function getStaticProps(ctx: any) {
-  const api = new Api();
-  const params: any = ctx.params;
+export default function Produtos() {
+  const [products, setProducts] = useState<ProductType[]>([]);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [content, setContent] = useState<any>({});
+  const [HeaderFooter, setHeaderFooter] = useState<any>({});
+  const [DataSeo, setDataSeo] = useState<any>({});
+  const [Scripts, setScripts] = useState<any>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const observerRef = useRef<HTMLDivElement | null>(null);
 
-  let request: any = await api.content(
-    {
-      method: 'get',
-      url: "products",
-    },
-    ctx
-  );
+  useEffect(() => {
+    const api = new Api();
 
-  const HeaderFooter = request?.data?.HeaderFooter ?? {};
-  const DataSeo = request?.data?.DataSeo ?? {};
-  const Scripts = request?.data?.Scripts ?? {};
-  const content = request?.data?.content ?? {};
+    async function loadContent() {
+      try {
+        let request: any = await api.content({
+          method: "get",
+          url: "products",
+        });
 
-  let offset = !!params?.page ? (params?.page - 1) * limit : 0;
+        setHeaderFooter(request?.data?.HeaderFooter ?? {});
+        setDataSeo(request?.data?.DataSeo ?? {});
+        setScripts(request?.data?.Scripts ?? {});
+        setContent(request?.data?.content ?? {});
+      } catch (err) {
+        console.error("Erro ao carregar conteúdo inicial:", err);
+      }
+    }
 
-  request = await api.request(
-    {
-      method: "get",
-      url: "request/products",
-      data: {
-        limit: limit,
-        offset: offset,
-        ordem: "desc",
+    loadContent();
+  }, []);
+
+  useEffect(() => {
+    const api = new Api();
+
+    async function loadProducts() {
+      setLoading(true);
+      try {
+        let offset = (page - 1) * limit;
+
+        const request = (await api.request({
+          method: "get",
+          url: "request/products",
+          data: {
+            limit,
+            offset,
+            ordem: "desc",
+          },
+        })) as { data: ProductType[]; metadata?: { count?: number } };
+
+        const newProducts = Array.isArray(request.data) ? request.data : [];
+
+        setProducts((prev) => [...prev, ...newProducts]);
+
+        const metadata = request.metadata ?? {};
+        const total = metadata.count ?? 0;
+
+        if (products.length + newProducts.length >= total) {
+          setHasMore(false);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar produtos:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  // Observer para scroll infinito
+  useEffect(() => {
+    if (!observerRef.current || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading) {
+          setPage((prev) => prev + 1);
+        }
       },
-    },
-    ctx
-  );
+      { threshold: 1 }
+    );
 
-  let metadata: any = request?.metadata ?? {};
+    observer.observe(observerRef.current);
 
-  const pages: any = new Array(
-    Math.ceil((metadata?.count ?? limit) / limit)
-  ).fill(true);
-
-  return {
-    props: {
-      page: params?.page ?? 1,
-      paginate: pages,
-      products: Array.isArray(request?.data) ? request.data : [],
-      content: content,
-      HeaderFooter: HeaderFooter,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
-    },
-    revalidate: 60 * 60 * 60,
-  };
-}
-
-export default function Produtos({
-  page,
-  paginate,
-  products,
-  content,
-  HeaderFooter,
-  DataSeo,
-  Scripts,
-}: {
-  page: any;
-  paginate: Array<any>;
-  products: Array<ProductType>;
-  content: any;
-  HeaderFooter: any;
-  DataSeo: any;
-  Scripts: any;
-}) {
-  const { isFallback } = useRouter();
-
-  if (isFallback) {
-    return <></>;
-  }
+    return () => {
+      if (observerRef.current) observer.unobserve(observerRef.current);
+    };
+  }, [loading, hasMore]);
 
   return (
     <Template
@@ -111,30 +125,21 @@ export default function Produtos({
         content: HeaderFooter,
       }}
     >
-      <section className="bg-cyan-500  pt-24 md:pt-32 relative">
+      {/* Header da página de produtos */}
+      <section className="bg-cyan-500 pt-24 md:pt-32 relative">
         <div className="container-medium relative pb-14 md:pb-16 text-white">
           <div className="flex items-end">
             <div className="w-full">
               <div className="pb-4">
                 <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
               </div>
-              <h1
-                className="font-title font-bold text-4xl md:text-5xl md:mb-4"
-                dangerouslySetInnerHTML={{ __html: content?.main_text }}
-              ></h1>
-              <div
-                className="text-lg md:text-2xl font-semibold"
-                dangerouslySetInnerHTML={{ __html: content?.main_description }}
-              ></div>
+              <h1 className="font-title font-bold text-4xl md:text-5xl md:mb-4">
+                Produtos
+              </h1>
+              <span className="text-lg md:text-2xl font-semibold">
+                Encontre as decorações da sua festa
+              </span>
             </div>
-            {!!getImage(content?.main_icons) && (
-              <div className="w-fit">
-                <Img
-                  src={getImage(content?.main_icons)}
-                  className="w-auto max-w-full"
-                />
-              </div>
-            )}
           </div>
         </div>
       </section>
@@ -145,22 +150,30 @@ export default function Produtos({
 
       <section className="container-medium md:pt-6">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 py-6">
-          {Array.isArray(products) && products.map((item, key) => (
-            <div key={key}>
-              <Product product={item} />
-            </div>
-          ))}
+          {Array.isArray(products) &&
+            products.map((item, key) => (
+              <div key={key}>
+                <Product product={item} />
+              </div>
+            ))}
         </div>
 
-        <div className="pt-4 pb-14">
-          {!!paginate?.length && (
-            <Paginate
-              paginate={paginate}
-              current={parseInt(page)}
-              route="produtos"
-            />
-          )}
-        </div>
+        {/* Loader + sentinel para scroll infinito */}
+        {loading && (
+          <div className="py-6 text-center text-gray-500">Carregando...</div>
+        )}
+        <div ref={observerRef} className="h-10"></div>
+
+        {!hasMore && (
+          <div className="py-6 text-center">
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="px-6 py-3 bg-yellow-300 text-black font-semibold rounded-lg shadow-md hover:bg-yellow-400 transition"
+            >
+              Voltar ao início
+            </button>
+          </div>
+        )}
       </section>
     </Template>
   );
