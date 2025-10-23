@@ -6,7 +6,6 @@ import { ProductType } from "@/src/models/product";
 import Img from "@/src/components/utils/ImgBase";
 import { getImage } from "@/src/helper";
 
-
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -54,7 +53,7 @@ export async function getStaticProps(ctx: any) {
 
   let request: any = await api.content(
     {
-      method: 'get',
+      method: "get",
       url: "products",
     },
     ctx
