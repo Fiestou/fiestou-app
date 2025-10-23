@@ -1,15 +1,14 @@
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/filters/Filter";
-
 import Newsletter from "@/src/components/common/Newsletter";
 import Product from "@/src/components/common/Product";
-import { Button } from "@/src/components/ui/form";
 import { getImage, getQueryUrlParams } from "@/src/helper";
 import { ProductType } from "@/src/models/product";
 import Api from "@/src/services/api";
 import Template from "@/src/template";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Icon from "@/src/icons/fontAwesome/FIcon";
 
 let limit = 15;
 
@@ -53,7 +52,6 @@ export default function Listagem({
   Scripts: any;
 }) {
   const router = useRouter();
-
   const api = useMemo(() => new Api(), []);
 
   const [page, setPage] = useState(0 as number);
@@ -62,7 +60,9 @@ export default function Listagem({
   const [placeholder, setPlaceholder] = useState(true as boolean);
   const [filters, setFilters] = useState<any>({});
   const [products, setProducts] = useState([] as Array<ProductType>);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const activeRequest = useRef(0);
+  const observerRef = useRef<HTMLDivElement | null>(null);
 
   function toQuery(params: Record<string, any>) {
     const qs = new URLSearchParams();
@@ -183,6 +183,42 @@ export default function Listagem({
     fetchProducts(filters, page);
   }, [fetchProducts, filters, hasMore, loading, page]);
 
+  // 👇 Scroll infinito usando IntersectionObserver
+  useEffect(() => {
+    if (!hasMore || loading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          handleLoadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "200px",
+        threshold: 0.1,
+      }
+    );
+
+    const currentRef = observerRef.current;
+    if (currentRef) observer.observe(currentRef);
+
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, [hasMore, loading, handleLoadMore]);
+
+  // 👇 Scroll Top
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  useEffect(() => {
+    const onScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <Template
       scripts={Scripts}
@@ -258,20 +294,25 @@ export default function Listagem({
             )}
 
             {hasMore && (
-              <div className="text-center">
-                <Button
-                  disable={loading}
-                  loading={loading}
-                  onClick={handleLoadMore}
-                >
-                  {loading ? "Carregando..." : "Carregar mais"}
-                </Button>
+              <div ref={observerRef} className="text-center py-6">
+                {loading && <span>Carregando mais produtos...</span>}
               </div>
             )}
           </>
         )}
       </section>
 
+
+      {/* 👇 Botão de scroll top */}
+      {showScrollTop && (
+        <button
+        onClick={scrollToTop}
+        className="fixed bottom-16 right-6 z-50 bg-yellow-300 text-black rounded-full p-3 shadow-lg hover:bg-yellow-400 transition-all duration-200"
+        aria-label="Voltar ao topo"
+        >
+          <Icon icon="fa-arrow-up" type="fas" className="text-lg" />
+        </button>
+      )}
       <Newsletter />
     </Template>
   );
