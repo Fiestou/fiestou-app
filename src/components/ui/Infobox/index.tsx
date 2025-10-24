@@ -12,7 +12,7 @@ export default function InfoBox({
     subscription,
 }: InfoBoxProps) {
     return (
-        <div className="p-4 flex flex-col justify-center items-center border border-black/20 rounded-lg ga">
+        <div className="p-4 flex flex-col justify-center items-center border border-black/20 rounded-lg gap-2">
             <div className="flex justify-start items-center gap-2 w-full">
                 {icon}
                 <h2 className="font-bold text-black/95 text-lg">{title}</h2>

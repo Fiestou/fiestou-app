@@ -1,73 +1,93 @@
-import { useEffect, useState } from "react";
+import * as React from "react";
 
-interface InputType {
-  name?: string;
-  onChange?: Function;
-  onKeyUp?: Function;
-  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  onBlur?: Function;
-  prevent?: boolean;
-  type?: string;
-  className?: string;
-  id?: string;
-  defaultValue?: string | number;
-  value?: string | number;
-  placeholder?: string;
+// Props: herda TUDO do <input>, e adiciona seus extras
+export type InputType = Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  // vamos controlar esses nomes para dar alias/semântica
+  "readOnly" | "onChange" | "onKeyUp" | "onKeyPress" | "onBlur"
+> & {
   placeholderStyle?: string;
   errorMessage?: string | boolean;
-  focus?: any;
   help?: string;
-  required?: boolean;
+  /** se true, bloqueia onKeyUp/onBlur (como no seu código) */
+  prevent?: boolean;
+  /** alias legada para readOnly */
   readonly?: boolean;
-  min?: string | number;
-  max?: string | number;
-  size?: number;
-}
+  /** alias legada para autoFocus */
+  focus?: boolean;
+  /** callbacks tipados */
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  onKeyUp?: React.KeyboardEventHandler<HTMLInputElement>;
+  onKeyPress?: React.KeyboardEventHandler<HTMLInputElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
+};
 
-export default function Input(attr: InputType) {
-  const onKeyUp = !!attr?.onKeyUp ? attr?.onKeyUp : attr?.onChange;
-  const onBlur = !!attr?.onBlur ? attr?.onBlur : attr?.onChange;
+const Input = React.forwardRef<HTMLInputElement, InputType>((attr, ref) => {
+  const {
+    className,
+    placeholderStyle,
+    errorMessage,
+    help,
+    prevent,
+    readonly,
+    focus,
+    onChange,
+    onKeyUp,
+    onKeyPress,
+    onBlur,
+    type = "text",
+    ...rest
+  } = attr;
+
+  // Handlers respeitando o "prevent" do seu componente
+  const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    onChange?.(e);
+  };
+
+  const handleKeyUp: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (!prevent) onKeyUp?.(e);
+  };
+
+  const handleKeyPress: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    onKeyPress?.(e);
+  };
+
+  const handleBlur: React.FocusEventHandler<HTMLInputElement> = (e) => {
+    if (!prevent) onBlur?.(e);
+  };
+
+  const classes = `${className ?? ""} ${
+    errorMessage
+      ? "border-red-500 placeholder-red-300"
+      : placeholderStyle ?? "placeholder-zinc-300"
+  } form-control ease ${
+    readonly ? "opacity-50 bg-zinc-100 placeholder-zinc-500" : "focus:border-zinc-800  hover:border-zinc-400"
+  }`;
 
   return (
     <>
       <input
-        name={attr?.name}
-        id={attr?.id ?? attr?.name}
-        type={attr?.type ?? "text"}
-        placeholder={attr?.placeholder}
-        readOnly={attr?.readonly}
-        className={`${attr?.className ?? ""} ${
-          attr?.errorMessage
-            ? "border-red-500 placeholder-red-300"
-            : attr?.placeholderStyle ?? "placeholder-zinc-300"
-        } form-control ease ${
-          !!attr?.readonly
-            ? "opacity-50 bg-zinc-100 placeholder-zinc-500"
-            : "focus:border-zinc-800  hover:border-zinc-400"
-        }`}
-        {...(!!attr?.defaultValue
-          ? { defaultValue: attr?.defaultValue }
-          : !!attr?.value
-          ? { value: attr?.value ?? "" }
-          : {})}
-        {...(!!attr?.min ? { min: attr?.min } : {})}
-        {...(!!attr?.max ? { max: attr?.max } : {})}
-        {...(!!attr?.size ? { size: attr?.size } : {})}
-        {...(!!attr?.focus ? { focus: attr?.focus } : {})}
-        onChange={(e) => (!!attr?.onChange ? attr?.onChange(e) : {})}
-        onKeyUp={(e) => (!!onKeyUp && !attr?.prevent ? onKeyUp(e) : {})}
-        onKeyPress={(e) => (attr?.onKeyPress ? attr?.onKeyPress(e) : {})}
-        onBlur={(e) => (!!onBlur && !attr?.prevent ? onBlur(e) : {})}
-        {...(!!attr?.required ? { required: true } : {})}
+        ref={ref}
+        // aliases legados convertidos para props nativas
+        readOnly={readonly}
+        autoFocus={!!focus}
+        type={type}
+        className={classes}
+        onChange={handleChange}
+        onKeyUp={handleKeyUp}
+        onKeyPress={handleKeyPress}
+        onBlur={handleBlur}
+        {...rest} // <- ESSENCIAL: libera inputMode, pattern, maxLength, etc.
       />
-      {attr?.help && (
-        <div className="text-zinc-400 text-xs pt-[2px]">{attr?.help}</div>
-      )}
-      {attr?.errorMessage && (
+      {help && <div className="text-zinc-400 text-xs pt-[2px]">{help}</div>}
+      {errorMessage && (
         <div className="text-red-500 text-xs pt-1 font-semibold">
-          {attr?.errorMessage}
+          {errorMessage}
         </div>
       )}
     </>
   );
-}
+});
+
+Input.displayName = "Input";
+export default Input;

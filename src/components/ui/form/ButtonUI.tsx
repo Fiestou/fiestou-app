@@ -2,34 +2,64 @@ import { clean } from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { ReactNode } from "react";
+import * as React from "react";
+
+type Variant =
+  | "primary"
+  | "secondary"
+  | "success"
+  | "danger"
+  | "dark"
+  | "white"
+  | "light"
+  | "outlineLight"
+  | "link"
+  | "transparent";
 
 interface ButtonType {
   name?: string;
-  onClick?: Function;
-  type?: string;
+  onClick?: React.MouseEventHandler<HTMLButtonElement | HTMLAnchorElement>;
+  type?: "button" | "submit" | "reset";
   className?: string;
+  /** ⚠️ compat legado: seu seletor antigo, ex: 'btn-yellow', 'btn-light' */
   style?: string;
   id?: string;
   href?: string;
-  target?: string;
+  target?: React.HTMLAttributeAnchorTarget;
   loading?: boolean;
   checked?: boolean;
   alt?: string;
   title?: string;
   between?: boolean;
   disable?: boolean;
-  othersAttrs?: any;
-  children: ReactNode;
+  othersAttrs?: React.HTMLAttributes<HTMLElement>;
+  children: React.ReactNode;
+  /** ✅ nova API recomendada */
+  variant?: Variant;
 }
 
 export default function Button(attr: ButtonType) {
   const router = useRouter();
 
-  let alt = !!attr?.alt ? attr?.alt : clean(String(attr?.children));
-  let title = !!attr?.title ? attr?.title : clean(String(attr?.children));
+  const alt = attr?.alt ?? clean(String(attr?.children ?? ""));
+  const title = attr?.title ?? clean(String(attr?.children ?? ""));
 
-  const style: any = {
+  // mapeia Variant → sua classe antiga
+  const variantToLegacyStyle: Record<Variant, string> = {
+    primary: "btn-dark",        // preto
+    secondary: "btn-light",     // cinza claro
+    success: "btn-success",
+    danger: "btn-danger",
+    dark: "btn-dark",
+    white: "btn-white",
+    light: "btn-light",
+    outlineLight: "btn-outline-light",
+    link: "btn-link",
+    transparent: "btn-transparent",
+  };
+
+  // classes originais com hover/desabilitado
+  const styles: Record<string, string> = {
     "btn-yellow": `btn bg-yellow-300 text-zinc-900 border border-transparent ${
       !attr?.disable ? "hover:bg-yellow-400" : "opacity-75 cursor-not-allowed"
     }`,
@@ -57,29 +87,33 @@ export default function Button(attr: ButtonType) {
     }`,
   };
 
+  // escolhe a classe final: variant > style > default
+  const legacyKey =
+    (attr?.variant && variantToLegacyStyle[attr.variant]) ||
+    attr?.style ||
+    "btn-yellow";
+
+  const className = `btn ${styles[legacyKey]} ${attr?.className ?? ""}`;
+
   const renderChildren = () => (
     <>
       <span
         className={`${
-          !!attr?.loading || !!attr?.checked ? "opacity-0" : ""
+          attr?.loading || attr?.checked ? "opacity-0" : ""
         } h-full flex items-center w-100 ${
           attr?.between ? "justify-between" : "justify-center"
         } gap-2`}
       >
         {attr?.children}
       </span>
-      {!!attr?.checked ? (
-        <div
-          className={`absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2`}
-        >
+      {attr?.checked ? (
+        <div className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
           <Icon icon="fa-check-circle" type="fal" className="text-2xl" />
         </div>
       ) : (
         !attr?.href &&
-        !!attr?.loading && (
-          <div
-            className={`absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2`}
-          >
+        attr?.loading && (
+          <div className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
             <Icon icon="fa-spinner-third" className="animate-spin" />
           </div>
         )
@@ -87,42 +121,38 @@ export default function Button(attr: ButtonType) {
     </>
   );
 
-  const attrs = {
-    ...(!!attr?.id ? { id: attr?.id } : {}),
-    ...(!!attr?.name ? { id: attr?.name } : {}),
-    className: `btn ${style[attr?.style ?? "btn-yellow"]} ${
-      attr?.className ?? ""
-    }`,
+  const commonAttrs = {
+    id: attr?.id ?? attr?.name,
+    className,
     alt: alt ?? "",
     title: title ?? "",
-    ...(!!alt || !!title ? { "aria-label": alt ?? title } : {}),
+    "aria-label": alt || title ? (alt ?? title) : undefined,
+    ...(attr?.othersAttrs || {}),
   };
 
-  return !attr?.href ? (
-    <button
-      {...attrs}
-      {...attr?.othersAttrs}
-      type={`${
-        !!attr?.loading || !!attr?.checked || !!attr?.disable
-          ? "button"
-          : attr?.type ?? "submit"
-      }`}
-      onClick={(e) =>
-        !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : {}
-      }
-    >
-      {renderChildren()}
-    </button>
-  ) : (
+  if (!attr?.href) {
+    return (
+      <button
+        {...(commonAttrs as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+        type={
+          attr?.loading || attr?.checked || attr?.disable
+            ? "button"
+            : attr?.type ?? "submit"
+        }
+        onClick={(e) => (!attr?.disable && attr?.onClick ? attr.onClick(e) : undefined)}
+      >
+        {renderChildren()}
+      </button>
+    );
+  }
+
+  // Next.js Link aceita className / onClick diretamente (Next 13+)
+  return (
     <Link
-      {...attrs}
-      {...attr?.othersAttrs}
-      href={!!attr?.href && !attr?.disable ? attr?.href : "#"}
-      passHref
-      target={!!attr?.target && !attr?.disable ? attr?.target : "_self"}
-      onClick={(e) =>
-        !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : {}
-      }
+      {...(commonAttrs as any)}
+      href={!attr?.disable ? attr.href : "#"}
+      target={!attr?.disable ? attr?.target ?? "_self" : "_self"}
+      onClick={(e) => (!attr?.disable && attr?.onClick ? attr.onClick(e) : undefined)}
     >
       {renderChildren()}
     </Link>

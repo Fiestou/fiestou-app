@@ -16,28 +16,6 @@ import { HeaderFooterType } from "@/src/models/headerFooter";
 import { DataSeoType } from "@/src/models/dataSeo";
 import { ScriptsType } from "@/src/models/scripts";
 
-export async function getStaticProps(ctx: any) {
-  const api = new Api();
-
-  let request: any = await api.content({method: 'get', url: `partners` });
-
-  const Stores = request?.data?.Stores ?? [];
-  const Partners = request?.data?.Partners ?? {};
-  const HeaderFooter = request?.data?.HeaderFooter ?? {};
-  const DataSeo = request?.data?.DataSeo ?? {};
-  const Scripts = request?.data?.Scripts ?? {};
-  
-  return {
-    props: {
-      Stores: Stores,
-      Partners: Partners,
-      HeaderFooter: HeaderFooter,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
-    },
-    revalidate: 60,
-  };
-}
 
 export default function Parceiros({
   Stores,
