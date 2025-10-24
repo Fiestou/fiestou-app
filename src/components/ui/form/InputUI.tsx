@@ -38,6 +38,7 @@ export default function Input(attr: InputType) {
         onKeyDown={(e) => attr.onKeyDown?.(e)}
         onBlur={(e) => (!attr.prevent ? attr.onBlur?.(e) : null)}
       />
+
       {attr.help && (
         <div className="text-zinc-400 text-xs pt-[2px]">{attr.help}</div>
       )}
@@ -48,7 +49,7 @@ export default function Input(attr: InputType) {
       )}
     </>
   );
-});
+}
 
 Input.displayName = "Input";
-export default Input;
+
