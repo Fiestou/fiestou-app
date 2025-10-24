@@ -48,6 +48,12 @@ const FormInitialType = {
     redirect: "/parceiros/cadastro",
 };
 
+interface EmailValidateResponse {
+    status?: number;
+    response?: boolean | object;
+    message?: string;
+}
+
 export default function SejaParceiro({
     Partner,
     Roles,
@@ -75,10 +81,10 @@ export default function SejaParceiro({
     const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
     const [isFormValid, setIsFormValid] = useState(false);
     const [errorMail, setErrorMail] = useState<string | null>(null);
-    
+
     const validatePassword = (pwd: string): string[] => {
         const errors: string[] = [];
-        
+
         if (pwd.length < 8) {
             errors.push("Mínimo de 8 caracteres");
         }
@@ -91,13 +97,13 @@ export default function SejaParceiro({
         if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/.test(pwd)) {
             errors.push("Pelo menos um caractere especial");
         }
-        
+
         return errors;
     };
 
     const validateAndSetPasswordErrors = (currentPassword: string, currentRepeat: string): boolean => {
         const errors = validatePassword(currentPassword);
-        
+
         if (currentPassword !== currentRepeat && currentRepeat.length > 0) {
             errors.push("As senhas devem ser iguais!");
         }
@@ -111,89 +117,100 @@ export default function SejaParceiro({
         const isNameValid = name.trim() !== "";
         const isEmailValid = email.trim() !== "" && validateEmail(email);
         const isPhoneValid = phone.replace(/\D/g, '').length >= 11;
-        
+
         setIsFormValid(arePasswordsValid && isNameValid && isEmailValid && isPhoneValid);
     };
 
-    useEffect(()=>{
-        if (errorMail){
-        setTimeout(()=>{
-            setErrorMail("");
-        }, 30000)
+    useEffect(() => {
+        checkFormValidity();
+    }, [name, email, phone, password, repeat, errorMail]);
+
+
+    useEffect(() => {
+        if (errorMail) {
+            setTimeout(() => {
+                setErrorMail("");
+            }, 30000)
         }
     }, [errorMail])
 
-    const handleSubmit = async (e: any) => {
+    const savePreCadastro = (payload: {
+        name: string;
+        email: string;
+        phone: string;
+        password?: string;
+    }) => {
+        if (typeof window === 'undefined') return;
+        try {
+            sessionStorage.setItem('preCadastro', JSON.stringify({
+                ts: Date.now(),
+                ...payload,
+            }));
+        } catch { }
+    };
+
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
         if (!isFormValid) {
-             toast.error("Por favor, preencha todos os campos corretamente.");
-             return;
+            toast.error("Por favor, preencha todos os campos corretamente.");
+            return;
         }
 
-        setForm({ ...form, loading: true });
+        setForm((prev) => ({ ...prev, loading: true }));
         setErrorMail(null);
 
         try {
             const cleanedPhone = phone.replace(/\D/g, '');
-            
             if (cleanedPhone.length < 11) {
                 toast.error("Número de telefone inválido");
                 return;
             }
 
-            const data: any = await api.bridge({
-                method: 'post',
-                url: "auth/pre-register",
-                data: {
-                    name: name,
-                    email: email,
-                    phone: cleanedPhone,
-                    password: password,
-                    remember: repeat,
-                    person: "partner",
-                },
+            const resp = await api.bridge<EmailValidateResponse>({
+                method: 'get',
+                url: 'auth/emailvalidate',
+                data: { email: email.trim().toLowerCase() },
+                noAppPrefix: false,
             });
-           console.log("Pré-cadastro realizado:", data);
 
-            if (data) {
-                toast.success(data.message || "Pré-cadastro realizado com sucesso!");
-                router.push({
-                    pathname: form.redirect,
-                    query: { ref: data.hash },
+
+            console.log("Email validation response:", resp);
+
+            const status = resp.status ?? 200;
+
+            if (status === 404) {
+                savePreCadastro({
+                    name,
+                    email,
+                    phone: cleanedPhone,
+                    password,
                 });
-            } else {
-                toast.error(data.message || "Ocorreu um erro ao processar sua solicitação.");
-            }
-        } catch (error: any) {
-            console.error("Erro na requisição de pré-cadastro:", error);
-            setForm((prevForm) => ({ ...prevForm, loading: false }));
-            
-            if (error.response && error.response.data) {
-                const { status, data: responseData } = error.response;
 
-                if (status === 422) {
-                    if (responseData.errors && responseData.errors.email) {
-                        const emailErrMsg = responseData.errors.email[0];
-                        setErrorMail(emailErrMsg);
-                        toast.error(emailErrMsg);
-                    } else if (responseData.errors) {
-                        const firstError = Object.values(responseData.errors).flat()[0];
-                        toast.error(firstError as string || "Por favor, corrija os campos indicados.");
-                    } else {
-                        toast.error(responseData.message || "Dados inválidos. Verifique e tente novamente.");
-                    }
-                } else if (status === 409) {
-                    const errorMessage = responseData.message || responseData.errors?.email?.[0] || "Endereço de e-mail já cadastrado. Tente um outro!";
-                    setErrorMail(errorMessage);
-                    toast.error(errorMessage);
-                } else {
-                    toast.error(responseData.message || "Ocorreu um erro inesperado. Tente novamente mais tarde.");
-                }
-            } else {
-                toast.error("Falha na conexão com o servidor. Verifique sua internet ou tente novamente.");
+                toast.success("Pré-cadastro realizado com sucesso!");
+
+                router.push({ pathname: form.redirect });
+                return;
             }
+
+            if (status == 200) {
+                savePreCadastro({
+                    name,
+                    email,
+                    phone: cleanedPhone,
+                    password,
+                });
+
+                toast.info("E-mail já existe");
+                return;
+            }
+
+            toast.error("Ocorreu um erro ao processar sua solicitação.");
+        } catch (error: any) {
+            toast.error(error?.message || "Ocorreu um erro ao processar sua solicitação.");
         } finally {
-            setForm((prevForm) => ({ ...prevForm, loading: false }));
+            setForm((prev) => ({ ...prev, loading: false }));
         }
     };
 
@@ -289,10 +306,10 @@ export default function SejaParceiro({
                                             <div className="form-group">
                                                 <Label style="light">E-mail</Label>
                                                 <Input
-                                                     onChange={(e: any) => {
+                                                    onChange={(e: any) => {
                                                         const newValue = e.target.value.toLowerCase();
                                                         setEmail(newValue);
-                                                       
+
                                                         if (newValue.trim() === "") {
                                                             setErrorMail(null);
                                                         } else if (!validateEmail(newValue)) {
@@ -354,7 +371,7 @@ export default function SejaParceiro({
                                                     required
                                                     value={repeat}
                                                 />
-                                                
+
                                                 <ul className="text-xs text-red-500 mt-1 list-disc list-inside">
                                                     <li className={password.length >= 8 ? 'text-green-600' : ''}>Mínimo de 8 caracteres</li>
                                                     <li className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>Pelo menos uma letra maiúscula</li>

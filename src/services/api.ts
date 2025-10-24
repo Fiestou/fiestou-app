@@ -21,15 +21,17 @@ interface ApiRequestType {
   url: string;
   data?: any;
   opts?: Object;
+  noAppPrefix?: boolean; // << NOVO
 }
+
 
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
 class Api {
   static request<T>(arg0: { method: string; url: string; }) {
-      throw new Error("Method not implemented.");
+    throw new Error("Method not implemented.");
   }
-  constructor() {}
+  constructor() { }
 
   async connect({ method = "get", url, data, opts }: ApiRequestType, ctx?: any) {
     return await new Promise((resolve, reject) => {
@@ -85,12 +87,12 @@ class Api {
       url = `${url}?${queryString}`;
       data = {};
     }
-  
+
     const validMethods: HttpMethod[] = ["get", "post", "put", "patch", "delete"];
     const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
       ? (method.toLowerCase() as HttpMethod)
       : "get";
-  
+
     return await axios[requestMethod](`/api${url}`, data, opts ?? {})
       .then((response: AxiosResponse) => response.data)
       .catch((error: any) => {
@@ -114,15 +116,34 @@ class Api {
     return await this.connect({ method, url }, ctx);
   }
 
-  async call<T>({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) : Promise<T> {
+  async call<T>({ method = "post", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
     url = `${process.env.BASE_URL}/api/${url}`;
     data = { graphs: data };
     return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
-  async bridge<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
-    url = `${process.env.API_REST}${url}`;
-    return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
+  async bridge<T>({ method = "get", url, data, opts, noAppPrefix = false }: ApiRequestType, ctx?: any): Promise<T> {
+    // Se vier url absoluta (http/https), respeita como está
+    if (/^https?:\/\//i.test(url)) {
+      return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
+    }
+
+    // Se começar com "/api", considera base BASE_URL (sem app/)
+    if (url.startsWith("/api/")) {
+      const full = `${process.env.BASE_URL}${url}`;
+      return this.connect({ method, url: full, data, opts }, ctx) as Promise<T>;
+    }
+
+    // Se pediram explicitamente para NÃO usar o prefixo "app/"
+    if (noAppPrefix) {
+      const path = url.replace(/^\/+/, ""); // remove "/" inicial se houver
+      const full = `${process.env.BASE_URL}/api/${path}`;
+      return this.connect({ method, url: full, data, opts }, ctx) as Promise<T>;
+    }
+
+    // Comportamento padrão (mantém suas rotas app/)
+    const full = `${process.env.API_REST}${url}`;
+    return this.connect({ method, url: full, data, opts }, ctx) as Promise<T>;
   }
 
   async graph({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
@@ -140,7 +161,7 @@ class Api {
     overwrite?: Object;
   }) {
     let url = "";
-    let requestMethod = "post"; 
+    let requestMethod = "post";
 
     if (data?.method == "upload") {
       url = `app/files/upload-base64`;
@@ -148,7 +169,7 @@ class Api {
 
     if (data?.method == "remove") {
       url = `app/files/remove-medias`;
-      requestMethod = "delete"; 
+      requestMethod = "delete";
     }
 
     return this.request({ method: requestMethod, url, data });
