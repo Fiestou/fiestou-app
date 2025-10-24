@@ -5,7 +5,7 @@ export default function Newsletter() {
   return (
     <section className="xl:py-14">
       <div className="container-medium">
-        <div className="bg-zinc-100 p-6 lg:p-20 relative overflow-hidden rounded-xl md:rounded-3xl">
+        <div className="bg-zinc-100 p-14 lg:p-20 relative overflow-hidden rounded-xl md:rounded-3xl">
           <div className="absolute left-0 top-0 grid w-1/4 h-full">
             <div className="p-10 hidden lg:flex items-end around">
               <Img src="/images/star.png" className="w-auto ml-8" />
@@ -16,14 +16,13 @@ export default function Newsletter() {
           </div>
           <div className="relative z-[1]">
             <div className="max-w-2xl mx-auto text-center pb-10 md:pb-8">
-              <span>Newsletter</span>
               <h2 className="font-title text-zinc-900 font-bold text-3xl md:text-5xl mt-2">
                 Receba novidades e promoções
               </h2>
             </div>
-            <div className="max-w-[40rem] mx-auto grid gap-2 md:gap-4">
+            <div className="max-w-[40rem] mx-auto grid gap-2 md:gap-4 ">
               <div className="">
-                <Label>Email</Label>
+                <Label>E-mail:</Label>
                 <Input placeholder="Insira seu melhor e-mail" />
               </div>
               <Button>Cadastrar agora</Button>

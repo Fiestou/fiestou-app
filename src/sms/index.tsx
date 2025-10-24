@@ -20,7 +20,6 @@ const SendSMS = async (data: any) => {
   })
     .then((response) => response.text())
     .then((result) => result)
-    .catch((error) => console.log("error", error));
 
   return request;
 };
@@ -36,8 +35,6 @@ export const RegisterUserSMS = async (user: any, content: MessageType) => {
   };
 
   const handleSendSMS = await SendSMS(data);
-
-  console.log("RegisterUserSMS: ", handleSendSMS);
 };
 
 export const RegisterOrderSMS = async (
@@ -49,18 +46,15 @@ export const RegisterOrderSMS = async (
 
   if (!!user?.phone) {
     let address: any = order.deliveryAddress;
-    address = `${address.street}, ${address.number}, ${
-      address.neighborhood
-    } - ${address.zipCode}\n${address.city}, ${address.state} - ${
-      address.country
-    } ${!!address.complement ? "\n" + address.complement : ""}`;
+    address = `${address.street}, ${address.number}, ${address.neighborhood
+      } - ${address.zipCode}\n${address.city}, ${address.state} - ${address.country
+      } ${!!address.complement ? "\n" + address.complement : ""}`;
 
     let messageDetails = "";
 
     products.forEach((item: any) => {
-      messageDetails += `${item.quantity} x ${
-        item.product.title
-      } - R$ ${moneyFormat(item.total)}\n`;
+      messageDetails += `${item.quantity} x ${item.product.title
+        } - R$ ${moneyFormat(item.total)}\n`;
     });
 
     messageDetails += `\nTotal: R$ ${moneyFormat(order.total)}\n`;
@@ -77,10 +71,6 @@ export const RegisterOrderSMS = async (
     };
 
     const handleSendSMS = await SendSMS(data);
-
-    console.log("RegisterOrderSMS: ", handleSendSMS);
-  } else {
-    console.log("RegisterOrderSMS: no phone", user);
   }
 };
 
@@ -102,10 +92,8 @@ export const CompleteOrderSMS = async (
 
     const handleSendSMS = await SendSMS(data);
 
-    console.log("CompleteOrderSMS: ", handleSendSMS);
-  } else {
-    console.log("CompleteOrderSMS: no phone", user);
   }
+
 };
 
 export const PartnerNewOrderSMS = async (
@@ -130,8 +118,6 @@ export const PartnerNewOrderSMS = async (
       };
 
       const handleSendSMS = await SendSMS(data);
-
-      console.log("PartnerNewOrderSMS: ", handleSendSMS);
     });
 };
 
@@ -161,9 +147,5 @@ export const ChangeDeliveryStatusSMS = async (
     };
 
     const handleSendSMS = SendSMS(data);
-
-    console.log("ChangeDeliveryStatusSMS: ", handleSendSMS);
-  } else {
-    console.log("ChangeDeliveryStatusSMS: no phone", user);
   }
 };

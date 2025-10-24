@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Template from "@/src/template";
-import { Button, Input, Label, Select } from "@/src/components/ui/form";
+import { Button, Input } from "@/src/components/ui/form";
 import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
@@ -36,7 +36,7 @@ interface PostType {
   slug: string;
   image: Array<any>;
   blocks: Array<any>;
-  status: string | number;
+  // status: string | number;
 }
 
 export default function Form({ id }: { id: number | string }) {
@@ -50,16 +50,35 @@ export default function Form({ id }: { id: number | string }) {
     setForm((form) => ({ ...form, ...value }));
   };
 
-  const [content, setContent] = useState({} as PostType);
-  const handleContent = (value: any) => {
-    setContent({ ...content, ...value });
+  const [content, setContent] = useState<PostType>({
+    // status: 0,
+    id: 0,
+    title: "",
+    slug: "",
+    image: [],
+    blocks: [
+      {
+        id: 1,
+        type: "text",
+        content: ""
+      },
+    ],
+  });
+
+  const handleContent = (value: Partial<PostType>) => {
+    setContent((prev) => ({ ...prev, ...value }));
   };
 
   const handleCache = async () => {
     try {
-      await axios.get(`/api/cache?route=/blog/${content.slug}`);
-    } catch (error) {
-      console.log(error);
+      await axios.get(`/api/cache`, {
+        params: {
+          route: `/blog/${content.slug}`,
+        },
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao atualizar o cache:', error?.response?.data || error.message);
     }
   };
 
@@ -80,7 +99,7 @@ export default function Form({ id }: { id: number | string }) {
         id: content.id ?? null,
         title: content?.title ?? `content-${shortId()}`,
         slug: content?.title ?? null,
-        status: content?.status,
+        // status: content?.status,
         content: {
           image: handle.image,
           blocks: handle.blocks,
@@ -223,39 +242,35 @@ export default function Form({ id }: { id: number | string }) {
                     </Button>
                   </div>
                   <div className="grid gap-4 order-1 lg:order-2 form-group">
-                    <div>
-                      <Label style="float">
-                        Visualização {content?.status}
-                      </Label>
+
+                    {/* <div>
+                      <label style={{ float: 'right' }}>
+                        Visualização: {content?.status === 0 ? 'Público' : 'Privado'}
+                      </label>
+
                       <select
                         name="status"
-                        value={content?.status}
-                        onChange={(e: any) =>
-                          handleContent({ status: e.target.value })
+                        value={String(content.status)}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                          handleContent({ status: Number(e.target.value) })
                         }
                         className="form-control"
                       >
-                        {[
-                          {
-                            name: "Público",
-                            value: 1,
-                          },
-                          {
-                            name: "Privado",
-                            value: 0,
-                          },
-                        ].map((option: any, key: any) => (
-                          <option value={option.value} key={key}>
-                            {option.name}
-                          </option>
-                        ))}
+                        {[{ name: "Público", value: 0 }, { name: "Privado", value: 1 }].map(
+                          (option, key) => (
+                            <option value={String(option.value)} key={key}>
+                              {option.name}
+                            </option>
+                          )
+                        )}
                       </select>
-                    </div>
+                    </div> */}
+
                     <div>
                       <div className="">
                         <FileManager
                           placeholder="Imagem destaque"
-                          value={content?.image ?? []}
+                          // value={content?.image ?? []}
                           aspect="aspect-square"
                           multiple={false}
                           onChange={(emit: any) =>

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-
 import { getUser } from "@/src/contexts/AuthContext";
 import { UserType } from "@/src/models/user";
-
 import Clean from "@/src/default/header/Clean";
 import Default from "@/src/default/header/Default";
 import Painel from "@/src/default/header/Painel";
@@ -59,5 +57,5 @@ export function Header(props: HeaderType) {
     return <Admin params={params} user={user} />;
   }
 
-  return <></>;
+  return null;
 }

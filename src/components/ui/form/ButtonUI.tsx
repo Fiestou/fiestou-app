@@ -60,31 +60,24 @@ export default function Button(attr: ButtonType) {
 
   // classes originais com hover/desabilitado
   const styles: Record<string, string> = {
-    "btn-yellow": `btn bg-yellow-300 text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-yellow-400" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-success": `btn bg-green-500 text-white border border-transparent ${
-      !attr?.disable ? "hover:bg-green-600" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-white": `btn bg-white text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-zinc-100" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-light": `btn bg-zinc-100 text-zinc-900 border border-transparent ${
-      !attr?.disable ? "hover:bg-zinc-200" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-danger": `btn bg-red-500 text-white border border-transparent ${
-      !attr?.disable ? "hover:bg-red-700" : "opacity-75 cursor-not-allowed"
-    }`,
-    "btn-dark": `btn bg-zinc-900 text-white border border-transparent ${
-      !attr?.disable ? "hover:bg-zinc-800" : "opacity-75 cursor-not-allowed"
-    }`,
+    "btn-yellow": `btn bg-yellow-300 text-zinc-900 border border-transparent ${!attr?.disable ? "hover:bg-yellow-400" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-success": `btn bg-green-500 text-white border border-transparent ${!attr?.disable ? "hover:bg-green-600" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-white": `btn bg-white text-zinc-900 border border-transparent ${!attr?.disable ? "hover:bg-zinc-100" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-light": `btn bg-zinc-100 text-zinc-900 border border-transparent ${!attr?.disable ? "hover:bg-zinc-200" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-danger": `btn bg-red-500 text-white border border-transparent ${!attr?.disable ? "hover:bg-red-700" : "opacity-75 cursor-not-allowed"
+      }`,
+    "btn-dark": `btn bg-zinc-900 text-white border border-transparent ${!attr?.disable ? "hover:bg-zinc-800" : "opacity-75 cursor-not-allowed"
+      }`,
     "btn-link": `text-zinc-900 underline font-bold p-0 border border-transparent`,
     "btn-transparent": `font-bold p-0 border border-transparent`,
-    "btn-outline-light": `border text-zinc-900 ${
-      !attr?.disable
+    "btn-outline-light": `border text-zinc-900 ${!attr?.disable
         ? "hover:border-zinc-300 hover:bg-zinc-50"
         : "opacity-75 cursor-not-allowed"
-    }`,
+      }`,
   };
 
   // escolhe a classe final: variant > style > default
@@ -98,11 +91,9 @@ export default function Button(attr: ButtonType) {
   const renderChildren = () => (
     <>
       <span
-        className={`${
-          attr?.loading || attr?.checked ? "opacity-0" : ""
-        } h-full flex items-center w-100 ${
-          attr?.between ? "justify-between" : "justify-center"
-        } gap-2`}
+        className={`${!!attr?.loading || !!attr?.checked ? "opacity-0" : ""
+          } h-full flex items-center w-100 ${attr?.between ? "justify-between" : "justify-center"
+          } gap-2`}
       >
         {attr?.children}
       </span>
@@ -121,33 +112,32 @@ export default function Button(attr: ButtonType) {
     </>
   );
 
-  const commonAttrs = {
-    id: attr?.id ?? attr?.name,
-    className,
+  const attrs = {
+    ...(!!attr?.id ? { id: attr?.id } : {}),
+    ...(!!attr?.name ? { id: attr?.name } : {}),
+    className: `btn ${style[attr?.style ?? "btn-yellow"]} ${attr?.className ?? ""
+      }`,
     alt: alt ?? "",
     title: title ?? "",
     "aria-label": alt || title ? (alt ?? title) : undefined,
     ...(attr?.othersAttrs || {}),
   };
 
-  if (!attr?.href) {
-    return (
-      <button
-        {...(commonAttrs as React.ButtonHTMLAttributes<HTMLButtonElement>)}
-        type={
-          attr?.loading || attr?.checked || attr?.disable
-            ? "button"
-            : attr?.type ?? "submit"
-        }
-        onClick={(e) => (!attr?.disable && attr?.onClick ? attr.onClick(e) : undefined)}
-      >
-        {renderChildren()}
-      </button>
-    );
-  }
-
-  // Next.js Link aceita className / onClick diretamente (Next 13+)
-  return (
+  return !attr?.href ? (
+    <button
+      {...attrs}
+      {...attr?.othersAttrs}
+      type={`${!!attr?.loading || !!attr?.checked || !!attr?.disable
+          ? "button"
+          : attr?.type ?? "submit"
+        }`}
+      onClick={(e) =>
+        !attr?.disable && !!attr?.onClick ? attr?.onClick(e) : {}
+      }
+    >
+      {renderChildren()}
+    </button>
+  ) : (
     <Link
       {...(commonAttrs as any)}
       href={!attr?.disable ? attr.href : "#"}

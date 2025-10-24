@@ -4,6 +4,8 @@ interface FontAwesomeType {
   icon: string;
   type?: string;
   className?: string;
+  alt?: string;
+  title?: string;
 }
 
 export default function FIcon(icon: FontAwesomeType) {
