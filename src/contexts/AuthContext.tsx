@@ -81,7 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       url: "auth/checkin",
       data: { ref: email },
     }) as CheckMail;
-    console.log("checkEmail", checkEmail);
     
     if (checkEmail.response && !checkEmail.user){
       return {
@@ -96,8 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { email: email, password: password },
     });
     
-    if (!!data.token) {
-      console.log("data", data);
+    if (data && data.token) {
       const user: UserType = data.user;
 
       Cookies.set("fiestou.authtoken", data.token, expires);

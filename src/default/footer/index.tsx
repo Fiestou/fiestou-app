@@ -1,5 +1,4 @@
 import Img from "@/src/components/utils/ImgBase";
-import { getImage, getSocial } from "@/src/helper";
 import FIcon from "@/src/icons/fontAwesome/FIcon";
 import BIcon from "@/src/icons/bootstrapIcons/BIcon";
 import Link from "next/link";
@@ -16,9 +15,7 @@ export interface FooterType {
 
 export function Footer(props: FooterType) {
   const pathname = usePathname() || "";
-
   const content = props.content;
-
   const [params, setParams] = useState({
     template: "",
     position: "fixed",
@@ -26,20 +23,18 @@ export function Footer(props: FooterType) {
     scroll: false,
     ...props,
   });
-
   const [whatsapp, setWhatsapp] = useState(false as boolean);
-
   const getWhatsapp = () => {
     const url = window.location.href;
+    const isHidden =
+      url.includes("admin") || url.includes("carrinho") || url.includes("checkout");
 
-    return url.includes("admin") ||
-      url.includes("carrinho") ||
-      url.includes("checkout") ? (
-      <></>
-    ) : (
+    if (isHidden) return null;
+
+    return (
       <div
         id="whatsapp-button"
-        className={`fixed z-20 m-2 md:m-4 bottom-0 right-0`}
+        className="fixed z-20 m-2 md:m-4 bottom-0 right-0"
       >
         <Button
           target="_blank"
@@ -60,8 +55,12 @@ export function Footer(props: FooterType) {
     }
   }, []);
 
-  if (params.template == "clean") {
-    return <div className="pt-10 md:py-10">{whatsapp && getWhatsapp()}</div>;
+  if (params.template === "clean") {
+    return (
+      <div className="pt-10 md:py-10">
+        {whatsapp && getWhatsapp()}
+      </div>
+    );
   }
 
   if (params.template == "default") {
@@ -69,81 +68,139 @@ export function Footer(props: FooterType) {
       <div>
         {whatsapp && getWhatsapp()}
         <div className="container-medium py-14">
-          <div className="grid md:flex items-start text-center md:text-left gap-4 md:gap-8">
+          <div className="grid md:flex items-start text-center md:text-left gap-4 md:gap-4">
             <div className="w-full md:max-w-[24rem]">
               <div className="w-full max-w-[150px] inline-block">
                 <Link passHref href="/">
                   <Img
-                    src={
-                      !!content?.footer_logo
-                        ? getImage(content.footer_logo)
-                        : "/images/logo.png"
-                    }
+                    src="/images/logo.png"
                     size="md"
-                    className="w-full"
+                    className="w-full h-full object-contain"
                   />
                 </Link>
               </div>
               <div
                 className="mx-auto max-w-[16rem] md:ml-0 md:max-w-[20rem] py-6"
-                dangerouslySetInnerHTML={{ __html: content?.footer_text ?? "" }}
-              ></div>
+              >Clicou👆, Marcou🗓, Fiestou🍾! Marketplace ideal para festas. <br /><br /> CNPJ: 62.363.954/0001-16</div>
             </div>
+
             <div className="w-full grid gap-10 items-start md:grid-cols-2 xl:grid-cols-4">
-              {!!content?.column_links &&
-                content.column_links.map((col: any, key: any) => (
-                  <div key={key} className="grid gap-4">
-                    <div className="text-zinc-900 font-bold">
-                      {col.column_title}
-                    </div>
-                    {col.column_list_links.map((item: any, index: any) => (
-                      <Link
-                        href={item.column_list_link ?? "#"}
-                        key={index}
-                        className="hover:text-yellow-500 ease"
-                      >
-                        <div>{item.column_list_title}</div>
-                      </Link>
-                    ))}
+              <div className="flex flex-col items-center gap-4">
+                <span className="text-zinc-900 font-bold">Fiestou</span>
+                <Link href="/sobre" className="hover:text-yellow-500 ease">
+                  <span>Sobre nós</span>
+                </Link>
+                <Link href="/contato" className="hover:text-yellow-500 ease">
+                  <span>Contato</span>
+                </Link>
+                <Link href="/blog" className="hover:text-yellow-500 ease">
+                  <span>Blog</span>
+                </Link>
+                <Link href="/faq" className="hover:text-yellow-500 ease">
+                  <span>FAQ</span>
+                </Link>
+              </div>
+              <div className="flex flex-col items-center gap-4">
+                <span className="text-zinc-900 font-bold">Produtos e Serviços</span>
+                <Link href="/comunicados/termos-de-aluguel" className="hover:text-yellow-500 ease">
+                  <span>Termos de aluguel</span>
+                </Link>
+                <Link href="/produtos/listagem/?order=desc&range=1000&page=1&category=50" className="hover:text-yellow-500 ease">
+                  <span>Decorações</span>
+                </Link>
+              </div>
+              <div className="flex flex-col items-center text-center gap-4">
+                <span className="text-zinc-900 font-bold">Cadastrar</span>
+                <Link href="/cadastre-se" className="hover:text-yellow-500 ease">
+                  <span>Como cliente</span>
+                </Link>
+                <Link href="/parceiros/seja-parceiro" className="hover:text-yellow-500 ease">
+                  <span>Como parceiro</span>
+                </Link>
+                <Link href="/comunicados/politica-de-privacidade" className="hover:text-yellow-500 ease">
+                  <span>Políticas de Privacidade</span>
+                </Link>
+              </div>
+
+              <div className="flex flex-col items-center gap-4 ">
+                <span className="text-zinc-900 font-bold">Siga nas redes</span>
+
+                <Link
+                  href="https://web.facebook.com/Fiestou.com.br#"
+                  target="_blank"
+                  className="group hover:text-yellow-500 ease"
+                >
+                  <div className="flex justify-center items-center gap-2">
+                    <FIcon
+                      icon="fa-facebook"
+                      type="fab"
+                      className="text-zinc-900 group-hover:text-yellow-500 ease"
+                    />
+                    <span>Facebook</span>
                   </div>
-                ))}
-              <div className="grid gap-4">
-                <div className="text-zinc-900 font-bold">Siga nas redes</div>
-                {!!content?.social &&
-                  content.social.map((item: any, key: any) => (
-                    <Link
-                      href={item.social_link ?? "#"}
-                      key={key}
-                      target="_blank"
-                      className="group hover:text-yellow-500 ease"
-                    >
-                      <div className="flex justify-center md:justify-start items-center gap-2">
-                        <div className="h-0 flex items-center">
-                          <div className="relative p-2">
-                            {getSocial(
-                              item.social_link ?? item.social_title ?? "#"
-                            ) == "tiktok" ? (
-                              <BIcon
-                                icon="bi-tiktok"
-                                className="text-zinc-900 group-hover:text-yellow-500 ease absolute mt-[1px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                              />
-                            ) : (
-                              <FIcon
-                                icon={`fa-${getSocial(
-                                  item.social_link ?? item.social_title ?? "#"
-                                )}`}
-                                type="fab"
-                                className="text-zinc-900 group-hover:text-yellow-500 ease absolute mt-[1px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                              />
-                            )}
-                          </div>
-                        </div>
-                        <span>{item.social_title}</span>
-                      </div>
-                    </Link>
-                  ))}
+                </Link>
+
+                <Link
+                  href="https://www.instagram.com/fiestou.com.br/"
+                  target="_blank"
+                  className="group hover:text-yellow-500 ease"
+                >
+                  <div className="flex justify-center items-center gap-2">
+                    <FIcon
+                      icon="fa-instagram"
+                      type="fab"
+                      className="text-zinc-900 group-hover:text-yellow-500 ease"
+                    />
+                    <span>Instagram</span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="https://pin.it/1zZ5jI3PS"
+                  target="_blank"
+                  className="group hover:text-yellow-500 ease"
+                >
+                  <div className="flex justify-center items-center gap-2">
+                    <FIcon
+                      icon="fa-pinterest"
+                      type="fab"
+                      className="text-zinc-900 group-hover:text-yellow-500 ease"
+                    />
+                    <span>Pinterest</span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="https://www.youtube.com/channel/UCOs0m-bltMn5n3ewKBLWVaQ"
+                  target="_blank"
+                  className="group hover:text-yellow-500 ease"
+                >
+                  <div className="flex justify-center items-center gap-2">
+                    <FIcon
+                      icon="fa-youtube"
+                      type="fab"
+                      className="text-zinc-900 group-hover:text-yellow-500 ease"
+                    />
+                    <span>Youtube</span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="https://www.tiktok.com/@fiestou.com"
+                  target="_blank"
+                  className="group hover:text-yellow-500 ease"
+                >
+                  <div className="flex justify-center items-center gap-2">
+                    <BIcon
+                      icon="bi-tiktok"
+                      className="text-zinc-900 group-hover:text-yellow-500 ease"
+                    />
+                    <span>TikTok</span>
+                  </div>
+                </Link>
               </div>
             </div>
+
           </div>
         </div>
 
@@ -180,12 +237,12 @@ export function Footer(props: FooterType) {
             <div>
               Desenvolvido por
               <a
-                href="https://8pdev.studio/"
+                href="https://www.fiestou.com.br/"
                 target="_blank"
-                className="hover:underline hover:text-rose-600 ease font-semibold pl-1"
+                className="hover:underline hover:text-yellow-600 ease font-semibold pl-1"
                 rel="noreferrer"
               >
-                oitop
+                Fiestou
               </a>
             </div>
           </div>
@@ -194,5 +251,5 @@ export function Footer(props: FooterType) {
     );
   }
 
-  return <></>;
+  return null;
 }

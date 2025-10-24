@@ -1,7 +1,6 @@
 import Api from "@/src/services/api";
 import { UserType } from "@/src/models/user";
 import UserEdit from "@/src/components/shared/UserEdit";
-import { useRouter } from "next/router";
 import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import HelpCard from "@/src/components/common/HelpCard";

@@ -72,7 +72,7 @@ export default function Form({
       if (!!page.publicUrl)
         await axios.get(`/api/cache?route=${page.publicUrl}`);
     } catch (error) {
-      console.log(error);
+
     }
   };
 
@@ -252,14 +252,14 @@ export default function Form({
                   {!!formFields?.form.filter(
                     (item: any) => item.column == "sidebar"
                   ).length && (
-                    <div className="order-3 grid gap-6 mt-5">
-                      {renderSectionsForm(
-                        formFields?.form.filter(
-                          (item: any) => item.column == "sidebar"
-                        )
-                      )}
-                    </div>
-                  )}
+                      <div className="order-3 grid gap-6 mt-5">
+                        {renderSectionsForm(
+                          formFields?.form.filter(
+                            (item: any) => item.column == "sidebar"
+                          )
+                        )}
+                      </div>
+                    )}
                 </div>
               </div>
             </div>

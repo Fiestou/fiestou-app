@@ -57,6 +57,7 @@ class Api {
       const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
         ? (method.toLowerCase() as HttpMethod)
         : "get";
+      
 
       api[requestMethod](url, data ?? {}, opts ?? {})
         .then((response: AxiosResponse) => {
@@ -96,7 +97,6 @@ class Api {
     return await axios[requestMethod](`/api${url}`, data, opts ?? {})
       .then((response: AxiosResponse) => response.data)
       .catch((error: any) => {
-        console.log(error);
         return null;
       });
   }

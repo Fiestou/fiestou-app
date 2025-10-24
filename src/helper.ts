@@ -37,15 +37,29 @@ export function slugfy(str: string) {
     : "";
 }
 
-export function moneyFormat(number?: number | string, separator?: string) {
-  if (!number) return 0;
+export function calcDeliveryTotal(dp: unknown): number {
+  if (Array.isArray(dp)) {
+    return dp.reduce((acc, it: any) => acc + (Number(it?.price) || 0), 0);
+  }
+  // fallback caso algum dia a API retorne objeto { total } ou número
+  const maybe = dp as any;
+  return Number(maybe?.total ?? maybe ?? 0) || 0;
+}
 
-  number = typeof number == "string" ? parseFloat(number) : number;
-  number = number.toFixed(2);
+export function moneyFormat(value?: number | string, separator = ","): string {
+  const n = Number(
+    typeof value === "string" ? value.replace(/[^\d.-]/g, "") : value
+  );
+  const fixed = Number.isFinite(n) ? n : 0;
 
-  number = number.replace(".", separator ?? ",");
+  // transforma em string com duas casas decimais
+  const [intPart, decPart] = fixed.toFixed(2).split(".");
 
-  return number;
+  // adiciona ponto a cada milhar
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  // junta de novo com o separador decimal
+  return `${formattedInt}${separator}${decPart}`;
 }
 
 export function serializeParam(key: string, value: any): string {
@@ -67,10 +81,21 @@ export function serializeParam(key: string, value: any): string {
 
 export function getQueryUrlParams() {
   const searchParams = new URLSearchParams(window.location.search);
-  const paramsObj: any = {};
+  const paramsObj: Record<string, string | string[]> = {};
 
-  searchParams.forEach((value, key) => {
-    paramsObj[key] = value;
+  searchParams.forEach((value, rawKey) => {
+    const key = rawKey.replace(/\[\]$/, "");
+    if (paramsObj[key] === undefined) {
+      paramsObj[key] = value;
+      return;
+    }
+
+    if (Array.isArray(paramsObj[key])) {
+      (paramsObj[key] as string[]).push(value);
+      return;
+    }
+
+    paramsObj[key] = [paramsObj[key] as string, value];
   });
 
   return paramsObj;
@@ -200,8 +225,7 @@ export function phoneJustNumber(str?: string) {
 }
 
 export function justNumber(str: any): string {
-  if (!str) 
-    return "";
+  if (!str) return "";
 
   return str.toString().replace(/\D/g, "");
 }
@@ -445,6 +469,7 @@ export async function getZipCode(zipCode: string) {
   var validacep = /^[0-9]{8}$/;
 
   if (validacep.test(justNumber(zipCode))) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     return await fetch(`https://viacep.com.br/ws/${justNumber(zipCode)}/json/`)
       .then((data) => data.json())
       .then((data) => data);

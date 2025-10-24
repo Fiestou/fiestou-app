@@ -6,7 +6,7 @@ import Badge from "@/src/components/utils/Badge";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { NextApiRequest } from "next";
-import Filter from "@/src/components/common/Filter";
+
 import { getImage } from "@/src/helper";
 import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -14,8 +14,9 @@ import ShareModal from "@/src/components/utils/ShareModal";
 import Modal from "@/src/components/utils/Modal";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import FilterStore from "./components/FilterStore";
-import { FilterQueryType } from "@/src/types/filtros/request";
+import { FilterQueryType } from "@/src/types/filtros";
+import Filter from "@/src/components/common/filters/Filter";
+
 
 export interface Store {
   title: string;
@@ -111,6 +112,44 @@ export default function Store({
   const [page, setPage] = useState(0 as number);
   const [loading, setLoading] = useState(false as boolean);
   const [handleParams, setHandleParams] = useState({} as FilterQueryType);
+  const [mounted, setMounted] = useState(false);
+
+  // Função para buscar produtos com filtros e paginação
+  const fetchProducts = async (params: any) => {
+    setLoading(true);
+    const api = new Api();
+    const limit = 16;
+    const offset = 0; // sempre começa do início ao filtrar
+
+    const request: any = await api.request({
+      method: "get",
+      url: "request/products",
+      data: {
+        ...params,
+        store: store?.id,
+        user: store?.user,
+        limit,
+        offset,
+      },
+    });
+
+    const items = request.data ?? [];
+    setLoading(false);
+
+    return {
+      items,
+      total: items.length,
+      page: 0,
+      pageSize: limit,
+      pages: Math.ceil((items.length || 1) / limit),
+    };
+  };
+
+  // Função para atualizar a lista de produtos ao filtrar
+  const handleFilterResults = (data: any) => {
+    setListProducts(data.items);
+    setPage(data.page);
+  };
 
   const getProducts = async (reset = false, params = handleParams, pageNumber = page) => {
     setLoading(true);
@@ -127,6 +166,8 @@ export default function Store({
     let limit = 16;
     let offset = number * 16;
 
+   
+
     let request: any = await api.request({
       method: "get",
       url: "request/products",
@@ -139,7 +180,7 @@ export default function Store({
       },
     });
 
-    const handle = request.data;
+    const handle = request?.data;
 
     if (!handle?.length) {
       setPage(-1);
@@ -151,10 +192,18 @@ export default function Store({
     setLoading(false);
   };
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    getProducts();
+  }, []);
+
   const baseUrl = `https://fiestou.com.br/${store?.slug}`;
 
   if (isFallback) {
-    return <></>;
+    return null;
   }
 
 
@@ -297,12 +346,11 @@ export default function Store({
       </div>
 
       <div className="relative pt-5">
-        <FilterStore
-          store={store}
-          returnData={(dataProducts: FilterQueryType) => {
-            setHandleParams(dataProducts);
-            getProducts(true, dataProducts, 0); // Limpa e busca do zero
-          }}
+        <Filter
+          store={store?.id}
+          context="store"
+          fetchProducts={fetchProducts}
+          onResults={handleFilterResults}
         />
       </div>
 

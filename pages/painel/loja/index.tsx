@@ -15,7 +15,8 @@ import HelpCard from "@/src/components/common/HelpCard";
 import { RelationType } from "@/src/models/relation";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { categorie } from "@/src/types/filtros/response";
+import SelectDropdown from "../../../src/components/ui/form/SelectDropdown";
+import MultiSelect from "../../../src/components/ui/form/MultiSelectUi";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -26,7 +27,7 @@ export async function getServerSideProps(
 
   request = await api.call(
     {
-      method: 'post',
+      method: "post",
       url: "request/graph",
       data: [
         {
@@ -39,48 +40,18 @@ export async function getServerSideProps(
             },
           ],
         },
-        {
-          model: "storeType",
-        },
-        {
-          model: "elements",
-          filter: [
-            {
-              key: "active",
-              value: "1",
-              compare: "=",
-            },
-            {
-              relation: "group",
-              where: [
-                {
-                  key: "segment",
-                  value: "1",
-                  compare: "=",
-                },
-                {
-                  key: "active",
-                  value: "1",
-                  compare: "=",
-                },
-              ],
-            },
-          ],
-        },
       ],
     },
     req
   );
 
   const page = request?.data?.query?.page ?? [];
-  const storeTypes = request?.data?.query?.storeType ?? [];
-  const categorie = request?.data?.query?.categorie ?? [];
+  const storeTypes = request?.data?.query.storeType ?? [];
 
   return {
     props: {
       page: page[0] ?? {},
       storeTypes: storeTypes,
-      categorie: categorie,
     },
   };
 }
@@ -101,25 +72,22 @@ const days = [
   { value: "Holiday", name: "Feriados" },
 ];
 
-export default function Store({
+export default function Loja({
   page,
   storeTypes,
-  elements: initialElements,
 }: {
   page: any;
   storeTypes: Array<RelationType>;
-  elements: categorie[];
 }) {
   const api = new Api();
   const router = useRouter();
 
-  const [elements, setElements] = useState<categorie[]>(initialElements || []);
   const [form, setForm] = useState(formInitial);
   const handleForm = (value: Object) => {
     setForm({ ...form, ...value });
   };
 
-  const [week, setWeek] = useState<DayType[]>([]);
+  const [week, setWeek] = useState([] as Array<DayType>);
   const handleWeek = (value: Object, day: string) => {
     let handle = store?.openClose ?? ([] as Array<DayType>);
 
@@ -148,38 +116,32 @@ export default function Store({
   };
 
   const getStore = async () => {
-    try {
-      let request: any = await api.bridge({
-        method: 'post',
-        url: "stores/form",
-      });      
-  
-      const handle = request.data ?? {};
-      const elementsFromApi = request.elements ?? [];
-      const openClose = Array.isArray(handle?.openClose) ? handle.openClose : [];
-      
-      setElements(elementsFromApi);
-      setOldStore(handle);
-      setStore(handle);
-      setWeek(openClose);
-  
-      setHandleCover({
-        remove: 0,
-        preview: !!handle?.cover ? getImage(handle?.cover, "xl") : "",
-      });
-  
-      setHandleProfile({
-        remove: 0,
-        preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
-      });
-  
-    } catch (error) {
-      console.error("Error fetching store data:", error);
-      setWeek([]);
-      setElements([]);
-    }
+    let request: any = await api.bridge({
+      method: "post",
+      url: "stores/form",
+    });
+
+    const handle = request.data ?? {};
+    handle.deliveryRegions = handle.zipcode_cities_ranges?.map(
+      (item: { zipcode_cities_range_id: number }) =>
+        item.zipcode_cities_range_id
+    );
+
+    setOldStore(handle);
+    setStore(handle);
+    setWeek((handle?.openClose ?? []) as Array<DayType>);
+
+    setHandleCover({
+      remove: 0,
+      preview: !!handle?.cover ? getImage(handle?.cover, "xl") : "",
+    });
+
+    setHandleProfile({
+      remove: 0,
+      preview: !!handle?.profile ? getImage(handle?.profile, "thumb") : "",
+    });
   };
-  
+
   const handleCoverRemove = async (e: any) => {
     setHandleCover({
       preview: "",
@@ -262,7 +224,7 @@ export default function Store({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -279,7 +241,7 @@ export default function Store({
 
     handleForm({ edit: "", loading: false });
   };
-  
+
   const handleProfileRemove = async (e: any) => {
     setHandleProfile({
       preview: "",
@@ -362,7 +324,7 @@ export default function Store({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/register",
       data: handle,
     });
@@ -379,7 +341,7 @@ export default function Store({
 
     handleForm({ edit: "", loading: false });
   };
-  
+
   const handleZipCode = async (zipCode: string) => {
     const location = await getZipCode(zipCode);
 
@@ -415,6 +377,14 @@ export default function Store({
     }
 
     handleForm({ edit: "", loading: false });
+
+    await api.request({
+      method: "PUT",
+      url: `app/zipcode-cities-range-stores/${store?.id}`,
+      data: {
+        ids: store?.deliveryRegions,
+      },
+    });
   };
 
   const renderAction = (
@@ -462,27 +432,33 @@ export default function Store({
     );
   };
 
+  const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
+
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const response = await api.request({
+          method: "get",
+          url: "app/zipcode-cities-range",
+        });
+        setDeliveryRegionsOptions(
+          (response?.data?.data || []).map((region) => ({
+            value: region.id,
+            name: `${region.name} (${region.start} - ${region.finish})`,
+          }))
+        );
+      } catch (e) {
+        setDeliveryRegionsOptions([]);
+      }
+    };
+    fetchRegions();
+  }, []);
+
   useEffect(() => {
     if (!!window) {
       getStore();
     }
   }, []);
-
-  useEffect(() => {
-    if (form.edit === "segment") {
-      const options = document.querySelectorAll('select[name="segment"] option');
-
-      options.forEach(option => {
-        const icon = option.dataset.icon;
-        if (icon) {
-          option.style.backgroundImage = `url(${icon})`;
-          option.style.backgroundRepeat = 'no-repeat';
-          option.style.backgroundPosition = 'left center';
-          option.style.paddingLeft = '30px';
-        }
-      });
-    }
-  }, [form.edit]);
 
   return (
     !router.isFallback && (
@@ -947,7 +923,7 @@ export default function Store({
                     )}
                   </div>
                 </form>
-                {/* SEGMENTO */}
+                {/*  */}
                 <form
                   onSubmit={(e: any) => handleSubmit(e)}
                   method="POST"
@@ -962,45 +938,134 @@ export default function Store({
                     <div className="w-fit">{renderAction("segment")}</div>
                   </div>
                   <div className="w-full">
-                  {form.edit == "segment" ? (
-                    <Select
-                    onChange={(e: any) => {
-                      if (!e.target.value) return;
-                      const selected = elements.find(el => el.id.toString() === e.target.value);
-                      handleStore({ segment: selected?.name });
-                    }}
-                    value={elements.find(el => el.name === store?.segment)?.id?.toString() || ""}
-                    placeholder={!store?.segment ? "Selecione seu segmento" : ""}
-                    name="segment"
-                    options={elements.map((element) => ({
-                      name: (
-                        <div className="flex items-center gap-2">
-                          <img 
-                            src={element.icon} 
-                            alt="" 
-                            className="w-5 h-5 object-contain"
-                            onError={(e) => (e.currentTarget.style.display = 'none')}
-                          />
-                          {element.name}
-                        </div>
-                      ),
-                      value: element.id.toString()
-                    }))}
-                  />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      {store?.segment && elements.find(el => el.name === store.segment)?.icon && (
-                        <img 
-                          src={elements.find(el => el.name === store.segment)?.icon} 
-                          alt={store.segment}
-                          className="w-5 h-5"
-                        />
-                      )}
-                      <span>{store?.segment || "Informe o segmento da sua loja"}</span>
+                    {form.edit == "segment" ? (
+                      <Select
+                        onChange={(e: any) =>
+                          handleStore({ segment: e.target.value })
+                        }
+                        value={store?.segment}
+                        placeholder="Selecione seu segmento"
+                        name="lojaTipo"
+                        options={groupOptions.map((item: any) => {
+                          return {
+                            name: item.title,
+                            value: item.id,
+                          };
+                        })}
+                      />
+                    ) : (
+                      storeTypes.filter((item) => item.id == store?.segment)[0]
+                        ?.title ?? "Informe o segmento da sua loja"
+                    )}
+                  </div>
+                </form>
+                {/*  */}
+
+                <form
+                  onSubmit={(e: any) => handleSubmit(e)}
+                  method="POST"
+                  className="grid gap-4 border-b pb-8 mb-0"
+                >
+                  <div className="flex items-center">
+                    <div className="w-full">
+                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                        Valores de entrega
+                      </h4>
                     </div>
-                  )}
-                </div>
-              </form>
+                    <div className="w-fit">{renderAction("frete")}</div>
+                  </div>
+                  <div className="w-full">
+                    {form.edit == "frete" ? (
+                      <div className="grid gap-4">
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Você possui serviço de entrega?
+                          </label>
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="is_delivery_fee_active"
+                                value="1"
+                                checked={!!store?.is_delivery_fee_active}
+                                onChange={(e) =>
+                                  handleStore({
+                                    is_delivery_fee_active: Number(
+                                      e.target.value
+                                    ),
+                                  })
+                                }
+                              />
+                              <span>Sim</span>
+                            </label>
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="is_delivery_fee_active"
+                                value="0"
+                                checked={!store?.is_delivery_fee_active}
+                                onChange={(e) =>
+                                  handleStore({
+                                    is_delivery_fee_active: Number(
+                                      e.target.value
+                                    ),
+                                  })
+                                }
+                              />
+                              <span>Não</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Valor do KM rodado
+                          </label>
+                          <div className="relative">
+                            <Input
+                              type="text"
+                              className="w-full"
+                              value={store?.default_delivery_fee}
+                              onChange={(e) =>
+                                handleStore({
+                                  default_delivery_fee: e.target.value,
+                                })
+                              }
+                            />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-help group">
+                              <Icon
+                                icon="fa-info-circle"
+                                className="text-zinc-400"
+                              />
+                              <div className="absolute hidden group-hover:block right-0 bg-zinc-800 text-white p-2 rounded text-sm w-48">
+                                Valor cobrado por quilômetro rodado na entrega
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Região de atendimento
+                          </label>
+                          <MultiSelect
+                            name="deliveryRegions"
+                            placeholder="Selecione as regiões"
+                            value={store?.deliveryRegions}
+                            onChange={(values) =>
+                              handleStore({ deliveryRegions: values })
+                            }
+                            options={deliveryRegionsOptions}
+                            className="min-h-[46px] relative"
+                            isMulti={true}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>Informe as regras do frete</>
+                    )}
+                  </div>
+                </form>
               </div>
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
                 <HelpCard list={page.help_list} />

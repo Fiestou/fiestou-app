@@ -1,26 +1,21 @@
-/* Titar 'request' */
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import Filter from "@/src/components/common/Filter";
+import Filter from "@/src/components/common/filters/Filter";
 import Newsletter from "@/src/components/common/Newsletter";
 import Product from "@/src/components/common/Product";
-import { Button } from "@/src/components/ui/form";
-import Img from "@/src/components/utils/ImgBase";
 import { getImage, getQueryUrlParams } from "@/src/helper";
 import { ProductType } from "@/src/models/product";
-import { RelationType } from "@/src/models/relation";
-import { StoreType } from "@/src/models/store";
 import Api from "@/src/services/api";
 import Template from "@/src/template";
-import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Icon from "@/src/icons/fontAwesome/FIcon";
 
 let limit = 15;
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
-  let request: any; 
-  
+  let request: any;
+
   try {
     request = await api.content(
       {
@@ -28,7 +23,7 @@ export async function getStaticProps(ctx: any) {
         url: "default",
       },
       ctx
-    );    
+    );
   } catch (error) {
     request = { data: {} };
   }
@@ -57,51 +52,171 @@ export default function Listagem({
   Scripts: any;
 }) {
   const router = useRouter();
-
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
 
   const [page, setPage] = useState(0 as number);
+  const [hasMore, setHasMore] = useState(true as boolean);
+  const [loading, setLoading] = useState(false as boolean);
   const [placeholder, setPlaceholder] = useState(true as boolean);
-  const [params, setParams] = useState({} as any);
+  const [filters, setFilters] = useState<any>({});
   const [products, setProducts] = useState([] as Array<ProductType>);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const activeRequest = useRef(0);
+  const observerRef = useRef<HTMLDivElement | null>(null);
 
-  const getProducts = async () => {
-    const handleParams: any = getQueryUrlParams();
+  function toQuery(params: Record<string, any>) {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === "") return;
+      if (Array.isArray(v)) {
+        v.forEach((item) => qs.append(`${k}[]`, String(item)));
+      } else {
+        qs.append(k, String(v));
+      }
+    });
+    return qs.toString();
+  }
 
-    if (!!handleParams["categoria[]"]) {
-      handleParams["categorias"] = handleParams["categoria[]"];
-      delete handleParams["categoria[]"];
+  const normalizeFilters = useCallback(() => {
+    const params = getQueryUrlParams();
+    const normalized: Record<string, any> = {};
+
+    const passthroughKeys = ["busca", "range", "tags", "store", "whereIn", "order"];
+    passthroughKeys.forEach((key) => {
+      const value = (params as any)[key];
+      if (value !== undefined && value !== "") {
+        normalized[key] = value;
+      }
+    });
+
+    if (normalized.order === undefined && (params as any).ordem) {
+      normalized.order = (params as any).ordem;
     }
-    
-    setParams(handleParams);
 
-    let offset = page * limit;
+    const ensureSingleValue = (value: any) =>
+      Array.isArray(value) ? value[value.length - 1] : value;
 
-    let request: any = await api.request({
-      method: "get",
-      url: "request/products",
-      data: {
-        ...handleParams,
-        limit: limit,
-        offset: offset,
-      },
-    });  
-    const handle = request.data;
+    ["busca", "range", "store", "order"].forEach((key) => {
+      if (normalized[key] !== undefined) {
+        normalized[key] = ensureSingleValue(normalized[key]);
+      }
+    });
 
-    if (!handle?.length) {
-      setPage(-1);
-    } else {
-      setPage(page + 1);
-      setProducts([...products, ...handle]);
+    const resolveArray = (value: unknown) => {
+      if (Array.isArray(value)) return value.filter(Boolean).map((item) => String(item));
+      if (value === undefined || value === null || value === "") return undefined;
+      return [String(value)];
+    };
+
+    const colorKeys = ["colors", "color", "cores", "cor"];
+    const colorsValue = colorKeys
+      .map((key) => (params as any)[key])
+      .find((value) => value !== undefined && value !== "");
+    const colors = resolveArray(colorsValue);
+    if (colors?.length) normalized.colors = colors;
+
+    const categoryKeys = ["category", "categories", "categoria", "categorias"];
+    const categoriesValue = categoryKeys
+      .map((key) => (params as any)[key])
+      .find((value) => value !== undefined && value !== "");
+    const categories = resolveArray(categoriesValue);
+    if (categories?.length) normalized.category = categories;
+
+    if (normalized.order && Array.isArray(normalized.order)) {
+      normalized.order = normalized.order[0];
     }
 
-    setPlaceholder(false);
-  };
+    return normalized;
+  }, []);
+
+  const fetchProducts = useCallback(
+    async (activeFilters: Record<string, any>, nextPage: number, replace = false) => {
+      const requestId = ++activeRequest.current;
+      setLoading(true);
+
+      try {
+        const offset = nextPage * limit;
+        const qs = toQuery({ ...activeFilters, limit, offset });
+
+        const response: any = await api.request({
+          method: "get",
+          url: `request/products?${qs}`,
+        });
+
+        if (requestId !== activeRequest.current) {
+          return;
+        }
+
+        const items = (response?.data ?? []) as ProductType[];
+
+        setProducts((prev) => (replace ? items : [...prev, ...items]));
+
+        if (items.length >= limit) {
+          setPage(nextPage + 1);
+          setHasMore(true);
+        } else {
+          setPage(nextPage);
+          setHasMore(false);
+        }
+      } finally {
+        if (requestId === activeRequest.current) {
+          setLoading(false);
+          setPlaceholder(false);
+        }
+      }
+    },
+    [api]
+  );
 
   useEffect(() => {
-    if (!!window) {
-      getProducts();
-    }
+    const normalized = normalizeFilters();
+    setFilters(normalized);
+    setProducts([]);
+    setPage(0);
+    setHasMore(true);
+    setPlaceholder(true);
+    fetchProducts(normalized, 0, true);
+  }, [router.asPath, normalizeFilters, fetchProducts]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!hasMore || loading) return;
+    fetchProducts(filters, page);
+  }, [fetchProducts, filters, hasMore, loading, page]);
+
+  // 👇 Scroll infinito usando IntersectionObserver
+  useEffect(() => {
+    if (!hasMore || loading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          handleLoadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "200px",
+        threshold: 0.1,
+      }
+    );
+
+    const currentRef = observerRef.current;
+    if (currentRef) observer.observe(currentRef);
+
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, [hasMore, loading, handleLoadMore]);
+
+  // 👇 Scroll Top
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  useEffect(() => {
+    const onScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
@@ -144,7 +259,7 @@ export default function Listagem({
             <div className="animate-pulse py-8 rounded-lg overflow-hidden bg-zinc-200"></div>
           </div>
         ) : (
-          <Filter {...params} />
+          <Filter {...filters} />
         )}
       </div>
 
@@ -178,21 +293,26 @@ export default function Listagem({
               </div>
             )}
 
-            {page != -1 && (
-              <div className="text-center">
-                <Button
-                  onClick={() => {
-                    getProducts();
-                  }}
-                >
-                  Carregar mais
-                </Button>
+            {hasMore && (
+              <div ref={observerRef} className="text-center py-6">
+                {loading && <span>Carregando mais produtos...</span>}
               </div>
             )}
           </>
         )}
       </section>
 
+
+      {/* 👇 Botão de scroll top */}
+      {showScrollTop && (
+        <button
+        onClick={scrollToTop}
+        className="fixed bottom-16 right-6 z-50 bg-yellow-300 text-black rounded-full p-3 shadow-lg hover:bg-yellow-400 transition-all duration-200"
+        aria-label="Voltar ao topo"
+        >
+          <Icon icon="fa-arrow-up" type="fas" className="text-lg" />
+        </button>
+      )}
       <Newsletter />
     </Template>
   );

@@ -1,5 +1,5 @@
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import Filter from "@/src/components/common/Filter";
+import Filter from "@/src/components/common/filters/Filter";
 import Product from "@/src/components/common/Product";
 import Img from "@/src/components/utils/ImgBase";
 import Paginate from "@/src/components/utils/Paginate";
@@ -169,12 +169,12 @@ export default function Categoria({
                 className="font-title font-bold text-4xl md:text-5xl mb-8 md:mb-0"
                 dangerouslySetInnerHTML={{ __html: category?.title }}
               ></h1>
-              {/*
+              
               <div
                 className="text-lg md:text-2xl font-semibold"
                 dangerouslySetInnerHTML={{ __html: content?.main_description }}
               ></div>
-              */}
+             
             </div>
             {!!getImage(content?.main_icons) && (
               <div className="w-fit">
