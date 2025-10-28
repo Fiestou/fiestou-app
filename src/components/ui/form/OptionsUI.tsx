@@ -47,7 +47,9 @@ export default function Options(attrs: OptionsType) {
 
     return (
       <div
-        className={`${isSelected ? "opacity-50" : ""} hover:bg-zinc-100 cursor-pointer flex items-center gap-2 p-2`}
+        className={`${
+          isSelected ? "opacity-50" : ""
+        } hover:bg-zinc-100 cursor-pointer flex items-center gap-2 p-2`}
         onClick={() => addList(item)}
       >
         {!!getImage(item?.image) ? (
@@ -79,7 +81,16 @@ export default function Options(attrs: OptionsType) {
           placeholder="Selecione suas opções"
           onFocus={() => setDropdown(true)}
           onBlur={() => setTimeout(() => setDropdown(false), 120)}
-          onChange={(e) => attrs.onSearch?.(e.target.value)}
+          onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const value = e.target.value;
+
+            if (attrs.onSearch) {
+              const result = await attrs.onSearch(value);
+              if (Array.isArray(result)) {
+                setDropdown(true);
+              }
+            }
+          }}
         />
 
         {/* ✅ Renderização segura da lista */}

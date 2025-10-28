@@ -8,6 +8,7 @@ import { RelationType } from "@/src/models/relation";
 interface ProductType {
   combinations?: RelationType[];
   suggestions?: string;
+  attrs?: Record<string, any>;
 }
 
 interface ProductBundleProps {
