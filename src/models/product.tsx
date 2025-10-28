@@ -87,11 +87,15 @@ export interface ProductType {
   assembly?: string;
   status?: string | number | boolean;
   updated_at?: string;
+  priceHigh?: number;
+  priceLow?: number;
+  medias?: Array<any>;
+  name?: string;
 }
 
 export interface VariationProductOrderType {
-  title: string;
   id: string;
+  title: string;
   quantity?: number;
   price?: string | number;
 }
