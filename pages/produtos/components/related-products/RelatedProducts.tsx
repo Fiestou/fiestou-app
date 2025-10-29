@@ -18,22 +18,42 @@ import { StoreType } from "@/src/models/store";
 type RelatedProductsProps = {
   product: ProductType;
   store: StoreType;
+  categories?: any[];
 };
 
-export default function RelatedProducts({ product, store }: RelatedProductsProps) {
+export default function RelatedProducts({
+  product,
+  store,
+  categories,
+}: RelatedProductsProps) {
   const [match, setMatch] = useState<ProductType[]>([]);
 
   // Busca os produtos relacionados
   const fetchRelatedProducts = async () => {
     const api = new Api();
-    const request: any = await api.request({
+    let request: any = await api.request({
       method: "get",
       url: "request/products",
       data: {
         ignore: product.id,
         store: store?.id ?? 0,
         tags: (product?.tags ?? ",").split(",").filter((item) => !!item),
-        categorias: (product?.category ?? []).map((cat: any) => cat.slug),
+        categorias: (product?.category ?? [])
+          .map((prodCat: any) => {
+            let slug = null;
+            if (Array.isArray(categories)) {
+              // Safety check
+              categories.forEach((parent: any) => {
+                parent.childs?.forEach((child: any) => {
+                  if (child.id === prodCat.id) {
+                    slug = child.slug;
+                  }
+                });
+              });
+            }
+            return slug;
+          })
+          .filter((slug: any) => !!slug),
         limit: 10,
       },
     });
@@ -95,21 +115,28 @@ export default function RelatedProducts({ product, store }: RelatedProductsProps
   if (!match.length) return null;
 
   return (
-    <section className="pt-8 md:pt-16">
+    <section className="pt-8 md:pt-16  ">
       <div className="container-medium relative">
         <div className="grid md:flex items-center justify-between gap-2">
           <div className="flex w-full items-center gap-2">
-            <FDobleIcon icon="fa-puzzle-piece" size="sm" />
+            <div>
+              <FDobleIcon icon="fa-puzzle-piece" size="sm" />
+            </div>
             <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
               Veja também
             </h4>
           </div>
           <div>{renderSlideArrows("match")}</div>
         </div>
-
         <div className="mt-6 md:mt-8">
           <div className="relative overflow-hidden rounded-xl">
-            {renderSlideProducts(match, "match")}
+            {match.length ? (
+              renderSlideProducts(match, "match")
+            ) : (
+              <p className="text-center text-zinc-500">
+                Nenhum produto relacionado encontrado
+              </p>
+            )}
           </div>
         </div>
       </div>

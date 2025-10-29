@@ -16,17 +16,24 @@ import { RelationType } from "@/src/models/relation";
 import { ProductType } from "@/src/models/product";
 
 type ProductCombinationsProps = {
-  combinations: RelationType[]; // agora aceita RelationType[]
+  product: ProductType;
+  combinations: RelationType[];
 };
 
-export default function ProductCombinations({ combinations }: ProductCombinationsProps) {
+export default function ProductCombinations({
+  product,
+  combinations,
+}: ProductCombinationsProps) {
   if (!combinations?.length) return null;
 
-  // normaliza para ProductType[]: se o relation tiver .product usa ele, senão assume que o objeto já é o produto
-  const products: ProductType[] = combinations.map((c: any) => {
-    if (c?.product) return c.product as ProductType;
-    return c as ProductType;
-  });
+  // Normaliza para ProductType[]: se o relation tiver .product, usa ele; senão, assume que já é um produto
+  const products: ProductType[] = combinations
+    .map((c): ProductType | null => {
+      if (c?.product) return c.product as ProductType;
+      if ((c as any)?.price) return c as ProductType;
+      return null;
+    })
+    .filter((item): item is ProductType => !!item);
 
   const renderSlideArrows = (keyRef: string | number) => (
     <div className="flex h-0 px-1 justify-between absolute md:relative gap-4 top-1/2 md:-top-4 left-0 w-full md:w-fit -translate-y-1/2 z-10">
@@ -66,7 +73,7 @@ export default function ProductCombinations({ combinations }: ProductCombination
         prevEl: `.swiper-${type}-prev`,
       }}
     >
-      {productsList.map((item: any, key: any) => (
+      {productsList.map((item, key) => (
         <SwiperSlide key={key}>
           <Product product={item} />
         </SwiperSlide>
@@ -79,7 +86,9 @@ export default function ProductCombinations({ combinations }: ProductCombination
       <div className="container-medium relative">
         <div className="grid md:flex items-center justify-between gap-2">
           <div className="flex w-full items-center gap-2">
-            <FDobleIcon icon="fa-puzzle-piece" size="sm" />
+            <div>
+              <FDobleIcon icon="fa-puzzle-piece" size="sm" />
+            </div>
             <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
               Combina com
             </h4>
@@ -89,7 +98,13 @@ export default function ProductCombinations({ combinations }: ProductCombination
 
         <div className="mt-6 md:mt-8">
           <div className="relative overflow-hidden rounded-xl">
-            {renderSlideProducts(products, "combinations")}
+            {products.length > 0 ? (
+              renderSlideProducts(products, "combinations")
+            ) : (
+              <p className="text-center text-zinc-500">
+                Nenhuma combinação disponível
+              </p>
+            )}
           </div>
         </div>
       </div>

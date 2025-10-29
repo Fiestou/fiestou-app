@@ -438,7 +438,22 @@ export default function Produto({
         ignore: product.id,
         store: store?.id ?? 0,
         tags: (product?.tags ?? ",").split(",").filter((item) => !!item),
-        categorias: (product?.category ?? []).map((cat: any) => cat.slug),
+        categorias: (product?.category ?? [])
+          .map((prodCat: any) => {
+            let slug = null;
+            if (Array.isArray(categories)) {
+              // Safety check
+              categories.forEach((parent: any) => {
+                parent.childs?.forEach((child: any) => {
+                  if (child.id === prodCat.id) {
+                    slug = child.slug;
+                  }
+                });
+              });
+            }
+            return slug;
+          })
+          .filter((slug: any) => !!slug),
         limit: 10,
       },
     });
@@ -839,7 +854,10 @@ export default function Produto({
 
       {/* Produtos que combinam */}
       {!!product?.combinations?.length && (
-        <ProductCombinations combinations={product.combinations} />
+        <ProductCombinations
+          product={product}
+          combinations={product.combinations}
+        />
       )}
 
       {/* Produtos relacionados */}
