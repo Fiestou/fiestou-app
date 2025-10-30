@@ -143,7 +143,18 @@ export default function CreateProduct() {
 
   const buildPayload = () => {
     const categoryPipe = coerceIds(data.category ?? []).join("|");
-    return sanitize({ ...data, category: categoryPipe });
+
+    // 🔧 transforma combinations (RelationType[]) em array de IDs
+    const combinationIds = Array.isArray(data.combinations)
+      ? data.combinations.map((c: any) => Number(c?.id)).filter(Boolean)
+      : [];
+
+    // ✅ monta payload final
+    return sanitize({
+      ...data,
+      category: categoryPipe,
+      combinations: combinationIds, // ou use JSON.stringify(combinationIds)
+    });
   };
 
   const SearchProducts = async (search: string): Promise<any[]> => {
