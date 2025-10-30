@@ -861,7 +861,7 @@ export default function Produto({
       )}
 
       {/* Produtos relacionados */}
-      {(product?.suggestions ?? "yes") === "yes" && (
+      {(product?.suggestions ?? "1") === "1" && (
         <RelatedProducts product={product} store={store} />
       )}
 

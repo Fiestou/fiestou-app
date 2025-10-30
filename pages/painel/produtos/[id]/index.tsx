@@ -49,11 +49,9 @@ export default function CreateProduct() {
   const [form, setForm] = useState(formInitial);
   const [productsFind, setProductsFind] = useState<RelationType[]>([]);
   const [colors, setColors] = useState<string[]>([]);
-  const [tags, setTags] = useState("");
-  const [data, setData] = useState({} as ProductType);
+  const [data, setData] = useState({ suggestions: true } as ProductType);
   const [product, setProduct] = useState({} as ProductType);
 
-  // Parser para converter string de dinheiro brasileiro para número
   const parseRealMoneyNumber = (value: string): number => {
     if (!value) return 0;
     const cleaned = value.replace(/[^\d.,]/g, "");
@@ -62,7 +60,6 @@ export default function CreateProduct() {
     return parseFloat(final) || 0;
   };
 
-  // Formatar número para string monetária
   const formatRealMoney = (value: string): string => {
     const numValue = parseRealMoneyNumber(value);
     return numValue.toLocaleString("pt-BR", {
@@ -143,17 +140,15 @@ export default function CreateProduct() {
 
   const buildPayload = () => {
     const categoryPipe = coerceIds(data.category ?? []).join("|");
-
-    // 🔧 transforma combinations (RelationType[]) em array de IDs
     const combinationIds = Array.isArray(data.combinations)
       ? data.combinations.map((c: any) => Number(c?.id)).filter(Boolean)
       : [];
 
-    // ✅ monta payload final
     return sanitize({
       ...data,
       category: categoryPipe,
-      combinations: combinationIds, // ou use JSON.stringify(combinationIds)
+      combinations: combinationIds,
+      suggestions: data.suggestions ? 1 : 0,
     });
   };
 
@@ -197,8 +192,17 @@ export default function CreateProduct() {
       store: getStore(),
     };
 
-    setProduct(handle);
-    setData({ ...handle, color: handle.color });
+    const suggestions =
+      handle.suggestions == null
+        ? true
+        : handle.suggestions === 1 ||
+          handle.suggestions === "1" ||
+          handle.suggestions === true ||
+          handle.suggestions === "true";
+
+    setProduct({ ...handle, suggestions });
+    setData({ ...handle, color: handle.color, suggestions });
+
     setColors(
       handle?.color?.split
         ? handle.color.split("|")
@@ -209,9 +213,11 @@ export default function CreateProduct() {
     setPlaceholder(false);
   };
 
-  // Carregar conteúdo e produto
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setLoadingContent(false);
+      return;
+    }
 
     (async () => {
       try {
@@ -248,6 +254,7 @@ export default function CreateProduct() {
       setSubimitStatus("register_content");
 
       const payload = buildPayload();
+
       const request: any = await api.bridge({
         method: "post",
         url: "products/register",
