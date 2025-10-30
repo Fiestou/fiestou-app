@@ -1,4 +1,3 @@
-import Product from "@/src/components/common/Product";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import Template from "@/src/template";
@@ -7,26 +6,21 @@ import {
   AttributeType,
   CommentType,
   ProductType,
-  getPrice,
   getPriceValue,
 } from "@/src/models/product";
-import { dateFormat, getImage, getSummary, isMobileDevice } from "@/src/helper";
+import { dateFormat, getImage, isMobileDevice } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { AddToCart, GetCart } from "@/src/components/pages/carrinho";
-import Badge from "@/src/components/utils/Badge";
 import {
   AttributeProductOrderType,
   ProductOrderType,
   VariationProductOrderType,
 } from "@/src/models/product";
-import Img from "@/src/components/utils/ImgBase";
 import { StoreType } from "@/src/models/store";
 import Newsletter from "@/src/components/common/Newsletter";
 import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Navigation, Pagination, Zoom } from "swiper";
 import "swiper/css";
 import "swiper/css/zoom";
 import "swiper/css/navigation";
@@ -37,9 +31,6 @@ import Modal from "@/src/components/utils/Modal";
 import ShareModal from "@/src/components/utils/ShareModal";
 import { RelationType } from "@/src/models/relation";
 import LikeButton from "@/src/components/ui/LikeButton";
-import SidebarCart from "@/src/components/common/SidebarCart";
-import Checkbox from "@/src/components/ui/form/CheckboxUI";
-import QtdInput from "@/src/components/ui/form/QtdUI";
 import RelatedProducts from "../components/related-products/RelatedProducts";
 import ProductCombinations from "../components/product-combinations/ProductCombinations";
 import TrustedPartnerBadge from "../components/trusted-partner-badge/TrustedPartnerBadge";
@@ -139,7 +130,6 @@ export default function Produto({
   const [share, setShare] = useState(false as boolean);
   const baseUrl = `https://fiestou.com.br/produtos/${product?.id}`;
   const [loadCart, setLoadCart] = useState(false as boolean);
-  const [resume, setResume] = useState(false as boolean);
   const [blockdate, setBlockdate] = useState(Array<string>());
 
   const [days, setDays] = useState(1);
@@ -411,7 +401,6 @@ export default function Produto({
     setLoadingCep(true);
     const api = new Api();
     try {
-      // Consulta as regiões de entrega paginadas (pode ajustar o endpoint se necessário)
       const response = await api.request<any>({
         method: "get",
         url: `delivery-zipcode/${product?.id}/${cep.replace(/\D/g, "")}`,
@@ -460,66 +449,39 @@ export default function Produto({
 
     setMatch(request?.data ?? []);
   };
-
-  const renderSlideArrows = (keyRef: string | number) => {
-    return (
-      <div className="flex h-0 px-1 justify-between absolute md:relative gap-4 top-1/2 md:-top-4 left-0 w-full md:w-fit -translate-y-1/2 z-10">
-        <div>
-          <Button className={`swiper-${keyRef}-prev p-5 md:p-6 rounded-full`}>
-            <Icon
-              icon="fa-chevron-left"
-              type="far"
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -ml-[2px]"
-            />
-          </Button>
-        </div>
-        <div>
-          <Button className={`swiper-${keyRef}-next p-5 md:p-6 rounded-full`}>
-            <Icon
-              icon="fa-chevron-right"
-              type="far"
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ml-[1px]"
-            />
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderSlideProducts = (handleMatch: Array<any>, type: string) => {
-    return (
-      <Swiper
-        spaceBetween={16}
-        breakpoints={{
-          0: {
-            slidesPerView: 1,
-            centeredSlides: true,
-          },
-          640: {
-            slidesPerView: 2,
-            centeredSlides: false,
-          },
-          1024: {
-            slidesPerView: 4,
-            centeredSlides: false,
-          },
-        }}
-        modules={[Pagination, Navigation]}
-        className="swiper-equal"
-        navigation={{
-          nextEl: `.swiper-${type}-next`,
-          prevEl: `.swiper-${type}-prev`,
-        }}
-      >
-        {!!handleMatch.length &&
-          handleMatch.map((item: any, key: any) => (
-            <SwiperSlide key={key}>
-              <Product product={item} />
-            </SwiperSlide>
-          ))}
-      </Swiper>
-    );
-  };
+  //   return (
+  //     <Swiper
+  //       spaceBetween={16}
+  //       breakpoints={{
+  //         0: {
+  //           slidesPerView: 1,
+  //           centeredSlides: true,
+  //         },
+  //         640: {
+  //           slidesPerView: 2,
+  //           centeredSlides: false,
+  //         },
+  //         1024: {
+  //           slidesPerView: 4,
+  //           centeredSlides: false,
+  //         },
+  //       }}
+  //       modules={[Pagination, Navigation]}
+  //       className="swiper-equal"
+  //       navigation={{
+  //         nextEl: `.swiper-${type}-next`,
+  //         prevEl: `.swiper-${type}-prev`,
+  //       }}
+  //     >
+  //       {!!handleMatch.length &&
+  //         handleMatch.map((item: any, key: any) => (
+  //           <SwiperSlide key={key}>
+  //             <Product product={item} />
+  //           </SwiperSlide>
+  //         ))}
+  //     </Swiper>
+  //   );
+  // };
 
   const [productUpdated, setProductUpdated] = useState({} as ProductType);
   const getProductUpdated = async (identifier?: number | string) => {
@@ -864,14 +826,6 @@ export default function Produto({
       {(product?.suggestions ?? "1") === "1" && (
         <RelatedProducts product={product} store={store} />
       )}
-
-      <div className="pt-16 ">div vazia</div>
-
-      {/* Sidebar inutil */}
-      <SidebarCart
-        status={cartModal}
-        close={() => setCartModal(false as boolean)}
-      />
 
       {/* Receba novidades e promoções */}
       <Newsletter />
