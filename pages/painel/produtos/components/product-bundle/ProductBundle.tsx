@@ -7,7 +7,7 @@ import { RelationType } from "@/src/models/relation";
 
 interface ProductType {
   combinations?: RelationType[];
-  suggestions?: string;
+  suggestions?: boolean; // ✅ boolean
   attrs?: Record<string, any>;
 }
 
@@ -24,6 +24,12 @@ const ProductBundle: React.FC<ProductBundleProps> = ({
   productsFind,
   SearchProducts,
 }) => {
+  React.useEffect(() => {
+    if (data.suggestions === undefined) {
+      handleData({ suggestions: true });
+    }
+  }, [data.suggestions, handleData]);
+
   return (
     <div className="border-t pt-4 pb-2">
       <h4 className="text-2xl text-zinc-900 pb-6">Venda combinada</h4>
@@ -48,18 +54,20 @@ const ProductBundle: React.FC<ProductBundleProps> = ({
           <Label>Mostrar produtos relacionados?</Label>
           <Select
             name="sugestoes"
-            value={data?.suggestions ?? "yes"}
+            value={data?.suggestions ? "true" : "false"} // exibe como string
             options={[
-              { name: "Sim", value: "yes" },
-              { name: "Não", value: "no" },
+              { name: "Sim", value: "true" },
+              { name: "Não", value: "false" },
             ]}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              handleData({ suggestions: e.target.value })
-            }
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+              const isTrue = e.target.value === "true";
+              handleData({ suggestions: isTrue });
+            }}
           />
         </div>
       </div>
     </div>
   );
 };
+
 export default ProductBundle;

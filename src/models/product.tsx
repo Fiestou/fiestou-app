@@ -75,7 +75,7 @@ export interface ProductType {
   category?: (string | number)[];
   color?: string | "sem cor";
   combinations?: Array<RelationType>;
-  suggestions?: string | "yes" | "no";
+  suggestions?: any;
   fragility?: string;
   vehicle?: string;
   freeTax?: string;
