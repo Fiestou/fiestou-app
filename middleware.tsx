@@ -39,7 +39,8 @@ export async function middleware(req: any) {
 
     if (
       user.person == "partner" &&
-      (url.includes("/dashboard") || url.includes("/admin"))
+      (url.includes("/dashboard") || url.includes("/admin")) &&
+      !url.includes("/dashboard/pedidos")
     ) {
       permanentLink.pathname = "/painel";
       return NextResponse.redirect(permanentLink);
