@@ -6,8 +6,6 @@ import { useEffect, useState } from "react";
 import { formatCep } from "../../utils/FormMasks";
 
 export default function AddressCheckoutForm(attrs: any) {
-  const [mounted, setMounted] = useState(false as boolean);
-
   const [zipCode, setZipCode] = useState("" as string);
   const [loadingZipCode, setLoadingZipCode] = useState(false as boolean);
   const [street, setStreet] = useState("" as string);
@@ -46,18 +44,49 @@ export default function AddressCheckoutForm(attrs: any) {
   ]);
 
   useEffect(() => {
-    if (!mounted) {
-      setMounted(true);
+    const incomingZip = formatCep(attrs.address?.zipCode ?? "");
+    if (justNumber(incomingZip) !== justNumber(zipCode)) {
+      setZipCode(incomingZip);
+    }
 
-      setZipCode(formatCep(attrs.address?.zipCode ?? ""));
-      setStreet(attrs.address?.street ?? "");
-      setNumber(attrs.address?.number ?? "");
-      setNeighborhood(attrs.address?.neighborhood ?? "");
-      setCity(attrs.address?.city ?? "");
-      setState(attrs.address?.state ?? "");
-      setCountry(attrs.address?.country ?? "");
-      setComplement(attrs.address?.complement ?? "");
-      setMain(attrs.address?.main ?? "");
+    const incomingStreet = attrs.address?.street ?? "";
+    if (incomingStreet !== street) {
+      setStreet(incomingStreet);
+    }
+
+    const incomingNumber = String(attrs.address?.number ?? "");
+    if (incomingNumber !== number) {
+      setNumber(incomingNumber);
+    }
+
+    const incomingNeighborhood = attrs.address?.neighborhood ?? "";
+    if (incomingNeighborhood !== neighborhood) {
+      setNeighborhood(incomingNeighborhood);
+    }
+
+    const incomingCity = attrs.address?.city ?? "";
+    if (incomingCity !== city) {
+      setCity(incomingCity);
+    }
+
+    const incomingState = attrs.address?.state ?? "";
+    if (incomingState !== state) {
+      setState(incomingState);
+    }
+
+    const incomingCountry = attrs.address?.country ?? "Brasil";
+    if (incomingCountry !== country) {
+      setCountry(incomingCountry);
+    }
+
+    const incomingComplement = attrs.address?.complement ?? "";
+    if (incomingComplement !== complement) {
+      setComplement(incomingComplement);
+    }
+
+    const incomingMain = Boolean(attrs.address?.main);
+    if (incomingMain !== main) {
+      setMain(incomingMain);
     }
   }, [attrs.address]);
 
