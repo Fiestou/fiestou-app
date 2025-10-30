@@ -120,7 +120,7 @@ export default function RelatedProducts({
         <div className="grid md:flex items-center justify-between gap-2">
           <div className="flex w-full items-center gap-2">
             <div>
-              <FDobleIcon icon="fa-puzzle-piece" size="sm" />
+              <FDobleIcon icon="fa-eye" size="sm" />
             </div>
             <h4 className="font-title font-bold text-zinc-900 text-3xl title-underline">
               Veja também
