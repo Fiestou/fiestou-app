@@ -21,6 +21,7 @@ export interface RelationType {
   metadata?:{ style?: "xl" | "lg" | string; limitSelect?: any; };
   image?: string | null;
   icon?: number | string;
+  product?: any;
 }
 
 export interface GroupType {
