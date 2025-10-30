@@ -26,10 +26,10 @@ import ProductStock from "../components/product-stock/ProductStock";
 import UnavailablePeriods from "../components/unavailable-periods/UnavailablePeriods";
 import ProductDimensions from "../components/product-dimensions/ProductDimensions";
 import ProductFeatures from "../components/product-features/ProductFeatures";
-import ProductBundle from "../components/product-bundle/ProductBundle";
 import TransportSection from "../components/transport-section/TransportSection";
 import VisibilitySection from "../components/visibility-section/VisibilitySection";
 import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
+import ProductBundle from "@/src/components/pages/painel/produtos/product-bundle/ProductBundle";
 
 const formInitial = {
   sended: false,

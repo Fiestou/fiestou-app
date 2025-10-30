@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { Button } from "@/src/components/ui/form";
-import ProductAttributes from "../product-attributes/ProductAttributes";
-import ProductQuantity from "../product-quantity/ProductQuantity";
+import ProductAttributes from "../../../../../../pages/produtos/components/product-attributes/ProductAttributes";
+import ProductQuantity from "../../../../../../pages/produtos/components/product-quantity/ProductQuantity";
 import { ProductType } from "@/src/models/product";
-import { useCart } from "../../hooks/useCart";
-import ProductShippingCalculator from "../product-shipping-calculator/ProductShippingCalculator";
+import { useCart } from "../../../../../hooks/useCart";
+import ProductShippingCalculator from "../../../../../../pages/produtos/components/product-shipping-calculator/ProductShippingCalculator";
 
 interface ProductFormProps {
   product: ProductType;
