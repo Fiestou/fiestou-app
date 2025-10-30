@@ -36,7 +36,7 @@ export const ColorfulRender = (item: any) => {
 
     case "colorFull":
       return (
-        <div className="p-3 rounded-full relative overflow-hidden bg-zinc-100">
+        <div className="p-3 rounded-full relative overflow-hidden bg-zinc-100 ">
           <div className="d-flex absolute w-full h-full top-0 left-0">
             {ColorsList.map(
               (color: any, key: any) =>
