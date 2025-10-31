@@ -571,6 +571,7 @@ export default function Produto({
                 </div>
               </div>
             )}
+            <div className="w-fit whitespace-nowrap pt-1">Categorias:</div>
             {!!categories?.length &&
               categories.map(
                 (category: any) =>
@@ -581,9 +582,6 @@ export default function Produto({
                       .includes(child.id)
                   ).length && (
                     <div key={category.id} className="flex gap-2 text-zinc-900">
-                      <div className="w-fit whitespace-nowrap pt-1">
-                        {category.title}:
-                      </div>
                       <div className="w-full flex items-center flex-wrap gap-1">
                         {!!category?.childs &&
                           category?.childs
