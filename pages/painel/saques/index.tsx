@@ -96,8 +96,6 @@ export default function Saque({
   };
 
   const [withdrawList, setWithdrawList] = useState([] as Array<any>);
-  const needsRecipientCompletion = true; // TODO: trocar por verificação real quando backend estiver pronto
-
   const getWithdraw = async () => {
     let request: any = await api.bridge({
       method: 'post',
@@ -248,13 +246,6 @@ export default function Saque({
                   <Icon icon="fa-hand-holding-usd" />
                   Solicitar saque
                 </Button>
-                <p className="text-sm text-red-600 mt-2 leading-relaxed">
-                    Antes de solicitar um saque, finalize o{" "}
-                    <Link href="/painel/meus-dados" className="underline font-semibold">
-                      cadastro da Pagar.me
-                    </Link>{" "}
-                    para liberar os repasses.
-                </p>
               </div>
             </div>
           </div>
