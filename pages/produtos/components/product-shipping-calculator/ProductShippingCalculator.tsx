@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { formatCep } from "@/src/components/utils/FormMasks";
@@ -12,6 +11,7 @@ interface ProductShippingCalculatorProps {
   loadingCep: boolean;
   handleCheckCep: () => void;
   cepError: boolean;
+  cepErrorMessage?: string | null;
   deliveryFee: number | null;
 }
 
@@ -21,6 +21,7 @@ export default function ProductShippingCalculator({
   loadingCep,
   handleCheckCep,
   cepError,
+  cepErrorMessage,
   deliveryFee,
 }: ProductShippingCalculatorProps) {
   const formatMoney = (value: any): string => {
@@ -92,9 +93,9 @@ export default function ProductShippingCalculator({
       </div>
 
       {cepError && (
-        <div className="text-red-500 text-sm mt-2">
-          Infelizmente, a entrega deste produto não está disponível para sua
-          região.
+        <div className="text-red-500 text-sm mt-2 leading-relaxed">
+          {cepErrorMessage ??
+            "Infelizmente, a entrega deste produto não está disponível para sua região."}
         </div>
       )}
 
