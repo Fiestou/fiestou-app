@@ -4,8 +4,17 @@ import { serializeParam } from "../helper";
 
 const token = Cookies.get("fiestou.authtoken");
 
+const getPublicBaseUrl = () =>
+  process.env.NEXT_PUBLIC_BASE_URL ?? process.env.BASE_URL ?? "";
+
+const getInternalBaseUrl = () =>
+  process.env.INTERNAL_BASE_URL ?? process.env.BASE_URL ?? "";
+
+const apiBaseURL =
+  typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
+
 export const api = axios.create({
-  baseURL: process.env.BASE_URL,
+  baseURL: apiBaseURL,
   headers: {
     "Access-Control-Allow-Origin": "*",
     "Content-Type": "application/json",
@@ -62,10 +71,36 @@ class Api {
           resolve(response.data);
         })
         .catch((error: any) => {
-          if (error.response && [400, 401, 418].includes(error.response.status)) {
-            reject(error.response);
-          }
-          resolve(error.response);
+          const normalizedError = () => {
+            if (error?.response) {
+              const { status, data, headers } = error.response;
+              return {
+                status,
+                data,
+                headers,
+                error: true,
+                message: error.message ?? null,
+              };
+            }
+
+            if (error?.request) {
+              return {
+                status: 503,
+                data: null,
+                error: true,
+                message: error.message ?? "Request failed",
+              };
+            }
+
+            return {
+              status: 500,
+              data: null,
+              error: true,
+              message: error?.message ?? "Unknown error",
+            };
+          };
+
+          resolve(normalizedError());
         });
     });
   }
@@ -100,33 +135,45 @@ class Api {
   }
 
   async trigger({ url, data, opts, method = "post" }: ApiRequestType, ctx?: any) {
-    url = `${process.env.APP_URL}${url}`;
+    const appUrl = process.env.APP_URL ?? getPublicBaseUrl();
+    url = `${appUrl}${url}`;
     return this.connect({ method, url, data, opts }, ctx);
   }
 
   async request<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
-    url = `${process.env.BASE_URL}/api/${url}`;
+    const baseUrl = typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
+    url = `${baseUrl}/api/${url}`;
     return await this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
   async content({ url, method = "get" }: any, ctx?: any) {
-    url = `${process.env.BASE_URL}/api/content/${url}`;
+    const baseUrl = typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
+    url = `${baseUrl}/api/content/${url}`;
     return await this.connect({ method, url }, ctx);
   }
 
   async call<T>({ method = "post", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
-    url = `${process.env.BASE_URL}/api/${url}`;
+    const baseUrl = typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
+    url = `${baseUrl}/api/${url}`;
     data = { graphs: data };
     return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
   async bridge<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
-    url = `${process.env.API_REST}${url}`;
+    const apiRest = typeof window === "undefined"
+      ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
+      : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
+
+    url = `${apiRest}${url}`;
     return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
   async graph({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
-    url = `${process.env.API_REST}${url}`;
+    const apiRest = typeof window === "undefined"
+      ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
+      : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
+
+    url = `${apiRest}${url}`;
     data = { graphs: data };
     return this.connect({ method, url, data, opts }, ctx);
   }
@@ -155,7 +202,11 @@ class Api {
   }
 
   async auth({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
-    url = `${process.env.API_REST}${url}`;
+    const apiRest = typeof window === "undefined"
+      ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
+      : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
+
+    url = `${apiRest}${url}`;
     return this.connect({ method, url, data, opts }, ctx);
   }
 }
