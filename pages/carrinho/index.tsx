@@ -4,104 +4,20 @@ import Image from "next/image";
 import Link from "next/link";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
-import { KeyboardEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductType, getPrice } from "@/src/models/product";
 import { NextApiRequest, NextApiResponse } from "next";
 import {
   dateBRFormat,
   findDates,
-  getAllowedRegionsDescription,
   getImage,
   getSummary,
-  isCEPInRegion,
-  justNumber,
   moneyFormat,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { RemoveToCart } from "@/src/components/pages/carrinho";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Img from "@/src/components/utils/ImgBase";
-import { formatCep } from "@/src/components/utils/FormMasks";
-import { CartType } from "@/src/models/cart";
-import { DeliveryItem } from "@/src/types/filtros";
-
-type DeliverySummaryEntry = {
-  key: string;
-  price: number;
-  storeId: number | null;
-  storeName: string;
-  storeSlug?: string;
-  storeLogoUrl?: string | null;
-};
-
-type DeliverySummary = {
-  total: number;
-  zipCodes: string[];
-  entries: DeliverySummaryEntry[];
-};
-
-const collectDeliverySummary = (items: Array<CartType>): DeliverySummary => {
-  const entriesMap = new Map<string, DeliverySummaryEntry>();
-  const zipCodes = new Set<string>();
-  let total = 0;
-
-  items.forEach((item) => {
-    const feeValue = Number(item?.details?.deliveryFee);
-    if (!Number.isFinite(feeValue) || feeValue < 0) {
-      return;
-    }
-
-    const storeData = item?.product?.store ?? {};
-    const rawStoreId =
-      item?.details?.deliveryStoreId ?? storeData?.id ?? storeData;
-
-    const storeId = Number(rawStoreId);
-    const hasNumericStoreId = Number.isFinite(storeId);
-    const entryKey = hasNumericStoreId
-      ? `store-${storeId}`
-      : `item-${item?.product?.id ?? Math.random()}`;
-
-    if (!entriesMap.has(entryKey)) {
-      const storeName =
-        storeData?.companyName ?? storeData?.title ?? "Loja parceira";
-      const storeSlug = storeData?.slug;
-      let storeLogoUrl: string | null = null;
-
-      if (storeData?.profile && typeof storeData.profile === "object") {
-        storeLogoUrl =
-          getImage(storeData.profile, "thumb") ||
-          getImage(storeData.profile, "sm") ||
-          getImage(storeData.profile);
-      }
-
-      entriesMap.set(entryKey, {
-        key: entryKey,
-        price: feeValue,
-        storeId: hasNumericStoreId ? storeId : null,
-        storeName,
-        storeSlug,
-        storeLogoUrl: storeLogoUrl || null,
-      });
-
-      total += feeValue;
-    }
-
-    const rawZip =
-      item?.details?.deliveryZipCode ?? item?.details?.deliveryZipCodeFormatted;
-    if (rawZip) {
-      const sanitizedZip = rawZip.toString().replace(/\D/g, "");
-      if (sanitizedZip.length >= 5) {
-        zipCodes.add(sanitizedZip);
-      }
-    }
-  });
-
-  return {
-    total,
-    zipCodes: Array.from(zipCodes),
-    entries: Array.from(entriesMap.values()),
-  };
-};
 
 export async function getServerSideProps({
   req,
@@ -156,260 +72,61 @@ export default function Carrinho({
   DataSeo,
   Scripts,
 }: {
-  cart: Array<CartType>;
+  cart: any;
   DataSeo: any;
   Scripts: any;
 }) {
-  const [listCart, setListCart] = useState<CartType[]>([]);
-  const [dates, setDates] = useState<Array<any>>([]);
-  const [subtotal, setSubtotal] = useState<number>(0);
-  const [resume, setResume] = useState<{
-    subtotal: number;
-    total: number;
-    delivery: number;
-    deliveryZipCodes: string[];
-    deliveryEntries: DeliverySummaryEntry[];
-    startDate: any;
-    endDate: any;
-  }>({
-    subtotal: 0,
-    total: 0,
-    delivery: 0,
-    deliveryZipCodes: [],
-    deliveryEntries: [],
-    startDate: null,
-    endDate: null,
-  });
-  const apiClient = useMemo(() => new Api(), []);
-  const [deliveryZipInput, setDeliveryZipInput] = useState("");
-  const [deliveryLoading, setDeliveryLoading] = useState(false);
-  const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  const [listCart, setListCart] = useState([] as Array<any>);
 
-  const recalcSummary = (items: Array<CartType>) => {
-    const datesHandle = items.map((item) => item.details?.dateStart);
-    const subtotalHandle = items.reduce((accumulator: number, item) => {
-      return accumulator + Number(item.total ?? 0);
-    }, 0);
-    const deliverySummary = collectDeliverySummary(items);
+  const [dates, setDates] = useState([] as Array<any>);
 
-    setDates(datesHandle);
-    setSubtotal(subtotalHandle);
-    setResume({
-      subtotal: subtotalHandle,
-      total: subtotalHandle + deliverySummary.total,
-      delivery: deliverySummary.total,
-      deliveryZipCodes: deliverySummary.zipCodes,
-      deliveryEntries: deliverySummary.entries,
-      startDate: findDates(datesHandle).minDate,
-      endDate: findDates(datesHandle).maxDate,
-    });
-  };
+  const [subtotal, setSubtotal] = useState(0 as number);
+
+  const [resume, setResume] = useState({} as any);
 
   const removeItemCart = (key: number) => {
-    const listHandle = listCart.filter((_, index) => index !== key);
+    let listHandle = listCart.filter(
+      (item: any, index: number) => index != key
+    );
+
+    let subtotalHandle = listHandle.reduce((acumulador: number, item: any) => {
+      return acumulador + item.total;
+    }, 0);
+
+    let datesHandle = listHandle.map((item: any) => item.details.dateStart);
 
     setListCart(listHandle);
-    recalcSummary(listHandle);
+    setDates(datesHandle);
+    setSubtotal(subtotalHandle);
+
+    setResume({
+      subtotal: subtotalHandle,
+      total: subtotalHandle,
+      startDate: findDates(datesHandle).minDate,
+      endDate: findDates(datesHandle).maxDate,
+    } as any);
 
     RemoveToCart(key);
   };
 
-  const applyDeliveryToCart = (
-    fees: DeliveryItem[],
-    sanitizedZip: string
-  ): { success: boolean; message?: string } => {
-    if (!fees.length) {
-      return {
-        success: false,
-        message: "Não conseguimos calcular o frete para este CEP.",
-      };
-    }
-
-    const formattedZip = formatCep(sanitizedZip);
-    const feeMap = new Map<number, number>();
-
-    fees.forEach((fee: any) => {
-      const storeId = Number(
-        fee?.store_id ?? fee?.storeId ?? fee?.store ?? fee?.store_id
-      );
-      const price = Number(fee?.price);
-
-      if (Number.isFinite(storeId) && Number.isFinite(price)) {
-        feeMap.set(storeId, price);
-      }
-    });
-
-    const missingStores: string[] = [];
-
-    const updatedList = listCart.map((item) => {
-      const productStore = item?.product?.store ?? {};
-      const storeSource =
-        item?.details?.deliveryStoreId ??
-        (typeof productStore === "object" ? productStore?.id : productStore);
-      const storeId = Number(storeSource);
-
-      const details = { ...(item.details ?? {}) };
-      details.deliveryZipCode = sanitizedZip;
-      details.deliveryZipCodeFormatted = formattedZip;
-
-      if (Number.isFinite(storeId)) {
-        details.deliveryStoreId = storeId;
-        if (feeMap.has(storeId)) {
-          details.deliveryFee = feeMap.get(storeId) ?? 0;
-        } else {
-          delete details.deliveryFee;
-          missingStores.push(
-            productStore?.companyName ??
-              productStore?.title ??
-              item?.product?.title ??
-              `Produto #${item?.product?.id ?? ""}`
-          );
-        }
-      } else {
-        delete details.deliveryStoreId;
-        delete details.deliveryFee;
-        missingStores.push(
-          productStore?.companyName ??
-            productStore?.title ??
-            item?.product?.title ??
-            `Produto #${item?.product?.id ?? ""}`
-        );
-      }
-
-      return {
-        ...item,
-        details,
-      };
-    });
-
-    if (missingStores.length) {
-      const list = Array.from(new Set(missingStores.filter(Boolean)));
-      return {
-        success: false,
-        message:
-          list.length > 0
-            ? `Não conseguimos calcular o frete para: ${list.join(", ")}`
-            : "Não conseguimos calcular o frete para este CEP.",
-      };
-    }
-
-    console.log('🛒 Carrinho - Lista atualizada com frete:', updatedList);
-
-    setListCart(updatedList);
-    if (typeof window !== "undefined") {
-      Cookies.set("fiestou.cart", JSON.stringify(updatedList), { expires: 7 });
-      console.log('🍪 Carrinho - Cookie salvo com sucesso');
-    }
-    recalcSummary(updatedList);
-
-    return { success: true };
-  };
-
-  const handleCalculateDelivery = async () => {
-    const sanitizedZip = justNumber(deliveryZipInput);
-
-    if (sanitizedZip.length !== 8) {
-      setDeliveryError("Informe um CEP válido para calcular o frete.");
-      return;
-    }
-
-    if (!isCEPInRegion(sanitizedZip)) {
-      setDeliveryError(
-        `Por enquanto atendemos apenas ${getAllowedRegionsDescription()}.`
-      );
-      return;
-    }
-
-    const productIds = listCart
-      .map((item) =>
-        Number(item?.product?.id ?? (typeof item?.product === "number" ? item.product : NaN))
-      )
-      .filter((id) => Number.isFinite(id)) as number[];
-
-    if (!productIds.length) {
-      setDeliveryError(
-        "Não encontramos produtos válidos no carrinho para calcular o frete."
-      );
-      return;
-    }
-
-    setDeliveryLoading(true);
-    setDeliveryError(null);
-
-    try {
-      const response: any = await apiClient.request({
-        method: "get",
-        url: `delivery-zipcodes/${sanitizedZip}`,
-        data: { ids: productIds },
-      });
-
-      const rawList =
-        Array.isArray(response?.data) && response?.data
-          ? response.data
-          : Array.isArray(response?.data?.data)
-          ? response.data.data
-          : Array.isArray(response)
-          ? response
-          : [];
-
-      const normalizedFees: DeliveryItem[] = rawList
-        .map((item: any) => ({
-          price: Number(item?.price),
-          store_id: Number(item?.store_id ?? item?.storeId ?? item?.store),
-        }))
-        .filter(
-          (fee: DeliveryItem) =>
-            Number.isFinite(fee.price) && Number.isFinite(fee.store_id)
-        );
-
-      if (!normalizedFees.length) {
-        setDeliveryError("Não conseguimos calcular o frete para este CEP.");
-        return;
-      }
-
-      console.log('📦 Carrinho - Taxas normalizadas:', normalizedFees);
-      console.log('📮 Carrinho - CEP sanitizado:', sanitizedZip);
-
-      const result = applyDeliveryToCart(normalizedFees, sanitizedZip);
-      console.log('✅ Carrinho - Resultado da aplicação:', result);
-
-      if (!result.success) {
-        setDeliveryError(result.message ?? "Não conseguimos calcular o frete.");
-        return;
-      }
-
-      setDeliveryZipInput(formatCep(sanitizedZip));
-      console.log('✅ Carrinho - Frete calculado e salvo com sucesso!');
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.error ||
-        error?.message ||
-        "Não conseguimos calcular o frete agora. Tente novamente.";
-      setDeliveryError(message);
-    } finally {
-      setDeliveryLoading(false);
-    }
-  };
-
-  const handleDeliveryZipKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleCalculateDelivery();
-    }
-  };
-
   useEffect(() => {
     setListCart(cart);
-    recalcSummary(cart);
-  }, [cart]);
 
-  useEffect(() => {
-    if (resume.deliveryZipCodes.length) {
-      setDeliveryZipInput(formatCep(resume.deliveryZipCodes[0]));
-    }
-  }, [resume.deliveryZipCodes]);
+    const handleDate = cart.map((item: any) => item.details.dateStart);
+    const handleSubtotal = cart.reduce((acumulador: number, item: any) => {
+      return acumulador + parseFloat(item.total);
+    }, 0);
+
+    setDates(handleDate);
+    setSubtotal(handleSubtotal);
+
+    setResume({
+      subtotal: handleSubtotal,
+      total: handleSubtotal,
+      startDate: findDates(handleDate).minDate,
+      endDate: findDates(handleDate).maxDate,
+    });
+  }, [cart]);
 
   return (
     <Template
@@ -455,111 +172,84 @@ export default function Carrinho({
                   </div>
 
                   {!!listCart.length &&
-                    listCart.map((item, key) => {
-                      const deliveryFeeValue = Number(item.details?.deliveryFee);
-                      const hasDeliveryFee =
-                        Number.isFinite(deliveryFeeValue) &&
-                        deliveryFeeValue >= 0;
-                      const rawDeliveryZip =
-                        item.details?.deliveryZipCode ??
-                        item.details?.deliveryZipCodeFormatted ??
-                        "";
-                      const formattedDeliveryZip = rawDeliveryZip
-                        ? formatCep(rawDeliveryZip.toString())
-                        : "";
-
-                      return (
-                        <div
-                          key={key}
-                          className="border-b pb-6 flex gap-2 md:gap-4"
-                        >
-                          <div className="w-full max-w-[4rem] pt-1">
-                            <div className="aspect aspect-square rounded-md relative overflow-hidden bg-zinc-200">
-                              {!!item?.product?.gallery?.length &&
-                                !!getImage(
-                                  item?.product?.gallery[0],
-                                  "thumb"
-                                ) && (
-                                  <Img
-                                    src={getImage(
-                                      item?.product?.gallery[0],
-                                      "thumb"
-                                    )}
-                                    size="md"
-                                    className="absolute object-cover h-full inset-0 w-full"
-                                  />
-                                )}
-                            </div>
-                          </div>
-                          <div className="w-full">
-                            <div className="flex gap-10 items-start">
-                              <div className="w-full">
-                                <h5 className="font-title font-bold text-zinc-900 text-xl">
-                                  <Link href={`/produtos/${item.product?.id}`}>
-                                    {item.product?.title}
-                                  </Link>
-                                </h5>
-                                <div className="mt-2 text-sm flex flex-wrap gap-1">
-                                  {!!item.product?.subtitle && (
-                                    <div>
-                                      <div
-                                        className="break-words whitespace-pre-wrap inline-block"
-                                        dangerouslySetInnerHTML={{
-                                          __html: item.product?.subtitle,
-                                        }}
-                                      ></div>
-                                    </div>
+                    listCart.map((item: any, key: any) => (
+                      <div
+                        key={key}
+                        className="border-b pb-6 flex gap-2 md:gap-4"
+                      >
+                        <div className="w-full max-w-[4rem] pt-1">
+                          <div className="aspect aspect-square rounded-md relative overflow-hidden bg-zinc-200">
+                            {!!item?.product?.gallery?.length &&
+                              !!getImage(
+                                item?.product?.gallery[0],
+                                "thumb"
+                              ) && (
+                                <Img
+                                  src={getImage(
+                                    item?.product?.gallery[0],
+                                    "thumb"
                                   )}
-                                </div>
-                              </div>
-                              <div className="w-fit text-right flex items-center gap-4">
-                                <h3 className="font-bold text-xl whitespace-nowrap leading-tight text-zinc-900">
-                                  R$ {moneyFormat(item.total)}
-                                </h3>
-                              </div>
-                            </div>
-                            <div className="flex items-end">
-                              <div className="w-full text-sm text-zinc-600 pt-2">
-                                <div className="flex gap-1">
-                                  Data:
-                                  <span>
-                                    {dateBRFormat(item.details?.dateStart)}
-                                  </span>
-                                </div>
-                                <div className="flex gap-1">
-                                  Fornecido por:
-                                  <span className="font-semibold text-zinc-900">
-                                    {item.product?.store?.title}
-                                  </span>
-                                </div>
-                                {hasDeliveryFee && (
-                                  <div className="flex gap-1 items-center">
-                                    Frete:
-                                    <span className="font-semibold text-zinc-900">
-                                      R$ {moneyFormat(deliveryFeeValue)}
-                                    </span>
-                                    {formattedDeliveryZip && (
-                                      <span className="text-xs text-zinc-500">
-                                        ({formattedDeliveryZip})
-                                      </span>
-                                    )}
+                                  size="md"
+                                  className="absolute object-cover h-full inset-0 w-full"
+                                />
+                              )}
+                          </div>
+                        </div>
+                        <div className="w-full">
+                          <div className="flex gap-10 items-start">
+                            <div className="w-full">
+                              <h5 className="font-title font-bold text-zinc-900 text-xl">
+                                <Link href={`/produtos/${item.product?.id}`}>
+                                  {item.product.title}
+                                </Link>
+                              </h5>
+                              <div className="mt-2 text-sm flex flex-wrap gap-1">
+                                {!!item.product?.subtitle && (
+                                  <div>
+                                    <div
+                                      className="break-words whitespace-pre-wrap inline-block"
+                                      dangerouslySetInnerHTML={{
+                                        __html: item.product?.subtitle,
+                                      }}
+                                    ></div>
                                   </div>
                                 )}
                               </div>
-                              <div>
-                                <Button
-                                  style="btn-link"
-                                  className="text-sm text-zinc-500 font-bold p-0"
-                                  onClick={() => removeItemCart(key)}
-                                >
-                                  Remover
-                                </Button>
+                            </div>
+                            <div className="w-fit text-right flex items-center gap-4">
+                              <h3 className="font-bold text-xl whitespace-nowrap leading-tight text-zinc-900">
+                                R$ {moneyFormat(item.total)}
+                              </h3>
+                            </div>
+                          </div>
+                          <div className="flex items-end">
+                            <div className="w-full text-sm text-zinc-600 pt-2">
+                              <div className="flex gap-1">
+                                Data:
+                                <span>
+                                  {dateBRFormat(item.details.dateStart)}
+                                </span>
                               </div>
+                              <div className="flex gap-1">
+                                Fornecido por:
+                                <span className="font-semibold text-zinc-900">
+                                  {item.product.store.title}
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <Button
+                                style="btn-link"
+                                className="text-sm text-zinc-500 font-bold p-0"
+                                onClick={() => removeItemCart(key)}
+                              >
+                                Remover
+                              </Button>
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   <div className="pt-4 md:pt-6 flex justify-center">
                     <Button
                       href={`${process.env.APP_URL}/produtos`}
@@ -607,117 +297,6 @@ export default function Carrinho({
 
                       <div className="border-t"></div>
 
-                      <div className="grid gap-2">
-                        <div className="font-bold text-sm text-zinc-900">
-                          Calcular frete
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <input
-                            type="text"
-                            className="border rounded px-3 py-2 w-full sm:flex-1"
-                            placeholder="Digite seu CEP"
-                            value={deliveryZipInput}
-                            maxLength={9}
-                            onChange={(e) => {
-                              setDeliveryZipInput(formatCep(e.target.value));
-                              setDeliveryError(null);
-                            }}
-                            onKeyDown={handleDeliveryZipKeyDown}
-                            disabled={deliveryLoading}
-                          />
-                          <Button
-                            type="button"
-                            style="btn-light"
-                            className="sm:w-auto w-full"
-                            loading={deliveryLoading}
-                            disable={deliveryLoading}
-                            onClick={handleCalculateDelivery}
-                          >
-                            Calcular
-                          </Button>
-                        </div>
-                        {deliveryError ? (
-                          <span className="text-sm text-red-500">
-                            {deliveryError}
-                          </span>
-                        ) : !resume.deliveryEntries.length ? (
-                          <span className="text-xs text-zinc-500">
-                            Informe o CEP para calcular o frete antes de
-                            continuar para o checkout.
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div className="border-t"></div>
-
-                      {(resume.deliveryZipCodes.length > 0 ||
-                        resume.delivery > 0 ||
-                        resume.deliveryEntries.length > 0) && (
-                        <div className="grid gap-2">
-                          <div className="flex justify-between">
-                            <div className="font-bold text-sm text-zinc-900 flex items-center">
-                              <Icon
-                                icon="fa-truck"
-                                className="text-sm mr-2 opacity-75"
-                              />
-                              Frete
-                              {resume.deliveryZipCodes.length
-                                ? ` (${resume.deliveryZipCodes
-                                    .map((zip) => formatCep(zip))
-                                    .join(", ")})`
-                                : ""}
-                            </div>
-                            <div className="whitespace-nowrap">
-                              R$ {moneyFormat(resume.delivery)}
-                            </div>
-                          </div>
-
-                          {resume.deliveryEntries.length > 0 && (
-                            <div className="grid gap-2 text-sm">
-                              {resume.deliveryEntries.map((entry) => {
-                                const label =
-                                  entry.storeName || "Entrega parceira";
-                                const initials = label
-                                  .split(" ")
-                                  .filter(Boolean)
-                                  .slice(0, 2)
-                                  .map((word) => word[0]?.toUpperCase())
-                                  .join("");
-
-                                return (
-                                  <div
-                                    key={entry.key}
-                                    className="flex items-center justify-between gap-3 rounded border border-dashed border-zinc-200 px-3 py-2 bg-white"
-                                  >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      {entry.storeLogoUrl ? (
-                                        <Img
-                                          src={entry.storeLogoUrl}
-                                          alt={label}
-                                          className="w-8 h-8 rounded-full object-cover border border-zinc-200"
-                                        />
-                                      ) : (
-                                        <div className="w-8 h-8 rounded-full bg-zinc-200 text-xs font-semibold flex items-center justify-center text-zinc-600">
-                                          {initials || "?"}
-                                        </div>
-                                      )}
-                                      <span className="truncate text-zinc-700">
-                                        {label}
-                                      </span>
-                                    </div>
-                                    <span className="font-semibold text-zinc-900">
-                                      R$ {moneyFormat(entry.price)}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          <div className="border-t"></div>
-                        </div>
-                      )}
-
                       <div className="flex gap-2 mb-4">
                         <div className="w-full text-zinc-900 font-bold">
                           Total
@@ -731,16 +310,10 @@ export default function Carrinho({
                         <Button
                           style="btn-success"
                           href="checkout"
-                          className="py-6 mb-2 md:mb-0"
-                          disable={!resume.deliveryEntries.length}
+                          className="py-6 mb-4 md:mb-0"
                         >
                           Confirmar e combinar entrega
                         </Button>
-                        {!resume.deliveryEntries.length && (
-                          <span className="text-xs text-red-500 text-center md:text-left">
-                            Calcule o frete para prosseguir.
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>

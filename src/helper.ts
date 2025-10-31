@@ -478,38 +478,17 @@ export async function getZipCode(zipCode: string) {
   return {};
 }
 
-export const CEP_ALLOWED_RANGES: { region: string; start: string; end: string }[] = [
-  { region: "João Pessoa", start: "58000001", end: "58999999" },
-];
-
-export function formatCEP(cep: string): string {
-  const digits = cep.replace(/\D/g, "");
-  if (digits.length !== 8) return cep;
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-}
-
-export function getAllowedRegionsDescription(): string {
-  if (!CEP_ALLOWED_RANGES.length) return "";
-
-  return CEP_ALLOWED_RANGES.map(
-    (range) =>
-      `${range.region} (CEP ${formatCEP(range.start)} a ${formatCEP(range.end)})`
-  ).join(", ");
-}
-
 export function isCEPInRegion(cep: string): boolean {
   if (!cep) return false;
 
+  const cepRanges: { region: string; start: string; end: string }[] = [
+    { region: "João Pessoa", start: "58000001", end: "58999999" },
+  ];
+
   const sanitizedCEP = cep.replace(/\D/g, "");
-  if (sanitizedCEP.length !== 8) return false;
 
-  const cepValue = Number(sanitizedCEP);
-
-  for (const range of CEP_ALLOWED_RANGES) {
-    const start = Number(range.start);
-    const end = Number(range.end);
-
-    if (cepValue >= start && cepValue <= end) {
+  for (const range of cepRanges) {
+    if (sanitizedCEP >= range.start && sanitizedCEP <= range.end) {
       return true;
     }
   }
