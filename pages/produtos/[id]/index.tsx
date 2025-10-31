@@ -8,7 +8,13 @@ import {
   ProductType,
   getPriceValue,
 } from "@/src/models/product";
-import { dateFormat, getImage, isMobileDevice } from "@/src/helper";
+import {
+  dateFormat,
+  getAllowedRegionsDescription,
+  getImage,
+  isCEPInRegion,
+  isMobileDevice,
+} from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
@@ -135,6 +141,7 @@ export default function Produto({
   const [days, setDays] = useState(1);
   const [cep, setCep] = useState("");
   const [cepError, setCepError] = useState(false);
+  const [cepErrorMessage, setCepErrorMessage] = useState<string | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
   const [cartModal, setCartModal] = useState(false as boolean);
@@ -169,6 +176,45 @@ export default function Produto({
     setBlockdate(product.unavailableDates ?? []);
   }, [product]);
 
+  const persistDeliveryInfo = (fee: number | null, sanitizedZip?: string) => {
+    setProductToCart((prev) => {
+      const nextDetails = { ...(prev?.details ?? {}) };
+
+      if (fee === null || Number.isNaN(fee)) {
+        delete nextDetails.deliveryFee;
+        delete nextDetails.deliveryZipCode;
+        delete nextDetails.deliveryZipCodeFormatted;
+        delete nextDetails.deliveryStoreId;
+      } else {
+        const storeIdRaw =
+          typeof store?.id !== "undefined"
+            ? store?.id
+            : typeof product?.store === "object"
+            ? product?.store?.id
+            : product?.store;
+
+        const zipSanitized =
+          sanitizedZip ?? cep.replace(/\D/g, "");
+        const zipFormatted = formatCep(zipSanitized);
+
+        nextDetails.deliveryFee = fee;
+        nextDetails.deliveryZipCode = zipSanitized;
+        nextDetails.deliveryZipCodeFormatted = zipFormatted;
+
+        const storeId = Number(storeIdRaw);
+        if (Number.isFinite(storeId)) {
+          nextDetails.deliveryStoreId = storeId;
+        } else {
+          delete nextDetails.deliveryStoreId;
+        }
+      }
+
+      return {
+        ...prev,
+        details: nextDetails,
+      };
+    });
+  };
   const handleQuantity = (q: any) => {
     const qtd = Number(q);
 
@@ -398,21 +444,74 @@ export default function Produto({
 
   const handleCheckCep = async () => {
     setCepError(false);
+    setCepErrorMessage(null);
     setLoadingCep(true);
     const api = new Api();
+
     try {
+      const sanitizedCep = cep.replace(/\D/g, "");
+
+      if (!sanitizedCep || sanitizedCep.length !== 8) {
+        setCepError(true);
+        setCepErrorMessage("Informe um CEP válido para calcular o frete.");
+        setLoadingCep(false);
+        return;
+      }
+
+      if (!isCEPInRegion(sanitizedCep)) {
+        setCepError(true);
+        setCepErrorMessage(
+          `Por enquanto atendemos apenas ${getAllowedRegionsDescription()}.`
+        );
+        setLoadingCep(false);
+        return;
+      }
+
       const response = await api.request<any>({
         method: "get",
-        url: `delivery-zipcode/${product?.id}/${cep.replace(/\D/g, "")}`,
+        url: `delivery-zipcode/${product?.id}/${sanitizedCep}`,
       });
-      const priceValue = response?.data?.price ?? null;
+
+      if (response?.status && response.status >= 400) {
+        let apiMessage =
+          response?.data?.error ||
+          "Não conseguimos calcular o frete para esse CEP agora.";
+
+        if (typeof apiMessage === "string" && apiMessage.includes("lat/lon")) {
+          apiMessage =
+            "Não conseguimos localizar esse endereço. Confirme o CEP e número ou escolha outro endereço próximo.";
+        }
+        setCepError(true);
+        setCepErrorMessage(apiMessage);
+        setDeliveryFee(null);
+        persistDeliveryInfo(null);
+        setLoadingCep(false);
+        return;
+      }
+
+      const rawPrice = response?.data?.price;
+      const priceValueRaw =
+        rawPrice === null || rawPrice === undefined ? null : Number(rawPrice);
+      const priceValue = Number.isFinite(priceValueRaw) ? priceValueRaw : null;
+
       setDeliveryFee(priceValue);
-      if (priceValue != 0) {
-        setCepError(!priceValue);
+      persistDeliveryInfo(priceValue, sanitizedCep);
+
+      if (!priceValue && priceValue !== 0) {
+        setCepError(true);
+        setCepErrorMessage(
+          "Não conseguimos calcular o frete para esse CEP agora."
+        );
       }
     } catch (e) {
       setCepError(true);
+      setCepErrorMessage(
+        "Não conseguimos calcular o frete para esse CEP agora. Tente novamente em instantes."
+      );
+      setDeliveryFee(null);
+      persistDeliveryInfo(null);
     }
+
     setLoadingCep(false);
   };
 
@@ -742,6 +841,7 @@ export default function Produto({
                     loadingCep={loadingCep}
                     handleCheckCep={handleCheckCep}
                     cepError={cepError}
+                    cepErrorMessage={cepErrorMessage}
                     deliveryFee={deliveryFee}
                   />
 
