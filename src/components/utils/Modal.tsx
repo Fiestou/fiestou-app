@@ -12,8 +12,6 @@ interface ModalProps {
   className?: string;
   /** quando true, mostra como drawer lateral direito (estilo da loja) */
   storeView?: boolean;
-  /** quando true, modal ocupa tela inteira (fullscreen) */
-  fullscreen?: boolean;
 }
 
 export default function Modal(attr: ModalProps) {
@@ -57,42 +55,20 @@ export default function Modal(attr: ModalProps) {
 
   return (
     <>
-      {/* ====== VARIAÇÃO FULLSCREEN (sem overlay) ====== */}
-      {attr.fullscreen ? (
+      <div
+        className={`fixed inset-0 z-[100] ${attr.status ? "h-[100svh]" : "h-0"
+          }`}
+        aria-hidden={!attr.status}
+      >
+        {/* overlay */}
         <div
-          className={`fixed inset-0 flex flex-col bg-white z-[100] overflow-hidden
-            transition-opacity duration-200 ease-in-out
-            ${status ? "opacity-100" : "opacity-0 pointer-events-none"}
-            ${attr.className ?? ""}`}
-          role="dialog"
-          aria-modal="true"
-          style={{ display: attr.status ? 'flex' : 'none' }}
-        >
-            {/* Header fixo */}
-            <div className="relative p-4 md:p-6 border-b bg-white z-10 shadow-sm">
-              {attr.title && (
-                <h4 className="text-xl md:text-2xl font-bold text-zinc-900 pr-12">
-                  {attr.title}
-                </h4>
-              )}
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-xl md:text-2xl absolute right-4 md:right-6 top-4 md:top-6 p-2 hover:bg-zinc-100 rounded-full transition-colors"
-                aria-label="Fechar"
-              >
-                <Icon icon="fa-times" />
-              </button>
-            </div>
+          onClick={onClose}
+          className={`${status ? "opacity-75" : "opacity-0"
+            } transition-opacity duration-200 ease-linear bg-zinc-900 absolute inset-0`}
+        />
 
-            {/* Conteúdo com scroll */}
-            <div className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 ${withStyle}`}>
-              <div className="max-w-5xl mx-auto">
-                {attr.children}
-              </div>
-            </div>
-          </div>
-        ) : attr.storeView ? (
+        {/* ====== VARIAÇÃO DRAWER (storeView) ====== */}
+        {attr.storeView ? (
           <div
             className={`fixed right-0 top-0 h-[100svh] flex flex-col bg-white ${drawerSize[attr.size ?? "xl"]} 
               shadow-xl transition-transform duration-200 ease-in-out
@@ -163,6 +139,7 @@ export default function Modal(attr: ModalProps) {
             </div>
           </div>
         )}
+      </div>
 
       {/* trava scroll do body enquanto aberto */}
       {attr.status && (

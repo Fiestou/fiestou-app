@@ -4,7 +4,7 @@ import { Button, Input } from "@/src/components/ui/form";
 import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
-import { NextApiRequest } from "next";
+import { NextApiRequest, NextApiResponse } from "next";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Editor from "@/src/components/ui/form/EditorUI";
@@ -12,12 +12,11 @@ import FileManager from "@/src/components/ui/form/FileManager";
 import axios from "axios";
 import { shortId } from "@/src/helper";
 
-export async function getServerSideProps({
-  query,
-}: {
-  query: NextApiRequest["query"];
-}) {
-  const { id } = query;
+export async function getServerSideProps(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const { id } = req.query;
 
   return {
     props: {

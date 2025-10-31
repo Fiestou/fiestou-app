@@ -1,16 +1,14 @@
 import Template from "@/src/template";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+  calcDeliveryTotal,
   dateBRFormat,
   findDates,
-  getImage,
-  getAllowedRegionsDescription,
   isCEPInRegion,
   justNumber,
   moneyFormat,
-  getZipCode,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
@@ -35,59 +33,10 @@ import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DeliveryItem } from "@/src/types/filtros";
-import Img from "@/src/components/utils/ImgBase";
 
 const FormInitialType = {
   sended: false,
   loading: false,
-};
-
-type DeliverySummaryEntry = {
-  storeId: number | null;
-  storeName: string;
-  storeSlug?: string;
-  price: number;
-  storeLogoUrl?: string | null;
-};
-
-const normalizeDeliveryItems = (items: DeliveryItem[]): DeliveryItem[] => {
-  const map = new Map<number, DeliveryItem>();
-
-  items.forEach((item) => {
-    const storeId = Number(item?.store_id);
-    const price = Number(item?.price);
-
-    if (!Number.isFinite(storeId) || !Number.isFinite(price)) {
-      return;
-    }
-
-    map.set(storeId, { price, store_id: storeId });
-  });
-
-  return Array.from(map.values());
-};
-
-const extractDeliveryFees = (items: Array<CartType>): DeliveryItem[] => {
-  return items
-    .map((item) => {
-      const fee = Number(item?.details?.deliveryFee);
-      const storeSource =
-        item?.details?.deliveryStoreId ??
-        (typeof item?.product?.store === "object"
-          ? (item?.product?.store as any)?.id
-          : item?.product?.store);
-      const storeId = Number(storeSource);
-
-      if (!Number.isFinite(fee) || !Number.isFinite(storeId)) {
-        return null;
-      }
-
-      return {
-        price: fee,
-        store_id: storeId,
-      } as DeliveryItem;
-    })
-    .filter((item): item is DeliveryItem => !!item);
 };
 
 export async function getServerSideProps(ctx: any) {
@@ -167,48 +116,16 @@ export default function Checkout({
   DataSeo: any;
   Scripts: any;
 }) {
-  const api = useMemo(() => new Api(), []);
-  const allowedRegionsDescription = getAllowedRegionsDescription();
+  const api = new Api();
 
   const platformCommission = Roles?.platformCommission ?? 5;
+  const deliveryTax = parseFloat(Roles?.kmPrice) ?? 2.5;
 
-  const [cartItems, setCartItems] = useState<Array<CartType>>(cart);
+  let stores: Array<StoreType> = [];
 
-  const storesById = useMemo(() => {
-    const map = new Map<number, StoreType>();
-
-    const registerStore = (candidate: any) => {
-      if (!candidate || typeof candidate !== "object") {
-        return;
-      }
-
-      const idRaw = (candidate as any)?.id ?? (candidate as any)?.store_id;
-      const id = Number(idRaw);
-
-      if (!Number.isFinite(id)) {
-        return;
-      }
-
-      if (!map.has(id)) {
-        map.set(id, candidate as StoreType);
-      }
-    };
-
-    products.forEach((product: ProductType) => {
-      registerStore(product?.store);
-    });
-
-    (cartItems as Array<CartType>).forEach((item: CartType) => {
-      registerStore((item as any)?.product?.store);
-    });
-
-    return map;
-  }, [products, cartItems]);
-
-  const storesList = useMemo(
-    () => Array.from(storesById.values()),
-    [storesById]
-  );
+  products.map((product: any, key: any) => {
+    stores[product.store.id] = product.store;
+  });
 
   const { isFallback } = useRouter();
 
@@ -262,347 +179,7 @@ export default function Checkout({
     }
   };
 
-  const [deliveryPrice, setDeliveryPrice] = useState<DeliveryItem[]>(() =>
-    normalizeDeliveryItems(extractDeliveryFees(cart))
-  );
-  const lastFetchedZipRef = useRef<string | null>(null);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
-
-  // Dependemos apenas do CEP formatado para evitar reprocessar desnecessariamente quando o carrinho é atualizado.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    setCartItems(cart);
-  }, [cart]);
-
-  // Inicializa o CEP e frete do carrinho que veio do servidor
-  useEffect(() => {
-    if (initialLoadDone || !cart.length) {
-      return;
-    }
-
-    console.log('🛒 Checkout - Cart inicial recebido do servidor:', cart);
-
-    const initialFees = extractDeliveryFees(cart);
-    console.log('💰 Checkout - Taxas extraídas:', initialFees);
-
-    if (initialFees.length) {
-      const normalized = normalizeDeliveryItems(initialFees);
-      setDeliveryPrice(normalized);
-      console.log('✅ Checkout - Frete definido:', normalized);
-
-      const zipHolder = cart.find(
-        (item: any) =>
-          item?.details?.deliveryZipCode ?? item?.details?.deliveryZipCodeFormatted
-      );
-
-      console.log('📍 Checkout - Item com CEP:', zipHolder);
-
-      const cartZip = zipHolder
-        ? justNumber(
-            zipHolder.details?.deliveryZipCode ??
-              zipHolder.details?.deliveryZipCodeFormatted ??
-              ""
-          )
-        : "";
-
-      console.log('📮 Checkout - CEP extraído:', cartZip);
-
-      if (cartZip.length === 8) {
-        // Marca o CEP como já buscado para evitar recálculo desnecessário
-        lastFetchedZipRef.current = cartZip;
-        console.log('✅ Checkout - CEP marcado como buscado:', cartZip);
-        // Não seta o address aqui - deixa o useEffect de cartDeliveryZip fazer isso (linha 521-536)
-      }
-    } else {
-      console.log('⚠️ Checkout - Nenhuma taxa de frete encontrada no carrinho');
-    }
-
-    setInitialLoadDone(true);
-  }, [cart, initialLoadDone]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    try {
-      const cookieCartRaw = Cookies.get("fiestou.cart");
-      if (!cookieCartRaw) {
-        return;
-      }
-
-      const parsedCart = JSON.parse(cookieCartRaw);
-      if (!Array.isArray(parsedCart)) {
-        return;
-      }
-
-      const hydratedCart = parsedCart.map((item: any) => {
-        if (item?.product && typeof item.product === "object") {
-          return item;
-        }
-
-        const productId =
-          typeof item?.product === "object" ? item?.product?.id : item?.product;
-
-        const productData = products.find(
-          (prod: any) => prod.id === Number(productId)
-        );
-
-        return productData ? { ...item, product: productData } : item;
-      });
-
-      setCartItems(hydratedCart);
-
-      const cookieFees = extractDeliveryFees(hydratedCart);
-      if (cookieFees.length) {
-        const normalized = normalizeDeliveryItems(cookieFees);
-        setDeliveryPrice(normalized);
-
-        const zipHolder = hydratedCart.find(
-          (item: any) =>
-            item?.details?.deliveryZipCode ??
-            item?.details?.deliveryZipCodeFormatted
-        );
-
-        const cookieZip = zipHolder
-          ? justNumber(
-              zipHolder.details?.deliveryZipCode ??
-                zipHolder.details?.deliveryZipCodeFormatted ??
-                ""
-            )
-          : "";
-
-        if (cookieZip.length === 8) {
-          lastFetchedZipRef.current = cookieZip;
-        }
-      }
-    } catch (error) {
-      console.error(
-        "checkout: falha ao sincronizar carrinho do cookie",
-        error
-      );
-    }
-  }, [products]);
-
-  const applyDeliveryFees = (
-    fees: DeliveryItem[],
-    sanitizedZip: string,
-    baseCart: CartType[]
-  ): boolean => {
-    if (!fees.length) {
-      toast.error("Não conseguimos calcular o frete para este CEP.");
-      return false;
-    }
-
-    const formattedZip = formatCep(sanitizedZip);
-    const feeMap = new Map<number, number>();
-
-    fees.forEach((fee) => {
-      const storeId = Number(fee?.store_id);
-      if (!Number.isFinite(storeId)) {
-        return;
-      }
-      feeMap.set(storeId, Number(fee?.price) || 0);
-    });
-
-    const missingStores = new Set<string>();
-
-    const updatedCart = baseCart.map((item) => {
-      const productStore = item?.product?.store ?? {};
-      const storeSource =
-        item?.details?.deliveryStoreId ??
-        (typeof productStore === "object"
-          ? (productStore as any)?.id
-          : productStore);
-      const storeId = Number(storeSource);
-
-      const details = { ...(item.details ?? {}) };
-      details.deliveryZipCode = sanitizedZip;
-      details.deliveryZipCodeFormatted = formattedZip;
-
-      if (Number.isFinite(storeId) && feeMap.has(storeId)) {
-        details.deliveryStoreId = storeId;
-        details.deliveryFee = feeMap.get(storeId) ?? 0;
-      } else {
-        delete details.deliveryFee;
-        missingStores.add(
-          (productStore as any)?.companyName ??
-            (productStore as any)?.title ??
-            item?.product?.title ??
-            `Produto #${item?.product?.id ?? ""}`
-        );
-      }
-
-      return {
-        ...item,
-        details,
-      };
-    });
-
-    if (missingStores.size) {
-      const list = Array.from(missingStores).filter(Boolean);
-      toast.error(
-        list.length
-          ? `Não conseguimos calcular o frete para: ${list.join(", ")}.`
-          : "Não conseguimos calcular o frete para este CEP."
-      );
-      return false;
-    }
-
-    setCartItems(updatedCart);
-
-    if (typeof window !== "undefined") {
-      Cookies.set("fiestou.cart", JSON.stringify(updatedCart), {
-        expires: 7,
-      });
-    }
-
-    setDeliveryPrice(normalizeDeliveryItems(fees));
-    return true;
-  };
-
-  const deliverySummary = useMemo(() => {
-    console.log('💼 Calculando deliverySummary com deliveryPrice:', deliveryPrice);
-    console.log('🏪 Lojas disponíveis (storesById):', Array.from(storesById.entries()));
-
-    const entries: DeliverySummaryEntry[] = [];
-    const seenStores = new Set<number>();
-
-    deliveryPrice.forEach((item) => {
-      const storeId = Number(item?.store_id);
-      const price = Number(item?.price);
-
-      console.log('🔍 Processando item:', { storeId, price, item });
-
-      if (!Number.isFinite(storeId) || !Number.isFinite(price)) {
-        console.log('❌ Item inválido (não é número finito)');
-        return;
-      }
-
-      if (seenStores.has(storeId)) {
-        console.log('⚠️ Loja já processada:', storeId);
-        return;
-      }
-
-      seenStores.add(storeId);
-
-      const store = storesById.get(storeId);
-      console.log('🏪 Loja encontrada para ID', storeId, ':', store);
-
-      let storeLogoUrl: string | null = null;
-
-      if (store && typeof (store as any)?.profile === "object" && (store as any).profile !== null) {
-        storeLogoUrl =
-          getImage((store as any).profile, "thumb") ||
-          getImage((store as any).profile, "sm") ||
-          getImage((store as any).profile);
-      }
-
-      const entry = {
-        storeId,
-        storeName: store?.companyName ?? store?.title ?? "Loja parceira",
-        storeSlug: store?.slug,
-        price,
-        storeLogoUrl,
-      };
-
-      console.log('✅ Entry criado:', entry);
-      entries.push(entry);
-    });
-
-    const requiredStoreIds = Array.from(storesById.keys());
-    const missingStoreIds = requiredStoreIds.filter((id) => !seenStores.has(id));
-
-    const total = entries.reduce((sum, entry) => sum + entry.price, 0);
-
-    const result = {
-      entries,
-      total,
-      missingStoreIds,
-    };
-
-    console.log('📊 deliverySummary final:', result);
-
-    return result;
-  }, [deliveryPrice, storesById]);
-
-  const cartDeliveryZip = useMemo(() => {
-    const itemWithZip = cartItems.find(
-      (cartItem: any) =>
-        cartItem?.details?.deliveryZipCode ||
-        cartItem?.details?.deliveryZipCodeFormatted
-    );
-
-    if (!itemWithZip) {
-      return "";
-    }
-
-    const rawZip =
-      itemWithZip.details?.deliveryZipCode ??
-      itemWithZip.details?.deliveryZipCodeFormatted ??
-      "";
-    const sanitized = justNumber(rawZip);
-    return sanitized.length === 8 ? sanitized : "";
-  }, [cartItems]);
-
-  useEffect(() => {
-    if (!cartDeliveryZip) {
-      return;
-    }
-
-    const fetchAddressFromCartZip = async () => {
-      const currentZip = justNumber(address?.zipCode ?? "");
-
-      // Se o CEP já está preenchido e é o mesmo do carrinho, não faz nada
-      if (currentZip === cartDeliveryZip) {
-        console.log('✅ CEP do carrinho já está no endereço:', cartDeliveryZip);
-        return;
-      }
-
-      console.log('🔍 Buscando endereço automaticamente para CEP do carrinho:', cartDeliveryZip);
-
-      try {
-        // Busca os dados do endereço pela API do ViaCEP
-        const location = await getZipCode(cartDeliveryZip);
-
-        if (!location?.erro) {
-          console.log('✅ Endereço encontrado:', location);
-
-          // Popula todos os campos do endereço automaticamente
-          setAddress((prevAddress) => ({
-            ...prevAddress,
-            zipCode: formatCep(cartDeliveryZip),
-            street: location.logradouro || prevAddress?.street || "",
-            neighborhood: location.bairro || prevAddress?.neighborhood || "",
-            city: location.localidade || prevAddress?.city || "",
-            state: location.uf || prevAddress?.state || "",
-            country: "Brasil",
-            main: true,
-          }));
-
-          console.log('✅ Endereço preenchido automaticamente do carrinho!');
-        } else {
-          console.log('⚠️ CEP do carrinho não encontrado na API, apenas preenchendo o campo:', cartDeliveryZip);
-
-          // Mesmo que não encontre o endereço, preenche o CEP
-          setAddress((prevAddress) => ({
-            ...prevAddress,
-            zipCode: formatCep(cartDeliveryZip),
-          }));
-        }
-      } catch (error) {
-        console.error('❌ Erro ao buscar endereço do carrinho:', error);
-
-        // Em caso de erro, apenas preenche o CEP
-        setAddress((prevAddress) => ({
-          ...prevAddress,
-          zipCode: formatCep(cartDeliveryZip),
-        }));
-      }
-    };
-
-    fetchAddressFromCartZip();
-  }, [cartDeliveryZip]);
+  const [deliveryPrice, setDeliveryPrice] = useState<DeliveryItem[]>([]);
 
   const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(false as boolean);
 
@@ -613,112 +190,52 @@ export default function Checkout({
   }, [user?.phone]);
 
   useEffect(() => {
-    const sanitizedZip = justNumber(address?.zipCode ?? "");
-
-    console.log('🔄 useEffect address.zipCode disparou:', { sanitizedZip, lastFetched: lastFetchedZipRef.current, currentDeliveryPrice: deliveryPrice });
-
-    // Se o CEP está incompleto MAS já temos um lastFetched válido, não limpa
-    if (sanitizedZip.length < 8) {
-      if (lastFetchedZipRef.current && lastFetchedZipRef.current.length === 8) {
-        console.log('⚠️ CEP incompleto mas já temos dados do carrinho, mantendo deliveryPrice');
-        return; // Mantém os dados do carrinho
-      }
-      console.log('🧹 Limpando deliveryPrice pois CEP < 8 e sem dados do carrinho');
-      setDeliveryPrice([]);
-      lastFetchedZipRef.current = null;
-      return;
-    }
-
-    if (lastFetchedZipRef.current === sanitizedZip) {
-      console.log('✅ CEP já foi buscado, pulando recálculo');
-      return;
-    }
-
-    console.log('🔍 Buscando frete para novo CEP:', sanitizedZip);
-    lastFetchedZipRef.current = sanitizedZip;
-
-    const getShippingPrice = async () => {
-      setLoadingDeliveryPrice(true);
-
-      try {
+    if (!!address?.zipCode && justNumber(address?.zipCode).length >= 8) {
+      const getShippingPrice = async () => {
+        setLoadingDeliveryPrice(true);
         const data: any = await api.request({
           method: "get",
-          url: `delivery-zipcodes/${sanitizedZip}`,
+          url: `delivery-zipcodes/${address?.zipCode}`,
           data: {
             ids: products.map((product: ProductType) => product.id),
           },
         });
-
-        const rawList: DeliveryItem[] = Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data)
-          ? data
-          : [];
-
-        const normalizedFees = normalizeDeliveryItems(
-          rawList
-            .map((x: any): DeliveryItem => ({
-              price: Number(x?.price) || 0,
-              store_id:
-                Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
-            }))
-            .filter(
-              (item: DeliveryItem) =>
-                Number.isFinite(item.price) && Number.isFinite(item.store_id)
-            )
-        );
-
-        if (!normalizedFees.length) {
-          setDeliveryPrice([]);
-          toast.error("Não conseguimos calcular o frete para este CEP.");
-          lastFetchedZipRef.current = null;
-          return;
-        }
-
-        const success = applyDeliveryFees(
-          normalizedFees,
-          sanitizedZip,
-          cartItems
-        );
-
-        if (!success) {
-          setDeliveryPrice([]);
-          lastFetchedZipRef.current = null;
-        }
-      } catch (error: any) {
-        setDeliveryPrice([]);
-        const message =
-          error?.response?.data?.message ??
-          error?.response?.data?.error ??
-          error?.message ??
-          "Não conseguimos calcular o frete agora. Tente novamente.";
-        toast.error(message);
-        lastFetchedZipRef.current = null;
-      } finally {
         setLoadingDeliveryPrice(false);
-      }
-    };
+        if (data?.data) {
+          const list: DeliveryItem[] = Array.isArray(data.data)
+            ? data.data.map((x: any): DeliveryItem => ({
+              price: Number(x?.price) || 0,
+              store_id: Number(x?.store_id) || 0,
+            }))
+            : [];
 
-    getShippingPrice();
-  }, [address?.zipCode, cartItems, products, api]);
+          setDeliveryPrice(list.filter((x) => Number.isFinite(x.price)));
+        } else {
+          setDeliveryPrice([]);
+        }
+      };
+
+      getShippingPrice();
+    }
+  }, [address?.zipCode]);
 
   const [listCart, setListCart] = useState([] as Array<CartType>);
   const [resume, setResume] = useState({} as any);
   useEffect(() => {
-    let dates = cartItems.map((item: any) => item.details.dateStart);
-    let subtotal = cartItems.reduce((acumulador: number, item: any) => {
+    let dates = cart.map((item: any) => item.details.dateStart);
+    let subtotal = cart.reduce((acumulador: number, item: any) => {
       return acumulador + item.total;
     }, 0);
 
     setResume({
       subtotal,
-      total: subtotal + deliverySummary.total,
+      total: subtotal + calcDeliveryTotal(deliveryPrice),
       startDate: findDates(dates).minDate,
       endDate: findDates(dates).maxDate,
     });
 
-    setListCart(cartItems);
-  }, [cartItems, deliverySummary.total]);
+    setListCart(cart);
+  }, [cart, deliveryPrice]);
 
   useEffect(() => {
     setLocations(user?.address ?? []);
@@ -730,32 +247,17 @@ export default function Checkout({
     }
   }, [user, token]);
 
-  const deliveryTotal = deliverySummary.total;
+  const deliveryTotal = calcDeliveryTotal(deliveryPrice);
 
   const submitOrder = async (e: any) => {
     e.preventDefault();
 
-    if (!formattedAddressZip) {
-      toast.error("Informe um CEP válido para calcular o frete.");
-      return;
-    }
-
-    if (!deliverySummary.entries.length) {
-      toast.error("Calcule o frete antes de finalizar o pedido.");
-      return;
-    }
-
-    if (deliverySummary.missingStoreIds.length) {
-      toast.error("Ainda falta calcular o frete para todos os fornecedores.");
-      return;
-    }
-
     setForm({ ...form, loading: true });
 
-    let total = deliverySummary.total;
+    let total = deliveryPrice.reduce((acc, item) => acc + item.price, 0);
     let listItems: Array<ProductOrderType> = [];
 
-    cartItems.map((item: any, key: any) => {
+    cart.map((item: any, key: any) => {
       const cartItem = Object.assign({}, item);
 
       let product: any =
@@ -810,7 +312,7 @@ export default function Checkout({
       deliverySchedule: schedule,
       deliveryAddress: address,
       deliveryTo: deliveryTo,
-      deliveryPrice: deliverySummary.total,
+      deliveryPrice: deliveryPrice.reduce((acc, item) => acc + item.price, 0),
       deliveryStatus: "pending",
       status: -1,
       freights: {
@@ -834,119 +336,60 @@ export default function Checkout({
   };
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const regionCookie = Cookies.get("fiestou.region");
-    if (!regionCookie) {
-      return;
-    }
-
-    try {
-      const handle: any = JSON.parse(regionCookie);
-      const regionZip = justNumber(handle?.cep ?? "");
-
-      if (!regionZip) {
-        return;
-      }
-
-      setAddress((prevAddress) => ({
-        ...prevAddress,
-        zipCode: formatCep(regionZip),
-      }));
-    } catch (error) {
-      console.error("checkout: não foi possível ler fiestou.region", error);
+    if (!!window && !!Cookies.get("fiestou.region")) {
+      const handle: any = JSON.parse(Cookies.get("fiestou.region") ?? "");
+      setAddress({ zipCode: handle?.cep ?? "", number: "" });
     }
   }, []);
 
-  const formattedAddressZip = useMemo(() => {
-    const digits = justNumber(address?.zipCode ?? "");
-    return digits.length === 8 ? formatCep(digits) : "";
-  }, [address?.zipCode]);
-
   const renderDeliveryPrice = () => {
-    console.log('🎨 renderDeliveryPrice chamado:', {
-      formattedAddressZip,
-      'address.zipCode': address?.zipCode,
-      loadingDeliveryPrice,
-      'deliverySummary.entries': deliverySummary.entries,
-      'deliverySummary.total': deliverySummary.total,
-    });
-
-    if (!formattedAddressZip && deliverySummary.entries.length === 0) {
-      return (
-        <span className="text-sm text-zinc-500">
-          Informe um CEP válido para calcular o frete.
-        </span>
+    const renderFreteItem = (item: { price: number; store_id: number }) => {
+      const product = products.find(
+        (product: any) => product.store.id == item.store_id
       );
-    }
 
-    if (loadingDeliveryPrice) {
-      console.log('⏳ Mostrando "Calculando frete..."');
-      return <span className="text-sm text-zinc-500">Calculando frete...</span>;
-    }
-
-    if (!deliverySummary.entries.length) {
-      console.log('❌ Nenhuma entry encontrada, mostrando erro');
       return (
-        <span className="text-sm text-red-500">
-          Não conseguimos calcular o frete para este CEP.
-        </span>
-      );
-    }
-
-    console.log('✅ Renderizando lista de lojas:', deliverySummary.entries);
-
-    const missingStoresNames = deliverySummary.missingStoreIds
-      .map((id) => {
-        const store = storesById.get(id);
-        return store?.companyName ?? store?.title ?? null;
-      })
-      .filter(Boolean);
-
-    return (
-      <div className="grid gap-2">
-        {deliverySummary.entries.map((entry) => {
-          const initials = entry.storeName
-            .split(" ")
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((word) => word[0]?.toUpperCase())
-            .join("");
-
-          return (
-            <div
-              key={entry.storeId ?? entry.storeName}
-              className="flex items-center justify-between gap-3 rounded border border-dashed border-zinc-200 px-3 py-2 bg-white"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                {entry.storeLogoUrl ? (
-                  <Img
-                    src={entry.storeLogoUrl}
-                    alt={entry.storeName}
-                    className="w-8 h-8 rounded-full object-cover border border-zinc-200"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-zinc-200 text-xs font-semibold flex items-center justify-center text-zinc-600">
-                    {initials || "?"}
-                  </div>
-                )}
-                <span className="truncate text-zinc-700">{entry.storeName}</span>
-              </div>
-              <div className="flex items-center gap-2 font-semibold text-zinc-900">
-                <Icon icon="fa-truck" className="text-sm text-yellow-600" />
-                <span>R$ {moneyFormat(entry.price)}</span>
-              </div>
-            </div>
-          );
-        })}
-
-        {!!missingStoresNames.length && (
-          <span className="text-xs text-red-500">
-            Ainda precisamos do frete para: {missingStoresNames.join(", ")}.
+        <div className="flex justify-between w-full">
+          <span className="font-bold">
+            Frete - {(product?.store as unknown as StoreType)?.companyName}
           </span>
-        )}
+          {loadingDeliveryPrice ? (
+            <span>Carregando...</span>
+          ) : (
+            <span className="ml-2">R$ {moneyFormat(item?.price)}</span>
+          )}
+        </div>
+      );
+    };
+    if (deliveryPrice.length == 0)
+      return (
+        <>
+          <span className="font-bold">
+            Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
+          </span>
+        </>
+      );
+
+    if ((address?.zipCode?.length ?? 0) < 8)
+      return (
+        <div className="flex justify-between w-full">
+          <span className="font-bold">
+            Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
+          </span>
+          {loadingDeliveryPrice ? (
+            <span>Carregando...</span>
+          ) : (
+            <span>Entrega indisponível</span>
+          )}
+        </div>
+      );
+    return (
+      <div className="w-full">
+        {deliveryPrice?.map((item: any, index: number) => (
+          <div key={index} className="text-sm flex justify-between">
+            {renderFreteItem(item)}
+          </div>
+        ))}
       </div>
     );
   };
@@ -1004,16 +447,9 @@ export default function Checkout({
 
                   {/* Alertas */}
                   {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
-                    <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm leading-relaxed">
-                      <Icon icon="fa-exclamation-triangle" className="mt-0.5 flex-shrink-0" />
-                      <span>
-                        Sua região ainda não está disponível para nossos fornecedores.
-                        {!!allowedRegionsDescription && (
-                          <strong className="block mt-1 text-yellow-900">
-                            Atendemos no momento: {allowedRegionsDescription}.
-                          </strong>
-                        )}
-                      </span>
+                    <div className="flex items-center bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
+                      <Icon icon="fa-exclamation-triangle" className="mr-2 flex-shrink-0" />
+                      <span>Sua região ainda não está disponível para nossos fornecedores.</span>
                     </div>
                   )}
 
@@ -1252,7 +688,7 @@ export default function Checkout({
                     Fornecedores
                   </h2>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {storesList.map((store: any, key: any) => (
+                    {stores.map((store: any, key: any) => (
                       <div key={key}>
                         <Partner params={store} />
                       </div>
@@ -1306,28 +742,25 @@ export default function Checkout({
                       <div className="border-t border-gray-300"></div>
 
                       {/* Frete */}
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="font-semibold text-sm text-zinc-900 flex items-center">
-                            <Icon
-                              icon="fa-truck"
-                              className="text-sm mr-2 opacity-75 flex-shrink-0"
-                            />
-                            <span>
-                              Frete {formattedAddressZip && `(${formattedAddressZip})`}
-                            </span>
-                          </div>
-                          <div className="text-right font-medium text-sm text-zinc-900">
-                            {loadingDeliveryPrice
-                              ? "Calculando..."
-                              : deliverySummary.entries.length
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="font-semibold text-sm text-zinc-900 flex items-center">
+                          <Icon
+                            icon="fa-truck"
+                            className="text-sm mr-2 opacity-75 flex-shrink-0"
+                          />
+                          <span>
+                            Frete {!!address?.zipCode && `(${formatCep(address?.zipCode)})`}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium text-sm">
+                            {!isCEPInRegion(address?.zipCode)
+                              ? "Entrega indisponível"
+                              : !!address?.zipCode
                                 ? `R$ ${moneyFormat(deliveryTotal)}`
-                                : formattedAddressZip
-                                  ? "—"
-                                  : "Informe o CEP"}
+                                : "Informe um endereço"}
                           </div>
                         </div>
-                        <div>{renderDeliveryPrice()}</div>
                       </div>
 
                       <div className="border-t border-gray-300"></div>
