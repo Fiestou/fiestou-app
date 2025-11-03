@@ -15,7 +15,7 @@ import { PARTNER_MENU } from "@/src/default/header/Painel";
 import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
 import { RecipientEntity, RecipientStatusResponse } from "@/src/models/recipient";
 import { getRecipientStatus } from "@/src/services/recipients";
-
+// 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
