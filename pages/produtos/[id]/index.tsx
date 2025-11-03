@@ -548,39 +548,6 @@ export default function Produto({
 
     setMatch(request?.data ?? []);
   };
-  //   return (
-  //     <Swiper
-  //       spaceBetween={16}
-  //       breakpoints={{
-  //         0: {
-  //           slidesPerView: 1,
-  //           centeredSlides: true,
-  //         },
-  //         640: {
-  //           slidesPerView: 2,
-  //           centeredSlides: false,
-  //         },
-  //         1024: {
-  //           slidesPerView: 4,
-  //           centeredSlides: false,
-  //         },
-  //       }}
-  //       modules={[Pagination, Navigation]}
-  //       className="swiper-equal"
-  //       navigation={{
-  //         nextEl: `.swiper-${type}-next`,
-  //         prevEl: `.swiper-${type}-prev`,
-  //       }}
-  //     >
-  //       {!!handleMatch.length &&
-  //         handleMatch.map((item: any, key: any) => (
-  //           <SwiperSlide key={key}>
-  //             <Product product={item} />
-  //           </SwiperSlide>
-  //         ))}
-  //     </Swiper>
-  //   );
-  // };
 
   const [productUpdated, setProductUpdated] = useState({} as ProductType);
   const getProductUpdated = async (identifier?: number | string) => {

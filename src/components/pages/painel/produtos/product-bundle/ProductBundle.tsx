@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { Label, Select } from "@/src/components/ui/form";
+import { Label } from "@/src/components/ui/form";
 import Options from "@/src/components/ui/form/OptionsUI";
 import { RelationType } from "@/src/models/relation";
 
 interface ProductType {
   combinations?: RelationType[];
-  suggestions?: boolean; // ✅ boolean
+  suggestions?: boolean; // ✅ sempre true agora
   attrs?: Record<string, any>;
 }
 
@@ -24,8 +24,9 @@ const ProductBundle: React.FC<ProductBundleProps> = ({
   productsFind,
   SearchProducts,
 }) => {
+  // Garante que sempre seja true
   React.useEffect(() => {
-    if (data.suggestions === undefined) {
+    if (data.suggestions !== true) {
       handleData({ suggestions: true });
     }
   }, [data.suggestions, handleData]);
@@ -45,23 +46,6 @@ const ProductBundle: React.FC<ProductBundleProps> = ({
             list={productsFind}
             onChange={(emit: RelationType[]) => {
               handleData({ combinations: emit });
-            }}
-          />
-        </div>
-
-        {/* Sugestões */}
-        <div>
-          <Label>Mostrar produtos relacionados?</Label>
-          <Select
-            name="sugestoes"
-            value={data?.suggestions ? "true" : "false"} // exibe como string
-            options={[
-              { name: "Sim", value: "true" },
-              { name: "Não", value: "false" },
-            ]}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-              const isTrue = e.target.value === "true";
-              handleData({ suggestions: isTrue });
             }}
           />
         </div>
