@@ -112,7 +112,6 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
   };
 
   // --------- Carregar mais produtos ---------
-  // --------- Carregar mais produtos ---------
   const loadMoreProducts = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
