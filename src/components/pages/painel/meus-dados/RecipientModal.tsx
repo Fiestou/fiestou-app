@@ -117,8 +117,12 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
 
   const userType: RecipientTypeEnum = useMemo(() => {
     if (!user?.id) return "PF";
-    return user.person === "partner" ? "PJ" : "PF";
-  }, [user?.id, user?.person]);
+
+    const doc = user?.cpf || user?.document || '';
+    const cleanDoc = justNumber(doc); // Remove caracteres não-numéricos
+
+    return cleanDoc.length === 14 ? "PJ" : "PF";
+  }, [user?.id, user?.cpf, user?.document]);
 
   // Previne erro de hidratação SSR
   useEffect(() => {
