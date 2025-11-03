@@ -49,7 +49,10 @@ export default function CreateProduct() {
   const [form, setForm] = useState(formInitial);
   const [productsFind, setProductsFind] = useState<RelationType[]>([]);
   const [colors, setColors] = useState<string[]>([]);
-  const [data, setData] = useState({ suggestions: true } as ProductType);
+  const [data, setData] = useState({
+    suggestions: true,
+    status: 1,
+  } as ProductType);
   const [product, setProduct] = useState({} as ProductType);
 
   const parseRealMoneyNumber = (value: string): number => {
@@ -149,6 +152,7 @@ export default function CreateProduct() {
       category: categoryPipe,
       combinations: combinationIds,
       suggestions: data.suggestions ? 1 : 0,
+      status: data?.status ?? 1,
     });
   };
 

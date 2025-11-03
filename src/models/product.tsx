@@ -17,11 +17,11 @@ export interface ImageType {
   alt?: string;
 }
 
-export interface StoreType {
-  id: number | string;
-  name: string;
-  slug?: string;
-}
+// export interface StoreType {
+//   id: number | string;
+//   name: string;
+//   slug?: string;
+// }
 
 export interface VariationType {
   id: string | number;
@@ -79,7 +79,7 @@ export interface ProductType {
   fragility?: string;
   vehicle?: string;
   freeTax?: string;
-  comercialType?: string | "aluguel" | "venda";
+  comercialType?: string | "Aluguel" | "Venda";
   unavailableDates?: string[];
   schedulingPeriod?: string;
   schedulingTax?: number;
