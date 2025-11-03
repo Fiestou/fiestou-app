@@ -317,7 +317,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
                     <div className="w-full lg:w-[32rem] text-center">
                       <div className="rounded-md bg-zinc-100 py-2">
-                        {!!item.status ? "Exibindo" : "Oculto"}
+                        {item.status === 1 ? "Exibindo" : "Oculto"}
                       </div>
                     </div>
 
