@@ -123,7 +123,7 @@ export default function Categoria({
   category: any;
   products: Array<ProductType>;
   content: any;
-  params: any;
+  params?: any;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;
