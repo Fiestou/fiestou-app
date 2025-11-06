@@ -7,6 +7,7 @@ import { HeaderFooterType } from "@/src/models/headerFooter";
 import { DataSeoType } from "@/src/models/dataSeo";
 import { ScriptsType } from "@/src/models/scripts";
 import AdminPartner from "../admin/parceiros/[id]";
+import Partner from "@/src/components/common/Partner";
 
 
 export async function getStaticProps(ctx: any) {
@@ -87,7 +88,7 @@ export default function Parceiros({
             {Stores &&
               Stores.map((store, key) => (
                 <div key={key}>
-                  <AdminPartner data={store} />
+                  <Partner params={store} />
                 </div>
               ))}
           </div>
