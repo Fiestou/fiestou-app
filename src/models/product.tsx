@@ -1,9 +1,5 @@
 import { moneyFormat } from "@/src/helper";
 
-export interface RelationType {
-  id: string | number;
-}
-
 export interface StoreType {
   id: number | string;
   name: string;
@@ -17,11 +13,11 @@ export interface ImageType {
   alt?: string;
 }
 
-// export interface StoreType {
-//   id: number | string;
-//   name: string;
-//   slug?: string;
-// }
+export interface RelationType {
+  id: string | number;
+  name?: string;
+  title?: string;
+}
 
 export interface VariationType {
   id: string | number;
@@ -29,12 +25,6 @@ export interface VariationType {
   price?: number;
   image?: ImageType | string;
   priceSale?: number;
-}
-
-export interface RelationType {
-  id: string | number;
-  name?: string;
-  title: string;
 }
 
 export interface AttributeType {
@@ -45,6 +35,8 @@ export interface AttributeType {
   priceType: string;
   image?: string | number;
   variations: VariationType[];
+  parsed?: any;
+  attributes?: Array<AttributeType>;
 }
 
 export interface ProductType {
@@ -109,7 +101,7 @@ export interface ProductOrderType {
   product: any;
   attributes: any;
   quantity: number;
-  details?: Object | any;
+  details?: Record<string, any>;
   total: number;
 }
 
@@ -131,18 +123,16 @@ export interface PriceStringType {
   priceFromFor: boolean;
 }
 
-export const getPrice = (product: any) => {
-  let priceHigh: number = parseFloat(product?.price);
-  let priceLow: number = parseFloat(product?.priceSale);
+export const getPrice = (product: any): PriceStringType => {
+  const priceHigh = parseFloat(product?.price);
+  const priceLow = parseFloat(product?.priceSale);
 
   return {
-    price: moneyFormat(
-      priceLow > 0 && priceLow < priceHigh ? priceLow : priceHigh
-    ),
+    price: moneyFormat(priceLow > 0 && priceLow < priceHigh ? priceLow : priceHigh),
     priceLow: moneyFormat(priceLow) ?? "",
     priceHigh: moneyFormat(priceHigh),
     priceFromFor: !product?.attributes,
-  } as PriceStringType;
+  };
 };
 
 export interface PriceNumberType {
@@ -152,16 +142,16 @@ export interface PriceNumberType {
   priceFromFor: boolean;
 }
 
-export const getPriceValue = (product: any) => {
-  let priceHigh = Number(product?.price);
-  let priceLow = Number(product?.priceSale);
+export const getPriceValue = (product: any): PriceNumberType => {
+  const priceHigh = Number(product?.price);
+  const priceLow = Number(product?.priceSale);
 
   return {
     price: !!priceLow ? priceLow : priceHigh,
     priceLow: priceLow ?? 0,
-    priceHigh: priceHigh,
+    priceHigh,
     priceFromFor: !product?.attributes,
-  } as PriceNumberType;
+  };
 };
 
 export interface CommentType {
