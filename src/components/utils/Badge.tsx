@@ -7,7 +7,7 @@ interface BadgeType {
 
 export default function Badge(attr: BadgeType) {
   const style: any = {
-    success: "bg-green-500 text-white",
+    success: "bg-zinc-300 text-black ",
     light: "bg-zinc-100 text-zinc-900",
   };
 

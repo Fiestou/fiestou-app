@@ -7,10 +7,11 @@ import LikeButton from "../ui/LikeButton";
 import { getImage } from "@/src/helper";
 
 const formatMoney = (value: any): string => {
-  const num = typeof value === 'string' 
-    ? parseFloat(value.replace(/\./g, '').replace(',', '.')) 
-    : Number(value);
-  return new Intl.NumberFormat('pt-BR', {
+  const num =
+    typeof value === "string"
+      ? parseFloat(value.replace(/\./g, "").replace(",", "."))
+      : Number(value);
+  return new Intl.NumberFormat("pt-BR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(num);
@@ -21,9 +22,11 @@ export default function Product({ product }: { product: ProductType | any }) {
 
   let store: StoreType = product?.store ?? {};
 
-  const comercialType = product?.comercialType || '';
-  const capitalizedComercialType = comercialType ? comercialType.charAt(0).toUpperCase() + comercialType.slice(1) : '';
-  const isSelling = comercialType === 'selling';
+  const comercialType = product?.comercialType || "";
+  const capitalizedComercialType = comercialType
+    ? comercialType.charAt(0).toUpperCase() + comercialType.slice(1)
+    : "";
+  const isSelling = comercialType === "selling";
 
   return (
     <div className="group w-full h-full flex flex-col relative rounded-xl overflow-hidden">
@@ -53,18 +56,16 @@ export default function Product({ product }: { product: ProductType | any }) {
             <div className="w-full pt-3 flex gap-2 md:gap-2 items-center">
               <div className="w-fit">
                 {isSelling ? (
-                  <div className="flex items-center gap-1 bg-blue-100 whitespace-nowrap text-blue-900 rounded text-xs px-2 py-1">
-                    <Icon
-                      icon="fa-shopping-bag"
-                      className="text-xs"
-                      type="far"
-                    />
+                  // Venda
+                  <div className="flex items-center gap-1 bg-red-100 text-red-900 whitespace-nowrap rounded text-xs px-2 py-1">
+                    <Icon icon="fa-tag" className="text-xs" type="far" />
                     <span>{capitalizedComercialType}</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1 bg-lime-100 whitespace-nowrap text-lime-900 rounded text-xs px-2 py-1">
+                  // Aluguel
+                  <div className="flex items-center gap-1 bg-blue-100 text-blue-900 whitespace-nowrap rounded text-xs px-2 py-1">
                     <Icon icon="fa-clock" className="text-xs" type="far" />
-                    <span>{capitalizedComercialType || 'Para alugar'}</span>
+                    <span>{capitalizedComercialType}</span>
                   </div>
                 )}
               </div>
@@ -100,7 +101,7 @@ export default function Product({ product }: { product: ProductType | any }) {
           <div className="whitespace-nowrap pt-4">
             <div className="text-[.8rem] h-[1rem]">
               {getPrice(product).priceFromFor &&
-                !!getPrice(product).priceLow ? (
+              !!getPrice(product).priceLow ? (
                 <>
                   de
                   <span className="line-through mx-1">

@@ -19,7 +19,7 @@ import { AddressType } from "@/src/models/address";
 import { ProductOrderType, ProductType } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
 import { OrderType } from "@/src/models/order";
-import Partner from "@/src/components/common/Partner";
+import Partner from "@/src/components/common/ProductFeatures";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
@@ -280,22 +280,23 @@ export default function Checkout({
       return;
     }
 
-    console.log('🛒 Checkout - Cart inicial recebido do servidor:', cart);
+    console.log("🛒 Checkout - Cart inicial recebido do servidor:", cart);
 
     const initialFees = extractDeliveryFees(cart);
-    console.log('💰 Checkout - Taxas extraídas:', initialFees);
+    console.log("💰 Checkout - Taxas extraídas:", initialFees);
 
     if (initialFees.length) {
       const normalized = normalizeDeliveryItems(initialFees);
       setDeliveryPrice(normalized);
-      console.log('✅ Checkout - Frete definido:', normalized);
+      console.log("✅ Checkout - Frete definido:", normalized);
 
       const zipHolder = cart.find(
         (item: any) =>
-          item?.details?.deliveryZipCode ?? item?.details?.deliveryZipCodeFormatted
+          item?.details?.deliveryZipCode ??
+          item?.details?.deliveryZipCodeFormatted
       );
 
-      console.log('📍 Checkout - Item com CEP:', zipHolder);
+      console.log("📍 Checkout - Item com CEP:", zipHolder);
 
       const cartZip = zipHolder
         ? justNumber(
@@ -305,16 +306,16 @@ export default function Checkout({
           )
         : "";
 
-      console.log('📮 Checkout - CEP extraído:', cartZip);
+      console.log("📮 Checkout - CEP extraído:", cartZip);
 
       if (cartZip.length === 8) {
         // Marca o CEP como já buscado para evitar recálculo desnecessário
         lastFetchedZipRef.current = cartZip;
-        console.log('✅ Checkout - CEP marcado como buscado:', cartZip);
+        console.log("✅ Checkout - CEP marcado como buscado:", cartZip);
         // Não seta o address aqui - deixa o useEffect de cartDeliveryZip fazer isso (linha 521-536)
       }
     } else {
-      console.log('⚠️ Checkout - Nenhuma taxa de frete encontrada no carrinho');
+      console.log("⚠️ Checkout - Nenhuma taxa de frete encontrada no carrinho");
     }
 
     setInitialLoadDone(true);
@@ -377,10 +378,7 @@ export default function Checkout({
         }
       }
     } catch (error) {
-      console.error(
-        "checkout: falha ao sincronizar carrinho do cookie",
-        error
-      );
+      console.error("checkout: falha ao sincronizar carrinho do cookie", error);
     }
   }, [products]);
 
@@ -462,8 +460,14 @@ export default function Checkout({
   };
 
   const deliverySummary = useMemo(() => {
-    console.log('💼 Calculando deliverySummary com deliveryPrice:', deliveryPrice);
-    console.log('🏪 Lojas disponíveis (storesById):', Array.from(storesById.entries()));
+    console.log(
+      "💼 Calculando deliverySummary com deliveryPrice:",
+      deliveryPrice
+    );
+    console.log(
+      "🏪 Lojas disponíveis (storesById):",
+      Array.from(storesById.entries())
+    );
 
     const entries: DeliverySummaryEntry[] = [];
     const seenStores = new Set<number>();
@@ -472,26 +476,30 @@ export default function Checkout({
       const storeId = Number(item?.store_id);
       const price = Number(item?.price);
 
-      console.log('🔍 Processando item:', { storeId, price, item });
+      console.log("🔍 Processando item:", { storeId, price, item });
 
       if (!Number.isFinite(storeId) || !Number.isFinite(price)) {
-        console.log('❌ Item inválido (não é número finito)');
+        console.log("❌ Item inválido (não é número finito)");
         return;
       }
 
       if (seenStores.has(storeId)) {
-        console.log('⚠️ Loja já processada:', storeId);
+        console.log("⚠️ Loja já processada:", storeId);
         return;
       }
 
       seenStores.add(storeId);
 
       const store = storesById.get(storeId);
-      console.log('🏪 Loja encontrada para ID', storeId, ':', store);
+      console.log("🏪 Loja encontrada para ID", storeId, ":", store);
 
       let storeLogoUrl: string | null = null;
 
-      if (store && typeof (store as any)?.profile === "object" && (store as any).profile !== null) {
+      if (
+        store &&
+        typeof (store as any)?.profile === "object" &&
+        (store as any).profile !== null
+      ) {
         storeLogoUrl =
           getImage((store as any).profile, "thumb") ||
           getImage((store as any).profile, "sm") ||
@@ -506,12 +514,14 @@ export default function Checkout({
         storeLogoUrl,
       };
 
-      console.log('✅ Entry criado:', entry);
+      console.log("✅ Entry criado:", entry);
       entries.push(entry);
     });
 
     const requiredStoreIds = Array.from(storesById.keys());
-    const missingStoreIds = requiredStoreIds.filter((id) => !seenStores.has(id));
+    const missingStoreIds = requiredStoreIds.filter(
+      (id) => !seenStores.has(id)
+    );
 
     const total = entries.reduce((sum, entry) => sum + entry.price, 0);
 
@@ -521,7 +531,7 @@ export default function Checkout({
       missingStoreIds,
     };
 
-    console.log('📊 deliverySummary final:', result);
+    console.log("📊 deliverySummary final:", result);
 
     return result;
   }, [deliveryPrice, storesById]);
@@ -555,18 +565,21 @@ export default function Checkout({
 
       // Se o CEP já está preenchido e é o mesmo do carrinho, não faz nada
       if (currentZip === cartDeliveryZip) {
-        console.log('✅ CEP do carrinho já está no endereço:', cartDeliveryZip);
+        console.log("✅ CEP do carrinho já está no endereço:", cartDeliveryZip);
         return;
       }
 
-      console.log('🔍 Buscando endereço automaticamente para CEP do carrinho:', cartDeliveryZip);
+      console.log(
+        "🔍 Buscando endereço automaticamente para CEP do carrinho:",
+        cartDeliveryZip
+      );
 
       try {
         // Busca os dados do endereço pela API do ViaCEP
         const location = await getZipCode(cartDeliveryZip);
 
         if (!location?.erro) {
-          console.log('✅ Endereço encontrado:', location);
+          console.log("✅ Endereço encontrado:", location);
 
           // Popula todos os campos do endereço automaticamente
           setAddress((prevAddress) => ({
@@ -580,9 +593,12 @@ export default function Checkout({
             main: true,
           }));
 
-          console.log('✅ Endereço preenchido automaticamente do carrinho!');
+          console.log("✅ Endereço preenchido automaticamente do carrinho!");
         } else {
-          console.log('⚠️ CEP do carrinho não encontrado na API, apenas preenchendo o campo:', cartDeliveryZip);
+          console.log(
+            "⚠️ CEP do carrinho não encontrado na API, apenas preenchendo o campo:",
+            cartDeliveryZip
+          );
 
           // Mesmo que não encontre o endereço, preenche o CEP
           setAddress((prevAddress) => ({
@@ -591,7 +607,7 @@ export default function Checkout({
           }));
         }
       } catch (error) {
-        console.error('❌ Erro ao buscar endereço do carrinho:', error);
+        console.error("❌ Erro ao buscar endereço do carrinho:", error);
 
         // Em caso de erro, apenas preenche o CEP
         setAddress((prevAddress) => ({
@@ -604,7 +620,9 @@ export default function Checkout({
     fetchAddressFromCartZip();
   }, [cartDeliveryZip]);
 
-  const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(false as boolean);
+  const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(
+    false as boolean
+  );
 
   useEffect(() => {
     if (user?.phone) {
@@ -615,26 +633,34 @@ export default function Checkout({
   useEffect(() => {
     const sanitizedZip = justNumber(address?.zipCode ?? "");
 
-    console.log('🔄 useEffect address.zipCode disparou:', { sanitizedZip, lastFetched: lastFetchedZipRef.current, currentDeliveryPrice: deliveryPrice });
+    console.log("🔄 useEffect address.zipCode disparou:", {
+      sanitizedZip,
+      lastFetched: lastFetchedZipRef.current,
+      currentDeliveryPrice: deliveryPrice,
+    });
 
     // Se o CEP está incompleto MAS já temos um lastFetched válido, não limpa
     if (sanitizedZip.length < 8) {
       if (lastFetchedZipRef.current && lastFetchedZipRef.current.length === 8) {
-        console.log('⚠️ CEP incompleto mas já temos dados do carrinho, mantendo deliveryPrice');
+        console.log(
+          "⚠️ CEP incompleto mas já temos dados do carrinho, mantendo deliveryPrice"
+        );
         return; // Mantém os dados do carrinho
       }
-      console.log('🧹 Limpando deliveryPrice pois CEP < 8 e sem dados do carrinho');
+      console.log(
+        "🧹 Limpando deliveryPrice pois CEP < 8 e sem dados do carrinho"
+      );
       setDeliveryPrice([]);
       lastFetchedZipRef.current = null;
       return;
     }
 
     if (lastFetchedZipRef.current === sanitizedZip) {
-      console.log('✅ CEP já foi buscado, pulando recálculo');
+      console.log("✅ CEP já foi buscado, pulando recálculo");
       return;
     }
 
-    console.log('🔍 Buscando frete para novo CEP:', sanitizedZip);
+    console.log("🔍 Buscando frete para novo CEP:", sanitizedZip);
     lastFetchedZipRef.current = sanitizedZip;
 
     const getShippingPrice = async () => {
@@ -657,11 +683,13 @@ export default function Checkout({
 
         const normalizedFees = normalizeDeliveryItems(
           rawList
-            .map((x: any): DeliveryItem => ({
-              price: Number(x?.price) || 0,
-              store_id:
-                Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
-            }))
+            .map(
+              (x: any): DeliveryItem => ({
+                price: Number(x?.price) || 0,
+                store_id:
+                  Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
+              })
+            )
             .filter(
               (item: DeliveryItem) =>
                 Number.isFinite(item.price) && Number.isFinite(item.store_id)
@@ -866,12 +894,12 @@ export default function Checkout({
   }, [address?.zipCode]);
 
   const renderDeliveryPrice = () => {
-    console.log('🎨 renderDeliveryPrice chamado:', {
+    console.log("🎨 renderDeliveryPrice chamado:", {
       formattedAddressZip,
-      'address.zipCode': address?.zipCode,
+      "address.zipCode": address?.zipCode,
       loadingDeliveryPrice,
-      'deliverySummary.entries': deliverySummary.entries,
-      'deliverySummary.total': deliverySummary.total,
+      "deliverySummary.entries": deliverySummary.entries,
+      "deliverySummary.total": deliverySummary.total,
     });
 
     if (!formattedAddressZip && deliverySummary.entries.length === 0) {
@@ -888,7 +916,7 @@ export default function Checkout({
     }
 
     if (!deliverySummary.entries.length) {
-      console.log('❌ Nenhuma entry encontrada, mostrando erro');
+      console.log("❌ Nenhuma entry encontrada, mostrando erro");
       return (
         <span className="text-sm text-red-500">
           Não conseguimos calcular o frete para este CEP.
@@ -896,7 +924,7 @@ export default function Checkout({
       );
     }
 
-    console.log('✅ Renderizando lista de lojas:', deliverySummary.entries);
+    console.log("✅ Renderizando lista de lojas:", deliverySummary.entries);
 
     const missingStoresNames = deliverySummary.missingStoreIds
       .map((id) => {
@@ -932,7 +960,9 @@ export default function Checkout({
                     {initials || "?"}
                   </div>
                 )}
-                <span className="truncate text-zinc-700">{entry.storeName}</span>
+                <span className="truncate text-zinc-700">
+                  {entry.storeName}
+                </span>
               </div>
               <div className="flex items-center gap-2 font-semibold text-zinc-900">
                 <Icon icon="fa-truck" className="text-sm text-yellow-600" />
@@ -969,7 +999,6 @@ export default function Checkout({
       <section className="py-4 sm:py-6 lg:py-10 min-h-screen">
         <form autoComplete="off" onSubmit={(e: any) => submitOrder(e)}>
           <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-6xl">
-
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 xr:gap-12">
               {/* Coluna Principal - Formulário */}
               <div className="w-full lg:w-2/3 xl:w-[68%] space-y-6 lg:space-y-8">
@@ -1005,9 +1034,13 @@ export default function Checkout({
                   {/* Alertas */}
                   {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
                     <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm leading-relaxed">
-                      <Icon icon="fa-exclamation-triangle" className="mt-0.5 flex-shrink-0" />
+                      <Icon
+                        icon="fa-exclamation-triangle"
+                        className="mt-0.5 flex-shrink-0"
+                      />
                       <span>
-                        Sua região ainda não está disponível para nossos fornecedores.
+                        Sua região ainda não está disponível para nossos
+                        fornecedores.
                         {!!allowedRegionsDescription && (
                           <strong className="block mt-1 text-yellow-900">
                             Atendemos no momento: {allowedRegionsDescription}.
@@ -1022,36 +1055,39 @@ export default function Checkout({
                     !address?.number ||
                     !address?.city ||
                     !address?.state) && (
-                      <div className="flex items-start bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
-                        <Icon
-                          icon="fa-exclamation-triangle"
-                          className="mr-2 mt-0.5 flex-shrink-0"
-                        />
-                        <span>
-                          Preencha seu endereço corretamente. Não se esqueça de informar o complemento.
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex items-start bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
+                      <Icon
+                        icon="fa-exclamation-triangle"
+                        className="mr-2 mt-0.5 flex-shrink-0"
+                      />
+                      <span>
+                        Preencha seu endereço corretamente. Não se esqueça de
+                        informar o complemento.
+                      </span>
+                    </div>
+                  )}
 
                   {/* Lista de Endereços */}
                   {!!locations.length && !customLocation && (
                     <div className="space-y-3">
                       {locations.map((addr: AddressType, key: any) => (
                         <div
-                          className={`${addr == address
-                            ? "border-yellow-400 bg-yellow-50"
-                            : "border-gray-200 hover:border-gray-300"
-                            } rounded-lg border cursor-pointer transition-all duration-200`}
+                          className={`${
+                            addr == address
+                              ? "border-yellow-400 bg-yellow-50"
+                              : "border-gray-200 hover:border-gray-300"
+                          } rounded-lg border cursor-pointer transition-all duration-200`}
                           key={key}
                           onClick={() => setAddress(addr)}
                         >
                           <div className="flex gap-3 p-3 sm:p-4 items-start">
                             <div className="pt-1">
                               <div
-                                className={`${addr?.street == address?.street
-                                  ? "border-yellow-500"
-                                  : "border-gray-300"
-                                  } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
+                                className={`${
+                                  addr?.street == address?.street
+                                    ? "border-yellow-500"
+                                    : "border-gray-300"
+                                } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
                               >
                                 {addr?.street == address?.street && (
                                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
@@ -1107,7 +1143,8 @@ export default function Checkout({
                       Verifique seu número de telefone
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
-                      * O Fiestou utiliza seu número exclusivamente para enviar atualizações sobre o status do seu pedido.
+                      * O Fiestou utiliza seu número exclusivamente para enviar
+                      atualizações sobre o status do seu pedido.
                     </p>
                   </div>
 
@@ -1122,12 +1159,13 @@ export default function Checkout({
                       required
                       value={phone}
                       placeholder="Insira seu telefone aqui"
-                      className={`form-control flex-1 px-3 py-2 rounded-lg border text-sm sm:text-base ${phone && !isPhoneValid(phone)
-                        ? 'border-red-500 focus:border-red-500'
-                        : !hasChanged()
-                          ? 'bg-gray-100 border-gray-300'
-                          : 'border-green-500 focus:border-green-600'
-                        } focus:outline-none focus:ring-2 focus:ring-opacity-50`}
+                      className={`form-control flex-1 px-3 py-2 rounded-lg border text-sm sm:text-base ${
+                        phone && !isPhoneValid(phone)
+                          ? "border-red-500 focus:border-red-500"
+                          : !hasChanged()
+                          ? "bg-gray-100 border-gray-300"
+                          : "border-green-500 focus:border-green-600"
+                      } focus:outline-none focus:ring-2 focus:ring-opacity-50`}
                     />
                     <Button
                       onClick={handleSavePhone}
@@ -1160,16 +1198,18 @@ export default function Checkout({
                       <div
                         key={key}
                         onClick={() => setDeliveryTo(option.type)}
-                        className={`border ${deliveryTo == option.type
-                          ? "border-yellow-400 bg-yellow-50"
-                          : "border-gray-200 hover:border-gray-300"
-                          } p-3 lg:p-4 cursor-pointer rounded-lg transition-all duration-200 flex gap-3 items-center`}
+                        className={`border ${
+                          deliveryTo == option.type
+                            ? "border-yellow-400 bg-yellow-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        } p-3 lg:p-4 cursor-pointer rounded-lg transition-all duration-200 flex gap-3 items-center`}
                       >
                         <div
-                          className={`${deliveryTo == option.type
-                            ? "border-yellow-500"
-                            : "border-gray-300"
-                            } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
+                          className={`${
+                            deliveryTo == option.type
+                              ? "border-yellow-500"
+                              : "border-gray-300"
+                          } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
                         >
                           {deliveryTo == option.type && (
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
@@ -1231,13 +1271,18 @@ export default function Checkout({
                               onClick={() =>
                                 setSchedule(`${item.period} - ${item.time}`)
                               }
-                              className={`${schedule == item.period + " - " + item.time
-                                ? "text-yellow-600 bg-yellow-50 border-yellow-300"
-                                : "text-gray-600 hover:text-gray-900 border-gray-200 hover:bg-gray-50"
-                                } border rounded-lg p-3 text-center cursor-pointer transition-all duration-200`}
+                              className={`${
+                                schedule == item.period + " - " + item.time
+                                  ? "text-yellow-600 bg-yellow-50 border-yellow-300"
+                                  : "text-gray-600 hover:text-gray-900 border-gray-200 hover:bg-gray-50"
+                              } border rounded-lg p-3 text-center cursor-pointer transition-all duration-200`}
                             >
-                              <div className="text-xs font-medium">{item.period}</div>
-                              <div className="font-bold text-sm mt-1">{item.time}</div>
+                              <div className="text-xs font-medium">
+                                {item.period}
+                              </div>
+                              <div className="font-bold text-sm mt-1">
+                                {item.time}
+                              </div>
                             </div>
                           </SwiperSlide>
                         ))}
@@ -1254,7 +1299,7 @@ export default function Checkout({
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {storesList.map((store: any, key: any) => (
                       <div key={key}>
-                        <Partner params={store} />
+                        <Partner {...store} />
                       </div>
                     ))}
                   </div>
@@ -1286,7 +1331,11 @@ export default function Checkout({
                               ? `- ${dateBRFormat(resume.endDate)}`
                               : ""}
                           </div>
-                          {schedule && <div className="text-yellow-600 font-medium">{schedule}</div>}
+                          {schedule && (
+                            <div className="text-yellow-600 font-medium">
+                              {schedule}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1314,17 +1363,19 @@ export default function Checkout({
                               className="text-sm mr-2 opacity-75 flex-shrink-0"
                             />
                             <span>
-                              Frete {formattedAddressZip && `(${formattedAddressZip})`}
+                              Frete{" "}
+                              {formattedAddressZip &&
+                                `(${formattedAddressZip})`}
                             </span>
                           </div>
                           <div className="text-right font-medium text-sm text-zinc-900">
                             {loadingDeliveryPrice
                               ? "Calculando..."
                               : deliverySummary.entries.length
-                                ? `R$ ${moneyFormat(deliveryTotal)}`
-                                : formattedAddressZip
-                                  ? "—"
-                                  : "Informe o CEP"}
+                              ? `R$ ${moneyFormat(deliveryTotal)}`
+                              : formattedAddressZip
+                              ? "—"
+                              : "Informe o CEP"}
                           </div>
                         </div>
                         <div>{renderDeliveryPrice()}</div>
@@ -1370,12 +1421,12 @@ export default function Checkout({
                       {/* Botão de Confirmar */}
                       <div className="pt-4">
                         {!!address?.street &&
-                          !!address?.complement &&
-                          !!address?.number &&
-                          !!schedule &&
-                          !!address?.zipCode &&
-                          !!isCEPInRegion(address?.zipCode) &&
-                          isPhoneValid(phone) ? (
+                        !!address?.complement &&
+                        !!address?.number &&
+                        !!schedule &&
+                        !!address?.zipCode &&
+                        !!isCEPInRegion(address?.zipCode) &&
+                        isPhoneValid(phone) ? (
                           <Button
                             loading={form.loading}
                             style="btn-success"

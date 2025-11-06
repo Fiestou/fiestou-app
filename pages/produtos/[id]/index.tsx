@@ -193,8 +193,7 @@ export default function Produto({
             ? product?.store?.id
             : product?.store;
 
-        const zipSanitized =
-          sanitizedZip ?? cep.replace(/\D/g, "");
+        const zipSanitized = sanitizedZip ?? cep.replace(/\D/g, "");
         const zipFormatted = formatCep(zipSanitized);
 
         nextDetails.deliveryFee = fee;
@@ -370,19 +369,33 @@ export default function Produto({
     }
   };
 
-  const handleDetails = (detail: Object) => {
-    let details = { ...(productToCart?.details ?? {}), ...detail };
+  interface DetailsType {
+    dateStart?: Date;
+    dateEnd?: Date;
+    days?: number;
+    schedulingDiscount?: number;
+    [key: string]: any; // permite outros campos sem erro
+  }
+
+  const handleDetails = (detail: DetailsType) => {
+    const details: DetailsType = {
+      ...(productToCart?.details ?? {}),
+      ...detail,
+    };
 
     let days = 1;
-    let date_1: any = new Date(details?.dateStart?.toDateString() ?? "");
-    let date_2: any = new Date(details?.dateEnd?.toDateString() ?? "");
 
-    const timestampDate1 = date_1.getTime();
-    const timestampDate2 = date_2.getTime();
+    const date_1 = details?.dateStart ? new Date(details.dateStart) : null;
+    const date_2 = details?.dateEnd ? new Date(details.dateEnd) : null;
 
-    days = Math.round(
-      Math.abs(timestampDate1 - timestampDate2) / (24 * 60 * 60 * 1000)
-    );
+    if (date_1 && date_2) {
+      const timestampDate1 = date_1.getTime();
+      const timestampDate2 = date_2.getTime();
+
+      days = Math.round(
+        Math.abs(timestampDate1 - timestampDate2) / (24 * 60 * 60 * 1000)
+      );
+    }
 
     setDays(!!days ? days : 1);
 
@@ -392,7 +405,7 @@ export default function Produto({
         ...details,
         dateStart: dateFormat(details?.dateStart),
         dateEnd: dateFormat(details?.dateEnd),
-        days: days,
+        days,
         schedulingDiscount: product?.schedulingDiscount,
       },
     });
