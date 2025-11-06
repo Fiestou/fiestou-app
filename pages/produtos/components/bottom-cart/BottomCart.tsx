@@ -22,7 +22,7 @@ export default function BottomCart({ productToCart, inCart, isMobile }: BottomCa
     };
   }, [isMobile]);
 
-  if (!productToCart?.total) return null;
+  if (productToCart?.total == null || isNaN(productToCart.total)) return null;
 
   const formatMoney = (value: any): string => {
     const num =

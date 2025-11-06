@@ -3,7 +3,7 @@ import { getImage } from "@/src/helper";
 import { ProductType } from "@/src/models/product";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Newsletter from "@/src/components/common/Newsletter";
 import Img from "@/src/components/utils/ImgBase";
 import Icon from "@/src/icons/fontAwesome/FIcon";
@@ -16,7 +16,6 @@ import "swiper/css/pagination";
 import Product from "@/src/components/common/Product";
 import PostItem from "@/src/components/common/PostItem";
 import Filter from "@/src/components/common/filters/Filter";
-
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -44,7 +43,7 @@ export async function getStaticProps(ctx: any) {
       DataSeo: DataSeo,
       Scripts: Scripts,
     },
-    revalidate: 60 * 60 * 60,
+    revalidate: 60 * 60 * 3,
   };
 }
 
