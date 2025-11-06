@@ -147,8 +147,18 @@ export default function CreateProduct() {
       ? data.combinations.map((c: any) => Number(c?.id)).filter(Boolean)
       : [];
 
+    let attributesJson: string = "[]";
+    if (data.attributes && typeof data.attributes !== "string") {
+      try {
+        attributesJson = JSON.stringify(data.attributes);
+      } catch {
+        attributesJson = "[]";
+      }
+    }
+
     return sanitize({
       ...data,
+      attributes: data.attributes,
       category: categoryPipe,
       combinations: combinationIds,
       suggestions: data.suggestions ? 1 : 0,
@@ -324,7 +334,20 @@ export default function CreateProduct() {
             />
           </Link>
           <div className="font-title font-bold text-2xl md:text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-            {data.id ? "Editar produto" : "Novo produto"}
+            {data?.id ? (
+              <>
+                Editar:{" "}
+                <span
+                  style={{
+                    color: data?.color || "#000000",
+                  }}
+                >
+                  {data?.title || "Produto"}
+                </span>
+              </>
+            ) : (
+              "Adicionar novo produto"
+            )}
           </div>
         </div>
       </section>
