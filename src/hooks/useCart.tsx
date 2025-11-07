@@ -6,11 +6,9 @@ export function useCart(product: ProductType) {
   const [inCart, setInCart] = useState(false);
 
   const sendToCart = () => {
-    console.log("Enviando para o carrinho:", product);
   };
 
   const updateOrder = (item: any, attribute: any) => {
-    console.log("Atualizando pedido:", item, attribute);
   };
 
   const handleQuantity = (n: number) => {

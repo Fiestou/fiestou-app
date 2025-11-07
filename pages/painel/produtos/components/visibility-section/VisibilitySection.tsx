@@ -28,7 +28,6 @@ const VisibilitySection: React.FC<VisibilitySectionProps> = ({
             ]}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
               const value = Number(e.target.value);
-              console.log("Status selecionado:", value);
               handleData({ status: value });
             }}
           />
