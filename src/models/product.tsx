@@ -71,11 +71,11 @@ export interface ProductType {
   fragility?: string;
   vehicle?: string;
   freeTax?: string;
-  comercialType?: string | "Aluguel" | "Venda";
+  comercialType?: string | "aluguel" | "venda";
   unavailableDates?: string[];
-  schedulingPeriod?: string;
+  schedulingPeriod?: number | null;
   schedulingTax?: number;
-  schedulingDiscount?: number;
+  schedulingDiscount?: number | null
   assembly?: string;
   status?: string | number | boolean;
   updated_at?: string;

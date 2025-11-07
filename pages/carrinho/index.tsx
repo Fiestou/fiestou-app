@@ -293,12 +293,9 @@ export default function Carrinho({
       };
     }
 
-    console.log('🛒 Carrinho - Lista atualizada com frete:', updatedList);
-
     setListCart(updatedList);
     if (typeof window !== "undefined") {
       Cookies.set("fiestou.cart", JSON.stringify(updatedList), { expires: 7 });
-      console.log('🍪 Carrinho - Cookie salvo com sucesso');
     }
     recalcSummary(updatedList);
 
@@ -367,11 +364,7 @@ export default function Carrinho({
         return;
       }
 
-      console.log('📦 Carrinho - Taxas normalizadas:', normalizedFees);
-      console.log('📮 Carrinho - CEP sanitizado:', sanitizedZip);
-
       const result = applyDeliveryToCart(normalizedFees, sanitizedZip);
-      console.log('✅ Carrinho - Resultado da aplicação:', result);
 
       if (!result.success) {
         setDeliveryError(result.message ?? "Não conseguimos calcular o frete.");
@@ -379,7 +372,6 @@ export default function Carrinho({
       }
 
       setDeliveryZipInput(formatCep(sanitizedZip));
-      console.log('✅ Carrinho - Frete calculado e salvo com sucesso!');
     } catch (error: any) {
       const message =
         error?.response?.data?.error ||
