@@ -5,6 +5,7 @@ import Img from "@/src/components/utils/ImgBase";
 import { StoreType } from "@/src/models/store";
 import LikeButton from "../ui/LikeButton";
 import { getImage } from "@/src/helper";
+import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
 
 const formatMoney = (value: any): string => {
   const num =
@@ -31,7 +32,7 @@ export default function Product({ product }: { product: ProductType | any }) {
   return (
     <div className="group w-full h-full flex flex-col relative rounded-xl overflow-hidden">
       <div>
-        <Link passHref href={`/produtos/${product?.id}`}>
+        <Link passHref href={getProductUrl(product)}>
           <div className="aspect-[4.3/3] bg-zinc-100 relative overflow-hidden">
             {!!getImage(imageCover) && (
               <Img
@@ -47,7 +48,7 @@ export default function Product({ product }: { product: ProductType | any }) {
         <div className="flex flex-col w-full h-full">
           <div className="h-full">
             <div className="">
-              <Link passHref href={`/produtos/${product?.id}`}>
+              <Link passHref href={getProductUrl(product)}>
                 <h4 className="font-title font-bold text-[1.1rem] text-zinc-900 leading-tight">
                   {product?.title}
                 </h4>
@@ -56,13 +57,11 @@ export default function Product({ product }: { product: ProductType | any }) {
             <div className="w-full pt-3 flex gap-2 md:gap-2 items-center">
               <div className="w-fit">
                 {isSelling ? (
-                  // Venda
                   <div className="flex items-center gap-1 bg-red-100 text-red-900 whitespace-nowrap rounded text-xs px-2 py-1">
                     <Icon icon="fa-tag" className="text-xs" type="far" />
                     <span>{capitalizedComercialType}</span>
                   </div>
                 ) : (
-                  // Aluguel
                   <div className="flex items-center gap-1 bg-blue-100 text-blue-900 whitespace-nowrap rounded text-xs px-2 py-1">
                     <Icon icon="fa-clock" className="text-xs" type="far" />
                     <span>{capitalizedComercialType}</span>
@@ -91,7 +90,7 @@ export default function Product({ product }: { product: ProductType | any }) {
               <span className="inline-block">Fornecido por:</span>
               <Link
                 passHref
-                href={`/${store.slug}`}
+                href={getStoreUrl(store)}
                 className="underline hover:text-yellow-500 ease inline-block pl-1"
               >
                 <b> {store.title}</b>

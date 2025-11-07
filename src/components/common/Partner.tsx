@@ -2,10 +2,11 @@ import { StoreType } from "@/src/models/store";
 import Link from "next/link";
 import Img from "@/src/components/utils/ImgBase";
 import Badge from "@/src/components/utils/Badge";
+import { getStoreUrl } from "@/src/urlHelpers";
 
 export default function Partner({ params }: { params: StoreType }) {
   return (
-    <Link passHref href={`/${params.slug}`}>
+    <Link passHref href={getStoreUrl(params)}>
       <div className="flex items-center gap-4 p-2 md:p-3 border rounded-xl">
         <div className="w-1/3">
           <div className="w-full aspect-square bg-zinc-100 rounded-xl relative overflow-hidden">
