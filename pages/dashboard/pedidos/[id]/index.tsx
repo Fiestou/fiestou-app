@@ -21,6 +21,7 @@ import Modal from "@/src/components/utils/Modal";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { deliveryTypes } from "@/src/models/delivery";
 import Pagarme from "@/src/services/pagarme";
+import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -330,7 +331,7 @@ export default function Pedido({
                             </div>
                             <div className="grid gap-1 w-full">
                               <div className="font-title text-lg font-bold text-zinc-900">
-                              <Link href={`/produtos/${product?.id}`}>
+                              <Link href={getProductUrl(product)}>
                                 {product.title}
                               </Link>
                             </div>
@@ -342,7 +343,7 @@ export default function Pedido({
                                 )}
                                 Fornecido por:
                                 <Link
-                                  href={`/${product?.store.slug}`}
+                                  href={getStoreUrl(product?.store)}
                                   className="text-zinc-900 pl-2 font-semibold underline"
                                 >
                                   {product?.store.title}

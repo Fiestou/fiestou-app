@@ -38,6 +38,7 @@ import ShareModal from "@/src/components/utils/ShareModal";
 import { RelationType } from "@/src/models/relation";
 import LikeButton from "@/src/components/ui/LikeButton";
 import RelatedProducts from "../components/related-products/RelatedProducts";
+import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
 import ProductCombinations from "../components/product-combinations/ProductCombinations";
 import TrustedPartnerBadge from "../components/trusted-partner-badge/TrustedPartnerBadge";
 import EasyCancelBadge from "../components/easy-cancel-badge/EasyCancelBadge";
@@ -134,7 +135,7 @@ export default function Produto({
   const [swiperInstance, setSwiperInstance] = useState(null as any);
 
   const [share, setShare] = useState(false as boolean);
-  const baseUrl = `https://fiestou.com.br/produtos/${product?.id}`;
+  const baseUrl = `https://fiestou.com.br${getProductUrl(product, store)}`;
   const [loadCart, setLoadCart] = useState(false as boolean);
   const [blockdate, setBlockdate] = useState(Array<string>());
 
@@ -618,7 +619,7 @@ export default function Produto({
           <div className="text-zinc-900">
             Fornecido por:{" "}
             <Link
-              href={`/${store?.slug}`}
+              href={getStoreUrl(store)}
               className="font-bold hover:underline"
             >
               {store?.title}
@@ -745,7 +746,7 @@ export default function Produto({
         title: `${product?.title} - Produtos | ${DataSeo?.site_text}`,
         image: !!getImage(imageCover) ? getImage(imageCover) : "",
         description: DataSeo?.site_description,
-        url: `produtos/${product?.slug}`,
+        url: getProductUrl(product, store),
       }}
       header={{
         template: "default",
@@ -760,7 +761,7 @@ export default function Produto({
       <section className="">
         <div className="container-medium py-4 md:py-6">
           <Breadcrumbs
-            links={[{ url: `/produtos/${product?.id}`, name: "Produtos" }]}
+            links={[{ url: getProductUrl(product, store), name: "Produtos" }]}
           />
         </div>
       </section>
