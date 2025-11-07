@@ -24,6 +24,7 @@ import Img from "@/src/components/utils/ImgBase";
 import { formatCep } from "@/src/components/utils/FormMasks";
 import { CartType } from "@/src/models/cart";
 import { DeliveryItem } from "@/src/types/filtros";
+import { getProductUrl } from "@/src/urlHelpers";
 
 type DeliverySummaryEntry = {
   key: string;
@@ -487,7 +488,7 @@ export default function Carrinho({
                             <div className="flex gap-10 items-start">
                               <div className="w-full">
                                 <h5 className="font-title font-bold text-zinc-900 text-xl">
-                                  <Link href={`/produtos/${item.product?.id}`}>
+                                  <Link href={getProductUrl(item.product)}>
                                     {item.product?.title}
                                   </Link>
                                 </h5>
