@@ -10,6 +10,7 @@ import { CheckMail } from "../models/CheckEmail";
 type SignInData = {
   email: string;
   password: string;
+  recaptcha_token?: string;
 };
 
 type AuthContextType = {
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAuthenticated = !!Cookies.get("fiestou.authtoken");
 
-  async function SignIn({ email, password }: SignInData) {
+  async function SignIn({ email, password, recaptcha_token }: SignInData) {
     const expires = { expires: 14 };
 
     Cookies.remove("fiestou.authtoken");
@@ -81,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       url: "auth/checkin",
       data: { ref: email },
     }) as CheckMail;
-    
+
     if (checkEmail.response && !checkEmail.user){
       return {
         status: 422,
@@ -92,7 +93,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data: any = await request.bridge({
       method: 'post',
       url: "auth/login",
-      data: { email: email, password: password },
+      data: {
+        email: email,
+        password: password,
+        recaptcha_token: recaptcha_token
+      },
     });
     
     if (data && data.token) {
