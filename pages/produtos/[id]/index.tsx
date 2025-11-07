@@ -634,7 +634,7 @@ export default function Produto({
           <div className="grid gap-3">
             {!!product?.color && (
               <div className="flex items-center gap-3 text-zinc-900">
-                <div className="w-fit whitespace-nowrap pt-1">Cores:</div>
+                <div className="w-fit whitespace-nowrap">Cores:</div>
                 <div className="w-full flex items-center flex-wrap gap-1">
                   {ColorsList.map(
                     (color: any, key: any) =>
@@ -650,7 +650,7 @@ export default function Produto({
                 </div>
               </div>
             )}
-            <div className="w-fit whitespace-nowrap pt-1">Categorias:</div>
+            <div className="w-fit whitespace-nowrap">Categorias:</div>
             {!!categories?.length &&
               categories.map(
                 (category: any) =>
@@ -660,7 +660,7 @@ export default function Produto({
                       .map((cat: any) => cat.id)
                       .includes(child.id)
                   ).length && (
-                    <div key={category.id} className="flex gap-2 text-zinc-900">
+                    <div key={category.id} className="flex gap-2 text-zinc-950">
                       <div className="w-full flex items-center flex-wrap gap-1">
                         {!!category?.childs &&
                           category?.childs
@@ -684,7 +684,7 @@ export default function Produto({
               )}
 
             {!!product?.tags && (
-              <div className="flex gap-1 text-zinc-900">
+              <div className="flex items-center gap-1 text-zinc-900">
                 <div className="w-fit whitespace-nowrap">Tags:</div>
                 <div className="w-full flex items-center flex-wrap gap-1">
                   {product?.tags
