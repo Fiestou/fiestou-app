@@ -269,37 +269,37 @@ export default function Pagamento({
         id: orderId,
       },
     });
-    
-    if (!request.response){
-      
+
+    if (!request.response) {
+
       window.location.href = `/dashboard/meus-dados`;
-      if (typeof window !== 'undefined'){
+      if (typeof window !== 'undefined') {
         localStorage.setItem('message', 'Por favor insira todas as informações necessárias para finalizar o pagamento.')
       }
-     
+
       return;
     }
 
     const handle: OrderType = request?.data;
 
-      let dates: any = [];
-      let products: any = [];
+    let dates: any = [];
+    let products: any = [];
 
-      handle.listItems?.map((item: any) => {
-        dates.push(item.details.dateStart);
-        products.push(item.product);
-      });
+    handle.listItems?.map((item: any) => {
+      dates.push(item.details.dateStart);
+      products.push(item.product);
+    });
 
-      setResume({
-        startDate: findDates(dates).minDate,
-        endDate: findDates(dates).maxDate,
-      } as any);
+    setResume({
+      startDate: findDates(dates).minDate,
+      endDate: findDates(dates).maxDate,
+    } as any);
 
-      setOrder(handle);
-      setProducts(products);
+    setOrder(handle);
+    setProducts(products);
 
-      if (!!handle?.user) setUser(handle.user);
-      setPlaceholder(false);
+    if (!!handle?.user) setUser(handle.user);
+    setPlaceholder(false);
   };
 
   useEffect(() => {
@@ -309,51 +309,56 @@ export default function Pagamento({
   const submitPayment = async (e: any) => {
     e.preventDefault();
 
-    let formFeedback: any = {
-      loading: true,
-      feedback: "",
-    };
-
+    let formFeedback: any = { loading: true, feedback: "" };
     handleForm(formFeedback);
 
-    const handlePayment: any = payment;
-
+    // Endereço de faturamento (usa o do pedido ou o digitado)
     const orderAddress: any = useOrderAddress ? order.deliveryAddress : address;
 
-    if (handlePayment.payment_method == "credit_card") {
-      delete handlePayment["pix"];
-      delete handlePayment["boleto"];
+    // Monta payload base para o backend
+    const basePayload: any = {
+      order_id: Number(orderId),
+      payment_method: payment.payment_method, // "credit_card" | "pix" | "boleto"
+    };
 
-      handlePayment["credit_card"] = {
+    // CREDIT CARD
+    if (payment.payment_method === "credit_card") {
+      // Preferido: se você já tiver tokenização no front, atribua aqui:
+      // basePayload.card_token = tokenId;
+
+      // Fallback seguro temporário: envia os dados para o backend tokenizar lá
+      basePayload.credit_card = {
+        installments: Number(installments) || 1,
+        statement_descriptor: "FIESTOU",
+        operation_type: "auth_and_capture",
+        // dados do cartão para o backend tokenizar (se você ainda não tem card_token no front)
         card: {
-          ...card,
+          number: String(card?.number ?? ""),
+          holder_name: String(card?.holder_name ?? ""),
+          exp_month: String(card?.exp_month ?? ""),
+          exp_year: String(card?.exp_year ?? ""),
+          cvv: String(card?.cvv ?? ""),
+          holder_document: String(card?.holder_document ?? ""),
           billing_address: {
             country: "BR",
-            state: orderAddress?.state,
-            city: orderAddress?.city,
-            zip_code: orderAddress?.zipCode,
-            line_1: orderAddress?.street,
-            line_2: orderAddress?.number,
+            state: orderAddress?.state ?? "",
+            city: orderAddress?.city ?? "",
+            zip_code: orderAddress?.zipCode ?? "",
+            line_1: orderAddress?.street ?? "",
+            line_2: orderAddress?.number ?? "",
           },
         },
-        operation_type: "auth_and_capture",
-        installments: installments,
-        statement_descriptor: "FIESTOU",
       };
     }
 
-    if (handlePayment.payment_method == "pix") {
-      delete handlePayment["credit_card"];
-      delete handlePayment["boleto"];
-
-      handlePayment["pix"] = { expires_in: pix.expires_in };
+    // PIX
+    if (payment.payment_method === "pix") {
+      basePayload.pix_expires_in = Number(pix.expires_in) || 300; // 5 min default
     }
 
-    if (handlePayment.payment_method == "boleto") {
-      delete handlePayment["credit_card"];
-      delete handlePayment["pix"];
-
-      handlePayment["boleto"] = {
+    // BOLETO
+    if (payment.payment_method === "boleto") {
+      basePayload.boleto = {
         instructions: "Pagar até o vencimento",
         due_at: getCurrentDate(1),
         document_number: generateDocumentNumber(),
@@ -361,80 +366,87 @@ export default function Pagamento({
       };
     }
 
-    const pagarme = new Pagarme();
+    try {
+      // >>>> CHAMA O BACKEND <<<<
+      const response: any = await api.bridge({
+        method: "post",
+        url: "checkout/store", // rota do seu CheckoutController@store
+        data: basePayload,
+      });
 
-    const request = await pagarme.createOrder(
-      order,
-      handlePayment,
-      orderAddress
-    );
+      formFeedback["loading"] = false;
 
-    formFeedback["loading"] = false;
+      if (response?.response) {
+        const data = response?.data || {};
 
-    if (!!request.response) {
-      const handle: any = request.data;
-
-      if (payment.payment_method == "credit_card") {
-        if (handle?.status == "paid") {
-          CardManager();
-
-          formFeedback["sended"] = true;
-        } else {
-          formFeedback = {
-            ...formFeedback,
-            sended: false,
-            feedback: "Os dados fornecidos não são válidos. Tente novamente.",
-          };
+        // CARTÃO
+        if (payment.payment_method === "credit_card") {
+          // status "paid" indica sucesso
+          if (data?.status === "paid") {
+            CardManager();
+            formFeedback["sended"] = true;
+          } else {
+            formFeedback = {
+              ...formFeedback,
+              sended: false,
+              feedback: "Os dados fornecidos não foram aprovados. Tente novamente.",
+            };
+          }
         }
-      }
 
-      if (payment.payment_method == "pix") {
-        if (handle?.status == "paid" || handle?.status == "pending") {
-          const handleCharge: any = !!handle?.charges?.length
-            ? handle?.charges[0].last_transaction
-            : {};
-
-          PixManager({
-            status: true,
-            code: handleCharge.qr_code,
-            qrcode: handleCharge.qr_code_url,
-            time: handleCharge.expires_at,
-          });
-
-          formFeedback["sended"] = true;
-        } else {
-          formFeedback = {
-            ...formFeedback,
-            sended: false,
-            feedback:
-              "Algo deu errado ao processar seu pagamento. Tente novamente.",
-          };
+        // PIX
+        if (payment.payment_method === "pix") {
+          if (data?.status === "paid" || data?.status === "pending") {
+            const tx = data?.charges?.[0]?.last_transaction || {};
+            // Backend do Pagarme retorna expires_at/qr_code/qr_code_url
+            PixManager({
+              status: true,
+              code: tx.qr_code,
+              qrcode: tx.qr_code_url,
+              time: tx.expires_at,
+            });
+            formFeedback["sended"] = true;
+          } else {
+            formFeedback = {
+              ...formFeedback,
+              sended: false,
+              feedback: "Não foi possível gerar o PIX. Tente novamente.",
+            };
+          }
         }
-      }
 
-      if (payment.payment_method == "boleto") {
-        if (handle?.status == "paid" || handle?.status == "pending") {
-          const handleCharge: any = !!handle?.charges?.length
-            ? handle?.charges[0].last_transaction
-            : {};
-
-          BoletoManager(handleCharge);
-
-          formFeedback["sended"] = true;
-        } else {
-          formFeedback = {
-            ...formFeedback,
-            sended: false,
-            feedback: "Os dados fornecidos não são válidos. Tente novamente.",
-          };
+        // BOLETO
+        if (payment.payment_method === "boleto") {
+          if (data?.status === "paid" || data?.status === "pending") {
+            const tx = data?.charges?.[0]?.last_transaction || {};
+            BoletoManager({
+              status: true,
+              pdf: tx?.pdf,            // url do pdf
+              due_at: tx?.due_at,      // data de vencimento
+              line: tx?.line,          // linha digitável (se vier)
+            });
+            formFeedback["sended"] = true;
+          } else {
+            formFeedback = {
+              ...formFeedback,
+              sended: false,
+              feedback: "Não foi possível gerar o boleto. Tente novamente.",
+            };
+          }
         }
+      } else {
+        formFeedback = {
+          ...formFeedback,
+          sended: false,
+          feedback: "Algo deu errado ao processar seu pagamento. Tente novamente.",
+        };
       }
-    } else {
+    } catch (err) {
       formFeedback = {
         ...formFeedback,
+        loading: false,
         sended: false,
-        feedback:
-          "Algo deu errado ao processar seu pagamento. Tente novamente.",
+        feedback: "Falha de comunicação com o servidor. Tente novamente.",
       };
     }
 
@@ -765,8 +777,8 @@ export default function Pagamento({
                           >
                             <div
                               className={`border ${payment.payment_method == "credit_card"
-                                  ? "border-zinc-400"
-                                  : "border-zinc-300"
+                                ? "border-zinc-400"
+                                : "border-zinc-300"
                                 } w-[1rem] rounded-full h-[1rem] relative`}
                             >
                               {payment.payment_method == "credit_card" && (
@@ -1084,8 +1096,8 @@ export default function Pagamento({
                           >
                             <div
                               className={`border ${payment.payment_method == "boleto"
-                                  ? "border-zinc-400"
-                                  : "border-zinc-300"
+                                ? "border-zinc-400"
+                                : "border-zinc-300"
                                 } w-[1rem] rounded-full h-[1rem] relative`}
                             >
                               {payment.payment_method == "boleto" && (
@@ -1121,8 +1133,8 @@ export default function Pagamento({
                           >
                             <div
                               className={`border ${payment.payment_method == "pix"
-                                  ? "border-zinc-400"
-                                  : "border-zinc-300"
+                                ? "border-zinc-400"
+                                : "border-zinc-300"
                                 } w-[1rem] rounded-full h-[1rem] relative`}
                             >
                               {payment.payment_method == "pix" && (

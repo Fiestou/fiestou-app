@@ -33,6 +33,8 @@ interface ApiRequestType {
   noAppPrefix?: boolean; // << NOVO
 }
 
+const trimSlashes = (s: string) => s.replace(/\/+$/, '');
+const trimLeftSlashes = (s: string) => s.replace(/^\/+/, '');
 
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
@@ -66,7 +68,7 @@ class Api {
       const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
         ? (method.toLowerCase() as HttpMethod)
         : "get";
-      
+
 
       api[requestMethod](url, data ?? {}, opts ?? {})
         .then((response: AxiosResponse) => {
@@ -161,13 +163,23 @@ class Api {
     return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
   }
 
-  async bridge<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
+  async bridge<T>(
+    { method = "get", url, data, opts, noAppPrefix = false }: ApiRequestType,
+    ctx?: any
+  ): Promise<T> {
     const apiRest = typeof window === "undefined"
       ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
       : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
 
-    url = `${apiRest}${url}`;
-    return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
+    // se pediram "sem /app", tira o /app do fim da base
+    const base = noAppPrefix
+      ? apiRest.replace(/\/app\/?$/i, "/")
+      : apiRest;
+
+    // monta URL final sem barras duplicadas
+    const fullUrl = `${trimSlashes(base)}/${trimLeftSlashes(url)}`;
+
+    return this.connect({ method, url: fullUrl, data, opts }, ctx) as Promise<T>;
   }
 
   async graph({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {

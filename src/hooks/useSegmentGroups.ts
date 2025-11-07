@@ -17,7 +17,7 @@ export function useSegmentGroups() {
                 const res = await api.bridge<{ response: boolean; data?: Segment[]; error?: string }>({
                     method: "get",
                     url: "group/segmentgroups",
-                    noAppPrefix: true, // << ESSENCIAL
+                    noAppPrefix: true, 
                 });
                 if (!mounted) return;
 
