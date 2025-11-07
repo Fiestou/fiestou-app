@@ -17,9 +17,18 @@ export async function getServerSideProps(ctx: any) {
     ctx
   );
 
+  if (request?.status === 401) {
+    return {
+      redirect: {
+        destination: "/acesso",
+        permanent: false,
+      },
+    };
+  }
+
   return {
     props: {
-      orders: request?.data ?? [],
+      orders: Array.isArray(request?.data) ? request.data : [],
     },
   };
 }

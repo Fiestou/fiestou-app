@@ -12,7 +12,9 @@ import DobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Api from "@/src/services/api";
 import { BalanceType } from "@/src/models/order";
 import { PARTNER_MENU } from "@/src/default/header/Painel";
-import Partner from "../admin/parceiros";
+import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
+import { RecipientEntity, RecipientStatusResponse } from "@/src/models/recipient";
+import { getRecipientStatus } from "@/src/services/recipients";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -81,42 +83,45 @@ export default function Parceiro({ content }: { content: any }) {
       data: { limit: 10 },
     });
 
-    setOrders(request.data);
+    setOrders(Array.isArray(request?.data) ? request.data : []);
   };
 
+  const [period, setPeriod] = useState("month" as string);
 
-  const getRecipientCode = async (storeId: string) => {
+  const [user, setUser] = useState({} as UserType);
+
+  const [recipientModalOpen, setRecipientModalOpen] = useState(false);
+  const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
+
+  // Verificar status do cadastro PagMe
+  const checkPagarmeStatus = async () => {
     try {
-      const response: any = await api.bridge({
-        method: "GET",
-        url: `recipient/${storeId}/code`,
-      });
-
-      const code = response?.data?.code;
-
-      if (code) {
-        setRecipientCode(code); // salva direto no estado!
-      }
+      const status = await getRecipientStatus();
+      setRecipientStatus(status);
     } catch (error) {
-      console.error("Complete o cadastro :", error);
+      console.log("Erro ao verificar status PagMe:", error);
     }
   };
 
+  const handleRecipientCompleted = (data: RecipientEntity) => {
+    setRecipientStatus({
+      completed: true,
+      recipient: data,
+    });
+  };
 
   useEffect(() => {
     if (!!window) {
       getOrders();
       getBalance();
+      checkPagarmeStatus();
       setUser(getUser);
       setStoreId(getStore);
     }
   }, []);
 
-  useEffect(() => {
-    if (storeId) {
-      getRecipientCode(storeId); // ✅
-    }
-  }, [storeId]);
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  const hasOrders = safeOrders.length > 0;
 
   return (
     <Template
@@ -152,12 +157,23 @@ export default function Parceiro({ content }: { content: any }) {
                   {/* <div className="pt-3">
                     <Button
                       href="/painel/saques"
-                      className="btn p-2 pl-3 pr-5 text-sm text-nowrap"
+                      className="btn w-full p-2 pl-3 pr-5 text-sm text-nowrap"
                     >
                       <Icon icon="fa-hand-holding-usd" />
                       Solicitar saque
                     </Button>
-                  </div> */}
+                    {recipientStatus && !recipientStatus.completed && (
+                      <Button
+                        type="button"
+                        onClick={() => setRecipientModalOpen(true)}
+                        className="mt-2 w-full p-2 pl-3 pr-5 text-sm text-nowrap bg-yellow-400 hover:bg-yellow-500 text-black border-2 border-red-500"
+                        style=""
+                      >
+                        <Icon icon="fa-file-signature" className="mr-2" />
+                        Finalizar cadastro Pagar.me
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               <p
@@ -296,11 +312,11 @@ export default function Parceiro({ content }: { content: any }) {
                   </div>
                 </div>
 
-                {!!orders ? (
-                  orders.map((suborder: any, key: any) => (
-                    <div
-                      key={key}
-                      className="grid lg:flex border-t py-4 lg:py-8 gap-2 lg:gap-8 text-zinc-900 bg-opacity-5 ease items-center"
+          {hasOrders ? (
+            safeOrders.map((suborder: any, key: any) => (
+              <div
+                key={key}
+                className="grid lg:flex border-t py-4 lg:py-8 gap-2 lg:gap-8 text-zinc-900 bg-opacity-5 ease items-center"
                     >
                       <div className="w-full lg:w-1/12">
                         <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
@@ -364,6 +380,12 @@ export default function Parceiro({ content }: { content: any }) {
           </div>
         </div>
       </section>
+      <RecipientModal
+        open={recipientModalOpen}
+        onClose={() => setRecipientModalOpen(false)}
+        status={recipientStatus}
+        onCompleted={handleRecipientCompleted}
+      />
     </Template>
   );
 }
