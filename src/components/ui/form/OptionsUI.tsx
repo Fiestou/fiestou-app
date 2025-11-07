@@ -10,7 +10,7 @@ import { getImage } from "@/src/helper";
 interface OptionsType {
   name: string;
   onChange?: (value: RelationType[]) => void;
-  onSearch?: (value: string) => void;
+  onSearch?: (value: string) => Promise<RelationType[] | void> | void;
   className?: string;
   id?: string;
   value?: RelationType[];
@@ -21,13 +21,14 @@ interface OptionsType {
 
 export default function Options(attrs: OptionsType) {
   const [dropdown, setDropdown] = useState(false);
-  const [list, setList] = useState<RelationType[]>(attrs.value ?? []);
+  const [list, setList] = useState<RelationType[]>(Array.isArray(attrs.value) ? attrs.value : []);
 
   // ✅ Adiciona item sem mutar o array original
   const addList = (item: RelationType) => {
     setList((prev) => {
-      if (prev.find((itm) => itm.id === item.id)) return prev; // evita duplicata
-      const updated = [...prev, item];
+      const safePrev = Array.isArray(prev) ? prev : [];
+      if (safePrev.find((itm) => itm.id === item.id)) return safePrev; // evita duplicata
+      const updated = [...safePrev, item];
       attrs.onChange?.(updated);
       return updated;
     });
@@ -36,18 +37,23 @@ export default function Options(attrs: OptionsType) {
   // ✅ Remove item pelo slug
   const removeItem = (remove: RelationType) => {
     setList((prev) => {
-      const updated = prev.filter((item) => item.slug !== remove.slug);
+      const safePrev = Array.isArray(prev) ? prev : [];
+      const updated = safePrev.filter((item) => item.slug !== remove.slug);
       attrs.onChange?.(updated);
       return updated;
     });
   };
 
   const renderCategoriesForm = (item: RelationType) => {
-    const isSelected = list.some((itm) => itm.id === item.id);
+    const safeList = Array.isArray(list) ? list : [];
+    const isSelected = safeList.some((itm) => itm.id === item.id);
 
     return (
       <div
-        className={`${isSelected ? "opacity-50" : ""} hover:bg-zinc-100 cursor-pointer flex items-center gap-2 p-2`}
+        key={item.id}
+        className={`${
+          isSelected ? "opacity-50" : ""
+        } hover:bg-zinc-100 cursor-pointer flex items-center gap-2 p-2`}
         onClick={() => addList(item)}
       >
         {!!getImage(item?.image) ? (
@@ -67,7 +73,11 @@ export default function Options(attrs: OptionsType) {
 
   // ✅ Atualiza lista quando props mudam
   useEffect(() => {
-    setList(attrs.value ?? []);
+    if (Array.isArray(attrs.value)) {
+      setList(attrs.value);
+    } else {
+      setList([]);
+    }
   }, [attrs.value]);
 
   return (
@@ -79,7 +89,16 @@ export default function Options(attrs: OptionsType) {
           placeholder="Selecione suas opções"
           onFocus={() => setDropdown(true)}
           onBlur={() => setTimeout(() => setDropdown(false), 120)}
-          onChange={(e) => attrs.onSearch?.(e.target.value)}
+          onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const value = e.target.value;
+
+            if (attrs.onSearch) {
+              const result = await attrs.onSearch(value);
+              if (Array.isArray(result)) {
+                setDropdown(true);
+              }
+            }
+          }}
         />
 
         {/* ✅ Renderização segura da lista */}
@@ -109,13 +128,10 @@ export default function Options(attrs: OptionsType) {
       </div>
 
       {/* Dropdown */}
-      {dropdown && !!attrs?.list?.length && (
+      {dropdown && Array.isArray(attrs.list) && attrs.list.length > 0 && (
         <div className="absolute bottom-0 left-0 w-full z-10">
-          <div className="absolute top-0 left-0 w-full bg-white rounded border border-zinc-300 py-2">
-            {Array.isArray(attrs.list) &&
-              attrs.list.map((item: RelationType, key: number) => (
-                <div key={key}>{renderCategoriesForm(item)}</div>
-              ))}
+          <div className="absolute top-0 left-0 w-full bg-white rounded border border-zinc-300 py-2 max-h-64 overflow-y-auto">
+            {attrs.list.map((item: RelationType) => renderCategoriesForm(item))}
           </div>
         </div>
       )}
