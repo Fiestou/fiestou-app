@@ -94,7 +94,7 @@ export default function Parceiro({ content }: { content: any }) {
       const status = await getRecipientStatus();
       setRecipientStatus(status);
     } catch (error) {
-      console.log("Erro ao verificar status PagMe:", error);
+      console.error("Erro ao verificar status do recebedor:", error);
     }
   };
 

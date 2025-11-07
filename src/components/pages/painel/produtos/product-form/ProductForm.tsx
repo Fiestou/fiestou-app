@@ -29,7 +29,6 @@ export default function ProductForm({ product, store }: ProductFormProps) {
   };
 
   const navegateImageCarousel = (imageID: number) => {
-    console.log("Navegar para imagem:", imageID);
   };
 
   /** 🔍 Consulta de CEP (mockada, depois integrar API real) */
