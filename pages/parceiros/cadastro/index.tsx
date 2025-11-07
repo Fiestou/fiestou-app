@@ -183,10 +183,10 @@ export default function PartnerSignupWizard() {
 
       const req = await api.bridge<{ response: boolean; error?: string }>({
         method: "post",
-        url: "stores/complete-register",
+        url: "stores/completeregister",
         data: dataToSend,
       });
-
+      console.log("Complete Register response:", req);
       if (req.response) {
         try { sessionStorage.removeItem("preCadastro"); } catch {}
         router.push("/acesso");
