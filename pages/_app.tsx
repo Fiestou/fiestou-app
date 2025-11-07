@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 import { AuthProvider } from "@/src/contexts/AuthContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
 
 export default function App({
   Component,
@@ -21,22 +22,27 @@ export default function App({
   }, [router]);
 
   return (
-    <SessionProvider session={session}>
-      <AuthProvider>
-        <Component {...pageProps} />
-      </AuthProvider>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-    </SessionProvider>
+    <GoogleReCaptchaProvider
+      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+      language="pt-BR"
+    >
+      <SessionProvider session={session}>
+        <AuthProvider>
+          <Component {...pageProps} />
+        </AuthProvider>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+      </SessionProvider>
+    </GoogleReCaptchaProvider>
   );
 }
