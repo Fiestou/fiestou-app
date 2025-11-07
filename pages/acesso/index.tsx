@@ -11,6 +11,7 @@ import { UserType } from "@/src/models/user";
 import NextAuth from "@/src/components/pages/acesso/NextAuth";
 import { getSession } from "next-auth/react";
 import { AuthContext } from "@/src/contexts/AuthContext";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -61,6 +62,7 @@ export default function Acesso({
 
   const router = useRouter();
   const { SignIn } = useContext(AuthContext);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const [modalStatus, setModalStatus] = useState(!!modal as boolean);
   const [modalType, setModalType] = useState(modal as string);
@@ -75,11 +77,20 @@ export default function Acesso({
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (!executeRecaptcha) {
+      console.error("reCAPTCHA not loaded");
+      return;
+    }
+
     setFormValue({ loading: true, alert: "" });
+
+    // Gera o token reCAPTCHA v3
+    const recaptchaToken = await executeRecaptcha("login");
 
     const request: any = await SignIn({
       email: form.email,
       password: form.password,
+      recaptcha_token: recaptchaToken,
     });
 
     if (request.status == 422) {
