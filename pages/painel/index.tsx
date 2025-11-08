@@ -15,7 +15,7 @@ import { PARTNER_MENU } from "@/src/default/header/Painel";
 import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
 import { RecipientEntity, RecipientStatusResponse } from "@/src/models/recipient";
 import { getRecipientStatus } from "@/src/services/recipients";
-
+// 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
@@ -84,6 +84,7 @@ export default function Parceiro({ content }: { content: any }) {
   const [period, setPeriod] = useState("month" as string);
 
   const [user, setUser] = useState({} as UserType);
+  const [store, setStore] = useState<any>(null);
 
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
   const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
@@ -105,12 +106,41 @@ export default function Parceiro({ content }: { content: any }) {
     });
   };
 
+  const getUserStore = async () => {
+    const currentUser = getUser();
+    setUser(currentUser);
+
+    // Vamos usar os dados ja existentes como yuri pediu
+    if (currentUser?.person === "partner") {
+      const storeRequest: any = await api.request({
+        method: "post",
+        url: "request/stores",
+        data: [
+          {
+            model: "store",
+            filter: [
+              {
+                key: "user",
+                value: currentUser.id,
+                compare: "=",
+              },
+            ],
+          },
+        ],
+      });
+
+      if (storeRequest?.response && storeRequest?.data?.query?.store?.[0]) {
+        setStore(storeRequest.data.query.store[0]);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!!window) {
       getOrders();
       getBalance();
       checkPagarmeStatus();
-      setUser(getUser);
+      getUserStore();
     }
   }, []);
 
@@ -370,6 +400,8 @@ export default function Parceiro({ content }: { content: any }) {
         onClose={() => setRecipientModalOpen(false)}
         status={recipientStatus}
         onCompleted={handleRecipientCompleted}
+        user={user}
+        store={store}
       />
     </Template>
   );
