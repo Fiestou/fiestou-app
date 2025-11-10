@@ -65,7 +65,7 @@ export default function CartPreview({ isMobile = false, onClose }: CartPreviewPr
       const api = new Api();
       const productIds = cartData.map((item: any) => item.product);
 
-      const request = await api.request({
+      const request: any = await api.request({
         method: "get",
         url: "request/products",
         data: {
