@@ -24,7 +24,7 @@ export function getProductUrl(product: ProductType, store?: StoreType): string {
   }
 
   const storeData = store || product.store;
-  const storeSlug = storeData?.slug || "loja";
+  const storeSlug = (typeof storeData === 'object' && storeData?.slug) ? storeData.slug : "loja";
   const productSlug = product.slug || slugify(product.title || "produto");
 
   return `/produtos/${storeSlug}/${productSlug}-${product.id}`;
