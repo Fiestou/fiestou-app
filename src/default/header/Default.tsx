@@ -9,6 +9,8 @@ import User from "./utils/User";
 import Login from "./utils/Login";
 import BIcon from "@/src/icons/bootstrapIcons/BIcon";
 import FIcon from "@/src/icons/fontAwesome/FIcon";
+import { GetCart } from "@/src/components/pages/carrinho";
+import CartPreview from "@/src/components/common/CartPreview";
 
 export default function Default({
   params,
@@ -22,7 +24,30 @@ export default function Default({
     params.background != "bg-transparent" ? params.background : "bg-cyan-500";
 
   const [cart, setCart] = useState<any[]>([]);
+  const [showCartPreview, setShowCartPreview] = useState(false);
   const [menuModal, setMenuModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const loadCart = () => {
+      const cartData = GetCart();
+      setCart(cartData);
+    };
+
+    loadCart();
+    const interval = setInterval(loadCart, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
@@ -122,9 +147,20 @@ export default function Default({
             </div>
 
             {/* Carrinho */}
-            <div className="relative w-fit order-3 lg:order-5">
+            <div
+              className="relative w-fit order-3 lg:order-5"
+              {...(!isMobile && {
+                onMouseEnter: () => setShowCartPreview(true),
+                onMouseLeave: () => setShowCartPreview(false),
+              })}
+            >
               <Button
-                href="/carrinho"
+                {...(isMobile
+                  ? {
+                      type: "button",
+                      onClick: () => setShowCartPreview(!showCartPreview),
+                    }
+                  : { href: "/carrinho" })}
                 style="btn-transparent"
                 className="py-2 px-1 text-white hover:text-yellow-300 ease relative"
               >
@@ -137,6 +173,12 @@ export default function Default({
                   </div>
                 )}
               </Button>
+              {showCartPreview && cart.length > 0 && (
+                <CartPreview
+                  isMobile={isMobile}
+                  onClose={() => setShowCartPreview(false)}
+                />
+              )}
             </div>
 
             {/* Botão Mobile */}

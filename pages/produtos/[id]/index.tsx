@@ -362,11 +362,12 @@ export default function Produto({
     e.preventDefault();
     setLoadCart(true);
 
+    // pegar os dados
     if (AddToCart(productToCart)) {
       handleCart();
       setCartModal(true);
     } else {
-      setLoadCart(true);
+      setLoadCart(false);
     }
   };
 
