@@ -46,7 +46,7 @@ export default function BottomCart({ productToCart, inCart, isMobile }: BottomCa
 
       <div className="text-center p-4">
         {!inCart ? (
-          <Button>Adicionar</Button>
+          <Button type="submit">Adicionar</Button>
         ) : (
           <Button href="/carrinho" className="whitespace-nowrap">
             Acessar carrinho
