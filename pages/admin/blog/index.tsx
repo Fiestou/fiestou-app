@@ -92,8 +92,7 @@ export default function Blog() {
       </section>
       <section className="pt-6">
         <div className="container-medium pb-12">
-          <div className="border"
-          >
+          <div className="border">
             <div className="flex bg-zinc-100 p-8 gap-8 font-bold text-zinc-900 font-title">
               <div className="w-full">Título</div>
               <div className="w-[48rem]">Última atualização</div>
@@ -117,8 +116,14 @@ export default function Blog() {
                     </div>
                   </div>
                   <div className="w-[32rem] text-center">
-                    <div className="rounded-md text-sm bg-zinc-100 py-2">
-                      {!!item.status ? "Público" : "Privado"}
+                    <div
+                      className={`rounded-md text-sm py-2 text-center ${
+                        item.status === 0
+                          ? "bg-green-100 text-green-800"
+                          : "bg-zinc-100 text-zinc-800"
+                      }`}
+                    >
+                      {item.status === 0 ? "Público" : "Privado"}
                     </div>
                   </div>
                   <div className="w-[32rem] text-center flex gap-2">
