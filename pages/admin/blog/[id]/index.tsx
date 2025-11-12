@@ -164,34 +164,50 @@ export default function Form() {
             <div className="container-medium pb-12">
               <div className="grid lg:flex gap-10 ld:gap-20 items-start">
                 <div className="w-full grid gap-8">
-                  <div>
+                  {/* Campo de título */}
+                  <div className="grid gap-2">
+                    <label
+                      htmlFor="post-title"
+                      className="font-medium text-zinc-800"
+                    >
+                      Título
+                    </label>
                     <Input
-                      value={content?.title}
-                      onChange={(e: any ) =>
-                        handleContent({ title: e.target.value })
-                      }
-                      placeholder="Título"
+                      id="post-title"
+                      value={content.title}
+                      onChange={(e) => handleContent({ title: e.target.value })}
+                      placeholder="Digite o título do post"
                     />
                     {!!content?.slug && (
-                      <div className="pt-2 text-sm">
-                        <Link target="_blank" href={`/blog/${content.slug}`}>
-                          /blog/{content.slug}
-                        </Link>
-                      </div>
+                      <Link
+                        href={`/blog/${content.slug}`}
+                        target="_blank"
+                        className="text-sm text-blue-600 hover:underline"
+                      >
+                        /blog/{content.slug}
+                      </Link>
                     )}
                   </div>
 
-                  <label>
+                  {/* Editor de conteúdo */}
+                  <div className="grid gap-2">
+                    <label
+                      htmlFor="post-content"
+                      className="font-medium text-zinc-800"
+                    >
+                      Conteúdo
+                    </label>
                     <Editor
                       value={content?.blocks?.[0]?.content ?? ""}
-                      onChange={(value: any) =>
+                      onChange={(val) =>
                         handleContent({
-                          blocks: [{ id: 1, type: "text", content: value }],
+                          blocks: [{ id: 1, type: "text", content: val }],
                         })
                       }
-                      placeholder="Escreva seu conteúdo..."
+                      minHeight={180} // opcional: altura mínima do textarea
+                      className="your-tailwind-classes"
                     />
-                  </label>
+                  </div>
                 </div>
 
                 <div className="w-full lg:max-w-[24rem] grid gap-4 pb-2">

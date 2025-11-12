@@ -119,11 +119,11 @@ export default function Blog() {
                     <div
                       className={`rounded-md text-sm py-2 text-center ${
                         item.status === 0
-                          ? "bg-green-100 text-green-800"
-                          : "bg-zinc-100 text-zinc-800"
+                          ? "bg-zinc-100 text-zinc-800"
+                          : "bg-green-100 text-green-800"
                       }`}
                     >
-                      {item.status === 0 ? "Público" : "Privado"}
+                      {item.status === 0 ? "Privado" : "Público"}
                     </div>
                   </div>
                   <div className="w-[32rem] text-center flex gap-2">
@@ -163,7 +163,7 @@ export default function Blog() {
                 </div>
               ))}
           </div>
-          <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div>
+          {/* <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div> */}
         </div>
       </section>
     </Template>

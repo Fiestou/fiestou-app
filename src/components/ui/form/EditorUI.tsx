@@ -1,79 +1,127 @@
-import { useEffect, useState, useMemo } from "react";
+"use client";
+
+import { useMemo, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
-import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
-interface EditorType {
+interface EditorProps {
   name?: string;
-  onChange?: Function;
-  onKeyUp?: Function;
-  onBlur?: Function;
-  prevent?: boolean;
-  className?: string;
   id?: string;
   value?: string;
+  onChange?: (value: string) => void;
   placeholder?: string;
-  errorMessage?: string | boolean;
+  className?: string;
+  readOnly?: boolean;
   required?: boolean;
-  readonly?: boolean;
+  errorMessage?: string;
+  /** Quando true, renderiza um textarea simples em vez do ReactQuill */
+  plainText?: boolean;
+  /** Altura mínima inicial do textarea (px) */
+  minHeight?: number;
 }
 
-export default function Editor(attr: EditorType) {
-  const onKeyUp = !!attr?.onKeyUp ? attr?.onKeyUp : attr?.onChange;
-  const onBlur = !!attr?.onBlur ? attr?.onBlur : attr?.onChange;
-
-  const [value, setValue] = useState(attr?.value ?? ("" as any));
-  const handleValue = (value: any) => {
-    setValue(value);
-
-    attr?.onChange ? attr?.onChange(value) : {};
-    onKeyUp && !attr?.prevent ? onKeyUp(value) : {};
-    onBlur && !attr?.prevent ? onBlur(value) : {};
-  };
-
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ["bold", "italic", "underline", "strike", "blockquote"],
-      [
-        { list: "ordered" },
-        { list: "bullet" },
-        { indent: "-1" },
-        { indent: "+1" },
-      ],
-      ["link", "image", "video"],
-      ["clean"],
-    ],
-  };
-
-  const formats = [
-    "header",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "blockquote",
-    "list",
-    "bullet",
-    "indent",
-    "link",
-    "image",
-    "video",
-  ];
-
+export default function Editor({
+  value = "",
+  onChange,
+  placeholder = "Escreva seu conteúdo...",
+  className = "",
+  readOnly = false,
+  plainText = false,
+  minHeight = 120,
+  id,
+}: EditorProps) {
+  // import dinâmico do ReactQuill — só carregado quando plainText === false
   const ReactQuill = useMemo(
-    () => dynamic(() => import("react-quill"), { ssr: false }),
+    () => (plainText ? null : dynamic(() => import("react-quill"), { ssr: false })),
+    [plainText]
+  );
+
+  const modules = useMemo(
+    () => ({
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike", "blockquote"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "image", "video"],
+        ["clean"],
+      ],
+    }),
     []
   );
 
+  const formats = useMemo(
+    () => [
+      "header",
+      "bold",
+      "italic",
+      "underline",
+      "strike",
+      "blockquote",
+      "list",
+      "bullet",
+      "link",
+      "image",
+      "video",
+    ],
+    []
+  );
+
+  const handleChange = useCallback(
+    (val: string) => {
+      onChange?.(val);
+    },
+    [onChange]
+  );
+
+  // --- Textarea auto-resize logic ---
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    if (plainText && textareaRef.current) {
+      const ta = textareaRef.current;
+      // reset height then set to scrollHeight to fit content
+      ta.style.height = "auto";
+      ta.style.height = Math.max(ta.scrollHeight, minHeight) + "px";
+    }
+  }, [value, plainText, minHeight]);
+
+  // --- Render ---
+  if (plainText) {
+    return (
+      <div className={`w-full ${className}`}>
+        <textarea
+          id={id}
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder={placeholder}
+          readOnly={readOnly}
+          className={`
+            block w-full resize-none rounded-md border border-gray-300
+            px-4 py-3 text-base leading-relaxed text-gray-800
+            focus:outline-none focus:ring-2 focus:ring-yellow-300
+            ${readOnly ? "bg-gray-50" : "bg-white"}
+          `}
+          style={{ minHeight }}
+          aria-required={!!(id && (id && id.length) && false)} // placeholder for potential accessibility handling
+        />
+        {/* mensagem de erro, se quiser usar */}
+        {/* {errorMessage && <p className="mt-2 text-sm text-red-600">{errorMessage}</p>} */}
+      </div>
+    );
+  }
+
+  // rich editor (ReactQuill)
+  const RQ: any = ReactQuill; // tipagem flexível pois dynamic retorna um componente
   return (
-    <div>
-      <ReactQuill
+    <div className={`rounded-md border border-gray-200 ${className}`}>
+      <RQ
         theme="snow"
         modules={modules}
         formats={formats}
-        defaultValue={attr?.value}
-        onChange={handleValue}
+        value={value}
+        onChange={handleChange}
+        placeholder={placeholder}
+        readOnly={readOnly}
       />
     </div>
   );
