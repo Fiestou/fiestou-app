@@ -153,7 +153,7 @@ export default function Form() {
                     />
                   </Link>
                   <div className="font-title font-bold text-2xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                    {id !== "form" ? "Editando" : "Novo post"}
+                    {id !== "form" ? "Editar: " + content.title : "Criar novo post"}
                   </div>
                 </div>
               </div>
@@ -204,8 +204,8 @@ export default function Form() {
                           blocks: [{ id: 1, type: "text", content: val }],
                         })
                       }
-                      minHeight={180} // opcional: altura mínima do textarea
-                      className="your-tailwind-classes"
+                      minHeight={180}
+                      className="your-tailwind-classes quill-textarea"
                     />
                   </div>
                 </div>
