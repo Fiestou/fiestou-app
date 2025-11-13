@@ -7,7 +7,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { encode as base64_encode, decode as base64_decode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
-import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { CheckMail } from "@/src/models/CheckEmail";
 import { formatName, formatPhone, formatCpfCnpj, formatCep, validateEmail } from "../../src/components/utils/FormMasks";
 
@@ -53,6 +53,7 @@ export default function CadastreSe({
 }) {
   const api = new Api();
   const router = useRouter();
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const query: PageQueryType = router.query;
 
@@ -75,7 +76,6 @@ export default function CadastreSe({
   const [password, setPassword] = useState("" as string);
   const [repeat, setRepeat] = useState("" as string);
 
-  const [token, setToken] = useState("" as string);
   const [debouncedEmail, setDebouncedEmail] = useState("");
   const [errorMail, setErrorMail] = useState<string>("");
   const [emailValid, setEmailValid] = useState(true);
@@ -163,9 +163,17 @@ export default function CadastreSe({
     if (!await checkEmail(email)){
       return;
     }
-    
+
+    if (!executeRecaptcha) {
+      console.error("reCAPTCHA not loaded");
+      return;
+    }
+
     setForm({ ...form, loading: true });
-    
+
+    // Gera o token reCAPTCHA v3
+    const recaptchaToken = await executeRecaptcha("register");
+
     const phoneClean = phone.replace(/\D/g, "");
 
     const data: any = await api.bridge({
@@ -178,9 +186,10 @@ export default function CadastreSe({
         person: "client",
         password: password,
         re_password: repeat,
+        recaptcha_token: recaptchaToken,
       },
     });
-    
+
     if (data.response) {
       window.location.href = "/acesso?modal=register";
     } else {
@@ -328,15 +337,21 @@ export default function CadastreSe({
                   ></div>
                 )}
 
-                <div className="flex justify-center pt-4">
-                  <HCaptchaComponent
-                    onVerify={(token: string) => setToken(token)}
-                  />
+                <div className="text-xs text-center text-gray-500 pt-4">
+                  Este site é protegido pelo reCAPTCHA e aplica a{" "}
+                  <a href="https://policies.google.com/privacy" target="_blank" className="underline">
+                    Política de Privacidade
+                  </a>{" "}
+                  e os{" "}
+                  <a href="https://policies.google.com/terms" target="_blank" className="underline">
+                    Termos de Serviço
+                  </a>{" "}
+                  do Google.
                 </div>
 
                 <div className="form-group">
                   <Button
-                    disable={(!!errors.length && !!complete.length) || !token}
+                    disable={!!errors.length && !!complete.length}
                     loading={form.loading}
                   >
                     Cadastrar agora
