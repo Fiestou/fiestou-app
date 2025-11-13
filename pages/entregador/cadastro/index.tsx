@@ -193,7 +193,7 @@ export default function Cadastro({ user }: any) {
                   <div className="form-group">
                     <Label>E-mail</Label>
                     <Input
-                      readonly
+                      readOnly
                       name="email"
                       value={email}
                       type="text"

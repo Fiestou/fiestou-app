@@ -143,7 +143,7 @@ export default function Completar({ auth }: any) {
                     defaultValue={data.email}
                     type="email"
                     name="email"
-                    readonly
+                    readOnly
                   />
                 </div>
 
