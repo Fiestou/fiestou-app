@@ -26,6 +26,7 @@ import Pagarme from "@/src/services/pagarme";
 import { deliveryToName } from "@/src/models/delivery";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
+import { getProductUrl } from "@/src/urlHelpers";
 
 export interface CardType {
   number: number;
@@ -589,7 +590,7 @@ export default function Pagamento({
                               </div>
                               <div className="grid gap-1 w-full">
                                 <div className="font-title text-lg font-bold text-zinc-900">
-                                  <Link href={`/produtos/${product?.id}`}>
+                                  <Link href={getProductUrl(product)}>
                                     {product.title}
                                   </Link>
                                 </div>
