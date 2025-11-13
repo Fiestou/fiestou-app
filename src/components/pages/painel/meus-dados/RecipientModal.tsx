@@ -913,9 +913,8 @@ export default function RecipientModal({
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm text-yellow-800">
           <p className="font-semibold mb-1">⚠️ Atenção:</p>
           <p>
-            Os dados bancários devem pertencer ao mesmo CPF/CNPJ informado no
-            cadastro. A Pagar.me pode solicitar comprovantes adicionais antes de
-            liberar os repasses.
+            Os dados bancários devem pertencer ao mesmo CPF/CNPJ informado no cadastro.
+            A Pagar.me pode solicitar comprovantes adicionais antes de liberar os repasses.
           </p>
         </div>
       </div>
