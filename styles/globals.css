@@ -4,6 +4,9 @@
 
 @import "/public/scss/_shared.scss";
 
+/* ------------------------ */
+/* BASE */
+/* ------------------------ */
 @layer base {
   :root {
     --font-display: "Poppins", sans-serif;
@@ -56,15 +59,15 @@
     border-radius: 8px;
     font-family: Arial, sans-serif;
   }
-  
+
   .Toastify__toast {
     background-color: white !important;
   }
-  
+
   .Toastify__progress-bar {
-    background-color:  #00a7eb !important; 
+    background-color: #00a7eb !important;
   }
-  
+
   .arrow-number-none {
     -webkit-appearance: none !important;
     -moz-appearance: textfield !important;
@@ -80,9 +83,10 @@
       display: none;
     }
   }
+
   .custom-swiper .swiper-button-next,
   .custom-swiper .swiper-button-prev {
-  @apply text-yellow-400;
+    @apply text-yellow-400;
   }
 
   @keyframes slide-up {
@@ -98,5 +102,30 @@
 
   .animate-slide-up {
     animation: slide-up 0.3s ease-out;
+  }
+}
+
+/* ------------------------ */
+/* COMPONENTS */
+/* ------------------------ */
+@layer components {
+  .quill-textarea .ql-container {
+    @apply w-full max-w-full overflow-x-hidden rounded-md border border-zinc-300 bg-white;
+  }
+
+  .quill-textarea .ql-editor {
+    @apply break-words whitespace-pre-wrap leading-relaxed text-zinc-900;
+    word-break: break-word; /* 🔹 força quebra em palavras longas */
+    overflow-wrap: anywhere; /* 🔹 permite quebrar qualquer sequência contínua */
+    min-height: 180px;
+    line-height: 1.5;
+  }
+
+  .quill-textarea .ql-toolbar {
+    @apply border-b border-zinc-200 bg-zinc-50;
+  }
+
+  .quill-textarea .ql-editor::before {
+    @apply text-zinc-400;
   }
 }

@@ -14,9 +14,7 @@ interface EditorProps {
   readOnly?: boolean;
   required?: boolean;
   errorMessage?: string;
-  /** Quando true, renderiza um textarea simples em vez do ReactQuill */
   plainText?: boolean;
-  /** Altura mínima inicial do textarea (px) */
   minHeight?: number;
 }
 
@@ -30,9 +28,9 @@ export default function Editor({
   minHeight = 120,
   id,
 }: EditorProps) {
-  // import dinâmico do ReactQuill — só carregado quando plainText === false
   const ReactQuill = useMemo(
-    () => (plainText ? null : dynamic(() => import("react-quill"), { ssr: false })),
+    () =>
+      plainText ? null : dynamic(() => import("react-quill"), { ssr: false }),
     [plainText]
   );
 
@@ -73,18 +71,16 @@ export default function Editor({
     [onChange]
   );
 
-  // --- Textarea auto-resize logic ---
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => {
     if (plainText && textareaRef.current) {
       const ta = textareaRef.current;
-      // reset height then set to scrollHeight to fit content
       ta.style.height = "auto";
       ta.style.height = Math.max(ta.scrollHeight, minHeight) + "px";
     }
   }, [value, plainText, minHeight]);
 
-  // --- Render ---
+  // --- Modo simples (textarea) ---
   if (plainText) {
     return (
       <div className={`w-full ${className}`}>
@@ -96,24 +92,29 @@ export default function Editor({
           placeholder={placeholder}
           readOnly={readOnly}
           className={`
-            block w-full resize-none rounded-md border border-gray-300
-            px-4 py-3 text-base leading-relaxed text-gray-800
-            focus:outline-none focus:ring-2 focus:ring-yellow-300
-            ${readOnly ? "bg-gray-50" : "bg-white"}
+            block w-full resize-none rounded-md border border-zinc-300 px-4 py-3
+            font-sans text-base leading-relaxed text-zinc-900
+            placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-yellow-300
+            ${readOnly ? "bg-zinc-50 opacity-70" : "bg-white"}
           `}
           style={{ minHeight }}
-          aria-required={!!(id && (id && id.length) && false)} // placeholder for potential accessibility handling
         />
-        {/* mensagem de erro, se quiser usar */}
-        {/* {errorMessage && <p className="mt-2 text-sm text-red-600">{errorMessage}</p>} */}
       </div>
     );
   }
 
-  // rich editor (ReactQuill)
-  const RQ: any = ReactQuill; // tipagem flexível pois dynamic retorna um componente
+  // --- Modo rico (ReactQuill) ---
+  const RQ: any = ReactQuill;
   return (
-    <div className={`rounded-md border border-gray-200 ${className}`}>
+    <div
+      className={`
+        quill-textarea
+        rounded-md border border-zinc-300
+        font-sans text-base leading-relaxed text-zinc-900
+        ${className}
+        ${readOnly ? "opacity-70 bg-zinc-50" : "bg-white"}
+      `}
+    >
       <RQ
         theme="snow"
         modules={modules}

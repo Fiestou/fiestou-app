@@ -5,7 +5,7 @@ interface InputType extends React.InputHTMLAttributes<HTMLInputElement> {
   placeholderStyle?: string;
   errorMessage?: string | boolean;
   help?: string;
-  readonly?: boolean;
+  readOnly?: boolean;
 }
 
 export default function Input(attr: InputType) {
@@ -17,15 +17,22 @@ export default function Input(attr: InputType) {
         type={attr.type ?? "text"}
         placeholder={attr.placeholder}
         readOnly={attr.readOnly}
-        className={`${attr.className ?? ""} ${
-          attr.errorMessage
-            ? "border-red-500 placeholder-red-300"
-            : attr.placeholderStyle ?? "placeholder-zinc-300"
-        } form-control ease ${
-          attr.readOnly
-            ? "opacity-50 bg-zinc-100 placeholder-zinc-500"
-            : "focus:border-zinc-800 hover:border-zinc-400"
-        }`}
+        className={`
+          w-full rounded-md border border-zinc-300 px-4 py-3
+          font-sans text-base leading-relaxed text-zinc-900
+          placeholder:font-sans placeholder:text-base placeholder:leading-relaxed placeholder:text-zinc-400
+          ${attr.className ?? ""}
+          ${
+            attr.errorMessage
+              ? "border-red-500 placeholder:text-red-300"
+              : attr.placeholderStyle ?? ""
+          }
+          ${
+            attr.readOnly
+              ? "opacity-50 bg-zinc-100 placeholder:text-zinc-500"
+              : "focus:border-zinc-800 hover:border-zinc-400"
+          }
+        `}
         value={attr.value}
         defaultValue={attr.defaultValue}
         min={attr.min}
@@ -38,9 +45,11 @@ export default function Input(attr: InputType) {
         onKeyDown={(e) => attr.onKeyDown?.(e)}
         onBlur={(e) => (!attr.prevent ? attr.onBlur?.(e) : null)}
       />
+
       {attr.help && (
         <div className="text-zinc-400 text-xs pt-[2px]">{attr.help}</div>
       )}
+
       {attr.errorMessage && (
         <div className="text-red-500 text-xs pt-1 font-semibold">
           {attr.errorMessage}
