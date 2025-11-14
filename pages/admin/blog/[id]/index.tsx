@@ -13,6 +13,20 @@ import FileManager from "@/src/components/ui/form/FileManager";
 import axios from "axios";
 import { shortId } from "@/src/helper";
 
+export async function getServerSideProps({
+  query,
+}: {
+  query: NextApiRequest["query"];
+}) {
+  const { id } = query;
+
+  return {
+    props: {
+      id: id,
+    },
+  };
+}
+
 const formInitial = {
   sended: false,
   loading: false,
