@@ -1,10 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import Template from "@/src/template";
 import { Button, Input } from "@/src/components/ui/form";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
-import { NextApiRequest } from "next";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Editor from "@/src/components/ui/form/EditorUI";
@@ -37,61 +38,47 @@ interface PostType {
   slug: string;
   image: Array<any>;
   blocks: Array<any>;
-  // status: string | number;
+  status: string | number;
 }
 
-export default function Form({ id }: { id: number | string }) {
+export default function Form() {
   const api = new Api();
   const router = useRouter();
+  const { id } = router.query;
 
-  const [placeholder, setPlaceholder] = useState(true as boolean);
-
+  const [placeholder, setPlaceholder] = useState(true);
   const [form, setForm] = useState(formInitial);
-  const setFormValue = (value: any) => {
-    setForm((form) => ({ ...form, ...value }));
-  };
-
   const [content, setContent] = useState<PostType>({
-    // status: 0,
+    status: 1,
     id: 0,
     title: "",
     slug: "",
     image: [],
-    blocks: [
-      {
-        id: 1,
-        type: "text",
-        content: ""
-      },
-    ],
+    blocks: [{ id: 1, type: "text", content: "" }],
   });
 
-  const handleContent = (value: Partial<PostType>) => {
+  const setFormValue = (value: any) => setForm((f) => ({ ...f, ...value }));
+  const handleContent = (value: Partial<PostType>) =>
     setContent((prev) => ({ ...prev, ...value }));
-  };
 
   const handleCache = async () => {
     try {
       await axios.get(`/api/cache`, {
-        params: {
-          route: `/blog/${content.slug}`,
-        },
+        params: { route: `/blog/${content.slug}` },
       });
-
     } catch (error: any) {
-      console.error('Erro ao atualizar o cache:', error?.response?.data || error.message);
+      console.error(
+        "Erro ao atualizar o cache:",
+        error?.response?.data || error.message
+      );
     }
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
     setFormValue({ loading: true });
 
-    const handle = {
-      ...content,
-    };
-
+    const handle = { ...content };
     const request: any = await api.bridge({
       method: "post",
       url: "admin/content/register",
@@ -100,7 +87,7 @@ export default function Form({ id }: { id: number | string }) {
         id: content.id ?? null,
         title: content?.title ?? `content-${shortId()}`,
         slug: content?.title ?? null,
-        // status: content?.status,
+        status: content?.status,
         content: {
           image: handle.image,
           blocks: handle.blocks,
@@ -109,7 +96,6 @@ export default function Form({ id }: { id: number | string }) {
     });
 
     await handleCache();
-
     setContent(handle);
 
     if (request.response) {
@@ -120,43 +106,36 @@ export default function Form({ id }: { id: number | string }) {
   };
 
   const getPost = async () => {
-    setPlaceholder(true);
-
-    if (id != "form") {
-      let request: any = await api.bridge({
-        method: "get",
-        url: "admin/content/get",
-        data: {
-          type: "blog",
-          id: id,
-        },
-      });
-
-      setContent(request.data);
+    if (!id || id === "form") {
+      setContent((prev) => ({ ...prev, status: 1 })); // garante status = 1 em novo post
+      setPlaceholder(false);
+      return;
     }
 
+    setPlaceholder(true);
+    const request: any = await api.bridge({
+      method: "get",
+      url: "admin/content/get",
+      data: { type: "blog", id },
+    });
+
+    // garante que o status nunca seja nulo ou undefined
+    setContent({ ...request.data, status: request.data?.status ?? 1 });
     setPlaceholder(false);
   };
 
   useEffect(() => {
-    getPost();
-  }, []);
+    if (router.isReady) getPost();
+  }, [router.isReady, id]);
 
   return (
     <Template
-      header={{
-        template: "admin",
-        position: "solid",
-      }}
-      footer={{
-        template: "clean",
-      }}
+      header={{ template: "admin", position: "solid" }}
+      footer={{ template: "clean" }}
     >
-      {placeholder ? (
-        <></>
-      ) : (
-        <form onSubmit={(e: any) => handleSubmit(e)}>
-          <section className="">
+      {placeholder ? null : (
+        <form onSubmit={handleSubmit}>
+          <section>
             <div className="container-medium pt-6 md:pt-12 pb-4 md:pb-8">
               <div className="flex justify-between">
                 <div className="pb-4">
@@ -178,6 +157,7 @@ export default function Form({ id }: { id: number | string }) {
                   </Link>
                 )}
               </div>
+
               <div className="flex items-end">
                 <div className="w-full flex items-center">
                   <Link passHref href="/admin/blog">
@@ -187,66 +167,75 @@ export default function Form({ id }: { id: number | string }) {
                     />
                   </Link>
                   <div className="font-title font-bold text-2xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                    {id != "form" ? "Editando" : "Novo post"}
+                    {id !== "form" ? "Editar: " + content.title : "Criar novo post"}
                   </div>
                 </div>
               </div>
             </div>
           </section>
-          <section className="">
+
+          <section>
             <div className="container-medium pb-12">
               <div className="grid lg:flex gap-10 ld:gap-20 items-start">
                 <div className="w-full grid gap-8">
-                  <div className="">
+                  {/* Campo de título */}
+                  <div className="grid gap-2">
+                    <label
+                      htmlFor="post-title"
+                      className="font-medium text-zinc-800"
+                    >
+                      Título
+                    </label>
                     <Input
-                      value={content?.title}
-                      onChange={(e: any) =>
-                        handleContent({ title: e.target.value })
-                      }
-                      placeholder="Título"
+                      id="post-title"
+                      value={content.title}
+                      onChange={(e) => handleContent({ title: e.target.value })}
+                      placeholder="Digite o título do post"
                     />
                     {!!content?.slug && (
-                      <div className="pt-2 text-sm">
-                        <Link
-                          target="_blank"
-                          href={`/blog/${content.slug}`}
-                        >{`/blog/${content.slug}`}</Link>
-                      </div>
+                      <Link
+                        href={`/blog/${content.slug}`}
+                        target="_blank"
+                        className="text-sm text-blue-600 hover:underline"
+                      >
+                        /blog/{content.slug}
+                      </Link>
                     )}
                   </div>
-                  <div className="">
+
+                  {/* Editor de conteúdo */}
+                  <div className="grid gap-2">
+                    <label
+                      htmlFor="post-content"
+                      className="font-medium text-zinc-800"
+                    >
+                      Conteúdo
+                    </label>
                     <Editor
-                      value={
-                        content?.blocks && content?.blocks[0]
-                          ? content?.blocks[0].content
-                          : ""
-                      }
-                      onChange={(value: any) =>
+                      value={content?.blocks?.[0]?.content ?? ""}
+                      onChange={(val) =>
                         handleContent({
-                          blocks: [
-                            {
-                              id: 1,
-                              type: "text",
-                              content: value,
-                            },
-                          ],
+                          blocks: [{ id: 1, type: "text", content: val }],
                         })
                       }
-                      placeholder="Escreva seu conteúdo..."
+                      minHeight={180}
+                      className="your-tailwind-classes quill-textarea"
                     />
                   </div>
                 </div>
+
                 <div className="w-full lg:max-w-[24rem] grid gap-4 pb-2">
                   <div className="order-last lg:order-1 grid">
                     <Button className="py-4" loading={form.loading}>
                       Salvar
                     </Button>
                   </div>
-                  <div className="grid gap-4 order-1 lg:order-2 form-group">
 
-                    {/* <div>
-                      <label style={{ float: 'right' }}>
-                        Visualização: {content?.status === 0 ? 'Público' : 'Privado'}
+                  <div className="grid gap-4 order-1 lg:order-2 form-group">
+                    <div>
+                      <label style={{ float: "right" }}>
+                        Visualização:{" "}
+                        {content?.status === 1 ? "Público" : "Privado"}
                       </label>
 
                       <select
@@ -257,31 +246,26 @@ export default function Form({ id }: { id: number | string }) {
                         }
                         className="form-control"
                       >
-                        {[{ name: "Público", value: 0 }, { name: "Privado", value: 1 }].map(
-                          (option, key) => (
-                            <option value={String(option.value)} key={key}>
-                              {option.name}
-                            </option>
-                          )
-                        )}
+                        {[
+                          { name: "Público", value: 1 },
+                          { name: "Privado", value: 0 },
+                        ].map((option, key) => (
+                          <option value={String(option.value)} key={key}>
+                            {option.name}
+                          </option>
+                        ))}
                       </select>
-                    </div> */}
+                    </div>
 
                     <div>
-                      <div className="">
-                        <FileManager
-                          placeholder="Imagem destaque"
-                          // value={content?.image ?? []}
-                          aspect="aspect-square"
-                          multiple={false}
-                          onChange={(emit: any) =>
-                            handleContent({ image: emit })
-                          }
-                          options={{
-                            dir: "blog",
-                          }}
-                        />
-                      </div>
+                      <FileManager
+                        placeholder="Imagem destaque"
+                        value={content?.image ?? []}
+                        aspect="aspect-square"
+                        multiple={false}
+                        onChange={(emit: any) => handleContent({ image: emit })}
+                        options={{ dir: "blog" }}
+                      />
                     </div>
                   </div>
                 </div>

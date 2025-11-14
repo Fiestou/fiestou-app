@@ -52,6 +52,11 @@ const nextConfig = {
         source: "/sitemap.xml",
         destination: "/api/sitemap",
       },
+      // SEO: /produtos/loja/produto-123 -> /produtos/produto-123
+      {
+        source: "/produtos/:storeSlug/:productSlugId",
+        destination: "/produtos/:productSlugId",
+      },
     ];
   },
   generateEtags: false,
@@ -71,6 +76,8 @@ const nextConfig = {
     PAGARME_ID: process.env.PAGARME_ID,
     PAGARME_PUBLIC_KEY: process.env.PAGARME_PUBLIC_KEY,
     PAGARME_SECRET_KEY: process.env.PAGARME_SECRET_KEY,
+    NEXT_PUBLIC_RECAPTCHA_SITE_KEY: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+    RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
   },
   trailingSlash: true,
   experimental: {
@@ -93,6 +100,12 @@ const nextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
+        port: "8080",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "148.113.189.30",
         port: "8080",
         pathname: "/**",
       },

@@ -21,14 +21,15 @@ const VisibilitySection: React.FC<VisibilitySectionProps> = ({
           <Label>Exibir na minha loja</Label>
           <Select
             name="status"
-            value={data?.status ?? "visible"}
+            value={data?.status ?? 1}
             options={[
-              { name: "Sim", value: "visible" },
-              { name: "Não", value: "hidden" },
+              { name: "Sim", value: 1 },
+              { name: "Não", value: -1 },
             ]}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              handleData({ status: e.target.value })
-            }
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+              const value = Number(e.target.value);
+              handleData({ status: value });
+            }}
           />
         </div>
       </div>
