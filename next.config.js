@@ -52,6 +52,11 @@ const nextConfig = {
         source: "/sitemap.xml",
         destination: "/api/sitemap",
       },
+      // SEO: /produtos/loja/produto-123 -> /produtos/produto-123
+      {
+        source: "/produtos/:storeSlug/:productSlugId",
+        destination: "/produtos/:productSlugId",
+      },
     ];
   },
   generateEtags: false,
@@ -95,6 +100,12 @@ const nextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
+        port: "8080",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "148.113.189.30",
         port: "8080",
         pathname: "/**",
       },
