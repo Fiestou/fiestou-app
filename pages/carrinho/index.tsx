@@ -24,6 +24,7 @@ import Img from "@/src/components/utils/ImgBase";
 import { formatCep } from "@/src/components/utils/FormMasks";
 import { CartType } from "@/src/models/cart";
 import { DeliveryItem } from "@/src/types/filtros";
+import { getProductUrl } from "@/src/urlHelpers";
 
 type DeliverySummaryEntry = {
   key: string;
@@ -293,12 +294,9 @@ export default function Carrinho({
       };
     }
 
-    console.log('🛒 Carrinho - Lista atualizada com frete:', updatedList);
-
     setListCart(updatedList);
     if (typeof window !== "undefined") {
       Cookies.set("fiestou.cart", JSON.stringify(updatedList), { expires: 7 });
-      console.log('🍪 Carrinho - Cookie salvo com sucesso');
     }
     recalcSummary(updatedList);
 
@@ -367,11 +365,7 @@ export default function Carrinho({
         return;
       }
 
-      console.log('📦 Carrinho - Taxas normalizadas:', normalizedFees);
-      console.log('📮 Carrinho - CEP sanitizado:', sanitizedZip);
-
       const result = applyDeliveryToCart(normalizedFees, sanitizedZip);
-      console.log('✅ Carrinho - Resultado da aplicação:', result);
 
       if (!result.success) {
         setDeliveryError(result.message ?? "Não conseguimos calcular o frete.");
@@ -379,7 +373,6 @@ export default function Carrinho({
       }
 
       setDeliveryZipInput(formatCep(sanitizedZip));
-      console.log('✅ Carrinho - Frete calculado e salvo com sucesso!');
     } catch (error: any) {
       const message =
         error?.response?.data?.error ||
@@ -495,7 +488,7 @@ export default function Carrinho({
                             <div className="flex gap-10 items-start">
                               <div className="w-full">
                                 <h5 className="font-title font-bold text-zinc-900 text-xl">
-                                  <Link href={`/produtos/${item.product?.id}`}>
+                                  <Link href={getProductUrl(item.product)}>
                                     {item.product?.title}
                                   </Link>
                                 </h5>

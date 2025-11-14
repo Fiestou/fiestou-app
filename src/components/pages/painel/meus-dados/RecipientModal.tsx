@@ -101,11 +101,16 @@ const steps = [
   { id: "partners", label: "Sócios", only: "PJ" as RecipientTypeEnum },
 ] as const;
 
-type Step = typeof steps[number];
+type Step = (typeof steps)[number];
 
 type StepId = Step["id"];
 
-export default function RecipientModal({ open, onClose, status, onCompleted }: RecipientModalProps) {
+export default function RecipientModal({
+  open,
+  onClose,
+  status,
+  onCompleted,
+}: RecipientModalProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [formData, setFormData] = useState<RecipientEntity>(buildInitialForm);
   const [stepIndex, setStepIndex] = useState(0);
@@ -123,7 +128,8 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
     );
   }, [formData.type_enum]);
 
-  const currentStep = visibleSteps[Math.min(stepIndex, visibleSteps.length - 1)];
+  const currentStep =
+    visibleSteps[Math.min(stepIndex, visibleSteps.length - 1)];
 
   useEffect(() => {
     if (!open) {
@@ -132,11 +138,14 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
 
     if (status?.recipient) {
       const recipient = status.recipient;
-      const remoteConfig = (recipient as RecipientEntity).configs ?? recipient.config ?? null;
+      const remoteConfig =
+        (recipient as RecipientEntity).configs ?? recipient.config ?? null;
       setFormData({
         ...buildInitialForm(),
         ...recipient,
-        addresses: recipient.addresses?.length ? recipient.addresses : [createAddress()],
+        addresses: recipient.addresses?.length
+          ? recipient.addresses
+          : [createAddress()],
         phones: recipient.phones?.length ? recipient.phones : [createPhone()],
         partners:
           recipient.partners?.map((partner) => ({
@@ -177,7 +186,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateAddress = (index: number, field: keyof RecipientAddress, value: string) => {
+  const updateAddress = (
+    index: number,
+    field: keyof RecipientAddress,
+    value: string
+  ) => {
     setFormData((prev) => {
       const addresses = prev.addresses.map((address, idx) =>
         idx === index ? { ...address, [field]: value } : address
@@ -186,7 +199,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
     });
   };
 
-  const updatePhone = (index: number, field: keyof RecipientPhone, value: string) => {
+  const updatePhone = (
+    index: number,
+    field: keyof RecipientPhone,
+    value: string
+  ) => {
     setFormData((prev) => {
       const phones = prev.phones.map((phone, idx) =>
         idx === index ? { ...phone, [field]: value } : phone
@@ -195,7 +212,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
     });
   };
 
-  const updatePartner = (index: number, field: keyof RecipientPartner, value: any) => {
+  const updatePartner = (
+    index: number,
+    field: keyof RecipientPartner,
+    value: any
+  ) => {
     setFormData((prev) => {
       const partners = prev.partners.map((partner, idx) => {
         if (idx !== index) return partner;
@@ -213,11 +234,14 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
   const updateBankAccount = (field: keyof RecipientBankAccount, value: any) => {
     setFormData((prev) => ({
       ...prev,
-      bank_account: prev.bank_account ? { ...prev.bank_account, [field]: value } : createBankAccount(),
+      bank_account: prev.bank_account
+        ? { ...prev.bank_account, [field]: value }
+        : createBankAccount(),
     }));
   };
 
-  const addAddress = () => updateField("addresses", [...formData.addresses, createAddress()]);
+  const addAddress = () =>
+    updateField("addresses", [...formData.addresses, createAddress()]);
   const removeAddress = (index: number) => {
     if (formData.addresses.length === 1) return;
     updateField(
@@ -226,7 +250,8 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
     );
   };
 
-  const addPhone = () => updateField("phones", [...formData.phones, createPhone()]);
+  const addPhone = () =>
+    updateField("phones", [...formData.phones, createPhone()]);
   const removePhone = (index: number) => {
     if (formData.phones.length === 1) return;
     updateField(
@@ -235,7 +260,8 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
     );
   };
 
-  const addPartner = () => updateField("partners", [...formData.partners, createPartner()]);
+  const addPartner = () =>
+    updateField("partners", [...formData.partners, createPartner()]);
   const removePartner = (index: number) => {
     updateField(
       "partners",
@@ -258,7 +284,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
           return "Preencha nome completo e data de nascimento.";
         }
       } else {
-        if (!formData.company_name || !formData.trading_name || !formData.name) {
+        if (
+          !formData.company_name ||
+          !formData.trading_name ||
+          !formData.name
+        ) {
           return "Informe razão social, nome fantasia e representante legal.";
         }
       }
@@ -378,7 +408,8 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
       bank_account: formData.bank_account
         ? {
             ...formData.bank_account,
-            branch_check_digit: formData.bank_account.branch_check_digit?.trim() || undefined,
+            branch_check_digit:
+              formData.bank_account.branch_check_digit?.trim() || undefined,
           }
         : undefined,
     };
@@ -418,7 +449,9 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
             <span className={`${isActive ? "font-semibold" : "text-zinc-500"}`}>
               {step.label}
             </span>
-            {index !== visibleSteps.length - 1 && <span className="text-zinc-300">/</span>}
+            {index !== visibleSteps.length - 1 && (
+              <span className="text-zinc-300">/</span>
+            )}
           </div>
         );
       })}
@@ -439,7 +472,9 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
             <button
               key={type}
               type="button"
-              onClick={() => updateField("type_enum", type as RecipientTypeEnum)}
+              onClick={() =>
+                updateField("type_enum", type as RecipientTypeEnum)
+              }
               className={`border rounded-lg p-5 text-left transition-colors ${
                 active
                   ? "border-red-500 bg-red-50"
@@ -488,14 +523,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
             name="company_name"
             placeholder="Razão social"
             value={formData.company_name ?? ""}
-            onChange={(event) => updateField("company_name", event.target.value)}
+            onChange={(event) =>
+              updateField("company_name", event.target.value)
+            }
             required
           />
           <Input
             name="trading_name"
             placeholder="Nome fantasia"
             value={formData.trading_name ?? ""}
-            onChange={(event) => updateField("trading_name", event.target.value)}
+            onChange={(event) =>
+              updateField("trading_name", event.target.value)
+            }
             required
           />
           <Input
@@ -551,12 +590,12 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
       <Input
         name="professional_occupation"
         placeholder={
-          formData.type_enum === "PJ"
-            ? "Cargo do responsável"
-            : "Profissão"
+          formData.type_enum === "PJ" ? "Cargo do responsável" : "Profissão"
         }
         value={formData.professional_occupation ?? ""}
-        onChange={(event) => updateField("professional_occupation", event.target.value)}
+        onChange={(event) =>
+          updateField("professional_occupation", event.target.value)
+        }
       />
     </div>
   );
@@ -564,7 +603,10 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
   const renderAddresses = () => (
     <div className="space-y-6">
       {formData.addresses.map((address, index) => (
-        <div key={`address-${index}`} className="border rounded-lg p-4 space-y-3">
+        <div
+          key={`address-${index}`}
+          className="border rounded-lg p-4 space-y-3"
+        >
           <div className="flex justify-between items-center">
             <p className="font-semibold">Endereço {index + 1}</p>
             {formData.addresses.length > 1 && (
@@ -577,7 +619,7 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
               </button>
             )}
           </div>
-        <div className="grid md:grid-cols-2 gap-3">
+          <div className="grid md:grid-cols-2 gap-3">
             <Select
               name={`address-type-${index}`}
               value={address.type ?? "Recipient"}
@@ -597,7 +639,9 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
               name={`address-zip-${index}`}
               placeholder="CEP"
               value={address.zip_code}
-              onChange={(event) => updateAddress(index, "zip_code", event.target.value)}
+              onChange={(event) =>
+                updateAddress(index, "zip_code", event.target.value)
+              }
               required
             />
           </div>
@@ -606,21 +650,27 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
               name={`address-street-${index}`}
               placeholder="Rua"
               value={address.street}
-              onChange={(event) => updateAddress(index, "street", event.target.value)}
+              onChange={(event) =>
+                updateAddress(index, "street", event.target.value)
+              }
               required
             />
             <Input
               name={`address-number-${index}`}
               placeholder="Número"
               value={address.street_number}
-              onChange={(event) => updateAddress(index, "street_number", event.target.value)}
+              onChange={(event) =>
+                updateAddress(index, "street_number", event.target.value)
+              }
               required
             />
             <Input
               name={`address-complement-${index}`}
               placeholder="Complemento"
               value={address.complementary ?? ""}
-              onChange={(event) => updateAddress(index, "complementary", event.target.value)}
+              onChange={(event) =>
+                updateAddress(index, "complementary", event.target.value)
+              }
             />
           </div>
           <div className="grid md:grid-cols-3 gap-3">
@@ -628,14 +678,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
               name={`address-neighborhood-${index}`}
               placeholder="Bairro"
               value={address.neighborhood}
-              onChange={(event) => updateAddress(index, "neighborhood", event.target.value)}
+              onChange={(event) =>
+                updateAddress(index, "neighborhood", event.target.value)
+              }
               required
             />
             <Input
               name={`address-city-${index}`}
               placeholder="Cidade"
               value={address.city}
-              onChange={(event) => updateAddress(index, "city", event.target.value)}
+              onChange={(event) =>
+                updateAddress(index, "city", event.target.value)
+              }
               required
             />
             <Input
@@ -693,14 +747,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
               name={`phone-area-code-${index}`}
               placeholder="DDD"
               value={phone.area_code}
-              onChange={(event) => updatePhone(index, "area_code", event.target.value)}
+              onChange={(event) =>
+                updatePhone(index, "area_code", event.target.value)
+              }
               required
             />
             <Input
               name={`phone-number-${index}`}
               placeholder="Número"
               value={phone.number}
-              onChange={(event) => updatePhone(index, "number", event.target.value)}
+              onChange={(event) =>
+                updatePhone(index, "number", event.target.value)
+              }
               required
             />
           </div>
@@ -725,7 +783,8 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
     return (
       <div className="space-y-6">
         <p className="text-zinc-600">
-          Informe os dados da conta bancária onde você receberá os pagamentos. A conta deve estar no nome do titular do cadastro (CPF/CNPJ).
+          Informe os dados da conta bancária onde você receberá os pagamentos. A
+          conta deve estar no nome do titular do cadastro (CPF/CNPJ).
         </p>
 
         <div className="grid md:grid-cols-2 gap-4">
@@ -755,7 +814,10 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
             name="type"
             value={bank.type}
             onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-              updateBankAccount("type", event.target.value as "checking" | "savings")
+              updateBankAccount(
+                "type",
+                event.target.value as "checking" | "savings"
+              )
             }
             options={[
               { value: "checking", name: "Conta Corrente" },
@@ -770,14 +832,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
             name="branch_number"
             placeholder="Número da agência"
             value={bank.branch_number}
-            onChange={(event) => updateBankAccount("branch_number", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("branch_number", event.target.value)
+            }
             required
           />
           <Input
             name="branch_check_digit"
             placeholder="Dígito da agência"
             value={bank.branch_check_digit ?? ""}
-            onChange={(event) => updateBankAccount("branch_check_digit", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("branch_check_digit", event.target.value)
+            }
             maxLength={2}
           />
           <div className="col-span-1" />
@@ -788,14 +854,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
             name="account_number"
             placeholder="Número da conta (sem dígito)"
             value={bank.account_number}
-            onChange={(event) => updateBankAccount("account_number", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("account_number", event.target.value)
+            }
             required
           />
           <Input
             name="account_check_digit"
             placeholder="Dígito verificador da conta"
             value={bank.account_check_digit}
-            onChange={(event) => updateBankAccount("account_check_digit", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("account_check_digit", event.target.value)
+            }
             maxLength={5}
             required
           />
@@ -806,14 +876,20 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
             name="holder_name"
             placeholder="Nome completo do titular"
             value={bank.holder_name}
-            onChange={(event) => updateBankAccount("holder_name", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("holder_name", event.target.value)
+            }
             required
           />
           <Input
             name="holder_document"
-            placeholder={formData.type_enum === "PJ" ? "CNPJ do titular" : "CPF do titular"}
+            placeholder={
+              formData.type_enum === "PJ" ? "CNPJ do titular" : "CPF do titular"
+            }
             value={bank.holder_document}
-            onChange={(event) => updateBankAccount("holder_document", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("holder_document", event.target.value)
+            }
             required
           />
         </div>
@@ -822,7 +898,10 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
           name="holder_type"
           value={bank.holder_type}
           onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-            updateBankAccount("holder_type", event.target.value as "individual" | "company")
+            updateBankAccount(
+              "holder_type",
+              event.target.value as "individual" | "company"
+            )
           }
           options={[
             { value: "individual", name: "Pessoa Física" },
@@ -845,7 +924,10 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
   const renderPartnersStep = () => (
     <div className="space-y-6">
       {formData.partners.map((partner, index) => (
-        <div key={`partner-${index}`} className="border rounded-lg p-4 space-y-3">
+        <div
+          key={`partner-${index}`}
+          className="border rounded-lg p-4 space-y-3"
+        >
           <div className="flex justify-between items-center">
             <p className="font-semibold">Sócio {index + 1}</p>
             {formData.partners.length > 1 && (
@@ -863,14 +945,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
               name={`partner-name-${index}`}
               placeholder="Nome completo"
               value={partner.name}
-              onChange={(event) => updatePartner(index, "name", event.target.value)}
+              onChange={(event) =>
+                updatePartner(index, "name", event.target.value)
+              }
               required
             />
             <Input
               name={`partner-email-${index}`}
               placeholder="Email"
               value={partner.email ?? ""}
-              onChange={(event) => updatePartner(index, "email", event.target.value)}
+              onChange={(event) =>
+                updatePartner(index, "email", event.target.value)
+              }
             />
           </div>
           <div className="grid md:grid-cols-3 gap-3">
@@ -878,7 +964,9 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
               name={`partner-document-${index}`}
               placeholder="CPF"
               value={partner.document}
-              onChange={(event) => updatePartner(index, "document", event.target.value)}
+              onChange={(event) =>
+                updatePartner(index, "document", event.target.value)
+              }
               required
             />
             <Input
@@ -886,7 +974,9 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
               type="date"
               placeholder="Nascimento"
               value={partner.birth_date ?? ""}
-              onChange={(event) => updatePartner(index, "birth_date", event.target.value)}
+              onChange={(event) =>
+                updatePartner(index, "birth_date", event.target.value)
+              }
             />
             <Input
               name={`partner-income-${index}`}
@@ -907,7 +997,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
             placeholder="Profissão / cargo"
             value={partner.professional_occupation ?? ""}
             onChange={(event) =>
-              updatePartner(index, "professional_occupation", event.target.value)
+              updatePartner(
+                index,
+                "professional_occupation",
+                event.target.value
+              )
             }
           />
           <label className="flex items-center gap-3 text-sm text-zinc-700">
@@ -915,7 +1009,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
               type="checkbox"
               checked={Boolean(partner.self_declared_legal_representative)}
               onChange={(event) =>
-                updatePartner(index, "self_declared_legal_representative", event.target.checked)
+                updatePartner(
+                  index,
+                  "self_declared_legal_representative",
+                  event.target.checked
+                )
               }
             />
             É representante legal da empresa
@@ -982,12 +1080,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted }: R
             Voltar
           </Button>
           <Button
-            style={stepIndex === visibleSteps.length - 1 ? "btn-success" : "btn-yellow"}
+            style={
+              stepIndex === visibleSteps.length - 1
+                ? "btn-success"
+                : "btn-yellow"
+            }
             type="button"
             loading={isSubmitting}
             onClick={handleNext}
           >
-            {stepIndex === visibleSteps.length - 1 ? "Enviar para análise" : "Continuar"}
+            {stepIndex === visibleSteps.length - 1
+              ? "Enviar para análise"
+              : "Continuar"}
           </Button>
         </div>
       </div>

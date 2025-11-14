@@ -2,7 +2,7 @@ import Product from "@/src/components/common/Product";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Image from "next/image";
 import Link from "next/link";
-import Partner from "@/src/components/common/Partner";
+import Partner from "@/src/components/common/ProductFeatures";
 import Template from "@/src/template";
 
 export default function Entregador() {

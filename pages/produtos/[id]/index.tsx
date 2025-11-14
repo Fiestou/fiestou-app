@@ -38,6 +38,7 @@ import ShareModal from "@/src/components/utils/ShareModal";
 import { RelationType } from "@/src/models/relation";
 import LikeButton from "@/src/components/ui/LikeButton";
 import RelatedProducts from "../components/related-products/RelatedProducts";
+import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
 import ProductCombinations from "../components/product-combinations/ProductCombinations";
 import TrustedPartnerBadge from "../components/trusted-partner-badge/TrustedPartnerBadge";
 import EasyCancelBadge from "../components/easy-cancel-badge/EasyCancelBadge";
@@ -134,7 +135,7 @@ export default function Produto({
   const [swiperInstance, setSwiperInstance] = useState(null as any);
 
   const [share, setShare] = useState(false as boolean);
-  const baseUrl = `https://fiestou.com.br/produtos/${product?.id}`;
+  const baseUrl = `https://fiestou.com.br${getProductUrl(product, store)}`;
   const [loadCart, setLoadCart] = useState(false as boolean);
   const [blockdate, setBlockdate] = useState(Array<string>());
 
@@ -193,8 +194,7 @@ export default function Produto({
             ? product?.store?.id
             : product?.store;
 
-        const zipSanitized =
-          sanitizedZip ?? cep.replace(/\D/g, "");
+        const zipSanitized = sanitizedZip ?? cep.replace(/\D/g, "");
         const zipFormatted = formatCep(zipSanitized);
 
         nextDetails.deliveryFee = fee;
@@ -362,27 +362,42 @@ export default function Produto({
     e.preventDefault();
     setLoadCart(true);
 
+    // pegar os dados
     if (AddToCart(productToCart)) {
       handleCart();
       setCartModal(true);
     } else {
-      setLoadCart(true);
+      setLoadCart(false);
     }
   };
 
-  const handleDetails = (detail: Object) => {
-    let details = { ...(productToCart?.details ?? {}), ...detail };
+  interface DetailsType {
+    dateStart?: Date;
+    dateEnd?: Date;
+    days?: number;
+    schedulingDiscount?: number;
+    [key: string]: any; // permite outros campos sem erro
+  }
+
+  const handleDetails = (detail: DetailsType) => {
+    const details: DetailsType = {
+      ...(productToCart?.details ?? {}),
+      ...detail,
+    };
 
     let days = 1;
-    let date_1: any = new Date(details?.dateStart?.toDateString() ?? "");
-    let date_2: any = new Date(details?.dateEnd?.toDateString() ?? "");
 
-    const timestampDate1 = date_1.getTime();
-    const timestampDate2 = date_2.getTime();
+    const date_1 = details?.dateStart ? new Date(details.dateStart) : null;
+    const date_2 = details?.dateEnd ? new Date(details.dateEnd) : null;
 
-    days = Math.round(
-      Math.abs(timestampDate1 - timestampDate2) / (24 * 60 * 60 * 1000)
-    );
+    if (date_1 && date_2) {
+      const timestampDate1 = date_1.getTime();
+      const timestampDate2 = date_2.getTime();
+
+      days = Math.round(
+        Math.abs(timestampDate1 - timestampDate2) / (24 * 60 * 60 * 1000)
+      );
+    }
 
     setDays(!!days ? days : 1);
 
@@ -392,7 +407,7 @@ export default function Produto({
         ...details,
         dateStart: dateFormat(details?.dateStart),
         dateEnd: dateFormat(details?.dateEnd),
-        days: days,
+        days,
         schedulingDiscount: product?.schedulingDiscount,
       },
     });
@@ -548,39 +563,6 @@ export default function Produto({
 
     setMatch(request?.data ?? []);
   };
-  //   return (
-  //     <Swiper
-  //       spaceBetween={16}
-  //       breakpoints={{
-  //         0: {
-  //           slidesPerView: 1,
-  //           centeredSlides: true,
-  //         },
-  //         640: {
-  //           slidesPerView: 2,
-  //           centeredSlides: false,
-  //         },
-  //         1024: {
-  //           slidesPerView: 4,
-  //           centeredSlides: false,
-  //         },
-  //       }}
-  //       modules={[Pagination, Navigation]}
-  //       className="swiper-equal"
-  //       navigation={{
-  //         nextEl: `.swiper-${type}-next`,
-  //         prevEl: `.swiper-${type}-prev`,
-  //       }}
-  //     >
-  //       {!!handleMatch.length &&
-  //         handleMatch.map((item: any, key: any) => (
-  //           <SwiperSlide key={key}>
-  //             <Product product={item} />
-  //           </SwiperSlide>
-  //         ))}
-  //     </Swiper>
-  //   );
-  // };
 
   const [productUpdated, setProductUpdated] = useState({} as ProductType);
   const getProductUpdated = async (identifier?: number | string) => {
@@ -638,7 +620,7 @@ export default function Produto({
           <div className="text-zinc-900">
             Fornecido por:{" "}
             <Link
-              href={`/${store?.slug}`}
+              href={getStoreUrl(store)}
               className="font-bold hover:underline"
             >
               {store?.title}
@@ -654,7 +636,7 @@ export default function Produto({
           <div className="grid gap-3">
             {!!product?.color && (
               <div className="flex items-center gap-3 text-zinc-900">
-                <div className="w-fit whitespace-nowrap pt-1">Cores:</div>
+                <div className="w-fit whitespace-nowrap">Cores:</div>
                 <div className="w-full flex items-center flex-wrap gap-1">
                   {ColorsList.map(
                     (color: any, key: any) =>
@@ -670,7 +652,7 @@ export default function Produto({
                 </div>
               </div>
             )}
-            <div className="w-fit whitespace-nowrap pt-1">Categorias:</div>
+            <div className="w-fit whitespace-nowrap">Categorias:</div>
             {!!categories?.length &&
               categories.map(
                 (category: any) =>
@@ -680,7 +662,7 @@ export default function Produto({
                       .map((cat: any) => cat.id)
                       .includes(child.id)
                   ).length && (
-                    <div key={category.id} className="flex gap-2 text-zinc-900">
+                    <div key={category.id} className="flex gap-2 text-zinc-950">
                       <div className="w-full flex items-center flex-wrap gap-1">
                         {!!category?.childs &&
                           category?.childs
@@ -704,7 +686,7 @@ export default function Produto({
               )}
 
             {!!product?.tags && (
-              <div className="flex gap-1 text-zinc-900">
+              <div className="flex items-center gap-1 text-zinc-900">
                 <div className="w-fit whitespace-nowrap">Tags:</div>
                 <div className="w-full flex items-center flex-wrap gap-1">
                   {product?.tags
@@ -765,7 +747,7 @@ export default function Produto({
         title: `${product?.title} - Produtos | ${DataSeo?.site_text}`,
         image: !!getImage(imageCover) ? getImage(imageCover) : "",
         description: DataSeo?.site_description,
-        url: `produtos/${product?.slug}`,
+        url: getProductUrl(product, store),
       }}
       header={{
         template: "default",
@@ -780,7 +762,7 @@ export default function Produto({
       <section className="">
         <div className="container-medium py-4 md:py-6">
           <Breadcrumbs
-            links={[{ url: `/produtos/${product?.id}`, name: "Produtos" }]}
+            links={[{ url: getProductUrl(product, store), name: "Produtos" }]}
           />
         </div>
       </section>
