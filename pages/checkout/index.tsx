@@ -19,7 +19,7 @@ import { AddressType } from "@/src/models/address";
 import { ProductOrderType, ProductType } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
 import { OrderType } from "@/src/models/order";
-import Partner from "@/src/components/common/ProductFeatures";
+import Partner from "@/src/components/common/Partner";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
@@ -1227,7 +1227,7 @@ export default function Checkout({
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {storesList.map((store: any, key: any) => (
                       <div key={key}>
-                        <Partner {...store} />
+                        <Partner params={store} />
                       </div>
                     ))}
                   </div>
