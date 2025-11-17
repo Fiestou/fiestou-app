@@ -13,20 +13,6 @@ import FileManager from "@/src/components/ui/form/FileManager";
 import axios from "axios";
 import { shortId } from "@/src/helper";
 
-export async function getServerSideProps({
-  query,
-}: {
-  query: NextApiRequest["query"];
-}) {
-  const { id } = query;
-
-  return {
-    props: {
-      id: id,
-    },
-  };
-}
-
 const formInitial = {
   sended: false,
   loading: false,
@@ -78,30 +64,44 @@ export default function Form() {
     e.preventDefault();
     setFormValue({ loading: true });
 
-    const handle = { ...content };
-    const request: any = await api.bridge({
+    const response: any = await api.bridge({
       method: "post",
       url: "admin/content/register",
       data: {
         type: "blog",
         id: content.id ?? null,
         title: content?.title ?? `content-${shortId()}`,
-        slug: content?.title ?? null,
+        slug: content?.slug ?? null,
         status: content?.status,
         content: {
-          image: handle.image,
-          blocks: handle.blocks,
+          image: content.image,
+          blocks: content.blocks,
         },
       },
     });
 
-    await handleCache();
-    setContent(handle);
+    // Agora o backend devolve o slug correto
+    if (response?.data) {
+      // Atualiza o estado com o conteúdo REAL vindo do backend
+      setContent(response.data);
 
-    if (request.response) {
-      router.push({ pathname: "/admin/blog" });
+      // Limpando cache automaticamente
+      try {
+        await axios.get("/api/cache", {
+          params: {
+            route: `/blog/${response.data.slug}`,
+          },
+        });
+        console.log("Cache limpo automaticamente!");
+      } catch (error: any) {
+        console.error("Erro ao limpar cache:", error.message);
+      }
+    }
+
+    if (response.response) {
+      router.push("/admin/blog");
     } else {
-      setFormValue({ loading: false, sended: request.response });
+      setFormValue({ loading: false, sended: response.response });
     }
   };
 
@@ -150,10 +150,8 @@ export default function Form() {
                   <Link
                     href={`/api/cache?route=/blog/${content.slug}&redirect=/blog/${content.slug}`}
                     target="_blank"
-                    className="whitespace-nowrap flex items-center gap-2 ease hover:text-zinc-950 font-semibold"
                   >
                     Limpar cache
-                    <Icon icon="fa-sync" className="text-xs mt-1" />
                   </Link>
                 )}
               </div>
@@ -167,7 +165,9 @@ export default function Form() {
                     />
                   </Link>
                   <div className="font-title font-bold text-2xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                    {id !== "form" ? "Editar: " + content.title : "Criar novo post"}
+                    {id !== "form"
+                      ? "Editar: " + content.title
+                      : "Criar novo post"}
                   </div>
                 </div>
               </div>
