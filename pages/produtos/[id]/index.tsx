@@ -674,7 +674,7 @@ export default function Produto({
                             .map((child: RelationType) => (
                               <Link
                                 key={child.id}
-                                href={`/produtos/listagem/?categoria=${child.slug}`}
+                                href={`/produtos/listagem/?busca=${encodeURIComponent(child.title)}`}
                                 className="bg-zinc-100 hover:bg-zinc-200 py-1 px-2 rounded ease"
                               >
                                 {child.title}
