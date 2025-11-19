@@ -32,14 +32,14 @@ export default function Clientes({ store }: { store: any }) {
       },
     });
 
-    setClients(request.data);
+    setClients(request.data || []);
   };
 
   useEffect(() => {
     if (!!window) {
       relationship();
     }
-  });
+  }, []);
 
   return (
     <Template
