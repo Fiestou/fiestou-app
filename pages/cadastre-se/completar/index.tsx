@@ -11,6 +11,7 @@ import { UserType } from "@/src/models/user";
 import { AuthContext } from "@/src/contexts/AuthContext";
 import { CheckMail } from "@/src/models/CheckEmail";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import ReCaptchaWrapper from "@/src/components/common/ReCaptchaWrapper";
 
 export async function getServerSideProps(ctx: any) {
   const session: any = await getSession(ctx);
@@ -31,7 +32,7 @@ export async function getServerSideProps(ctx: any) {
   };
 }
 
-export default function Completar({ auth }: any) {
+function CompletarPage({ auth }: any) {
   const { UserLogout } = useContext(AuthContext);
   const { executeRecaptcha } = useGoogleReCaptcha();
 
@@ -184,5 +185,13 @@ export default function Completar({ auth }: any) {
         </div>
       </div>
     </Template>
+  );
+}
+
+export default function Completar(props: any) {
+  return (
+    <ReCaptchaWrapper>
+      <CompletarPage {...props} />
+    </ReCaptchaWrapper>
   );
 }

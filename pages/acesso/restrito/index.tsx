@@ -7,6 +7,7 @@ import { FormEvent, useContext, useState } from "react";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import { AuthContext } from "@/src/contexts/AuthContext";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import ReCaptchaWrapper from "@/src/components/common/ReCaptchaWrapper";
 
 interface PageQueryType {
   ref: string | "";
@@ -19,7 +20,7 @@ const FormInitialType = {
   password: "",
 };
 
-export default function Restrito() {
+function RestritoPage() {
   const { SignIn } = useContext(AuthContext);
   const { executeRecaptcha } = useGoogleReCaptcha();
 
@@ -134,5 +135,13 @@ export default function Restrito() {
         </div>
       </div>
     </Template>
+  );
+}
+
+export default function Restrito() {
+  return (
+    <ReCaptchaWrapper>
+      <RestritoPage />
+    </ReCaptchaWrapper>
   );
 }

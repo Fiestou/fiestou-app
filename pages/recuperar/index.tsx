@@ -5,6 +5,7 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useState } from "react";
 import Api from "@/src/services/api";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import ReCaptchaWrapper from "@/src/components/common/ReCaptchaWrapper";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -35,7 +36,7 @@ const formInitial = {
   email: "",
 };
 
-export default function Recuperar({
+function RecuperarPage({
   DataSeo,
   Scripts,
 }: {
@@ -157,5 +158,13 @@ export default function Recuperar({
         </div>
       </div>
     </Template>
+  );
+}
+
+export default function Recuperar(props: any) {
+  return (
+    <ReCaptchaWrapper>
+      <RecuperarPage {...props} />
+    </ReCaptchaWrapper>
   );
 }

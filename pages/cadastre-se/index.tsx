@@ -10,6 +10,7 @@ import { Button, Input, Label } from "@/src/components/ui/form";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { CheckMail } from "@/src/models/CheckEmail";
 import { formatName, formatPhone, formatCpfCnpj, formatCep, validateEmail } from "../../src/components/utils/FormMasks";
+import ReCaptchaWrapper from "@/src/components/common/ReCaptchaWrapper";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -42,7 +43,7 @@ const FormInitialType = {
   redirect: "login",
 };
 
-export default function CadastreSe({
+function CadastreSePage({
   Register,
   DataSeo,
   Scripts,
@@ -383,5 +384,13 @@ export default function CadastreSe({
         `}
       </style>
     </Template>
+  );
+}
+
+export default function CadastreSe(props: any) {
+  return (
+    <ReCaptchaWrapper>
+      <CadastreSePage {...props} />
+    </ReCaptchaWrapper>
   );
 }

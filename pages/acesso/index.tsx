@@ -12,6 +12,7 @@ import NextAuth from "@/src/components/pages/acesso/NextAuth";
 import { getSession } from "next-auth/react";
 import { AuthContext } from "@/src/contexts/AuthContext";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import ReCaptchaWrapper from "@/src/components/common/ReCaptchaWrapper";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -49,7 +50,7 @@ const formInitial = {
   alert: "" 
 };
 
-export default function Acesso({
+function AcessoPage({
   modal,
   DataSeo,
   Scripts,
@@ -287,5 +288,13 @@ export default function Acesso({
         </div>
       </Modal>
     </Template>
+  );
+}
+
+export default function Acesso(props: any) {
+  return (
+    <ReCaptchaWrapper>
+      <AcessoPage {...props} />
+    </ReCaptchaWrapper>
   );
 }
