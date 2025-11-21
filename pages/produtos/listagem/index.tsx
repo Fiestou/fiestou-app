@@ -2,6 +2,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/filters/Filter";
 import Newsletter from "@/src/components/common/Newsletter";
 import Product from "@/src/components/common/Product";
+import SuggestedProducts from "@/src/components/common/SuggestedProducts";
 import { getImage, getQueryUrlParams } from "@/src/helper";
 import { ProductType } from "@/src/models/product";
 import Api from "@/src/services/api";
@@ -60,6 +61,8 @@ export default function Listagem({
   const [placeholder, setPlaceholder] = useState(true as boolean);
   const [filters, setFilters] = useState<any>({});
   const [products, setProducts] = useState([] as Array<ProductType>);
+  const [suggestions, setSuggestions] = useState([] as Array<ProductType>);
+  const [selectedColors, setSelectedColors] = useState([] as string[]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const activeRequest = useRef(0);
   const observerRef = useRef<HTMLDivElement | null>(null);
@@ -148,8 +151,15 @@ export default function Listagem({
         }
 
         const items = (response?.data ?? []) as ProductType[];
+        const suggestedItems = (response?.suggestions ?? []) as ProductType[];
+        const colorsFromApi = (response?.colors ?? []) as string[];
 
         setProducts((prev) => (replace ? items : [...prev, ...items]));
+
+        if (replace) {
+          setSuggestions(suggestedItems);
+          setSelectedColors(colorsFromApi);
+        }
 
         if (items.length >= limit) {
           setPage(nextPage + 1);
@@ -275,14 +285,19 @@ export default function Listagem({
           </div>
         ) : (
           <>
-            {!!products.length || !placeholder ? (
+            {!!products.length ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
-                {!!products.length &&
-                  products.map((item, key) => (
-                    <div key={key}>
-                      <Product product={item} />
-                    </div>
-                  ))}
+                {products.map((item, key) => (
+                  <div key={key}>
+                    <Product product={item} />
+                  </div>
+                ))}
+              </div>
+            ) : selectedColors.length > 0 && suggestions.length > 0 ? (
+              <div className="text-center py-12 opacity-80">
+                <div className="text-2xl font-semibold font-title pb-2">
+                  Não encontramos resultados para sua busca
+                </div>
               </div>
             ) : (
               <div className="text-center py-20 opacity-70">
@@ -302,6 +317,15 @@ export default function Listagem({
         )}
       </section>
 
+
+      {/* Sugestões de produtos com cores selecionadas */}
+      {suggestions.length > 0 && selectedColors.length > 0 && (
+        <SuggestedProducts
+          products={suggestions}
+          colors={selectedColors}
+          title="Você também pode gostar"
+        />
+      )}
 
       {/* 👇 Botão de scroll top */}
       {showScrollTop && (
