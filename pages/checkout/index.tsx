@@ -1,7 +1,7 @@
 import Template from "@/src/template";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   dateBRFormat,
   findDates,
@@ -18,12 +18,10 @@ import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
 import { ProductOrderType, ProductType } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
-import { OrderType } from "@/src/models/order";
 import Partner from "@/src/components/common/Partner";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
-
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
@@ -36,6 +34,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DeliveryItem } from "@/src/types/filtros";
 import Img from "@/src/components/utils/ImgBase";
+import { registerOrder as registerOrderService } from "@/src/services/order";
 
 const FormInitialType = {
   sended: false,
@@ -116,6 +115,7 @@ export async function getServerSideProps(ctx: any) {
     },
     ctx
   );
+
 
   const DataSeo: any = request?.data?.DataSeo ?? {};
   const Scripts: any = request?.data?.Scripts ?? {};
@@ -280,22 +280,18 @@ export default function Checkout({
       return;
     }
 
-    console.log('🛒 Checkout - Cart inicial recebido do servidor:', cart);
 
     const initialFees = extractDeliveryFees(cart);
-    console.log('💰 Checkout - Taxas extraídas:', initialFees);
-
+    
     if (initialFees.length) {
       const normalized = normalizeDeliveryItems(initialFees);
       setDeliveryPrice(normalized);
-      console.log('✅ Checkout - Frete definido:', normalized);
 
       const zipHolder = cart.find(
         (item: any) =>
           item?.details?.deliveryZipCode ?? item?.details?.deliveryZipCodeFormatted
       );
 
-      console.log('📍 Checkout - Item com CEP:', zipHolder);
 
       const cartZip = zipHolder
         ? justNumber(
@@ -305,12 +301,10 @@ export default function Checkout({
           )
         : "";
 
-      console.log('📮 Checkout - CEP extraído:', cartZip);
 
       if (cartZip.length === 8) {
         // Marca o CEP como já buscado para evitar recálculo desnecessário
         lastFetchedZipRef.current = cartZip;
-        console.log('✅ Checkout - CEP marcado como buscado:', cartZip);
         // Não seta o address aqui - deixa o useEffect de cartDeliveryZip fazer isso (linha 521-536)
       }
     } else {
@@ -462,9 +456,6 @@ export default function Checkout({
   };
 
   const deliverySummary = useMemo(() => {
-    console.log('💼 Calculando deliverySummary com deliveryPrice:', deliveryPrice);
-    console.log('🏪 Lojas disponíveis (storesById):', Array.from(storesById.entries()));
-
     const entries: DeliverySummaryEntry[] = [];
     const seenStores = new Set<number>();
 
@@ -472,23 +463,18 @@ export default function Checkout({
       const storeId = Number(item?.store_id);
       const price = Number(item?.price);
 
-      console.log('🔍 Processando item:', { storeId, price, item });
-
       if (!Number.isFinite(storeId) || !Number.isFinite(price)) {
-        console.log('❌ Item inválido (não é número finito)');
         return;
       }
 
       if (seenStores.has(storeId)) {
-        console.log('⚠️ Loja já processada:', storeId);
         return;
       }
 
       seenStores.add(storeId);
 
       const store = storesById.get(storeId);
-      console.log('🏪 Loja encontrada para ID', storeId, ':', store);
-
+     
       let storeLogoUrl: string | null = null;
 
       if (store && typeof (store as any)?.profile === "object" && (store as any).profile !== null) {
@@ -506,7 +492,6 @@ export default function Checkout({
         storeLogoUrl,
       };
 
-      console.log('✅ Entry criado:', entry);
       entries.push(entry);
     });
 
@@ -521,7 +506,7 @@ export default function Checkout({
       missingStoreIds,
     };
 
-    console.log('📊 deliverySummary final:', result);
+  
 
     return result;
   }, [deliveryPrice, storesById]);
@@ -555,19 +540,17 @@ export default function Checkout({
 
       // Se o CEP já está preenchido e é o mesmo do carrinho, não faz nada
       if (currentZip === cartDeliveryZip) {
-        console.log('✅ CEP do carrinho já está no endereço:', cartDeliveryZip);
         return;
       }
 
-      console.log('🔍 Buscando endereço automaticamente para CEP do carrinho:', cartDeliveryZip);
+      
 
       try {
         // Busca os dados do endereço pela API do ViaCEP
         const location = await getZipCode(cartDeliveryZip);
 
         if (!location?.erro) {
-          console.log('✅ Endereço encontrado:', location);
-
+      
           // Popula todos os campos do endereço automaticamente
           setAddress((prevAddress) => ({
             ...prevAddress,
@@ -580,9 +563,8 @@ export default function Checkout({
             main: true,
           }));
 
-          console.log('✅ Endereço preenchido automaticamente do carrinho!');
         } else {
-          console.log('⚠️ CEP do carrinho não encontrado na API, apenas preenchendo o campo:', cartDeliveryZip);
+         
 
           // Mesmo que não encontre o endereço, preenche o CEP
           setAddress((prevAddress) => ({
@@ -615,26 +597,26 @@ export default function Checkout({
   useEffect(() => {
     const sanitizedZip = justNumber(address?.zipCode ?? "");
 
-    console.log('🔄 useEffect address.zipCode disparou:', { sanitizedZip, lastFetched: lastFetchedZipRef.current, currentDeliveryPrice: deliveryPrice });
+  
 
     // Se o CEP está incompleto MAS já temos um lastFetched válido, não limpa
     if (sanitizedZip.length < 8) {
       if (lastFetchedZipRef.current && lastFetchedZipRef.current.length === 8) {
-        console.log('⚠️ CEP incompleto mas já temos dados do carrinho, mantendo deliveryPrice');
+      
         return; // Mantém os dados do carrinho
       }
-      console.log('🧹 Limpando deliveryPrice pois CEP < 8 e sem dados do carrinho');
+   
       setDeliveryPrice([]);
       lastFetchedZipRef.current = null;
       return;
     }
 
     if (lastFetchedZipRef.current === sanitizedZip) {
-      console.log('✅ CEP já foi buscado, pulando recálculo');
+     
       return;
     }
 
-    console.log('🔍 Buscando frete para novo CEP:', sanitizedZip);
+  
     lastFetchedZipRef.current = sanitizedZip;
 
     const getShippingPrice = async () => {
@@ -732,9 +714,13 @@ export default function Checkout({
 
   const deliveryTotal = deliverySummary.total;
 
+
+
   const submitOrder = async (e: any) => {
     e.preventDefault();
 
+
+      
     if (!formattedAddressZip) {
       toast.error("Informe um CEP válido para calcular o frete.");
       return;
@@ -749,6 +735,8 @@ export default function Checkout({
       toast.error("Ainda falta calcular o frete para todos os fornecedores.");
       return;
     }
+
+ 
 
     setForm({ ...form, loading: true });
 
@@ -779,6 +767,9 @@ export default function Checkout({
           details: handle,
         };
 
+        const qty = Number(cartItem.quantity) || 1;
+        const unitPrice = Number(cartItem.total) / qty;
+
         listItems.push({
           attributes: cartItem.attributes,
           details: cartItem.details,
@@ -794,7 +785,8 @@ export default function Checkout({
             schedulingTax: product?.schedulingTax ?? "",
             schedulingPeriod: product?.schedulingPeriod ?? "",
           },
-          quantity: cartItem.quantity,
+          quantity: qty,
+          unit_price: unitPrice,
           total: cartItem.total,
         });
 
@@ -802,35 +794,37 @@ export default function Checkout({
       }
     });
 
-    const order: OrderType = {
-      user: user,
-      listItems: listItems,
-      platformCommission: platformCommission,
-      total: resume.total,
-      deliverySchedule: schedule,
+    const payload = {
       deliveryAddress: address,
-      deliveryTo: deliveryTo,
-      deliveryPrice: deliverySummary.total,
-      deliveryStatus: "pending",
-      status: -1,
+      listItems,
       freights: {
-        zipcode: address?.zipCode,
+        zipcode: justNumber(address?.zipCode ?? ""),
         productsIds: listItems.map((item: any) => item.product.id),
       },
+      platformCommission,
+      deliverySchedule: schedule,
+      deliveryStatus: "pending",
+      deliveryTo,
     };
 
-    const registerOrder: any = await api.bridge({
-      method: "post",
-      url: "orders/register",
-      data: order,
-    });
+    try {
+      const created: any = await registerOrderService(payload);
+      console.log("Pedido registrado com sucesso:", created);
+      const firstId = created?.orders?.[0]?.id;
 
-    if (!!registerOrder.response && !!registerOrder?.data?.id) {
-      Cookies.remove("fiestou.cart");
-      window.location.href = `/dashboard/pedidos/pagamento/${registerOrder?.data?.id}`;
+      if (firstId) {
+        Cookies.remove("fiestou.cart");
+        window.location.href = `/dashboard/pedidos/pagamento/${firstId}`;
+        return;
+      }
+
+      toast.error("Não foi possível criar seu pedido. Tente novamente.");
+    } catch (err) {
+      console.error("Erro ao registrar pedido:", err);
+      toast.error("Erro ao registrar o pedido.");
+    } finally {
+      setForm({ ...form, loading: false });
     }
-
-    setForm({ ...form, loading: false });
   };
 
   useEffect(() => {
@@ -866,13 +860,6 @@ export default function Checkout({
   }, [address?.zipCode]);
 
   const renderDeliveryPrice = () => {
-    console.log('🎨 renderDeliveryPrice chamado:', {
-      formattedAddressZip,
-      'address.zipCode': address?.zipCode,
-      loadingDeliveryPrice,
-      'deliverySummary.entries': deliverySummary.entries,
-      'deliverySummary.total': deliverySummary.total,
-    });
 
     if (!formattedAddressZip && deliverySummary.entries.length === 0) {
       return (
@@ -883,20 +870,17 @@ export default function Checkout({
     }
 
     if (loadingDeliveryPrice) {
-      console.log('⏳ Mostrando "Calculando frete..."');
       return <span className="text-sm text-zinc-500">Calculando frete...</span>;
     }
 
     if (!deliverySummary.entries.length) {
-      console.log('❌ Nenhuma entry encontrada, mostrando erro');
       return (
         <span className="text-sm text-red-500">
           Não conseguimos calcular o frete para este CEP.
         </span>
       );
     }
-
-    console.log('✅ Renderizando lista de lojas:', deliverySummary.entries);
+;
 
     const missingStoresNames = deliverySummary.missingStoreIds
       .map((id) => {
@@ -1385,7 +1369,7 @@ export default function Checkout({
                           </Button>
                         ) : (
                           <button
-                            type="button"
+                            type="submit"
                             className="w-full bg-green-500/40 text-white border border-transparent py-4 text-base font-semibold rounded-lg cursor-not-allowed"
                           >
                             Confirmar e efetuar pagamento

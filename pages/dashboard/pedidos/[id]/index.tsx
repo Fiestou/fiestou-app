@@ -115,117 +115,136 @@ export default function Pedido({
   const [resume, setResume] = useState({} as any);
 
   const renderDelivery = () => {
-    let checked = false;
+    if (!order?.id) return null;
 
-    let render = [];
+    const valid = deliveryTypes.filter(
+      (item) => !["canceled", "returned"].includes(item.value)
+    );
 
-    render.push(
-      <div key={order.id} className="relative flex pb-8">
+    const active = valid.findIndex(
+      (step) => step.value === order.delivery_status
+    );
+
+    const TodayStep = (
+      <div className="relative flex pb-8">
         <div className="absolute top-0 left-0 border-l-2 border-dashed h-full ml-3"></div>
-        <div className="w-fit relative">
-          <div className="p-3 relative bg-green-400 rounded-full">
+        <div className="w-fit">
+          <div className="p-3 bg-green-500 rounded-full relative">
             <Icon
               icon="fa-check"
-              className="text-white absolute text-xs mt-[1px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-              type="far"
+              className="absolute text-white text-xs top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
             />
           </div>
         </div>
         <div className="w-full pl-3">
           <div className="font-bold text-zinc-900">
-            Pedido realizado - {getShorDate(order.created_at)}
+            Pedido realizado - {getShorDate(order.createdAt)}
           </div>
-          <div className="text-sm">Seu pedido já está em nosso sistema.</div>
+          <div className="text-sm">Seu pedido foi registrado.</div>
         </div>
       </div>
     );
 
-    const validDeliveryTypes = deliveryTypes.filter(
-      (item: any) => !["canceled", "returned"].includes(item.value)
-    );
-    const checkedLevel = validDeliveryTypes
-      .map((item: any) => item.value)
-      .indexOf(order.deliveryStatus);
+    return (
+      <>
+        {TodayStep}
 
-    validDeliveryTypes.map((item: any, key) => {
-      render.push(
-        <div
-          key={key}
-          className={`${checkedLevel < key && "opacity-40"} relative flex`}
-        >
-          <div className="w-fit relative bg-white">
-            {validDeliveryTypes.length - 1 != key && (
-              <div className="absolute top-0 left-0 w-full h-full">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 border-l-2 border-dashed h-full"></div>
+        {valid.map((step, index) => {
+          const isCompleted = index < active;
+          const isCurrent = index === active;
+
+          const circleColor = isCompleted
+            ? "bg-green-500"
+            : isCurrent
+              ? "bg-yellow-400"
+              : "bg-zinc-400";
+
+          return (
+            <div key={step.value} className="relative flex pb-8">
+              {index !== valid.length - 1 && (
+                <div className="absolute top-0 left-0 border-l-2 border-dashed h-full ml-3"></div>
+              )}
+
+              <div className="w-fit">
+                <div className="p-3 rounded-full relative">
+                  <div className={`${circleColor} p-3 rounded-full relative`}>
+                    {isCompleted && (
+                      <Icon
+                        icon="fa-check"
+                        className="absolute text-white text-xs top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-            <div className={`bg-white relative rounded-full`}>
+
               <div
-                className={`${
-                  key < checkedLevel
-                    ? "bg-green-400"
-                    : checkedLevel == key
-                    ? "bg-yellow-300"
-                    : "bg-zinc-400"
-                } p-3 rounded-full relative`}
+                className={`w-full pl-3 ${index > active ? "opacity-40" : ""
+                  }`}
               >
-                {(checkedLevel > key ||
-                  checkedLevel == validDeliveryTypes.length - 1) && (
-                  <Icon
-                    icon="fa-check"
-                    className="text-white absolute text-xs mt-[1px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                    type="far"
-                  />
-                )}
+                <div className="font-bold text-zinc-900">{step.name}</div>
+                <div className="text-sm">{step.description}</div>
               </div>
             </div>
-          </div>
-          <div className="w-full pl-3 pb-8">
-            <div className="font-bold text-zinc-900">{item.name}</div>
-            <div className="text-sm">{item.description}</div>
-          </div>
-        </div>
-      );
-    });
-
-    return render;
+          );
+        })}
+      </>
+    );
   };
-
-  const getOrder = async (attempts?: number) => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "orders/get",
-      data: {
-        id: orderId,
-      },
+  
+  const getOrder = async () => {
+    const request: any = await api.bridge({
+      method: "get",
+      url: "order/" + orderId,
     });
 
-    if (!request?.response) {
+    const fetchedOrder: OrderType =
+      request?.data?.data ?? request?.data ?? ({} as OrderType);
+
+    if (!fetchedOrder?.id) {
       return {
         redirect: {
           permanent: false,
-          destination: "/dashboard/pedidos",
         },
       };
     }
 
-    const handle: OrderType = request?.data ?? {};
+    // ------------------------------
+    // 1. Produtos (fonte do item)
+    // ------------------------------
+    const products = fetchedOrder.items?.map((item) => item.productId) ?? [];
 
-    let dates: any = [];
-    let products: any = [];
+    setProducts(products);
 
-    handle.listItems?.map((item: any) => {
-      dates.push(item.details.dateStart);
-      products.push(item.product);
+    // ------------------------------
+    // 2. Datas do agendamento
+    // ------------------------------
+    const dates: string[] = [];
+
+    fetchedOrder.items?.forEach((item) => {
+      const rawDetails = item.metadata?.raw_item?.details;
+
+      if (rawDetails?.dateStart) dates.push(rawDetails.dateStart);
+      if (rawDetails?.dateEnd) dates.push(rawDetails.dateEnd);
     });
+
+    // fallback para pedidos novos
+    if (dates.length === 0 && fetchedOrder.metadata?.scheduleStart) {
+      dates.push(fetchedOrder.metadata.scheduleStart);
+      dates.push(
+        fetchedOrder.metadata.scheduleEnd ?? fetchedOrder.metadata.scheduleStart
+      );
+    }
 
     setResume({
       startDate: findDates(dates).minDate,
       endDate: findDates(dates).maxDate,
-    } as any);
+    });
 
-    setOrder(handle);
-    setProducts(products);
+    // ------------------------------
+    // 3. Salva o pedido completo
+    // ------------------------------
+    setOrder(fetchedOrder);
   };
 
   const initialized = useRef(false);
@@ -330,10 +349,10 @@ export default function Pedido({
                             </div>
                             <div className="grid gap-1 w-full">
                               <div className="font-title text-lg font-bold text-zinc-900">
-                              <Link href={`/produtos/${product?.id}`}>
-                                {product.title}
-                              </Link>
-                            </div>
+                                <Link href={`/produtos/${product?.id}`}>
+                                  {product.title}
+                                </Link>
+                              </div>
                               <div className="text-sm">
                                 {!!product.sku && (
                                   <>
@@ -417,22 +436,22 @@ export default function Pedido({
                           Pedido nº <b>{order.id}</b>
                         </div>
                         <div className="">
-                          Realizado em {getShorDate(order.created_at)}
+                          Realizado em {getShorDate(order.createdAt)}
                         </div>
                         <div className="">
                           Agendado para: {dateBRFormat(resume.startDate)}{" "}
                           {resume.endDate != resume.startDate
                             ? `- ${dateBRFormat(resume.endDate)}`
                             : ""}{" "}
-                          |{order.deliverySchedule}
-                        </div>
-                        <div className="">
-                          Valor de entrega:{" "}
-                          {!!order?.deliveryPrice
-                            ? `R$ ${moneyFormat(order.deliveryPrice)}`
-                            : "Gratuita"}
-                        </div>
+                          |{order.delivery_schedule}
                       </div>
+                      <div className="">
+                        Valor de entrega:{" "}
+                        {!!order?.delivery_price
+                            ? `R$ ${moneyFormat(order.delivery_price)}`
+                            : "Gratuita"}
+                      </div>
+                    </div>
 
                       <div>
                         <hr className="my-0" />
@@ -444,18 +463,18 @@ export default function Pedido({
                         </div>
                         <div className="text-sm">
                           <div>
-                            {order?.deliveryAddress?.street},{" "}
-                            {order?.deliveryAddress?.number}
+                            {order?.delivery_address?.street},{" "}
+                            {order?.delivery_address?.number}
                           </div>
-                          <div>{order?.deliveryAddress?.neighborhood}</div>
-                          <div>CEP: {order?.deliveryAddress?.zipCode}</div>
+                          <div>{order?.delivery_address?.neighborhood}</div>
+                          <div>CEP: {order?.delivery_address?.zipCode}</div>
                           <div>
-                            {order?.deliveryAddress?.city} |{" "}
-                            {order?.deliveryAddress?.state} -{" "}
-                            {order?.deliveryAddress?.country}
+                            {order?.delivery_address?.city} |{" "}
+                            {order?.delivery_address?.state} -{" "}
+                            {order?.delivery_address?.country}
                           </div>
                           <div>
-                            complemento: {order?.deliveryAddress?.complement}
+                            complemento: {order?.delivery_address?.complement}
                           </div>
                         </div>
                       </div>
@@ -473,7 +492,7 @@ export default function Pedido({
                             </div>
                             <div className="text-sm flex items-center gap-2">
                               {!!order.metadata?.payment_method &&
-                              order.metadata?.payment_method == "pix" ? (
+                                order.metadata?.payment_method == "pix" ? (
                                 <>
                                   <Img
                                     src="/images/pagarme/pix-icon.png"
@@ -519,14 +538,14 @@ export default function Pedido({
                           <div className="flex gap-2">
                             <div className="w-full">Subtotal de produtos</div>
                             <div className="whitespace-nowrap">
-                              R$ {moneyFormat(order.total)}
+                              R$ {moneyFormat(order.subtotal)}
                             </div>
                           </div>
                           <div className="flex gap-2">
                             <div className="w-full">Frete</div>
                             <div className="whitespace-nowrap">
-                              {!!order.deliveryPrice
-                                ? `R$ ${moneyFormat(order.deliveryPrice)}`
+                              {!!order.delivery_price
+                                ? `R$ ${moneyFormat(order.delivery_price)}`
                                 : "Grátis"}
                             </div>
                           </div>
@@ -648,11 +667,10 @@ export default function Pedido({
                           <Icon
                             icon="fa-star"
                             type={rate.rate >= value ? "fa" : "fal"}
-                            className={`${
-                              rate.rate >= value
-                                ? "text-yellow-400"
-                                : "text-gray-400"
-                            }  ease text-lg hover:text-yellow-600`}
+                            className={`${rate.rate >= value
+                              ? "text-yellow-400"
+                              : "text-gray-400"
+                              }  ease text-lg hover:text-yellow-600`}
                           />
                         </label>
                       ))}

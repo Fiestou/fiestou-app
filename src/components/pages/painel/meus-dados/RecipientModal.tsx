@@ -3,6 +3,7 @@ import Link from "next/link";
 import Modal from "@/src/components/utils/Modal";
 import { Button, Input, Select } from "@/src/components/ui/form";
 import {
+  AddressType,
   RecipientAddress,
   RecipientBankAccount,
   RecipientConfig,
@@ -10,18 +11,20 @@ import {
   RecipientPartner,
   RecipientPhone,
   RecipientStatusResponse,
+  RecipientType,
   RecipientTypeEnum,
-} from "@/src/models/recipient";
+  PhoneType,
+} from "@/src/models/Recipient";
 import { UserType } from "@/src/models/user";
 import { toast } from "react-toastify";
-import { saveRecipientDraft } from "@/src/services/recipients";
 import { justNumber, maskHandle, formatCPF, formatCNPJ } from "@/src/helper";
+import { createRecipient } from "@/src/services/recipients";
 
 interface RecipientModalProps {
   open: boolean;
   onClose: () => void;
   status?: RecipientStatusResponse | null;
-  onCompleted?: (recipient: RecipientEntity) => void;
+  onCompleted?: (recipient: RecipientType) => void;
   user?: UserType;
   store?: any;
 }
@@ -124,7 +127,7 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     return cleanDoc.length === 14 ? "PJ" : "PF";
   }, [user?.id, user?.cpf, user?.document]);
 
-  // Previne erro de hidratação SSR
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -147,45 +150,112 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     }
 
     if (status?.recipient) {
-      const recipient = status.recipient;
-      const remoteConfig = (recipient as RecipientEntity).configs ?? recipient.config ?? null;
+      const recipient = status.recipient as RecipientType;
+
+      const remoteConfig =
+        (recipient as any).configs ?? recipient.config ?? null;
+
       setFormData({
         ...buildInitialForm(),
-        ...recipient,
+        // tipo do usuário
         type_enum: userType,
+
         email: user?.email || recipient.email || "",
         document: user?.cpf || user?.document || recipient.document || "",
         name: user?.name || recipient.name || "",
         birth_date: user?.date || recipient.birth_date || "",
-        addresses: [],
-        phones: [],
+
+        company_name:
+          userType === "PJ"
+            ? (recipient.company_name ?? "") || (store?.companyName ?? "") || ""
+            : null,
+
+        trading_name:
+          userType === "PJ"
+            ? (recipient.trading_name ?? "") || (store?.title ?? "") || ""
+            : null,
+
+        annual_revenue: recipient.annual_revenue
+          ? Number(recipient.annual_revenue)
+          : null,
+
+        monthly_income: recipient.monthly_income
+          ? Number(recipient.monthly_income)
+          : null,
+
+        professional_occupation: recipient.professional_occupation || "",
+
+        // endereços vindos do back, convertidos pro tipo do form
+        addresses:
+          recipient.addresses?.map((addr: AddressType) => ({
+            id: addr.id,
+            type: "Recipient" as const,
+            partner_document: addr.partner_document ?? "",
+            street: addr.street ?? "",
+            complementary: addr.complementary ?? "",
+            street_number: addr.street_number ?? "",
+            neighborhood: addr.neighborhood ?? "",
+            city: addr.city ?? "",
+            state: addr.state ?? "",
+            zip_code: addr.zip_code ?? "",
+            reference_point: addr.reference_point ?? "",
+          })) ?? [createAddress()],
+
+        phones:
+          recipient.phones?.map((phone: PhoneType) => ({
+            id: phone.id,
+            type: "Recipient" as const,
+            partner_document: phone.partner_document ?? "",
+            area_code: phone.area_code ?? "",
+            number: phone.number ?? "",
+          })) ?? [createPhone()],
+
         partners:
-          recipient.partners?.map((partner) => ({
-            ...partner,
+          recipient.partners?.map((partner: any) => ({
+            id: partner.id,
+            name: partner.name,
+            email: partner.email,
+            document: partner.document,
+            birth_date: partner.birth_date,
+            monthly_income: partner.monthly_income
+              ? Number(partner.monthly_income)
+              : null,
+            professional_occupation: partner.professional_occupation,
             self_declared_legal_representative: Boolean(
               partner.self_declared_legal_representative
             ),
           })) ?? [],
+
         configs: remoteConfig
           ? {
-              ...createConfig(),
-              ...remoteConfig,
-              transfer_enabled: Boolean(remoteConfig.transfer_enabled),
-              anticipation_enabled: Boolean(remoteConfig.anticipation_enabled),
-            }
+            ...createConfig(),
+            ...remoteConfig,
+            transfer_enabled: Boolean(remoteConfig.transfer_enabled),
+            anticipation_enabled: Boolean(remoteConfig.anticipation_enabled),
+          }
           : createConfig(),
+
         bank_account: recipient.bank_account
           ? {
-              ...createBankAccount(),
-              ...recipient.bank_account,
-              holder_type: userType === "PJ" ? "company" : "individual"
-            }
+            ...createBankAccount(),
+            bank: recipient.bank_account.bank ?? "",
+            branch_number: recipient.bank_account.branch_number ?? "",
+            branch_check_digit: recipient.bank_account.branch_check_digit ?? "",
+            account_number: recipient.bank_account.account_number ?? "",
+            account_check_digit: recipient.bank_account.account_check_digit ?? "",
+            holder_name: recipient.bank_account.holder_name ?? "",
+            holder_type: userType === "PJ" ? "company" : "individual",
+            holder_document: recipient.bank_account.holder_document ?? "",
+            type:
+              (recipient.bank_account.type as "checking" | "savings") ?? "checking",
+          }
           : (() => {
-              const acc = createBankAccount();
-              acc.holder_type = userType === "PJ" ? "company" : "individual";
-              return acc;
-            })(),
+            const acc = createBankAccount();
+            acc.holder_type = userType === "PJ" ? "company" : "individual";
+            return acc;
+          })(),
       });
+
       setStepIndex(0);
       setStepError(null);
       return;
@@ -374,20 +444,46 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
   const handleSubmit = async () => {
     const payload: RecipientEntity = {
       ...formData,
+      type_enum: formData.type_enum,
+      email: formData.email.trim(),
+      document: justNumber(formData.document),
+      name: formData.name.trim(),
+
+      company_name:
+        formData.type_enum === "PJ" ? formData.company_name || "" : null,
+      trading_name:
+        formData.type_enum === "PJ" ? formData.trading_name || "" : null,
+
       annual_revenue: formData.annual_revenue ?? null,
+      birth_date: formData.birth_date || "",
       monthly_income: formData.monthly_income ?? null,
-      addresses: [], // Não enviamos mais endereços
-      phones: [], // Não enviamos mais telefones
+      professional_occupation: formData.professional_occupation || "",
+
+      addresses: formData.addresses.map((addr) => ({
+        ...addr,
+        zip_code: addr.zip_code || "",
+        city: addr.city || "",
+        state: addr.state || "",
+        type: addr.type || "Recipient",
+      })),
+
+      phones: formData.phones.map((phone) => ({
+        ...phone,
+        type: phone.type || "Recipient",
+      })),
+
       partners:
         formData.type_enum === "PJ"
           ? formData.partners.map((partner) => ({
-              ...partner,
-              monthly_income: partner.monthly_income ?? null,
-              self_declared_legal_representative: Boolean(
-                partner.self_declared_legal_representative
-              ),
-            }))
+            ...partner,
+            document: justNumber(partner.document),
+            monthly_income: partner.monthly_income ?? null,
+            self_declared_legal_representative: Boolean(
+              partner.self_declared_legal_representative
+            ),
+          }))
           : [],
+
       configs: {
         ...formData.configs,
         transfer_day: formData.configs.transfer_day ?? null,
@@ -397,28 +493,35 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
         anticipation_days: formData.configs.anticipation_days?.trim() || null,
         anticipation_delay: formData.configs.anticipation_delay?.trim() || null,
       },
-      bank_account: formData.bank_account
-        ? {
-            ...formData.bank_account,
-            holder_type: formData.type_enum === "PJ" ? "company" : "individual",
-            branch_check_digit: formData.bank_account.branch_check_digit?.trim() || undefined,
-          }
-        : undefined,
+
+      // 👇 sempre manda um RecipientBankAccount válido
+      bank_account: {
+        ...formData.bank_account,
+        holder_type: formData.type_enum === "PJ" ? "company" : "individual",
+        branch_check_digit:
+          formData.bank_account.branch_check_digit?.trim() || "",
+        holder_document: justNumber(
+          formData.bank_account.holder_document || ""
+        ),
+      },
     };
 
     setIsSubmitting(true);
     try {
-      // TODO: Substituir saveRecipientDraft por chamada real ao backend (Aguardando Backend)
-      const savedRecipient = await saveRecipientDraft(payload);
+      const savedRecipient = await createRecipient(payload);
       toast.success("Dados enviados para análise.");
       onCompleted?.(savedRecipient);
       onClose();
-    } catch (error) {
-      toast.error("Não foi possível salvar o cadastro agora.");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        error?.message || "Não foi possível salvar o cadastro agora."
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const StepIndicator = () => (
     <div className="flex items-center gap-2 flex-wrap">
@@ -428,13 +531,12 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
         return (
           <div key={step.id} className="flex items-center gap-2 text-sm">
             <span
-              className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-                isActive
-                  ? "bg-zinc-900 text-white"
-                  : isDone
+              className={`w-6 h-6 rounded-full flex items-center justify-center border ${isActive
+                ? "bg-zinc-900 text-white"
+                : isDone
                   ? "bg-green-500 text-white"
                   : "bg-white text-zinc-600"
-              }`}
+                }`}
             >
               {index + 1}
             </span>

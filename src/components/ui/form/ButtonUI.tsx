@@ -26,6 +26,7 @@ interface ButtonType {
   id?: string;
   href?: string;
   target?: React.HTMLAttributeAnchorTarget;
+  rel?: string;
   loading?: boolean;
   checked?: boolean;
   alt?: string;
@@ -126,6 +127,7 @@ export default function Button(attr: ButtonType) {
     alt: alt ?? "",
     title: title ?? "",
     "aria-label": alt || title ? (alt ?? title) : undefined,
+    rel: attr?.rel,
     ...(attr?.othersAttrs || {}),
   };
 

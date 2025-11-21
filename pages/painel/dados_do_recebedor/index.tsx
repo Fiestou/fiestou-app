@@ -8,47 +8,14 @@ import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useEffect, useState } from "react";
 import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
-import { RecipientEntity, RecipientStatusResponse } from "@/src/models/recipient";
+import { RecipientStatusResponse, RecipientType } from "@/src/models/Recipient";
 import { getRecipientStatus } from "@/src/services/recipients";
 import HelpCardConfig from "@/src/components/common/HelpCardConfig";
 import InterrogacaoIcon from "@/src/icons/InterrogacaoIcon";
 import SettingsIcon from "@/src/icons/SettingsIcon";
 
-export async function getServerSideProps(ctx: any) {
-  const api = new Api();
-
-  const request: any = await api.call(
-    {
-      method: 'post',
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "account",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
-
-  let page: any = request?.data?.query?.page[0] ?? {};
-
-  return {
-    props: {
-      page: page,
-    },
-  };
-}
-
 export default function MeusDados({ page }: { page: any }) {
-  //console.log('Test de dads:', { page });
-
+  
   const api = new Api();
 
   const [user, setUser] = useState({} as UserType);
@@ -94,12 +61,11 @@ export default function MeusDados({ page }: { page: any }) {
   };
 
   const fetchRecipientStatus = async () => {
-    // TODO: trocar getRecipientStatus por chamada real ao backend (Aguardando Backend)
     const status = await getRecipientStatus();
     setRecipientStatus(status);
   };
 
-  const handleRecipientCompleted = (data: RecipientEntity) => {
+  const handleRecipientCompleted = (data: RecipientType) => {
     setRecipientStatus({
       completed: true,
       recipient: data,
