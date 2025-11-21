@@ -28,48 +28,91 @@ export default function UserEdit({ user }: { user: UserType }) {
     setForm({ ...form, ...value });
   };
 
-  const [oldUser, setOldUser] = useState(user as UserType);
   const [content, setContent] = useState<RecipientType>();
   const [storeId, setStoreId] = useState<any>();
 
   const getRecipientCode = async (storeId: string) => {
     try {
-      const response: any = await api.bridge({
+      const res: any = await api.bridge({
         method: "GET",
         url: `info/recipient/${storeId}`,
-      });
-      setContent(response.recipient);
-    } catch (error) {
-      console.error("Complete o cadastro :", error);
-    }
-  };
-
-  const createRecipient = async (storeId: string | undefined) => {
-    try {
-      const response: any = await api.bridge({
-        method: "POST",
-        url: `createrecipient/${storeId}`,
+        // se essa rota estiver fora de /api/app, passe noAppPrefix: true
       });
 
-      if (response.success) {
-        setContent(response.recipient);
-        toast.success("Recebedor criado com sucesso!");
+      if (!res?.response || !res?.data) {
+        toast.error("Não foi possível carregar o recebedor.");
+        return;
       }
+
+      const d = res.data;
+
+      // mapeia address/phone (objetos) -> arrays esperados pelos componentes
+      const mapped: RecipientType = {
+        recipient: null,
+        id: d.id,
+        store_id: d.store_id,
+        partner_id: d.partner_id,
+        code: d.code ?? "",
+        type_enum: d.type_enum ?? "",
+        type: d.type ?? "individual",
+        name: d.name ?? "",
+        email: d.email ?? "",
+        document: d.document ?? "",
+        company_name: d.company_name ?? null,
+        trading_name: d.trading_name ?? null,
+        birth_date: d.birth_date ?? "",
+        monthly_income: d.monthly_income ?? "",
+        professional_occupation: d.professional_occupation ?? null,
+
+        // converte address {..} para addresses [{..}]
+        addresses: d.address
+          ? [{
+            id: 0, // se vier no payload, use d.address.id
+            street: d.address.street ?? "",
+            complementary: d.address.complementary ?? "",
+            street_number: d.address.street_number ?? "",
+            neighborhood: d.address.neighborhood ?? "",
+            city: d.address.city ?? "",
+            state: d.address.state ?? "",
+            zip_code: d.address.zip_code ?? "",
+            reference_point: d.address.reference_point ?? "",
+          }]
+          : [],
+
+        // converte phone {..} para phones [{..}]
+        phones: d.phone
+          ? [{
+            id: 0, // se vier no payload, use d.phone.id
+            area_code: d.phone.area_code ?? "",
+            number: d.phone.number ?? "",
+          }]
+          : [],
+
+        // se quiser expor o bloco bancário direto no content
+        config: {},
+        partners: [],
+        annual_revenue: null,
+        created_at: "",
+        updated_at: ""
+      };
+
+      setContent(mapped);
     } catch (error) {
-      console.error("Complete o cadastro :", error);
+      console.error("Complete o cadastro:", error);
+      toast.error("Erro ao carregar recebedor.");
     }
   };
 
   useEffect(() => {
     if (!!window) {
       setStoreId(getStore());
-      createRecipient(getStore());
     }
   }, []);
 
   useEffect(() => {
+    console.log("storeId changed:", storeId);
     if (storeId) {
-      getRecipientCode(storeId); // ✅
+      getRecipientCode(storeId);
     }
   }, [storeId]);
 
@@ -77,84 +120,6 @@ export default function UserEdit({ user }: { user: UserType }) {
     remove: 0,
     preview: user?.profile?.preview ?? "",
   });
-
-  console.log("UserEdit content:", content);
-
-
-  // const handleSubmitFile = async (e: any) => {
-  //   e.preventDefault();
-
-  //   handleForm({ loading: true });
-
-  //   let profileValue = content?.profile;
-
-  //   if (!!handleProfile.remove) {
-  //     const request = await api
-  //       .media({
-  //         dir: "user",
-  //         app: user.id,
-  //         index: user.id,
-  //         method: "remove",
-  //         medias: [handleProfile.remove],
-  //       })
-  //       .then((res: any) => res);
-
-  //     if (request.response && !!request.removed) {
-  //       profileValue = {};
-  //     }
-  //   }
-
-  //   if (!!content?.profile?.files) {
-  //     const upload = await api
-  //       .media({
-  //         dir: "user",
-  //         app: user.id,
-  //         index: user.id,
-  //         method: "upload",
-  //         medias: [content?.profile?.files],
-  //       })
-  //       .then((data: any) => data);
-
-  //     if (upload.response && !!upload.medias[0].status) {
-  //       const media = upload.medias[0].media;
-  //       media["details"] = JSON.parse(media.details);
-
-  //       profileValue = {
-  //         id: media.id,
-  //         base_url: media.base_url,
-  //         permanent_url: media.permanent_url,
-  //         details: media.details,
-  //         preview: media.base_url + media.details?.sizes["lg"],
-  //       };
-  //     }
-  //   }
-
-  //   handleContent({ profile: profileValue });
-
-  //   const handle = {
-  //     ...content,
-  //     profile: profileValue,
-  //     id: user.id,
-  //   };
-
-  //   const request: any = await api.bridge({
-  //     method: 'post',
-  //     url: "users/update",
-  //     data: handle,
-  //   });
-
-  //   if (request.response) {
-  //     setContent(handle);
-  //     setOldUser(Object.assign({}, handle));
-
-  //     setHandleProfile({
-  //       preview: typeof profileValue?.preview === "string" ? profileValue.preview : "",
-  //       remove: 0,
-  //     });
-  //   }
-
-  //   handleForm({ edit: "", loading: false });
-  // };
 
 
   return (

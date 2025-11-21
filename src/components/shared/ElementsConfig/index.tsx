@@ -1,31 +1,37 @@
 import React from 'react';
 import { formatCpfCnpj, formatName, formatPhone } from '../../utils/FormMasks';
+import { formatDate } from '@/src/helper';
 
 interface Props {
     title: string;
-    value: string | undefined;
+    value: string | number | null | undefined; // aceita null também
     editmode?: boolean;
-    type: 'phone' | 'document' | 'number' | 'string';
+    type: 'phone' | 'document' | 'number' | 'string' | 'date';
     handleValueEdit: (value: any) => void;
 }
 
-const formatValue = (type: Props['type'], value: string | undefined): string => {
-    if (value === undefined || value === null) return "";
+const formatValue = (
+  type: Props['type'],
+  value: string | number | null | undefined
+): string => {
+  if (value === undefined || value === null) return "";
 
-    const strValue = String(value); // <-- força string aqui
+  const strValue = String(value); // força string aqui
 
-    switch (type) {
-        case 'phone':
-            return formatPhone(strValue);
-        case 'document':
-            return formatCpfCnpj(strValue);
-        case 'number':
-            return strValue; // ou formatação de moeda, se quiser
-        case 'string':
-            return formatName(strValue);
-        default:
-            return strValue;
-    }
+  switch (type) {
+    case 'phone':
+      return formatPhone(strValue);
+    case 'document':
+      return formatCpfCnpj(strValue);
+    case 'number':
+      return strValue;
+    case 'string':
+      return formatName(strValue);
+    case 'date':
+      return formatDate(strValue);
+    default:
+      return strValue;
+  }
 };
 
 const ElementsConfig: React.FC<Props> = (props) => {
@@ -33,6 +39,17 @@ const ElementsConfig: React.FC<Props> = (props) => {
         props.value !== undefined &&
         props.value !== null &&
         props.value.toString().trim() !== "";
+
+    // valor que vai para o input
+    const inputValue =
+        props.type === 'date'
+            ? (props.value ? String(props.value).split('T')[0] : '')
+            : (props.value ?? "");
+
+    const inputType =
+        props.type === 'date'
+            ? 'date'
+            : 'text';
 
     return (
         <div className="grid gap-4 ">
@@ -53,7 +70,11 @@ const ElementsConfig: React.FC<Props> = (props) => {
                         onChange={(e) => props.handleValueEdit(e.target.value)}
                     />
                 ) : hasValue ? (
-                    <span className="">{formatValue(props.type, props.value ?? "")}</span>
+                    <span className="">
+                        {props.title === "Renda mensal"
+                            ? `R$ ${props.value}`                        // aqui entra o R$
+                            : formatValue(props.type, props.value ?? "")}
+                    </span>
                 ) : (
                     <span className="text-red-500">Não Preenchido</span>
                 )}

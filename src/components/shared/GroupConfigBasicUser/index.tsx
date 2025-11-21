@@ -17,6 +17,7 @@ const GroupConfigBasicUser: React.FC<Props> = ({ title, content }) => {
     const [editMode, setEditMode] = useState(false);
     const [phoneInput, setPhoneInput] = useState('');
     const [contentForm, setContentForm] = useState<RecipientType>({
+        recipient: null,
         id: 0,
         partner_id: null,
         code: '',

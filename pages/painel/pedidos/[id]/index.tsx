@@ -28,39 +28,6 @@ interface OrderItem {
   };
 }
 
-export async function getServerSideProps(ctx: any) {
-  const api = new Api();
-  const query = ctx.query;
-
-  let request: any = await api.bridge(
-    {
-      method: "post",
-      url: "suborders/get",
-      data: {
-        id: query.id,
-      },
-    },
-    ctx
-  );
-
-  let suborder = request?.data ?? {};
-
-  if (!request?.response || !suborder.id) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/painel/pedidos",
-      },
-    };
-  }
-
-  return {
-    props: {
-      suborder: suborder,
-      order: suborder?.order ?? {},
-    },
-  };
-}
 
 const FormInitialType = {
   sended: false,
@@ -68,10 +35,8 @@ const FormInitialType = {
 };
 
 export default function Pedido({
-  suborder,
   order,
 }: {
-  suborder: OrderType;
   order: OrderTypeResponse;
 }) {
   const api = new Api();
@@ -115,13 +80,10 @@ export default function Pedido({
   const [form, setForm] = useState(FormInitialType);
   const [dropdownDelivery, setDropdownDelivery] = useState(false as boolean);
 
-  const [data, setData] = useState((suborder ?? {}) as OrderType);
-  const handleData = (value: Object) => {
-    setData((data) => ({ ...data, ...value }));
-  };
+  const [orderState, setOrderState] = useState((order ?? {}) as OrderType);
 
   const [deliveryStatus, setDeliveryStatus] = useState(
-    suborder.deliveryStatus as string
+    (order?.delivery_status as string) ?? "pending"
   );
   const notifyDelivery = async (e: any) => {
     e.preventDefault();
@@ -131,18 +93,18 @@ export default function Pedido({
     setForm({ ...form, loading: true });
 
     const handle: any = {
-      ...data,
+      ...orderState,
       deliveryStatus: deliveryStatus,
     };
 
     const request: any = await api.bridge({
       method: "post",
-      url: "suborders/register",
+      url: "orders/register",
       data: handle,
     });
 
     if (!!request.response) {
-      setData(handle);
+      setOrderState(handle);
     }
 
     setForm({ ...form, loading: false });
@@ -286,10 +248,10 @@ export default function Pedido({
                     Dados do cliente
                   </div>
                   <div>
-                    <div>{suborder.user?.name}</div>
-                    <div>{suborder.user?.email}</div>
-                    <div>{suborder.user?.phone}</div>
-                    <div>{suborder.user?.cpf}</div>
+                    <div>{order.user?.name}</div>
+                    <div>{order.user?.email}</div>
+                    <div>{order.user?.phone}</div>
+                    <div>{order.user?.cpf}</div>
                   </div>
                 </div>
                 {!!order.metadata && (
@@ -317,27 +279,27 @@ export default function Pedido({
                 <div>
                   <div className="font-bold font-title text-zinc-900 text-xl mb-4">
                     Entrega (
-                    {!!order?.deliveryPrice
-                      ? `R$ ${moneyFormat(order.deliveryPrice)}`
+                    {!!order?.delivery_price
+                      ? `R$ ${moneyFormat(order.delivery_price)}`
                       : "Gratuita"}
                     )
                   </div>
                   <div>
-                    {deliveryToName[order.deliveryTo]}, {order.deliverySchedule}
+                    {deliveryToName[order.delivery_to]}, {order.delivery_schedule}
                   </div>
                   <div>
-                    {order?.deliveryAddress?.street},{" "}
-                    {order?.deliveryAddress?.number},{" "}
-                    {order?.deliveryAddress?.neighborhood}
+                    {order?.delivery_address?.street},{" "}
+                    {order?.delivery_address?.number},{" "}
+                    {order?.delivery_address?.neighborhood}
                   </div>
                   <div>
-                    CEP: {order?.deliveryAddress?.zipCode}
+                    CEP: {order?.delivery_address?.zipCode}
                     <br />
-                    {order?.deliveryAddress?.complement}
+                    {order?.delivery_address?.complement}
                   </div>
                   <div>
-                    {order?.deliveryAddress?.city} |{" "}
-                    {order?.deliveryAddress?.state}
+                    {order?.delivery_address?.city} |{" "}
+                    {order?.delivery_address?.state}
                   </div>
                 </div>
                 <form
@@ -407,7 +369,7 @@ export default function Pedido({
                     <Select
                       name="status_entrega"
                       onChange={(e: any) => setDeliveryStatus(e.target.value)}
-                      value={data.deliveryStatus ?? "pending"}
+                      value={orderState.delivery_status ?? "pending"}
                       options={deliveryTypes}
                     />
                   </div>

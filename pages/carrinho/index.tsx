@@ -1,18 +1,15 @@
 import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import Image from "next/image";
 import Link from "next/link";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import { KeyboardEvent, useEffect, useMemo, useState } from "react";
-import { ProductType, getPrice } from "@/src/models/product";
 import { NextApiRequest, NextApiResponse } from "next";
 import {
   dateBRFormat,
   findDates,
   getAllowedRegionsDescription,
   getImage,
-  getSummary,
   isCEPInRegion,
   justNumber,
   moneyFormat,

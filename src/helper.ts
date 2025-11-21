@@ -291,6 +291,13 @@ export function shortId(): string {
 
 export function getImage(image: any, size?: string) {
   if (!image) return "";
+  
+  console.log("image", image);
+
+  // Se recebeu apenas uma URL string, retorna ela diretamente
+  if (typeof image === "string") {
+    return image;
+  }
 
   if (!!image?.medias) {
     image = image?.medias;
@@ -312,6 +319,34 @@ export function getImage(image: any, size?: string) {
 
   return "";
 }
+
+export const formatDate = (value: string | undefined | null): string => {
+  if (!value) return "";
+
+  // Se vier algo tipo 2001-10-04T00:00:00.000000Z, pega só a parte da data
+  const raw = value.split("T")[0];
+
+  const [year, month, day] = raw.split("-");
+  if (!year || !month || !day) return value; // fallback
+
+  return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+};
+
+export const formatCPF = (v: string) => {
+  const n = justNumber(v).slice(0, 11);
+  return n
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
+};
+
+export const formatCNPJ = (v: string) => {
+  const n = justNumber(v).slice(0, 14);
+  return n
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3.$4")
+    .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d{4})(\d{1,2})/, "$1.$2.$3/$4-$5");
+};
 
 export function isMobileDevice() {
   const userAgent = window.navigator.userAgent;

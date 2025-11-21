@@ -1,5 +1,4 @@
 import axios from "axios";
-import Cookies from "js-cookie";
 import { convertToCents, phoneAreaCode, phoneJustNumber } from "../helper";
 import { OrderType } from "@/src/models/order";
 import { ProductOrderType } from "../models/product";

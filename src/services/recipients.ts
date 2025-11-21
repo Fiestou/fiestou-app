@@ -1,22 +1,22 @@
-import { RecipientEntity, RecipientStatusResponse } from "@/src/models/recipient";
-import Api from "@/src/services/api";
+import { CreateRecipientResponse, RecipientEntity, RecipientStatusResponse, RecipientType } from "../models/Recipient";
+import Api from "./api";
 
 const api = new Api();
 
-/**
- * Busca o status do cadastro PagMe da loja autenticada
- */
 export async function getRecipientStatus(): Promise<RecipientStatusResponse> {
   try {
     const response: any = await api.bridge({
       method: "get",
-      url: "recipients/status",
+      url: "info/recipients/status",
     });
 
-    if (response?.data?.data) {
+    console.log("Response do status do recipient:", response);  
+    console.log(response.data.recipient);  
+
+    if (response?.data) {
       return {
-        completed: response.data.data.completed || false,
-        recipient: response.data.data.recipient || null,
+        completed: response.data.completed || false,
+        recipient: response.data.recipient || null,
       };
     }
 
@@ -25,6 +25,27 @@ export async function getRecipientStatus(): Promise<RecipientStatusResponse> {
     console.error("Erro ao buscar status do recipient:", error);
     return { completed: false, recipient: null };
   }
+}
+
+export async function createRecipient(
+  payload: RecipientEntity
+): Promise<RecipientType> {
+  
+  const res = await api.bridge<CreateRecipientResponse>({
+    method: "post",
+    url: "/recipient/register",
+    data: payload,
+  });
+
+  if (!res?.response) {
+    throw new Error(res?.message || "Erro ao cadastrar recebedor");
+  }
+
+  if (!res.data) {
+    throw new Error("Resposta sem dados do recebedor");
+  }
+
+  return res.data as RecipientType;
 }
 
 /**

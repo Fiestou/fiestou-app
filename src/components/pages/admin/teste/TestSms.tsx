@@ -38,7 +38,7 @@ export default function Sms({ page }: { page: any }) {
 
     if (data.content == "register") {
       await RegisterUserSMS(
-        { email: data.email, name: data.name, phone: data.phone },
+        { id: 0, email: data.email, name: data.name, phone: data.phone },
         getContent("register")
       );
     }
@@ -46,7 +46,7 @@ export default function Sms({ page }: { page: any }) {
     if (data.content == "delivery") {
       await ChangeDeliveryStatusSMS(
         {
-          user: { email: data.email, name: data.name, phone: data.phone },
+          user: { id: 0, email: data.email, name: data.name, phone: data.phone },
           deliveryStatus: "sent",
           deliverySchedule: "",
           deliveryPrice: 0,
@@ -67,7 +67,7 @@ export default function Sms({ page }: { page: any }) {
     if (data.content == "order") {
       await RegisterOrderSMS(
         {
-          user: { email: data.email, name: data.name, phone: data.phone },
+          user: { id: 0, email: data.email, name: data.name, phone: data.phone },
           deliveryStatus: "",
           deliverySchedule: "",
           deliveryPrice: 0,
@@ -89,7 +89,7 @@ export default function Sms({ page }: { page: any }) {
     if (data.content == "order_complete") {
       await CompleteOrderSMS(
         {
-          user: { email: data.email, name: data.name, phone: data.phone },
+          user: { id: 0, email: data.email, name: data.name, phone: data.phone },
           deliveryStatus: "",
           deliverySchedule: "",
           deliveryPrice: 0,

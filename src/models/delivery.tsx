@@ -72,7 +72,7 @@ export const deliveryTypes = [
   },
 ];
 
-export const deliveryToName: any = {
+export const deliveryToName: Record<string, string> = {
   reception: "Entregar na portaria",
   door: "Deixar na porta",
   for_me: "Estarei para receber",
