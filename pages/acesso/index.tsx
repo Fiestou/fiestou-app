@@ -27,7 +27,7 @@ export async function getServerSideProps(ctx: any) {
     };
   }
 
-  let request: any = await api.content({method: 'get', url: `default` });
+  let request: any = await api.content({ method: "get", url: `default` });
 
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
@@ -45,8 +45,8 @@ const formInitial = {
   sended: false,
   loading: false,
   email: "",
-  password: '',
-  alert: "" 
+  password: "",
+  alert: "",
 };
 
 export default function Acesso({
@@ -107,15 +107,15 @@ export default function Acesso({
     }
   };
 
-  useEffect(()=>{
-    if (form.alert){
-      setTimeout(()=>{
+  useEffect(() => {
+    if (form.alert) {
+      setTimeout(() => {
         setFormValue({
-          alert: ""
-        })
-      }, 3000)
+          alert: "",
+        });
+      }, 3000);
     }
-  }, [form.alert])
+  }, [form.alert]);
 
   return (
     <Template
@@ -227,7 +227,8 @@ export default function Acesso({
                     className="underline text-yellow-600 font-bold"
                     href="/cadastre-se"
                   >
-                    {" "}Cadastre-se
+                    {" "}
+                    Cadastre-se
                   </Link>
                 </div>
               </form>
@@ -252,8 +253,8 @@ export default function Acesso({
             {modalType == "register"
               ? "Sua conta foi criada!"
               : modalType == "await"
-                ? "Cadastro em análise!"
-                : "Confirme seu endereço de e-mail!"}
+              ? "Cadastro em análise!"
+              : "Confirme seu endereço de e-mail!"}
           </h4>
           <div className="pt-2">
             {modalType == "register" ? (

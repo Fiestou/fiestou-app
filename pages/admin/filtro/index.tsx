@@ -4,13 +4,19 @@ import { useEffect, useState } from "react";
 
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import NewGroup from "../../../src/components/pages/admin/filtro/buttons/NewGroup";
-import { CirclePlus } from 'lucide-react';
+import { CirclePlus } from "lucide-react";
 import EyeButton from "../../../src/components/pages/admin/filtro/buttons/Eye";
 import Card from "../../../src/components/pages/admin/filtro/section/Card";
-import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modals/GroupModal";
+import GroupModal, {
+  GroupData,
+} from "@/src/components/pages/admin/filtro/modals/GroupModal";
 import { toast } from "react-toastify";
 import { categorie, Group } from "@/src/store/filter";
-import { GroupsResponse, RequestRegister, ResponseRegister } from "@/src/types/filtros";
+import {
+  GroupsResponse,
+  RequestRegister,
+  ResponseRegister,
+} from "@/src/types/filtros";
 export default function Categorias() {
   const api = new Api();
 
@@ -22,10 +28,10 @@ export default function Categorias() {
 
   const onSaveGroup = async (data: GroupData) => {
     let dataRequest: RequestRegister = {
-      name: data?.name || '',
-      description: data?.description || '',
+      name: data?.name || "",
+      description: data?.description || "",
       active: true,
-      segment: data?.segment ?? false
+      segment: data?.segment ?? false,
     };
 
     try {
@@ -35,35 +41,33 @@ export default function Categorias() {
         request = await api.bridge<ResponseRegister>({
           method: "put",
           url: `group/update/${data.id}`,
-          data: dataRequest
+          data: dataRequest,
         });
       } else {
         request = await api.bridge<ResponseRegister>({
           method: "post",
           url: "group/register",
-          data: dataRequest
+          data: dataRequest,
         });
       }
 
       if (!request) {
-        toast.error('Não foi possível salvar o grupo de filtros.');
+        toast.error("Não foi possível salvar o grupo de filtros.");
         return;
       }
       setOpenGroupModal(false);
       window.location.reload();
 
-      toast.success('Grupo de filtros salvo com sucesso!');
-
+      toast.success("Grupo de filtros salvo com sucesso!");
     } catch (error) {
-      console.error('Erro ao salvar o grupo:', error);
-      toast.error('Ocorreu um erro ao salvar o grupo de filtros.');
+      console.error("Erro ao salvar o grupo:", error);
+      toast.error("Ocorreu um erro ao salvar o grupo de filtros.");
     }
   };
 
   const handleAddElementClick = (groupId: number) => {
-
     setNextGroupElements([]);
-    const currentIndex = groups.findIndex(group => group.id === groupId);
+    const currentIndex = groups.findIndex((group) => group.id === groupId);
 
     if (currentIndex === -1) {
       return;
@@ -75,9 +79,9 @@ export default function Categorias() {
       setNextGroupElements([
         {
           name: "é o último grupo",
-          icon: '',
+          icon: "",
           id: -1,
-        }
+        },
       ]);
     } else if (nextGroup && nextGroup.categories) {
       const mappedElements = nextGroup.categories.map((element) => ({
@@ -118,7 +122,7 @@ export default function Categorias() {
   };
 
   const onEditClick = async (groupId: number) => {
-    const GroupGet = groups.filter((el) => el.id === groupId); // Corrigir o uso do filter
+    const GroupGet = groups.filter((el) => el.id === groupId);
 
     if (GroupGet.length > 0) {
       setUpdateGroup(GroupGet[0]);
@@ -130,15 +134,13 @@ export default function Categorias() {
 
   useEffect(() => {
     getGroups();
-  }, [])
-
-
+  }, []);
 
   useEffect(() => {
     if (!openGroupModal) {
       setUpdateGroup(null);
     }
-  }, [openGroupModal])
+  }, [openGroupModal]);
 
   return (
     <Template
@@ -157,16 +159,11 @@ export default function Categorias() {
               ]}
             />
           </div>
-
         </div>
       </section>
 
-
-      <section className=" flex flex-col gap-3 w-full w-full  m-5  justify-center  items-center mx-auto">
-
-        <div
-          className=" flex flex-col gap-3 w-full max-w-[1000px]  "
-        >
+      <section className=" flex flex-col gap-3 w-full m-5  justify-center  items-center mx-auto">
+        <div className=" flex flex-col gap-3 w-full max-w-[1000px]  ">
           <div className="flex mt-6 pb-6">
             <div className="w-full flex justify-between ">
               <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
@@ -186,7 +183,11 @@ export default function Categorias() {
                   title={value.name}
                   description={value.description}
                   id={value.id}
-                  onDeleteGroup={() => { setGroups((prev) => prev.filter((group) => group.id !== value.id)) }}
+                  onDeleteGroup={() => {
+                    setGroups((prev) =>
+                      prev.filter((group) => group.id !== value.id)
+                    );
+                  }}
                   onAddElementClick={handleAddElementClick}
                 />
               );
@@ -194,19 +195,15 @@ export default function Categorias() {
           ) : (
             <p>No groups available.</p>
           )}
-
         </div>
 
-
-        <div
-          className=" flex flex-col gap-3 w-full max-w-[1000px] "
-        >
+        <div className=" flex flex-col gap-3 w-full max-w-[1000px] ">
           <div className="flex mt-6 pb-6">
             <div className="w-full flex justify-between ">
               <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
                 Configurar Filtro Dinâmico
               </div>
-              <div className="flex-[1.2] gap-2 justify-end items-center flex flex-row w-" >
+              <div className="flex-[1.2] gap-2 justify-end items-center flex flex-row w-">
                 <NewGroup
                   onClick={() => {
                     setOpenGroupModal(true);
@@ -220,7 +217,6 @@ export default function Categorias() {
 
           {groups && groups.length > 0 ? (
             groups.map((value, index) => {
-
               return (
                 <Card
                   key={index}
@@ -230,7 +226,11 @@ export default function Categorias() {
                   title={value.name}
                   description={value.description}
                   id={value.id}
-                  onDeleteGroup={() => { setGroups((prev) => prev.filter((group) => group.id !== value.id)) }}
+                  onDeleteGroup={() => {
+                    setGroups((prev) =>
+                      prev.filter((group) => group.id !== value.id)
+                    );
+                  }}
                   onAddElementClick={handleAddElementClick}
                 />
               );
@@ -238,12 +238,19 @@ export default function Categorias() {
           ) : (
             <p>No groups available.</p>
           )}
-
         </div>
-
       </section>
 
-      <GroupModal onSaveClick={(data) => { onSaveGroup(data) }} data={updateGroup} open={openGroupModal} onRequestClose={() => { setOpenGroupModal(false) }} />
+      <GroupModal
+        onSaveClick={(data) => {
+          onSaveGroup(data);
+        }}
+        data={updateGroup}
+        open={openGroupModal}
+        onRequestClose={() => {
+          setOpenGroupModal(false);
+        }}
+      />
     </Template>
-  )
+  );
 }
