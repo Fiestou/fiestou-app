@@ -86,8 +86,8 @@ export default function Home() {
       <CategoriesSection categories={categoriesData} />
       <TestimonialsSection testimonials={testimonialsData} />;
       <PartnersSection partners={partnersData} />
-      <TestimonialsSection testimonials={testimonialsData} />
-      <PartnersSection partners={partnersData} />
+      <BlogSection Blog={Blog} />
+      <Newsletter />
     </Template>
   );
 }
