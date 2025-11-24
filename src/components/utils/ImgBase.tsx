@@ -7,6 +7,7 @@ interface ImageType {
   title?: string;
   className?: string;
   id?: string;
+  style?: React.CSSProperties;
 }
 
 export default function Img(props: ImageType) {
