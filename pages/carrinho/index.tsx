@@ -525,8 +525,61 @@ export default function Carrinho({
                                     {item.product?.store?.title}
                                   </span>
                                 </div>
+
+                                {/* Adicionais/Atributos */}
+                                {item.attributes && Array.isArray(item.attributes) && item.attributes.length > 0 && (() => {
+                                  const attributesWithSelected = item.attributes
+                                    .map((attr: any) => ({
+                                      ...attr,
+                                      selectedVariations: (attr.variations || []).filter((v: any) => v.quantity > 0)
+                                    }))
+                                    .filter((attr: any) => attr.selectedVariations.length > 0);
+
+                                  if (attributesWithSelected.length === 0) return null;
+
+                                  return (
+                                    <div className="mt-2 pt-2 border-t border-zinc-200">
+                                      {attributesWithSelected.map((attr: any, attrIdx: number) => (
+                                        <div key={attrIdx} className="mb-3 last:mb-0">
+                                          <p className="text-xs font-bold text-zinc-800 mb-1">{attr.title}</p>
+                                          {attr.selectedVariations.map((variation: any, varIdx: number) => {
+                                            const price = variation.price || variation.priceValue || 0;
+                                            const numPrice = typeof price === 'string' ? parseFloat(price.replace(',', '.')) : Number(price);
+                                            const quantity = variation.quantity || 1;
+                                            const totalPrice = numPrice * quantity;
+
+                                            return (
+                                              <div key={varIdx} className="ml-2 mb-2">
+                                                <div className="flex justify-between items-center gap-2 text-sm text-zinc-700">
+                                                  <span className="flex items-center gap-1.5">
+                                                    <span className="text-zinc-400">•</span>
+                                                    <span>{variation.title}</span>
+                                                  </span>
+                                                  {numPrice > 0 && (
+                                                    <span className="text-zinc-500 font-medium whitespace-nowrap text-xs">
+                                                      R$ {moneyFormat(numPrice)}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                {quantity > 1 && numPrice > 0 && (
+                                                  <div className="flex justify-between items-center gap-2 text-xs text-zinc-500 ml-4 mt-0.5">
+                                                    <span>Qtd: {quantity}</span>
+                                                    <span className="text-cyan-600 font-semibold">
+                                                      R$ {moneyFormat(totalPrice)}
+                                                    </span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
+
                                 {hasDeliveryFee && (
-                                  <div className="flex gap-1 items-center">
+                                  <div className="flex gap-1 items-center mt-1">
                                     Frete:
                                     <span className="font-semibold text-zinc-900">
                                       R$ {moneyFormat(deliveryFeeValue)}
@@ -597,6 +650,35 @@ export default function Carrinho({
                           R$ {moneyFormat(resume.subtotal)}
                         </div>
                       </div>
+
+                      {/* Total de adicionais */}
+                      {(() => {
+                        let totalAddons = 0;
+                        listCart.forEach((item: any) => {
+                          if (item.attributes && Array.isArray(item.attributes)) {
+                            item.attributes.forEach((attr: any) => {
+                              (attr.variations || []).forEach((v: any) => {
+                                if (v.quantity > 0 && v.price) {
+                                  totalAddons += Number(v.price) * (v.quantity || 1) * (item.quantity || 1);
+                                }
+                              });
+                            });
+                          }
+                        });
+                        return totalAddons > 0 ? (
+                          <>
+                            <div className="border-t"></div>
+                            <div className="flex justify-between">
+                              <div className="w-full whitespace-nowrap text-zinc-600">
+                                Adicionais
+                              </div>
+                              <div className="whitespace-nowrap text-cyan-600 font-semibold">
+                                R$ {moneyFormat(totalAddons)}
+                              </div>
+                            </div>
+                          </>
+                        ) : null;
+                      })()}
 
                       <div className="border-t"></div>
 

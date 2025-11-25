@@ -94,6 +94,7 @@ export interface VariationProductOrderType {
 
 export interface AttributeProductOrderType {
   id: string;
+  title?: string;
   variations: Array<VariationProductOrderType>;
 }
 
