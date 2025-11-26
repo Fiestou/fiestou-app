@@ -1,15 +1,12 @@
 import Template from "@/src/template";
 import Api from "@/src/services/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import NewGroup from "../../../src/components/pages/admin/filtro/buttons/NewGroup";
 import { CirclePlus } from "lucide-react";
-import EyeButton from "../../../src/components/pages/admin/filtro/buttons/Eye";
 import Card from "../../../src/components/pages/admin/filtro/section/Card";
-import GroupModal, {
-  GroupData,
-} from "@/src/components/pages/admin/filtro/modals/GroupModal";
+import GroupModal, { GroupData } from "@/src/components/pages/admin/filtro/modals/GroupModal";
 import { toast } from "react-toastify";
 import { categorie, Group } from "@/src/store/filter";
 import {
@@ -17,17 +14,35 @@ import {
   RequestRegister,
   ResponseRegister,
 } from "@/src/types/filtros";
+
 export default function Categorias() {
   const api = new Api();
 
-  const [openGroupModal, setOpenGroupModal] = useState<boolean>(false);
+  const [openGroupModal, setOpenGroupModal] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [group_target_adc, setGroup_Target_Adc] = useState<Group[]>([]);
-  const [updateGroup, setUpdateGroup] = useState<Group | null>();
+  const [targetGroups, setTargetGroups] = useState<Group[]>([]);
+  const [updateGroup, setUpdateGroup] = useState<Group | null>(null);
   const [nextGroupElements, setNextGroupElements] = useState<categorie[]>([]);
 
+  // 🚀 Busca de grupos corrigida com rotas corretas
+  const fetchGroups = useCallback(async () => {
+    try {
+      const [groupsRes, targetRes] = await Promise.all([
+        api.request<GroupsResponse>({ method: "get", url: "group/list" }),
+        api.request<GroupsResponse>({ method: "get", url: "group/targetadcpbl" }),
+      ]);
+
+      setGroups(groupsRes?.data ?? []);
+      setTargetGroups(targetRes?.data ?? []);
+    } catch (error) {
+      console.error("Erro ao buscar grupos:", error);
+      toast.error("Erro ao carregar os grupos.");
+    }
+  }, []);
+
+  // 🧾 Salvar grupo (create ou update)
   const onSaveGroup = async (data: GroupData) => {
-    let dataRequest: RequestRegister = {
+    const payload: RequestRegister = {
       name: data?.name || "",
       description: data?.description || "",
       active: true,
@@ -35,221 +50,111 @@ export default function Categorias() {
     };
 
     try {
-      let request;
+      const response = await api.bridge<ResponseRegister>({
+        method: data.id ? "put" : "post",
+        url: data.id ? `group/update/${data.id}` : "group/register",
+        data: payload,
+      });
 
-      if (data.id) {
-        request = await api.bridge<ResponseRegister>({
-          method: "put",
-          url: `group/update/${data.id}`,
-          data: dataRequest,
-        });
-      } else {
-        request = await api.bridge<ResponseRegister>({
-          method: "post",
-          url: "group/register",
-          data: dataRequest,
-        });
-      }
+      if (!response) return toast.error("Erro ao salvar o grupo.");
 
-      if (!request) {
-        toast.error("Não foi possível salvar o grupo de filtros.");
-        return;
-      }
+      toast.success("Grupo salvo com sucesso!");
       setOpenGroupModal(false);
-      window.location.reload();
-
-      toast.success("Grupo de filtros salvo com sucesso!");
+      fetchGroups();
     } catch (error) {
-      console.error("Erro ao salvar o grupo:", error);
-      toast.error("Ocorreu um erro ao salvar o grupo de filtros.");
+      console.error(error);
+      toast.error("Erro ao salvar o grupo.");
     }
+  };
+
+  const onEditClick = (groupId: number) => {
+    const found = groups.find((g) => g.id === groupId);
+    if (!found) return console.error("Grupo não encontrado");
+    setUpdateGroup(found);
+    setOpenGroupModal(true);
   };
 
   const handleAddElementClick = (groupId: number) => {
-    setNextGroupElements([]);
-    const currentIndex = groups.findIndex((group) => group.id === groupId);
-
-    if (currentIndex === -1) {
-      return;
+    const index = groups.findIndex((g) => g.id === groupId);
+    if (index === -1 || index === groups.length - 1) {
+      return setNextGroupElements([{ id: -1, name: "É o último grupo", icon: "" }]);
     }
 
-    const nextGroup = groups[currentIndex + 1];
-
-    if (currentIndex === groups.length - 1) {
-      setNextGroupElements([
-        {
-          name: "é o último grupo",
-          icon: "",
-          id: -1,
-        },
-      ]);
-    } else if (nextGroup && nextGroup.categories) {
-      const mappedElements = nextGroup.categories.map((element) => ({
-        ...element,
-        groupName: nextGroup.name,
-      }));
-
-      setNextGroupElements(mappedElements);
-    } else {
-      setNextGroupElements([]);
-    }
-  };
-
-  const getGroups = async () => {
-    try {
-      const request = await api.request<GroupsResponse>({
-        method: "get",
-        url: "group/list",
-      });
-      if (request) {
-        setGroups(request.data);
-      }
-    } catch (error) {
-      console.error("Error fetching groups:", error);
-    }
-
-    try {
-      const request = await api.request<GroupsResponse>({
-        method: "get",
-        url: "app/group/targetadc",
-      });
-      if (request) {
-        setGroup_Target_Adc(request.data);
-      }
-    } catch (error) {
-      console.error("Error fetching groups:", error);
-    }
-  };
-
-  const onEditClick = async (groupId: number) => {
-    const GroupGet = groups.filter((el) => el.id === groupId);
-
-    if (GroupGet.length > 0) {
-      setUpdateGroup(GroupGet[0]);
-      setOpenGroupModal(true);
-    } else {
-      console.error("Grupo não encontrado");
-    }
+    const next = groups[index + 1];
+    const mapped =
+      next.categories?.map((el) => ({ ...el, groupName: next.name })) ?? [];
+    setNextGroupElements(mapped);
   };
 
   useEffect(() => {
-    getGroups();
-  }, []);
+    fetchGroups();
+  }, [fetchGroups]);
 
   useEffect(() => {
-    if (!openGroupModal) {
-      setUpdateGroup(null);
-    }
+    if (!openGroupModal) setUpdateGroup(null);
   }, [openGroupModal]);
 
+  // 🔁 Renderização dos cards otimizada
+  const renderCards = (items: Group[], isTarget = false) => {
+    if (!items?.length) return <p>Nenhum grupo disponível.</p>;
+
+    return items.map((group) => (
+      <Card
+        key={group.id}
+        id={group.id}
+        title={group.name}
+        description={group.description}
+        elements={group.categories ?? []}
+        relatedElements={nextGroupElements}
+        grouptargeadc={isTarget}
+        onEditClick={onEditClick}
+        onDeleteGroup={() => setGroups((prev) => prev.filter((g) => g.id !== group.id))}
+        onAddElementClick={handleAddElementClick}
+      />
+    ));
+  };
+
   return (
-    <Template
-      header={{
-        template: "admin",
-        position: "solid",
-      }}
-    >
-      <section className="">
+    <Template header={{ template: "admin", position: "solid" }}>
+      <section>
         <div className="container-medium pt-12">
-          <div className="">
-            <Breadcrumbs
-              links={[
-                { url: "/admin", name: "Admin" },
-                { url: "/admin/blog", name: "Blog" },
-              ]}
-            />
-          </div>
+          <Breadcrumbs
+            links={[
+              { url: "/admin", name: "Admin" },
+              { url: "/admin/blog", name: "Blog" },
+            ]}
+          />
         </div>
       </section>
 
-      <section className=" flex flex-col gap-3 w-full m-5  justify-center  items-center mx-auto">
-        <div className=" flex flex-col gap-3 w-full max-w-[1000px]  ">
-          <div className="flex mt-6 pb-6">
-            <div className="w-full flex justify-between ">
-              <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
-                Configurar público-alvo
-              </div>
-            </div>
-          </div>
-          {group_target_adc && group_target_adc.length > 0 ? (
-            group_target_adc.map((value, index) => {
-              return (
-                <Card
-                  key={index}
-                  onEditClick={onEditClick}
-                  elements={value.categories as categorie[]}
-                  grouptargeadc={value.target_adc ? true : false}
-                  relatedElements={nextGroupElements}
-                  title={value.name}
-                  description={value.description}
-                  id={value.id}
-                  onDeleteGroup={() => {
-                    setGroups((prev) =>
-                      prev.filter((group) => group.id !== value.id)
-                    );
-                  }}
-                  onAddElementClick={handleAddElementClick}
-                />
-              );
-            })
-          ) : (
-            <p>No groups available.</p>
-          )}
+      <section className="m-5 flex flex-col items-center gap-3 mx-auto">
+        <div className="max-w-[1000px] w-full flex flex-col gap-3">
+          <h2 className="font-title text-3xl lg:text-4xl font-bold text-zinc-900">
+            Configurar público-alvo
+          </h2>
+          {renderCards(targetGroups, true)}
         </div>
 
-        <div className=" flex flex-col gap-3 w-full max-w-[1000px] ">
-          <div className="flex mt-6 pb-6">
-            <div className="w-full flex justify-between ">
-              <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
-                Configurar Filtro Dinâmico
-              </div>
-              <div className="flex-[1.2] gap-2 justify-end items-center flex flex-row w-">
-                <NewGroup
-                  onClick={() => {
-                    setOpenGroupModal(true);
-                  }}
-                  text="Adicionar grupo"
-                  icon={<CirclePlus size={20} />}
-                />
-              </div>
-            </div>
+        <div className="max-w-[1000px] w-full flex flex-col gap-3">
+          <div className="flex justify-between">
+            <h2 className="font-title text-3xl lg:text-4xl font-bold text-zinc-900">
+              Configurar Filtro Dinâmico
+            </h2>
+            <NewGroup
+              onClick={() => setOpenGroupModal(true)}
+              text="Adicionar grupo"
+              icon={<CirclePlus size={20} />}
+            />
           </div>
-
-          {groups && groups.length > 0 ? (
-            groups.map((value, index) => {
-              return (
-                <Card
-                  key={index}
-                  onEditClick={onEditClick}
-                  elements={value.categories as categorie[]}
-                  relatedElements={nextGroupElements}
-                  title={value.name}
-                  description={value.description}
-                  id={value.id}
-                  onDeleteGroup={() => {
-                    setGroups((prev) =>
-                      prev.filter((group) => group.id !== value.id)
-                    );
-                  }}
-                  onAddElementClick={handleAddElementClick}
-                />
-              );
-            })
-          ) : (
-            <p>No groups available.</p>
-          )}
+          {renderCards(groups)}
         </div>
       </section>
 
       <GroupModal
-        onSaveClick={(data) => {
-          onSaveGroup(data);
-        }}
         data={updateGroup}
         open={openGroupModal}
-        onRequestClose={() => {
-          setOpenGroupModal(false);
-        }}
+        onSaveClick={onSaveGroup}
+        onRequestClose={() => setOpenGroupModal(false)}
       />
     </Template>
   );
