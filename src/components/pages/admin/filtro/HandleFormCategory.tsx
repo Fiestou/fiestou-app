@@ -1,6 +1,5 @@
 import { Input, Label, Select } from "@/src/components/ui/form";
 import FileManager from "@/src/components/ui/form/FileManager";
-import { useEffect } from "react";
 
 export default function HandleFormCategory({
   item,
@@ -15,7 +14,7 @@ export default function HandleFormCategory({
         <Label style="float">Nome</Label>
         <Input
           value={item?.title ?? ""}
-          onChange={(e: any) =>
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             emit({
               title: e.target.value,
             })
@@ -27,7 +26,7 @@ export default function HandleFormCategory({
       <div className="form-group">
         <Label style="float">Destacar categoria</Label>
         <Select
-          onChange={(e: any) =>
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             emit({
               feature: e.target.value == "on",
             })
@@ -53,7 +52,7 @@ export default function HandleFormCategory({
           <div className="form-group w-full">
             <Label style="float">Quantidade de seleção</Label>
             <Select
-              onChange={(e: any) =>
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 emit({
                   multiple: e.target.value == "true",
                 })
@@ -79,7 +78,7 @@ export default function HandleFormCategory({
               <Label style="float">Máx</Label>
               <Input
                 value={item?.limitSelect ?? 0}
-                onChange={(e: any) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   emit({
                     limitSelect: e.target.value,
                   })
@@ -93,7 +92,7 @@ export default function HandleFormCategory({
           <div className="form-group w-full max-w-[12rem]">
             <Label style="float">Tamanho do elemento</Label>
             <Select
-              onChange={(e: any) =>
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 emit({
                   style: e.target.value,
                 })
@@ -124,7 +123,7 @@ export default function HandleFormCategory({
         <FileManager
           multiple={false}
           value={item?.image ?? []}
-          onChange={(value: any) => {
+          onChange={(value: React.ChangeEvent<HTMLInputElement>) => {
             emit({
               image: value,
             });
