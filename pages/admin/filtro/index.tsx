@@ -24,7 +24,6 @@ export default function Categorias() {
   const [updateGroup, setUpdateGroup] = useState<Group | null>(null);
   const [nextGroupElements, setNextGroupElements] = useState<categorie[]>([]);
 
-  // 🚀 Busca de grupos corrigida com rotas corretas
   const fetchGroups = useCallback(async () => {
     try {
       const [groupsRes, targetRes] = await Promise.all([
@@ -40,7 +39,6 @@ export default function Categorias() {
     }
   }, []);
 
-  // 🧾 Salvar grupo (create ou update)
   const onSaveGroup = async (data: GroupData) => {
     const payload: RequestRegister = {
       name: data?.name || "",
@@ -94,7 +92,6 @@ export default function Categorias() {
     if (!openGroupModal) setUpdateGroup(null);
   }, [openGroupModal]);
 
-  // 🔁 Renderização dos cards otimizada
   const renderCards = (items: Group[], isTarget = false) => {
     if (!items?.length) return <p>Nenhum grupo disponível.</p>;
 
@@ -121,7 +118,7 @@ export default function Categorias() {
           <Breadcrumbs
             links={[
               { url: "/admin", name: "Admin" },
-              { url: "/admin/blog", name: "Blog" },
+              { url: "/admin/filtro", name: "Filtro" },
             ]}
           />
         </div>

@@ -4,7 +4,7 @@ import Template from "@/src/template";
 import { useContext } from "react";
 
 export default function Admin() {
-  const { } = useContext(AuthContext);
+  const {} = useContext(AuthContext);
 
   return (
     <Template
@@ -18,13 +18,13 @@ export default function Admin() {
     >
       <section className="">
         <div className="container-medium py-14">
-          <div className="font-title font-bold text-5xl flex gap-4 items-center mb-4 text-zinc-900">
-            Olá, Pedro
-          </div>
-          <div>
+          <h1 className="font-title font-bold text-5xl flex gap-4 items-center mb-4 text-zinc-900">
+            Olá, Pedro!
+          </h1>
+          <span>
             Seja bem-vindo ao painel administrativo. Aqui você pode gerenciar
             seu perfil, eventos, e muito mais.
-          </div>
+          </span>
         </div>
 
         <div className="text-center mt-20">
