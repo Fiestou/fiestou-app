@@ -1,6 +1,5 @@
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useState } from "react";
-import { Button } from "../ui/form";
 
 interface ModalProps {
   status: boolean;
@@ -94,7 +93,7 @@ export default function Modal(attr: ModalProps) {
           </div>
         ) : attr.storeView ? (
           <div
-            className={`fixed right-0 top-0 h-[100svh] flex flex-col bg-white ${drawerSize[attr.size ?? "xl"]} 
+            className={`fixed right-0 top-0 h-[100svh] flex flex-col bg-white z-10 ${drawerSize[attr.size ?? "xl"]} 
               shadow-xl transition-transform duration-200 ease-in-out
               ${status ? "translate-x-0" : "translate-x-full"}
               ${attr.className ?? ""}`}
