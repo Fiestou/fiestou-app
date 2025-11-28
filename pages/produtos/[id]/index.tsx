@@ -274,6 +274,7 @@ export default function Produto({
     ) {
       orderUpdate.attributes.push({
         id: attr.id,
+        title: attr.title,
         variations: [],
       });
     }
@@ -364,8 +365,11 @@ export default function Produto({
 
     // pegar os dados
     if (AddToCart(productToCart)) {
-      handleCart();
       setCartModal(true);
+      // Não atualiza o inCart imediatamente para permitir adicionar mais
+      setTimeout(() => {
+        setLoadCart(false);
+      }, 500);
     } else {
       setLoadCart(false);
     }
