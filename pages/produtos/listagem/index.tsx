@@ -62,7 +62,11 @@ export default function Listagem({
   const [filters, setFilters] = useState<any>({});
   const [products, setProducts] = useState([] as Array<ProductType>);
   const [suggestions, setSuggestions] = useState([] as Array<ProductType>);
-  const [selectedColors, setSelectedColors] = useState([] as string[]);
+  const [activeFilters, setActiveFilters] = useState<{
+    colors: string[];
+    categories: { name: string; icon?: string }[];
+    tags: string[];
+  }>({ colors: [], categories: [], tags: [] });
   const [showScrollTop, setShowScrollTop] = useState(false);
   const activeRequest = useRef(0);
   const observerRef = useRef<HTMLDivElement | null>(null);
@@ -153,12 +157,18 @@ export default function Listagem({
         const items = (response?.data ?? []) as ProductType[];
         const suggestedItems = (response?.suggestions ?? []) as ProductType[];
         const colorsFromApi = (response?.colors ?? []) as string[];
+        const categoriesFromApi = (response?.categories ?? []) as { name: string; icon?: string }[];
+        const tagsFromApi = (response?.tags ?? []) as string[];
 
         setProducts((prev) => (replace ? items : [...prev, ...items]));
 
         if (replace) {
           setSuggestions(suggestedItems);
-          setSelectedColors(colorsFromApi);
+          setActiveFilters({
+            colors: colorsFromApi,
+            categories: categoriesFromApi,
+            tags: tagsFromApi,
+          });
         }
 
         if (items.length >= limit) {
@@ -293,7 +303,7 @@ export default function Listagem({
                   </div>
                 ))}
               </div>
-            ) : selectedColors.length > 0 && suggestions.length > 0 ? (
+            ) : (activeFilters.colors.length > 0 || activeFilters.categories.length > 0 || activeFilters.tags.length > 0) && suggestions.length > 0 ? (
               <div className="text-center py-12 opacity-80">
                 <div className="text-2xl font-semibold font-title pb-2">
                   Não encontramos resultados para sua busca
@@ -318,11 +328,11 @@ export default function Listagem({
       </section>
 
 
-      {/* Sugestões de produtos com cores selecionadas */}
-      {suggestions.length > 0 && selectedColors.length > 0 && (
+      {/* Sugestões de produtos com filtros selecionados */}
+      {suggestions.length > 0 && (activeFilters.colors.length > 0 || activeFilters.categories.length > 0 || activeFilters.tags.length > 0) && (
         <SuggestedProducts
           products={suggestions}
-          colors={selectedColors}
+          filters={activeFilters}
           title="Você também pode gostar"
         />
       )}
