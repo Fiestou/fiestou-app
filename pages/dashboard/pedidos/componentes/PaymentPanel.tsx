@@ -116,12 +116,6 @@ export const PaymentPanel = ({
               checked={form.sended || pix.status}
               style="btn-success"
               className="py-6 px-3"
-              disable={
-                (payment.payment_method === "pix" &&
-                  !documentIsValid(user?.document)) ||
-                (payment.payment_method === "credit_card" &&
-                  !documentIsValid(card?.holder_document))
-              }
             >
               Confirmar e pagar
             </Button>
@@ -263,12 +257,24 @@ const PixBoletoCard = ({
             <input
               type="text"
               id="pix-code"
-              defaultValue={pix.code}
+              value={pix.code ?? ""}
+              readOnly
               className="absolute h-0 w-0 opacity-0 overflow-hidden"
             />
             <button
               type="button"
-              onClick={() => CopyClipboard("pix-code")}
+              onClick={() => {
+                try {
+                  if (pix?.code) {
+                    navigator.clipboard.writeText(String(pix.code));
+                    return;
+                  }
+                } catch (e) {
+                  // fallthrough to helper
+                }
+
+                CopyClipboard("pix-code");
+              }}
               className="font-semibold pt-3 pb-2 text-cyan-600"
             >
               <Icon icon="fa-copy" className="mr-2" />
@@ -386,7 +392,7 @@ const PaymentMethodOptions = ({
       />
       {payment.payment_method === "pix" && (
         <div className="px-3 md:px-4 pb-3 md:pb-4 grid gap-4">
-          {!user?.cpf && (
+          {((user?.document ?? "").toString().length < 12) && (
             <div className="form-group mt-1">
               <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
                 CPF/CNPJ

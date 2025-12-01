@@ -3,6 +3,7 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
+import { fetchOrderById } from "@/src/services/order";
 import { OrderType } from "@/src/models/order";
 import Payment from "@/src/services/payment";
 import { RateType } from "@/src/models/product";
@@ -21,30 +22,6 @@ import Modal from "@/src/components/utils/Modal";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { deliveryTypes } from "@/src/models/delivery";
 import Pagarme from "@/src/services/pagarme";
-
-export async function getServerSideProps(ctx: any) {
-  const api = new Api();
-  const params = ctx.params;
-
-  let request: any = await api.content({
-    method: 'get',
-    url: "order",
-  });
-
-  const HeaderFooter = request?.data?.HeaderFooter ?? {};
-  const DataSeo = request?.data?.DataSeo ?? {};
-  const Scripts = request?.data?.Scripts ?? {};
-
-  return {
-    props: {
-      orderId: params.id,
-      HeaderFooter: HeaderFooter,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
-    },
-  };
-}
-
 const formInitial = {
   edit: "",
   loading: false,
@@ -193,13 +170,8 @@ export default function Pedido({
   };
   
   const getOrder = async () => {
-    const request: any = await api.bridge({
-      method: "get",
-      url: "order/" + orderId,
-    });
-
-    const fetchedOrder: OrderType =
-      request?.data?.data ?? request?.data ?? ({} as OrderType);
+    const fetchedOrder: OrderType | null =
+      (await fetchOrderById(api, orderId)) ?? ({} as OrderType);
 
     if (!fetchedOrder?.id) {
       return {

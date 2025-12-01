@@ -1,5 +1,6 @@
 import Template from "@/src/template";
 import Api from "@/src/services/api";
+import { fetchOrderById } from "@/src/services/order";
 import { useEffect, useState } from "react";
 import {
   CopyClipboard,
@@ -153,19 +154,15 @@ export default function Pagamento({
   const [boleto, setBoleto] = useState<any>({});
 
   const ConfirmManager = async () => {
-    let request: any = await api.bridge({
-      method: "post",
-      url: "orders/get",
-      data: {
-        id: orderId,
-      },
-    });
+    try {
+      // Usa o serviço centralizado para obter o pedido atualizado
+      const handle = await fetchOrderById(api, orderId);
 
-    const handle: OrderType =
-      request?.data?.data ?? request?.data ?? ({} as OrderType);
-
-    if (handle.status === 1) {
-      window.location.href = `/dashboard/pedidos/${orderId}`;
+      if (handle && handle.status === 1) {
+        window.location.href = `/dashboard/pedidos/${orderId}`;
+      }
+    } catch (err) {
+      console.error("ConfirmManager error:", err);
     }
   };
 

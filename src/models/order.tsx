@@ -127,6 +127,8 @@ export interface OrderPartnerBlock {
  * - blocos dedicados para payment / delivery / partner
  */
 export interface OrderType {
+  freights_orders_price: any;
+  listItems: any;
   metadata: any;
   delivery_status: string;
   user: null;

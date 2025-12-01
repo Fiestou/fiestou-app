@@ -2,14 +2,14 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
+import { fetchOrderById } from "@/src/services/order";
 import { OrderType, OrderTypeResponse } from "@/src/models/order";
 import {
-  dateBRFormat,
   getExtenseData,
   moneyFormat
 } from "@/src/helper";
 import { Button, Label, Select } from "@/src/components/ui/form";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { deliveryToName, deliveryTypes } from "@/src/models/delivery";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -34,13 +34,28 @@ const FormInitialType = {
   loading: false,
 };
 
-export default function Pedido({
-  order,
-}: {
-  order: OrderTypeResponse;
-}) {
+export default function Pedido() {
   const api = new Api();
   const router = useRouter();
+
+  // order state (loaded on mount using router.query.id)
+  const [order, setOrder] = useState({} as OrderType);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    const idRaw = router.query.id ?? router.query[0];
+    const id = Number(idRaw);
+    if (!id) return;
+
+    (async () => {
+      const fetched = await fetchOrderById(api, id);
+      if (fetched) {
+        setOrder(fetched as OrderType);
+        setDeliveryStatus((fetched as any)?.delivery_status ?? "pending");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, router.query]);
 
   const orderByStore = useCallback(() => {
     let orderByStore = new Map<number, any>();
@@ -49,11 +64,11 @@ export default function Pedido({
       const listItem = order.listItems?.find((item: any) => item.product.id === productItem.id);
       const productItemWithAttributes = order.products?.find((item: any) => item.id === productItem.id);
       const additionalExtras: any[] = [];
-      
+
       if (listItem?.attributes) {
         listItem.attributes.forEach((attribute: any) => {
           const attributeTitle = JSON.parse(productItemWithAttributes?.attributes ?? "[]");
-          
+
           attribute.variations.forEach((variation: any) => {
             additionalExtras.push({
               title: attributeTitle.find((item: any) => item.id === attribute.id)?.title,
@@ -65,7 +80,7 @@ export default function Pedido({
       }
 
       if (orderByStore.has(productItem.store.id)) {
-        return orderByStore.get(productItem.store.id).push({...productItem, additionalExtra: additionalExtras});
+        return orderByStore.get(productItem.store.id).push({ ...productItem, additionalExtra: additionalExtras });
       }
 
       return orderByStore.set(productItem.store.id, [{
@@ -80,11 +95,12 @@ export default function Pedido({
   const [form, setForm] = useState(FormInitialType);
   const [dropdownDelivery, setDropdownDelivery] = useState(false as boolean);
 
-  const [orderState, setOrderState] = useState((order ?? {}) as OrderType);
-
-  const [deliveryStatus, setDeliveryStatus] = useState(
-    (order?.delivery_status as string) ?? "pending"
+  const [deliveryStatus, setDeliveryStatus] = useState<string>(
+    "pending"
   );
+
+  console.log("ORDER STATE:", order);
+
   const notifyDelivery = async (e: any) => {
     e.preventDefault();
 
@@ -93,7 +109,7 @@ export default function Pedido({
     setForm({ ...form, loading: true });
 
     const handle: any = {
-      ...orderState,
+      ...order,
       deliveryStatus: deliveryStatus,
     };
 
@@ -103,8 +119,17 @@ export default function Pedido({
       data: handle,
     });
 
+    // Tenta extrair o pedido atualizado da resposta (normaliza formatos possíveis)
+    const returnedOrder: OrderType | null =
+      request?.order ?? request?.data?.data ?? request?.data ?? null;
+
     if (!!request.response) {
-      setOrderState(handle);
+      if (returnedOrder && returnedOrder.id) {
+        setOrder(returnedOrder as any);
+      } else {
+        // fallback: atualiza com os dados locais enviados
+        setOrder(handle as any);
+      }
     }
 
     setForm({ ...form, loading: false });
@@ -174,7 +199,7 @@ export default function Pedido({
               <div className="grid md:gap-2 pb-6">
                 <div className="text-2xl text-zinc-900">Detalhes do pedido</div>
                 <div className="text-base">
-                  Realizado em: {getExtenseData(order.created_at)}
+                  Realizado em: {getExtenseData(order.createdAt)}
                 </div>
               </div>
               <div className="border rounded-xl p-4 lg:p-8">
@@ -182,7 +207,7 @@ export default function Pedido({
                   Array.from(orderByStore().entries()).map(([storeId, items]: [number, any[]]) => {
 
                     const subtotal = items.reduce((sum: number, item: any) => sum + Number(item.price) + item.additionalExtra.reduce((sum: number, extra: any) => sum + Number(extra.price), 0), 0);
-                    const frete: string | number = order.freights_orders_price.find((freight) => freight.store_id == storeId)?.price || 0;
+                                    const frete: string | number = order.freights_orders_price?.find((freight: any) => freight.store_id == storeId)?.price || 0;
 
                     return (
                       <div key={storeId} className="mb-8">
@@ -248,10 +273,10 @@ export default function Pedido({
                     Dados do cliente
                   </div>
                   <div>
-                    <div>{order.user?.name}</div>
-                    <div>{order.user?.email}</div>
-                    <div>{order.user?.phone}</div>
-                    <div>{order.user?.cpf}</div>
+                    <div>{(order as any).user?.name}</div>
+                    <div>{(order as any).user?.email}</div>
+                    <div>{(order as any).user?.phone}</div>
+                    <div>{(order as any).user?.cpf}</div>
                   </div>
                 </div>
                 {!!order.metadata && (
@@ -264,9 +289,16 @@ export default function Pedido({
                       <div>
                         <div>
                           {!!order.metadata?.payment_method &&
-                          order.metadata?.payment_method == "pix"
+                            order.metadata?.payment_method == "pix"
                             ? "PIX"
                             : "Cartão de crédito"}
+                        </div>
+                        <div className="text-sm text-zinc-500 mt-2">
+                          <strong>Código do recebedor:</strong>{" "}
+                          {(order as any)?.store?.recipient_id ||
+                            ((order?.products?.[0] as any)?.store?.recipient_id) ||
+                            ((order as any)?.payments?.[0]?.split?.[0]?.recipient_id) ||
+                            "—"}
                         </div>
                         {!!order.metadata?.installments && (
                           <div>{order.metadata?.installments}x</div>
@@ -279,27 +311,27 @@ export default function Pedido({
                 <div>
                   <div className="font-bold font-title text-zinc-900 text-xl mb-4">
                     Entrega (
-                    {!!order?.delivery_price
-                      ? `R$ ${moneyFormat(order.delivery_price)}`
+                    {!!order?.delivery?.price
+                      ? `R$ ${moneyFormat(order.delivery?.price)}`
                       : "Gratuita"}
                     )
                   </div>
                   <div>
-                    {deliveryToName[order.delivery_to]}, {order.delivery_schedule}
+                    {order?.delivery?.to}, {order?.delivery?.schedule}
                   </div>
                   <div>
-                    {order?.delivery_address?.street},{" "}
-                    {order?.delivery_address?.number},{" "}
-                    {order?.delivery_address?.neighborhood}
+                    {order?.delivery?.address?.street},{" "}
+                    {order?.delivery?.address?.number},{" "}
+                    {order?.delivery?.address?.neighborhood}
                   </div>
                   <div>
-                    CEP: {order?.delivery_address?.zipCode}
+                    CEP: {order?.delivery?.address?.zipCode}
                     <br />
-                    {order?.delivery_address?.complement}
+                    {order?.delivery?.address?.complement}
                   </div>
                   <div>
-                    {order?.delivery_address?.city} |{" "}
-                    {order?.delivery_address?.state}
+                    {order?.delivery?.address?.city} |{" "}
+                    {order?.delivery?.address?.state}
                   </div>
                 </div>
                 <form
@@ -369,7 +401,7 @@ export default function Pedido({
                     <Select
                       name="status_entrega"
                       onChange={(e: any) => setDeliveryStatus(e.target.value)}
-                      value={orderState.delivery_status ?? "pending"}
+                      value={deliveryStatus ?? "pending"}
                       options={deliveryTypes}
                     />
                   </div>
