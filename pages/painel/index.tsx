@@ -89,6 +89,7 @@ export default function Parceiro({ content }: { content: any }) {
   const [store, setStore] = useState<any>(null);
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
   const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
+  console.log("recipientStatus:", recipientStatus);
 
   const checkPagarmeStatus = async () => {
     try {
@@ -202,11 +203,13 @@ export default function Parceiro({ content }: { content: any }) {
                       </Button>
                     )}
 
-                    {recipientStatus && recipientStatus.completed && (
+                    {recipientStatus?.completed && (
                       <p className="mt-2 text-sm font-semibold text-green-600">
-                        Código recebedor:{" "}
-                        {recipientStatus.recipient &&
-                          "—"}
+                        Código recebedor: {" "}
+                        {((recipientStatus?.recipient as any)?.code) ||
+                          ((recipientStatus?.recipient as any)?.id
+                            ? String((recipientStatus?.recipient as any).id)
+                            : "—")}
                       </p>
                     )}
                   </div>

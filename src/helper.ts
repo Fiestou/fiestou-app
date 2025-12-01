@@ -291,8 +291,6 @@ export function shortId(): string {
 
 export function getImage(image: any, size?: string) {
   if (!image) return "";
-  
-  console.log("image", image);
 
   // Se recebeu apenas uma URL string, retorna ela diretamente
   if (typeof image === "string") {

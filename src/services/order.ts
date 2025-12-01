@@ -1,8 +1,27 @@
-// src/services/order.ts
+import { OrderType } from "@/src/models/order";
 import Api from "@/src/services/api";
 
-const api = new Api();
+/**
+ * Fetch order by id using the bridge API and return a normalized OrderType or null
+ */
+export async function fetchOrderById(api?: Api, orderId?: number): Promise<OrderType | null> {
+  try {
+    const client = api ?? new Api();
+    const req: any = await client.bridge({
+      method: "get",
+      url: `order/${orderId}`,
+    });
 
+    const order: OrderType = req?.order ?? req?.data?.data ?? req?.data ?? null;
+
+    return order ?? null;
+  } catch (err) {
+    console.error("fetchOrderById error:", err);
+    return null;
+  }
+}
+
+const api = new Api();
 /**
  * Tipagens básicas (ajusta conforme o backend for evoluindo)
  */
