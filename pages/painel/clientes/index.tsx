@@ -25,7 +25,7 @@ export default function Clientes({ store }: { store: any }) {
 
   const relationship = async () => {
     let request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "stores/customers",
       data: {
         store: store,
@@ -91,6 +91,7 @@ export default function Clientes({ store }: { store: any }) {
           </div>
         </div>
       </section>
+
       <section className="pt-6">
         <div className="container-medium pb-12">
           <div className="border border-t-0 grid md:grid-cols-2 lg:block w-full">
@@ -99,24 +100,30 @@ export default function Clientes({ store }: { store: any }) {
               <div className="w-full">E-mail</div>
               <div className="w-[22rem]"></div>
             </div>
+
             {!!clients &&
               clients.map((client: any, key: any) => (
                 <div
                   key={key}
                   className="grid lg:flex border-t p-4 lg:p-8 gap-2 lg:gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 ease items-center"
                 >
+                  {/* Nome */}
                   <div className="w-full lg:w-[40rem]">
                     <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
                       Nome
                     </span>
                     {client?.name}
                   </div>
+
+                  {/* Email */}
                   <div className="w-full">
                     <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
                       E-mail
                     </span>
                     {client?.email}
                   </div>
+
+                  {/* Botão */}
                   <div className="w-full lg:w-[22rem] grid">
                     <Button
                       href={`/painel/clientes/${client.id}`}
@@ -126,9 +133,17 @@ export default function Clientes({ store }: { store: any }) {
                       Ver detalhes
                     </Button>
                   </div>
+
+                  {/* 🔍 MOSTRA TODAS AS PROPRIEDADES DO CLIENT */}
+                  <div className="mt-6 col-span-full w-full">
+                    <pre className="text-xs bg-zinc-100 p-4 rounded-lg overflow-auto">
+                      {JSON.stringify(client, null, 2)}
+                    </pre>
+                  </div>
                 </div>
               ))}
           </div>
+
           <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div>
         </div>
       </section>
