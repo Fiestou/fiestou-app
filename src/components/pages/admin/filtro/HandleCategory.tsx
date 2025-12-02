@@ -3,8 +3,7 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import HandleCategories from "./HandleCategories";
 import { getImage } from "@/src/helper";
 import { useEffect, useState } from "react";
-import { Button, Input, Label, Select } from "@/src/components/ui/form";
-import FileManager from "@/src/components/ui/form/FileManager";
+import { Button } from "@/src/components/ui/form";
 import Modal from "@/src/components/utils/Modal";
 import HandleFormCategory from "./HandleFormCategory";
 import Api from "@/src/services/api";
@@ -43,7 +42,7 @@ export default function HandleCategory({
     emitEdit({ ...item, ...value });
   };
 
-  const submitEdit = async (e: any) => {
+  const submitEdit = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
 
     handleForm({ loading: true });
@@ -60,7 +59,7 @@ export default function HandleCategory({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "categories/register",
       data: handle,
     });
