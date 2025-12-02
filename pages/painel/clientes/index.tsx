@@ -133,17 +133,9 @@ export default function Clientes({ store }: { store: any }) {
                       Ver detalhes
                     </Button>
                   </div>
-
-                  {/* 🔍 MOSTRA TODAS AS PROPRIEDADES DO CLIENT */}
-                  <div className="mt-6 col-span-full w-full">
-                    <pre className="text-xs bg-zinc-100 p-4 rounded-lg overflow-auto">
-                      {JSON.stringify(client, null, 2)}
-                    </pre>
-                  </div>
                 </div>
               ))}
           </div>
-
           <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div>
         </div>
       </section>
