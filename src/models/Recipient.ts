@@ -175,7 +175,7 @@ export interface RecipientEntity {
 
 export interface RecipientStatusResponse {
   completed: boolean;
-  recipient?: RecipientType | null;
+  recipient: RecipientType | null;
 }
 
 /** update (telas de edição) */

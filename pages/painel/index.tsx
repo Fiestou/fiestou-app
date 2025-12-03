@@ -10,12 +10,19 @@ import { Button } from "@/src/components/ui/form";
 import { Chart } from "@/src/components/utils/Chart";
 import DobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Api from "@/src/services/api";
-import { BalanceType } from "@/src/models/order";
 import { PARTNER_MENU } from "@/src/default/header/Painel";
 import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
 import { RecipientStatusResponse, RecipientType } from "@/src/models/Recipient";
 import { getRecipientStatus } from "@/src/services/recipients";
 import { getOrdersByCustomer } from "@/src/services/order";
+
+type BalanceType = {
+  cash: number;
+  payments: number;
+  promises: number;
+  orders: number;
+};
+
 // 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -150,6 +157,11 @@ export default function Parceiro({ content }: { content: any }) {
     }
   }, [user?.id]);
 
+  useEffect(() => {
+   console.log("user changed:", recipientStatus?.recipient);
+  }, [recipientStatus]);
+
+
   const safeOrders = Array.isArray(orders) ? orders : [];
   const hasOrders = safeOrders.length > 0;
 
@@ -206,10 +218,10 @@ export default function Parceiro({ content }: { content: any }) {
                     {recipientStatus?.completed && (
                       <p className="mt-2 text-sm font-semibold text-green-600">
                         Código recebedor: {" "}
-                        {((recipientStatus?.recipient as any)?.code) ||
-                          ((recipientStatus?.recipient as any)?.id
+                        {((recipientStatus?.recipient as any)) ||
+                          ((recipientStatus?.recipient as any)
                             ? String((recipientStatus?.recipient as any).id)
-                            : "—")}
+                            : "N/A")}
                       </p>
                     )}
                   </div>

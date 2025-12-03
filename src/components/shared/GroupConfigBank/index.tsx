@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import ElementsConfig from '../ElementsConfig';
 import { Button } from '../../ui/form';
 import ArrowUp from '@/src/icons/arrowUp';
@@ -51,14 +51,18 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId }) => {
                 return;
             }
 
-            const storeId = 123;
+            // resolve store id from context (getStore()) or fallback to recipientId
+            const storeId = getStore() || recipientId;
 
+            // Try the new endpoint POST /withdraw/{storeId} first
             const checkWithdraw = await api.bridge<any>({
                 method: "post",
-                url: `/withdraw/list/${storeId}/split`,
+                url: `/withdraw/${storeId}`,
             });
 
-            const withdrawData = checkWithdraw?.data?.[0];
+            // normalize withdraw data from multiple possible response shapes
+            const withdrawData =
+                checkWithdraw?.data ?? checkWithdraw?.data?.data ?? checkWithdraw?.data?.[0] ?? null;
 
             const payloadWithdraw = {
                 store: storeId,
@@ -67,7 +71,7 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId }) => {
                 is_split: 1,
             };
 
-            if (withdrawData?.code) {
+            if (withdrawData && withdrawData.code) {
                 const updateWithdraw = await api.bridge<any>({
                     method: "put",
                     url: `/withdraw/update`,
@@ -90,7 +94,7 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId }) => {
                     data: payloadWithdraw,
                 });
 
-                if (createWithdraw?.success) {
+                if (createWithdraw?.success || createWithdraw?.response) {
                     toast.success("Saque criado com sucesso!");
                 } else {
                     toast.error("Erro ao criar saque.");
@@ -107,22 +111,31 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId }) => {
     useEffect(() => {
         const fetchWithdrawData = async () => {
             try {
-                const storeId = getStore(); // ou getStore() se tiver isso vindo de contexto
-                const checkWithdraw = await api.bridge<any>({
-                    method: "post",
-                    url: `/withdraw/list/${storeId}/split`,
-                });
+                const storeId = getStore();
 
-                const withdrawData = checkWithdraw?.data?.[0];
-                if (withdrawData?.bankAccount) {
-                    const bankAccount = typeof withdrawData.bankAccount === "string"
-                        ? JSON.parse(withdrawData.bankAccount)
-                        : withdrawData.bankAccount;
+                const checkWithdraw = await api.bridge<any>({
+                    method: "get",
+                    url: `/withdraw/${storeId}`,
+                });
+                console.log("checkWithdraw:", checkWithdraw);
+
+                const withdrawData = checkWithdraw[0]?.data ?? checkWithdraw?.data?.data ?? checkWithdraw?.data?.[0] ?? null;
+
+                console.log("withdrawData:", withdrawData?.account_number);
+
+                const bankAccountRaw = withdrawData?.account_number || withdrawData?.account_number || null;
+
+                console.log("bankAccountRaw:", bankAccountRaw);
+
+                if (bankAccountRaw) {
+                    const bankAccount = typeof bankAccountRaw === "string" ? JSON.parse(bankAccountRaw) : bankAccountRaw;
+
+                    console.log("bankAccount parsed:", bankAccount);
 
                     setContentForm({
                         title: bankAccount.title ?? "",
                         bank: bankAccount.bank ?? "",
-                        branch_number: bankAccount.branch_number ?? "",
+                        branch_number: bankAccount.branch_number ?? bankAccount.branch_number ?? "",
                         branch_check_digit: bankAccount.branch_check_digit ?? "",
                         account_number: bankAccount.account_number ?? "",
                         account_check_digit: bankAccount.account_check_digit ?? "",
@@ -135,6 +148,11 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId }) => {
 
         fetchWithdrawData();
     }, []);
+
+    useEffect(() => {
+        console.log("contentForm updated:", contentForm);
+    }, [contentForm]);
+
     return (
         <div className="border-b pb-8 mb-0">
             <div className="flex justify-between items-center">
