@@ -5,24 +5,24 @@ import { Label, Select } from "@/src/components/ui/form";
 
 interface ProductType {
   comercialType?: string;
-  schedulingPeriod?: string;
-  schedulingDiscount?: number | "";
+  schedulingPeriod?: number | null;
+  schedulingDiscount?: number | null;
 }
 
 interface ProductCommercialTypeProps {
-  data?: ProductType; // <- torna opcional
-  handleData?: (updated: Partial<ProductType>) => void; // <- também opcional no SSR
+  data?: ProductType;
+  handleData?: (updated: Partial<ProductType>) => void;
 }
 
 const schedulingPeriodOptions = [
-  { value: "day", name: "Por dia" },
-  { value: "night", name: "Por noite" },
-  { value: "hour", name: "Por hora" },
+  { value: 1, name: "Por dia" },
+  { value: 2, name: "Por noite" },
+  { value: 3, name: "Por hora" },
 ];
 
 const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
-  data = {}, // <- garante objeto vazio como default
-  handleData = () => {}, // <- função vazia default
+  data = {},
+  handleData = () => {},
 }) => {
   const handleComercialTypeChange = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -31,8 +31,8 @@ const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
     if (value !== "aluguel") {
       handleData({
         comercialType: value,
-        schedulingPeriod: "",
-        schedulingDiscount: "",
+        schedulingPeriod: null,
+        schedulingDiscount: null,
       });
     } else {
       handleData({ comercialType: value });
@@ -40,12 +40,13 @@ const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
   };
 
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    handleData({ schedulingPeriod: e.target.value });
+    const value = e.target.value === "" ? null : Number(e.target.value);
+    handleData({ schedulingPeriod: value });
   };
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const numberValue = value === "" ? "" : Number(value);
+    const numberValue = value === "" ? null : Number(value);
     handleData({ schedulingDiscount: numberValue });
   };
 
@@ -76,7 +77,7 @@ const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
             <Select
               name="periodo"
               onChange={handlePeriodChange}
-              value={data?.schedulingPeriod || ""}
+              value={data?.schedulingPeriod ?? ""}
               options={[
                 { value: "", name: "Selecione o período..." },
                 ...schedulingPeriodOptions,

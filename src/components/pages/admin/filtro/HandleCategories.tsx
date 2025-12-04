@@ -1,10 +1,9 @@
 import { RelationType } from "@/src/models/relation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ReactSortable } from "react-sortablejs";
 import HandleCategory from "./HandleCategory";
 import Modal from "@/src/components/utils/Modal";
-import { Button, Input, Label, Select } from "@/src/components/ui/form";
-import FileManager from "@/src/components/ui/form/FileManager";
+import { Button } from "@/src/components/ui/form";
 import { shortId } from "@/src/helper";
 import HandleFormCategory from "./HandleFormCategory";
 import Api from "@/src/services/api";
@@ -31,7 +30,7 @@ export default function HandleCategories({
   };
 
   const [newCategory, setNewCategory] = useState({} as any);
-  const handleNew = (value: any) => {
+  const handleNew = (value: React.FormEvent<HTMLFormElement>) => {
     setNewCategory({ ...newCategory, ...value });
   };
 
@@ -46,7 +45,7 @@ export default function HandleCategories({
     emitEdit(reorderList);
   };
 
-  const submitNewCategory = async (e: any) => {
+  const submitNewCategory = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     handleForm({ loading: true });

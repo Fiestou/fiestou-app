@@ -9,8 +9,8 @@ import Api from "@/src/services/api";
 import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
 import { AuthContext } from "@/src/contexts/AuthContext";
-import HCaptchaComponent from "@/src/components/utils/HCaptchaComponent";
 import { CheckMail } from "@/src/models/CheckEmail";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export async function getServerSideProps(ctx: any) {
   const session: any = await getSession(ctx);
@@ -33,14 +33,13 @@ export async function getServerSideProps(ctx: any) {
 
 export default function Completar({ auth }: any) {
   const { UserLogout } = useContext(AuthContext);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const expires = { expires: 14 };
 
   const api = new Api();
 
   const [loading, setLoading] = useState(false as boolean);
-
-  const [token, setToken] = useState("" as string);
 
   const [data, setData] = useState({} as any);
   const handleData = (value: any) => {
@@ -49,7 +48,15 @@ export default function Completar({ auth }: any) {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
+    if (!executeRecaptcha) {
+      console.error("reCAPTCHA not loaded");
+      return;
+    }
+
     setLoading(true);
+
+    // Gera o token reCAPTCHA v3
+    const recaptchaToken = await executeRecaptcha("complete_registration");
 
     const checkmail: CheckMail = await api.bridge({
       method: "post",
@@ -62,7 +69,7 @@ export default function Completar({ auth }: any) {
     const request: any = await api.bridge({
       method: 'post',
       url: "users/update",
-      data: { ...data, origin: "complete", person:checkmail.user.person },
+      data: { ...data, origin: "complete", person:checkmail.user.person, recaptcha_token: recaptchaToken },
     });
 
     if (!!request.response) {
@@ -136,7 +143,7 @@ export default function Completar({ auth }: any) {
                     defaultValue={data.email}
                     type="email"
                     name="email"
-                    readonly
+                    readOnly
                   />
                 </div>
 
@@ -154,14 +161,20 @@ export default function Completar({ auth }: any) {
                   </div>
                 </div>
 
-                <div className="flex justify-center pt-4">
-                  <HCaptchaComponent
-                    onVerify={(token: string) => setToken(token)}
-                  />
+                <div className="text-xs text-center text-gray-500 pt-4">
+                  Este site é protegido pelo reCAPTCHA e aplica a{" "}
+                  <a href="https://policies.google.com/privacy" target="_blank" className="underline">
+                    Política de Privacidade
+                  </a>{" "}
+                  e os{" "}
+                  <a href="https://policies.google.com/terms" target="_blank" className="underline">
+                    Termos de Serviço
+                  </a>{" "}
+                  do Google.
                 </div>
 
                 <div className="form-group">
-                  <Button disable={!token} loading={loading}>
+                  <Button loading={loading}>
                     Cadastrar agora
                   </Button>
                 </div>

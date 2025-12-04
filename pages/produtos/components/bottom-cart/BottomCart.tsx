@@ -22,7 +22,7 @@ export default function BottomCart({ productToCart, inCart, isMobile }: BottomCa
     };
   }, [isMobile]);
 
-  if (!productToCart?.total) return null;
+  if (productToCart?.total == null || isNaN(productToCart.total)) return null;
 
   const formatMoney = (value: any): string => {
     const num =
@@ -46,7 +46,7 @@ export default function BottomCart({ productToCart, inCart, isMobile }: BottomCa
 
       <div className="text-center p-4">
         {!inCart ? (
-          <Button>Adicionar</Button>
+          <Button type="submit">Adicionar</Button>
         ) : (
           <Button href="/carrinho" className="whitespace-nowrap">
             Acessar carrinho

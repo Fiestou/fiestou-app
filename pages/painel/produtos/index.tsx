@@ -112,7 +112,6 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
   };
 
   // --------- Carregar mais produtos ---------
-  // --------- Carregar mais produtos ---------
   const loadMoreProducts = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -318,7 +317,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
 
                     <div className="w-full lg:w-[32rem] text-center">
                       <div className="rounded-md bg-zinc-100 py-2">
-                        {!!item.status ? "Exibindo" : "Oculto"}
+                        {item.status === 1 ? "Exibindo" : "Oculto"}
                       </div>
                     </div>
 
@@ -349,12 +348,14 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                         <input className="cursor-pointer absolute h-full w-full top-0 left-0 opacity-0" />
                         <div className="absolute w-full bottom-0 left-0 hidden group-focus-within:block">
                           <div className="absolute border top-0 -mt-1 left-1/2 -translate-x-1/2 flex bg-white py-2 px-4 text-sm rounded-md gap-5">
-                            <div className="cursor-pointer">cancelar</div>
+                            <div className="cursor-pointer font-semibold text-zinc-900 bg-zinc-200 hover:bg-zinc-300 hover:text-red-600 px-4 py-2 rounded-md transition-colors duration-200">
+                              Cancelar
+                            </div>
                             <button
                               onClick={() => RemoveProduct(item)}
-                              className="cursor-pointer underline font-semibold text-zinc-900 hover:text-red-600"
+                              className="cursor-pointer font-semibold text-zinc-900 bg-zinc-200 hover:bg-zinc-300 hover:text-green-600 px-4 py-2 rounded-md transition-colors duration-200"
                             >
-                              confirmar
+                              Confirmar
                             </button>
                           </div>
                         </div>

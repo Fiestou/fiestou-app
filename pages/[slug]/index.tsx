@@ -16,6 +16,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { FilterQueryType } from "@/src/types/filtros";
 import Filter from "@/src/components/common/filters/Filter";
+import { getStoreUrl } from "@/src/urlHelpers";
 
 
 export interface Store {
@@ -200,7 +201,7 @@ export default function Store({
     getProducts();
   }, []);
 
-  const baseUrl = `https://fiestou.com.br/${store?.slug}`;
+  const baseUrl = `https://fiestou.com.br${getStoreUrl(store)}`;
 
   if (isFallback) {
     return null;
@@ -237,7 +238,7 @@ export default function Store({
             <Breadcrumbs
               links={[
                 { url: "/parceiros", name: "Parceiros" },
-                { url: `/${store?.slug}`, name: store?.title },
+                { url: getStoreUrl(store), name: store?.title },
               ]}
             />
           </div>

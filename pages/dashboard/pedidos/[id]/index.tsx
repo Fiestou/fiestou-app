@@ -22,6 +22,31 @@ import Modal from "@/src/components/utils/Modal";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { deliveryTypes } from "@/src/models/delivery";
 import Pagarme from "@/src/services/pagarme";
+import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
+
+export async function getServerSideProps(ctx: any) {
+  const api = new Api();
+  const params = ctx.params;
+
+  let request: any = await api.content({
+    method: 'get',
+    url: "order",
+  });
+
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
+
+  return {
+    props: {
+      orderId: params.id,
+      HeaderFooter: HeaderFooter,
+      DataSeo: DataSeo,
+      Scripts: Scripts,
+    },
+  };
+}
+
 const formInitial = {
   edit: "",
   loading: false,
@@ -321,10 +346,10 @@ export default function Pedido({
                             </div>
                             <div className="grid gap-1 w-full">
                               <div className="font-title text-lg font-bold text-zinc-900">
-                                <Link href={`/produtos/${product?.id}`}>
-                                  {product.title}
-                                </Link>
-                              </div>
+                              <Link href={getProductUrl(product)}>
+                                {product.title}
+                              </Link>
+                            </div>
                               <div className="text-sm">
                                 {!!product.sku && (
                                   <>
@@ -333,7 +358,7 @@ export default function Pedido({
                                 )}
                                 Fornecido por:
                                 <Link
-                                  href={`/${product?.store.slug}`}
+                                  href={getStoreUrl(product?.store)}
                                   className="text-zinc-900 pl-2 font-semibold underline"
                                 >
                                   {product?.store.title}

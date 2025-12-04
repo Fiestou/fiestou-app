@@ -6,6 +6,7 @@ import { decode as base64_decode } from "base-64";
 import { FormEvent, useContext, useState } from "react";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import { AuthContext } from "@/src/contexts/AuthContext";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 interface PageQueryType {
   ref: string | "";
@@ -20,6 +21,7 @@ const FormInitialType = {
 
 export default function Restrito() {
   const { SignIn } = useContext(AuthContext);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const router = useRouter();
   const { ref } = router.query as unknown as PageQueryType;
@@ -35,11 +37,20 @@ export default function Restrito() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
+    if (!executeRecaptcha) {
+      console.error("reCAPTCHA not loaded");
+      return;
+    }
+
     setFormValue({ loading: true });
+
+    // Gera o token reCAPTCHA v3
+    const recaptchaToken = await executeRecaptcha("admin_login");
 
     const request = await SignIn({
       email: form.email,
       password: form.password,
+      recaptcha_token: recaptchaToken,
     });
 
     if (!request.user) {
@@ -101,6 +112,18 @@ export default function Restrito() {
                   placeholder="*******"
                   required
                 />
+              </div>
+
+              <div className="text-xs text-center text-gray-500 pt-4">
+                Este site é protegido pelo reCAPTCHA e aplica a{" "}
+                <a href="https://policies.google.com/privacy" target="_blank" className="underline">
+                  Política de Privacidade
+                </a>{" "}
+                e os{" "}
+                <a href="https://policies.google.com/terms" target="_blank" className="underline">
+                  Termos de Serviço
+                </a>{" "}
+                do Google.
               </div>
 
               <div className="form-group">

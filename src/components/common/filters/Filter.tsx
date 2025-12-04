@@ -174,7 +174,7 @@ export default function Filter<T = any>({
       setLoading(true);
       const params = buildParams({ page });
       const queryString = new URLSearchParams(params).toString();
-      const res: any = await api.bridge({
+      const res: any = await api.request({
         method: "get",
         url:
           (context === "panel" ? "stores/products?" : "request/products?") +

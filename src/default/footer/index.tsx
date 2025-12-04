@@ -27,7 +27,9 @@ export function Footer(props: FooterType) {
   const getWhatsapp = () => {
     const url = window.location.href;
     const isHidden =
-      url.includes("admin") || url.includes("carrinho") || url.includes("checkout");
+      url.includes("admin") ||
+      url.includes("carrinho") ||
+      url.includes("checkout");
 
     if (isHidden) return null;
 
@@ -56,11 +58,7 @@ export function Footer(props: FooterType) {
   }, []);
 
   if (params.template === "clean") {
-    return (
-      <div className="pt-10 md:py-10">
-        {whatsapp && getWhatsapp()}
-      </div>
-    );
+    return <div className="pt-10 md:py-10">{whatsapp && getWhatsapp()}</div>;
   }
 
   if (params.template == "default") {
@@ -79,9 +77,11 @@ export function Footer(props: FooterType) {
                   />
                 </Link>
               </div>
-              <div
-                className="mx-auto max-w-[16rem] md:ml-0 md:max-w-[20rem] py-6"
-              >Clicou👆, Marcou🗓, Fiestou🍾! Marketplace ideal para festas. <br /><br /> CNPJ: 62.363.954/0001-16</div>
+              <div className="mx-auto max-w-[16rem] md:ml-0 md:max-w-[20rem] py-6">
+                Clicou👆, Marcou🗓, Fiestou🍾! Marketplace ideal para festas.{" "}
+                <br />
+                <br /> CNPJ: 62.363.954/0001-16
+              </div>
             </div>
 
             <div className="w-full grid gap-10 items-start md:grid-cols-2 xl:grid-cols-4">
@@ -101,23 +101,40 @@ export function Footer(props: FooterType) {
                 </Link>
               </div>
               <div className="flex flex-col items-center gap-4">
-                <span className="text-zinc-900 font-bold">Produtos e Serviços</span>
-                <Link href="/comunicados/termos-de-aluguel" className="hover:text-yellow-500 ease">
+                <span className="text-zinc-900 font-bold">
+                  Produtos e Serviços
+                </span>
+                <Link
+                  href="/comunicados/termos-de-aluguel"
+                  className="hover:text-yellow-500 ease"
+                >
                   <span>Termos de aluguel</span>
                 </Link>
-                <Link href="/produtos/listagem/?order=desc&range=1000&page=1&category=50" className="hover:text-yellow-500 ease">
+                <Link
+                  href="/produtos/listagem/?order=desc&range=1000&page=1&category=50"
+                  className="hover:text-yellow-500 ease"
+                >
                   <span>Decorações</span>
                 </Link>
               </div>
               <div className="flex flex-col items-center text-center gap-4">
                 <span className="text-zinc-900 font-bold">Cadastrar</span>
-                <Link href="/cadastre-se" className="hover:text-yellow-500 ease">
-                  <span>Como cliente</span>
-                </Link>
-                <Link href="/parceiros/seja-parceiro" className="hover:text-yellow-500 ease">
+                <Link
+                  href="/parceiros/seja-parceiro"
+                  className="hover:text-yellow-500 ease"
+                >
                   <span>Como parceiro</span>
                 </Link>
-                <Link href="/comunicados/politica-de-privacidade" className="hover:text-yellow-500 ease">
+                <Link
+                  href="/cadastre-se"
+                  className="hover:text-yellow-500 ease"
+                >
+                  <span>Como cliente</span>
+                </Link>
+                <Link
+                  href="/comunicados/politica-de-privacidade"
+                  className="hover:text-yellow-500 ease"
+                >
                   <span>Políticas de Privacidade</span>
                 </Link>
               </div>
@@ -181,7 +198,7 @@ export function Footer(props: FooterType) {
                       type="fab"
                       className="text-zinc-900 group-hover:text-yellow-500 ease"
                     />
-                    <span>Youtube</span>
+                    <span>YouTube</span>
                   </div>
                 </Link>
 
@@ -200,7 +217,6 @@ export function Footer(props: FooterType) {
                 </Link>
               </div>
             </div>
-
           </div>
         </div>
 

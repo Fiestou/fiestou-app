@@ -6,10 +6,13 @@ import { useEffect, useState } from "react";
 import { getImage, realMoneyNumber, shortId } from "@/src/helper";
 import React from "react";
 
+
+
 export default function Variations({
   product,
   attribute,
   emitVariations,
+
 }: {
   product: ProductType;
   attribute: AttributeType;
@@ -48,16 +51,27 @@ export default function Variations({
     let update = variations.map((variation, key) =>
       id == variation.id
         ? {
-          ...variation,
-          ...value,
-        }
+            ...variation,
+            ...value,
+          }
         : variation
     );
     emitVariations(update);
   };
 
   useEffect(() => {
-    setVariations(attribute?.variations);
+    let parsed: any = attribute;
+    if (typeof attribute === "string") {
+      try {
+        parsed = JSON.parse(attribute || "[]");
+      } catch (e) {
+        console.error("Erro parsing attributes:", e);
+        parsed = [];
+      }
+    }
+    // Se array, assume que é as variations diretamente
+    const vars = Array.isArray(parsed) ? parsed : parsed?.variations || [];
+    setVariations(vars.map((v: any) => ({ ...v, id: v.id || shortId() }))); // Garante ID se faltar
   }, [attribute]);
 
   return (
@@ -86,9 +100,9 @@ export default function Variations({
                         onBlur={(e: any) =>
                           !e.target.value
                             ? updateVariation(
-                              { title: `Variação ${key + 1}` },
-                              variation.id
-                            )
+                                { title: `Variação ${key + 1}` },
+                                variation.id
+                              )
                             : {}
                         }
                         type="text"
@@ -180,8 +194,9 @@ export default function Variations({
                     )}
                   </div> */}
                   <div
-                    className={`${collapseTrash == variation.id ? "hidden" : ""
-                      } w-fit`}
+                    className={`${
+                      collapseTrash == variation.id ? "hidden" : ""
+                    } w-fit`}
                   >
                     <Button
                       type="button"
@@ -200,7 +215,7 @@ export default function Variations({
                         className="font-semibold text-sm py-1 px-2"
                         onClick={() => setCollapseTrash("")}
                       >
-                        cancelar
+                        Cancelar
                       </Button>
                       <Button
                         type="button"
@@ -208,7 +223,7 @@ export default function Variations({
                         className="text-sm py-1 px-2"
                         onClick={() => removeVariation(variation.id)}
                       >
-                        remover
+                        Confirmar
                       </Button>
                     </div>
                   )}

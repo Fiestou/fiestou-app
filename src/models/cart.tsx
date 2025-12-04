@@ -1,6 +1,6 @@
 export interface DetailsCartType {
-  dateEnd?: string;
-  dateStart?: string;
+  dateStart?: Date | string;
+  dateEnd?: Date | string;
   days?: number;
   schedulingDiscount?: string;
   deliveryFee?: number;

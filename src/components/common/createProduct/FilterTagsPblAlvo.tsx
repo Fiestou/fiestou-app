@@ -1,4 +1,3 @@
-// components/.../FilterTags.tsx
 import { useEffect, useMemo, useState } from "react";
 import Api from "@/src/services/api";
 import Img from "@/src/components/utils/ImgBase";
@@ -6,13 +5,12 @@ import { Label, Button } from "@/src/components/ui/form";
 import { Categorie, Group } from "@/src/types/filtros";
 import { useCascadingGroups } from "../filters/filter/hooks/useCascadingGroups";
 
-
 interface FilterTagsPblAlvoProps {
   status: boolean;
   onFilter?: (categorie: Categorie[]) => void;
   onClose?: () => void;
   clickedElements: Categorie[];
-  maxSelected?: number; // novo
+  maxSelected?: number;
 }
 
 export default function FilterTagsPblAlvo({
@@ -26,21 +24,27 @@ export default function FilterTagsPblAlvo({
   const [allGroups, setAllGroups] = useState<Group[]>([]);
   const [activeElements, setActiveElements] = useState<number[]>([]);
 
-  const { localGroups, appendRelatedGroup, removeRelatedOf, resetFirstGroup, expandFromSelection } =
-    useCascadingGroups(allGroups);
+  const {
+    localGroups,
+    appendRelatedGroup,
+    removeRelatedOf,
+    resetFirstGroup,
+    expandFromSelection,
+  } = useCascadingGroups(allGroups);
 
-  // Sincroniza seleção externa
   useEffect(() => {
     const selectedIds = clickedElements.map((el) => el.id);
     setActiveElements(selectedIds);
   }, [clickedElements]);
 
-  // Carrega grupos ao abrir
   useEffect(() => {
     if (!status) return;
 
     const getFilterData = async () => {
-      const request: any = await api.request({ method: "get", url: "group/targetadcpbl" });
+      const request: any = await api.request({
+        method: "get",
+        url: "group/targetadcpbl",
+      });
 
       if (Array.isArray(request.data)) {
         const groups: Group[] = request.data.map((g: any) => ({
@@ -68,7 +72,7 @@ export default function FilterTagsPblAlvo({
     if (!clickedElements.length) return;
     // garante primeiro grupo + expansão coerente com a seleção existente
     resetFirstGroup();
-    expandFromSelection(clickedElements.map(c => c.id));
+    expandFromSelection(clickedElements.map((c) => c.id));
   }, [allGroups, clickedElements, resetFirstGroup, expandFromSelection]);
 
   const onToggleElement = (element: Categorie) => {
@@ -95,7 +99,9 @@ export default function FilterTagsPblAlvo({
   const selectedElementsFull = useMemo(() => {
     const dict = new Map<number, Categorie>();
     allGroups.forEach((g) => g.categories.forEach((c) => dict.set(c.id, c)));
-    return activeElements.map((id) => dict.get(id)).filter((x): x is Categorie => !!x);
+    return activeElements
+      .map((id) => dict.get(id))
+      .filter((x): x is Categorie => !!x);
   }, [activeElements, allGroups]);
 
   if (!status) return null;

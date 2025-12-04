@@ -39,12 +39,15 @@ const trimLeftSlashes = (s: string) => s.replace(/^\/+/, '');
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
 class Api {
-  static request<T>(arg0: { method: string; url: string; }) {
+  static request<T>(arg0: { method: string; url: string }) {
     throw new Error("Method not implemented.");
   }
-  constructor() { }
+  constructor() {}
 
-  async connect({ method = "get", url, data, opts }: ApiRequestType, ctx?: any) {
+  async connect(
+    { method = "get", url, data, opts }: ApiRequestType,
+    ctx?: any
+  ) {
     return await new Promise((resolve, reject) => {
       if (!!ctx?.req) {
         const authtoken = !!ctx?.req.cookies
@@ -64,8 +67,16 @@ class Api {
         data = {};
       }
 
-      const validMethods: HttpMethod[] = ["get", "post", "put", "patch", "delete"];
-      const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
+      const validMethods: HttpMethod[] = [
+        "get",
+        "post",
+        "put",
+        "patch",
+        "delete",
+      ];
+      const requestMethod = validMethods.includes(
+        method.toLowerCase() as HttpMethod
+      )
         ? (method.toLowerCase() as HttpMethod)
         : "get";
 
@@ -126,8 +137,16 @@ class Api {
       data = {};
     }
 
-    const validMethods: HttpMethod[] = ["get", "post", "put", "patch", "delete"];
-    const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
+    const validMethods: HttpMethod[] = [
+      "get",
+      "post",
+      "put",
+      "patch",
+      "delete",
+    ];
+    const requestMethod = validMethods.includes(
+      method.toLowerCase() as HttpMethod
+    )
       ? (method.toLowerCase() as HttpMethod)
       : "get";
 
@@ -138,26 +157,38 @@ class Api {
       });
   }
 
-  async trigger({ url, data, opts, method = "post" }: ApiRequestType, ctx?: any) {
+  async trigger(
+    { url, data, opts, method = "post" }: ApiRequestType,
+    ctx?: any
+  ) {
     const appUrl = process.env.APP_URL ?? getPublicBaseUrl();
     url = `${appUrl}${url}`;
     return this.connect({ method, url, data, opts }, ctx);
   }
 
-  async request<T>({ method = "get", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
-    const baseUrl = typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
+  async request<T>(
+    { method = "get", url, data, opts }: ApiRequestType,
+    ctx?: any
+  ): Promise<T> {
+    const baseUrl =
+      typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
     url = `${baseUrl}/api/${url}`;
-    return await this.connect({ method, url, data, opts }, ctx) as Promise<T>;
+    return (await this.connect({ method, url, data, opts }, ctx)) as Promise<T>;
   }
 
   async content({ url, method = "get" }: any, ctx?: any) {
-    const baseUrl = typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
+    const baseUrl =
+      typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
     url = `${baseUrl}/api/content/${url}`;
     return await this.connect({ method, url }, ctx);
   }
 
-  async call<T>({ method = "post", url, data, opts }: ApiRequestType, ctx?: any): Promise<T> {
-    const baseUrl = typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
+  async call<T>(
+    { method = "post", url, data, opts }: ApiRequestType,
+    ctx?: any
+  ): Promise<T> {
+    const baseUrl =
+      typeof window === "undefined" ? getInternalBaseUrl() : getPublicBaseUrl();
     url = `${baseUrl}/api/${url}`;
     data = { graphs: data };
     return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
@@ -183,9 +214,10 @@ class Api {
   }
 
   async graph({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
-    const apiRest = typeof window === "undefined"
-      ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
-      : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
+    const apiRest =
+      typeof window === "undefined"
+        ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
+        : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
 
     url = `${apiRest}${url}`;
     data = { graphs: data };
@@ -216,9 +248,10 @@ class Api {
   }
 
   async auth({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
-    const apiRest = typeof window === "undefined"
-      ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
-      : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
+    const apiRest =
+      typeof window === "undefined"
+        ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
+        : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
 
     url = `${apiRest}${url}`;
     return this.connect({ method, url, data, opts }, ctx);
@@ -259,3 +292,24 @@ export const defaultQuery = [
     ],
   },
 ];
+
+// Aqui está tipado como 'any' temporariamente, pois ainda vamos enterder melhor o que deve retornar
+export async function getHomeStatus(): Promise<any> {
+  try {
+    const api = new Api();
+    const response: any = await api.content({
+      method: "get",
+      url: `home`,
+    });
+
+    // If connect returned a normalized error object
+    if (response?.error) {
+      return { completed: false, recipient: null };
+    }
+
+    return response?.data ?? {};
+  } catch (error) {
+    console.error("Erro ao retornar itens da home:", error);
+    return { completed: false, recipient: null };
+  }
+}
