@@ -17,6 +17,15 @@ import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import SelectDropdown from "../../../src/components/ui/form/SelectDropdown";
 import MultiSelect from "../../../src/components/ui/form/MultiSelectUi";
+import CoverUploader from "@/src/components/lojista/cover-uploader/CoverUploader";
+import ProfileUploader from "@/src/components/lojista/profile-uploader/ProfileUploader";
+import StoreTitleForm from "@/src/components/lojista/store-title-form/StoreTitleForm";
+import StoreFormDescription from "@/src/components/lojista/store-form-description/StoreFormDescription";
+import FormBusiness from "@/src/components/lojista/form-business/FormBusiness";
+import FormOpenClose from "@/src/components/lojista/form-open-close/FormOpenClose";
+import FormLocation from "@/src/components/lojista/form-location/FormLocation";
+import SegmentForm from "@/src/components/lojista/segment-form/SegmentForm";
+import FreteForm from "@/src/components/lojista/frete-form/FreteForm";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -62,14 +71,14 @@ const formInitial = {
 };
 
 const days = [
-  { value: "Sunday", name: "Domingo" },
-  { value: "Monday", name: "Segunda" },
-  { value: "Tuesday", name: "Terça" },
-  { value: "Wednesday", name: "Quarta" },
-  { value: "Thursday", name: "Quinta" },
-  { value: "Friday", name: "Sexta" },
-  { value: "Saturday", name: "Sábado" },
-  { value: "Holiday", name: "Feriados" },
+  { value: "Domingo", name: "Domingo" },
+  { value: "Segunda", name: "Segunda" },
+  { value: "Terça", name: "Terça" },
+  { value: "Quarta", name: "Quarta" },
+  { value: "Quinta", name: "Quinta" },
+  { value: "Sexta", name: "Sexta" },
+  { value: "Sábado", name: "Sábado" },
+  { value: "Feriados", name: "Feriados" },
 ];
 
 export default function Loja({
@@ -342,20 +351,55 @@ export default function Loja({
     handleForm({ edit: "", loading: false });
   };
 
-  const handleZipCode = async (zipCode: string) => {
-    const location = await getZipCode(zipCode);
+  // ---- MÁSCARA DE CEP ----
+  const maskZip = (v: string) => {
+    v = v.replace(/\D/g, "");
+    if (v.length > 8) v = v.slice(0, 8);
+    if (v.length > 5) return v.slice(0, 5) + "-" + v.slice(5);
+    return v;
+  };
 
-    if (!!location) {
-      let address = store;
+  // ---- CONTROLA CEP ----
+  const handleZipCode = async (value: string) => {
+    const masked = maskZip(value);
 
-      address["zipCode"] = justNumber(zipCode);
-      address["street"] = location.logradouro;
-      address["neighborhood"] = location.bairro;
-      address["city"] = location.localidade;
-      address["state"] = location.uf;
-      address["country"] = "Brasil";
+    // Atualiza imediatamente o campo CEP (com máscara)
+    handleStore({ zipCode: masked });
 
-      setStore(address);
+    const numeric = masked.replace(/\D/g, "");
+
+    // Só pesquisa após 8 dígitos
+    if (numeric.length < 8) return;
+
+    const location = await getZipCode(numeric);
+    if (!location) return;
+
+    // Atualiza o endereço sem limpar o CEP
+    handleStore({
+      zipCode: masked, // mantém o CEP no estado
+      street: location.logradouro,
+      neighborhood: location.bairro,
+      city: location.localidade,
+      state: location.uf,
+      country: "Brasil",
+    });
+  };
+
+  const handleSubmitFinal = async (location: StoreLocation) => {
+    try {
+      setForm({ ...form, loading: true });
+
+      const { data } = await Api.post("store/update-location", {
+        ...location,
+      });
+
+      // atualiza estado da loja
+      setStore(data.store);
+
+      setForm({ ...form, edit: "", loading: false });
+    } catch (error) {
+      console.log(error);
+      setForm({ ...form, loading: false });
     }
   };
 
@@ -503,569 +547,92 @@ export default function Loja({
             <div className="grid lg:flex gap-10 lg:gap-20">
               <div className="w-full grid gap-8 border-t pt-6">
                 {/* CAPA */}
-                <form
-                  onSubmit={(e: any) => handleSubmitCover(e)}
-                  method="POST"
-                  acceptCharset="UTF-8"
-                  encType="multipart/form-data"
-                  className="grid gap-2 border-b pb-8 mb-0"
-                >
-                  <div className="flex items-center pb-2">
-                    <div className="w-full">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Imagem de capa
-                      </h4>
-                    </div>
-                    <div className="w-fit">{renderAction("cover")}</div>
-                  </div>
-                  {form.edit == "cover" ? (
-                    <FileInput
-                      name="cover"
-                      id="cover"
-                      onChange={async (e: any) => {
-                        handleStore({
-                          cover: {
-                            files: await handleCoverPreview(e),
-                          },
-                        });
-                      }}
-                      aspect="aspect-[6/2.5]"
-                      loading={form.loading}
-                      remove={(e: any) => handleCoverRemove(e)}
-                      preview={handleCover.preview}
-                    />
-                  ) : (
-                    <div className="aspect-[6/2.5] relative rounded-xl overflow-hidden bg-zinc-100">
-                      {!!handleCover.preview ? (
-                        <Img
-                          src={handleCover.preview}
-                          className={`${
-                            form.loading ? "blur-lg" : ""
-                          } absolute object-cover h-full inset-0 w-full`}
-                        />
-                      ) : (
-                        <Icon
-                          icon="fa-image"
-                          className="text-7xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-25"
-                        />
-                      )}
-                    </div>
-                  )}
-                  <div className="text-sm">
-                    Tamanho mínimo recomendado: 1024 x 480px - Formatos
-                    recomendados: PNG, JPEG
-                  </div>
-                </form>
+                <CoverUploader
+                  form={form}
+                  handleSubmitCover={handleSubmitCover}
+                  handleStore={handleStore}
+                  handleCoverPreview={handleCoverPreview}
+                  handleCoverRemove={handleCoverRemove}
+                  handleCover={handleCover}
+                  renderAction={renderAction}
+                />
                 {/* PERFIL */}
-                <form
-                  onSubmit={(e: any) => handleSubmitProfile(e)}
-                  method="POST"
-                  acceptCharset="UTF-8"
-                  encType="multipart/form-data"
-                  className="grid gap-4 border-b pb-8 mb-0"
-                >
-                  <div className="flex items-center gap-6">
-                    <div className="w-[5rem]">
-                      {form.edit == "profile" ? (
-                        <FileInput
-                          name="profile"
-                          id="profile"
-                          onChange={async (e: any) => {
-                            handleStore({
-                              profile: {
-                                files: await handleProfilePreview(e),
-                              },
-                            });
-                          }}
-                          rounded
-                          placeholder="Abrir"
-                          aspect="aspect-square"
-                          loading={form.loading}
-                          remove={(e: any) => handleProfileRemove(e)}
-                          preview={handleProfile.preview}
-                        />
-                      ) : (
-                        <>
-                          {!!handleProfile.preview ? (
-                            <div className="aspect-square border-zinc-900 border-2 relative rounded-full overflow-hidden">
-                              <Img
-                                src={handleProfile.preview}
-                                className={`${
-                                  form.loading ? "blur-lg" : ""
-                                } absolute object-cover h-full inset-0 w-full`}
-                              />
-                            </div>
-                          ) : (
-                            <div className="aspect-square border-zinc-900 text-zinc-900 border-2 relative rounded-full overflow-hidden">
-                              <Icon
-                                icon="fa-user"
-                                className="text-4xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                              />
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    <div className="w-fit">
-                      {renderAction("profile", {
-                        save: "Enviar",
-                        edit: "Alterar foto de perfil",
-                      })}
-                    </div>
-                  </div>
-                </form>
+                <ProfileUploader
+                  form={form}
+                  handleSubmitProfile={handleSubmitProfile}
+                  handleStore={handleStore}
+                  handleProfilePreview={handleProfilePreview}
+                  handleProfileRemove={handleProfileRemove}
+                  handleProfile={handleProfile}
+                  renderAction={renderAction}
+                />
                 {/* TITULO */}
-                <form
-                  onSubmit={(e: any) => handleSubmit(e)}
-                  method="POST"
-                  className="grid gap-4 border-b pb-8 mb-0"
-                >
-                  <div className="flex items-center">
-                    <div className="w-full">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Nome do estabelecimento
-                      </h4>
-                    </div>
-                    <div className="w-fit">{renderAction("title")}</div>
-                  </div>
-                  <div className="w-full">
-                    {form.edit == "title" ? (
-                      <Input
-                        onChange={(e: any) =>
-                          handleStore({ title: e.target.value })
-                        }
-                        value={store?.title}
-                        placeholder="Digite o nome aqui"
-                      />
-                    ) : (
-                      oldStore?.title ?? "Informe o nome da sua loja"
-                    )}
-                  </div>
-                </form>
+                <StoreTitleForm
+                  form={form}
+                  store={store}
+                  oldStore={oldStore}
+                  handleSubmit={handleSubmit}
+                  handleStore={handleStore}
+                  renderAction={renderAction}
+                />
                 {/* DESCRICAO */}
-                <form
-                  onSubmit={(e: any) => handleSubmit(e)}
-                  method="POST"
-                  className="grid gap-4 border-b pb-8 mb-0"
-                >
-                  <div className="flex items-center">
-                    <div className="w-full">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Descrição
-                      </h4>
-                    </div>
-                    <div className="w-fit">{renderAction("description")}</div>
-                  </div>
-                  <div className="w-full">
-                    {form.edit == "description" ? (
-                      <TextArea
-                        onChange={(e: any) =>
-                          handleStore({ description: e.target.value })
-                        }
-                        value={store?.description}
-                        placeholder="Digite sua descrição aqui"
-                      />
-                    ) : (
-                      oldStore?.description ??
-                      "Insira uma descrição para sua loja"
-                    )}
-                  </div>
-                </form>
+                <StoreFormDescription
+                  form={form}
+                  store={store}
+                  oldStore={oldStore}
+                  handleSubmit={handleSubmit}
+                  handleStore={handleStore}
+                  renderAction={renderAction}
+                />
                 {/* EMPRESA */}
-                <form
-                  onSubmit={(e: any) => handleSubmit(e)}
-                  method="POST"
-                  className="grid gap-4 border-b pb-8 mb-0"
-                >
-                  <div className="flex items-center">
-                    <div className="w-full">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Empresa
-                      </h4>
-                    </div>
-                    <div className="w-fit">{renderAction("business")}</div>
-                  </div>
-                  <div className="w-full">
-                    {form.edit == "business" ? (
-                      <div className="grid gap-2">
-                        <Input
-                          name="cnpj"
-                          onChange={(e: any) =>
-                            handleStore({
-                              document: justNumber(e.target.value),
-                            })
-                          }
-                          required
-                          value={store?.document}
-                          placeholder="CNPJ"
-                        />
-                        <Input
-                          name="nome"
-                          onChange={(e: any) =>
-                            handleStore({ companyName: e.target.value })
-                          }
-                          required
-                          value={store?.companyName}
-                          placeholder="Nome jurídico"
-                        />
-                      </div>
-                    ) : store?.document || store?.companyName ? (
-                      <>
-                        <div>CNPJ: {store?.document}</div>
-                        <div>Nome jurídico: {store?.companyName}</div>
-                      </>
-                    ) : (
-                      "Insira os dados da empresa"
-                    )}
-                  </div>
-                </form>
+                <FormBusiness
+                  form={form}
+                  store={store}
+                  oldStore={oldStore}
+                  handleStore={handleStore}
+                  handleSubmit={handleSubmit}
+                  renderAction={renderAction}
+                  justNumber={justNumber}
+                />
                 {/* HORARIO */}
-                <form
-                  onSubmit={(e: any) => handleSubmit(e)}
-                  method="POST"
-                  className="grid gap-4 border-b pb-8 mb-0"
-                >
-                  <div className="flex items-center">
-                    <div className="w-full">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Horário de atendimento
-                      </h4>
-                    </div>
-                    <div className="w-fit">{renderAction("openClose")}</div>
-                  </div>
-                  <div className="w-full">
-                    {form.edit == "openClose" ? (
-                      <div className="grid gap-2">
-                        {!!days.length &&
-                          days.map((day: any, key: any) => (
-                            <div
-                              key={key}
-                              className="flex items-center gap-4 text-sm"
-                            >
-                              <div className="w-1/6">{day.name}:</div>
-                              <div className="w-1/6 border-b border-zinc-900">
-                                <Input
-                                  type="time"
-                                  value={week[key]?.open}
-                                  onChange={(e: any) =>
-                                    handleWeek(
-                                      { open: e.target.value },
-                                      day.value
-                                    )
-                                  }
-                                  className="p-0 border-0"
-                                />
-                              </div>
-                              <div className="md:px-2 text-xs">até</div>
-                              <div className="w-1/6 border-b border-zinc-900">
-                                <Input
-                                  type="time"
-                                  value={week[key]?.close}
-                                  onChange={(e: any) =>
-                                    handleWeek(
-                                      { close: e.target.value },
-                                      day.value
-                                    )
-                                  }
-                                  className="p-0 border-0"
-                                />
-                              </div>
-                              <label className="text-xs flex gap-2 pl-2">
-                                <input
-                                  type="checkbox"
-                                  onChange={(e: any) =>
-                                    handleWeek(
-                                      { working: e.target.value },
-                                      day.value
-                                    )
-                                  }
-                                  {...(week[key]?.working == "on"
-                                    ? { checked: true }
-                                    : {})}
-                                />
-                                aberto
-                              </label>
-                            </div>
-                          ))}
-                      </div>
-                    ) : !!week.length ? (
-                      <div className="text-sm">
-                        {week.map((day: any, key: any) => (
-                          <div key={key} className="grid grid-cols-6">
-                            <div>{week[key]?.day}</div>
-                            {week[key]?.working != "on" ? (
-                              <>
-                                <div className="text-center">fechado</div>
-                                <div className="text-center">--</div>
-                                <div className="text-center">--</div>
-                              </>
-                            ) : (
-                              <>
-                                <div className="text-center">
-                                  {week[key]?.open}
-                                </div>
-                                <div className="text-center">até</div>
-                                <div className="text-center">
-                                  {week[key]?.close}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      "Informe um horário de funcionamento para sua loja"
-                    )}
-                  </div>
-                </form>
+                <FormOpenClose
+                  form={form}
+                  days={days}
+                  week={week}
+                  handleWeek={handleWeek}
+                  handleSubmit={handleSubmit}
+                  renderAction={renderAction}
+                />
                 {/* ENDERECO */}
-                <form
-                  onSubmit={(e: any) => handleSubmit(e)}
-                  method="POST"
-                  className="grid gap-4 border-b pb-8 mb-0"
-                >
-                  <div className="flex items-center">
-                    <div className="w-full">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Localização
-                      </h4>
-                    </div>
-                    <div className="w-fit">{renderAction("location")}</div>
-                  </div>
-                  <div className="w-full">
-                    {form.edit == "location" ? (
-                      <div className="grid gap-2">
-                        <Input
-                          name="cep"
-                          onChange={(e: any) => handleZipCode(e.target.value)}
-                          required
-                          value={store?.zipCode}
-                          placeholder="CEP"
-                        />
-                        <div className="flex gap-2">
-                          <div className="w-full">
-                            <Input
-                              name="rua"
-                              readonly
-                              required
-                              value={store?.street}
-                              placeholder="Rua"
-                            />
-                          </div>
-                          <div className="w-[10rem]">
-                            <Input
-                              name="numero"
-                              onChange={(e: any) =>
-                                handleStore({ number: e.target.value })
-                              }
-                              required
-                              value={store?.number}
-                              placeholder="Número"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="w-full">
-                            <Input
-                              name="bairro"
-                              readonly
-                              required
-                              value={store?.neighborhood}
-                              placeholder="Bairro"
-                            />
-                          </div>
-                          <div className="w-full">
-                            <Input
-                              name="complemento"
-                              onChange={(e: any) =>
-                                handleStore({ complement: e.target.value })
-                              }
-                              value={store?.complement}
-                              placeholder="Complemento"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="w-full">
-                            <Input
-                              name="cidade"
-                              readonly
-                              required
-                              value={store?.city}
-                              placeholder="Cidade"
-                            />
-                          </div>
-                          <div className="w-[10rem]">
-                            <Input
-                              name="estado"
-                              readonly
-                              required
-                              value={store?.state}
-                              placeholder="UF"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ) : store?.zipCode ? (
-                      <>
-                        <div>
-                          {store.street}, {store.number}
-                        </div>
-                        <div>
-                          {store.neighborhood} - {store.city} | {store.state}
-                        </div>
-                        <div>
-                          CEP: {store.zipCode} | {store.country}
-                        </div>
-                      </>
-                    ) : (
-                      "Informe a localização da sua loja"
-                    )}
-                  </div>
-                </form>
-                {/*  */}
-                <form
-                  onSubmit={(e: any) => handleSubmit(e)}
-                  method="POST"
-                  className="grid gap-4 border-b pb-8 mb-0"
-                >
-                  <div className="flex items-center">
-                    <div className="w-full">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Segmento
-                      </h4>
-                    </div>
-                    <div className="w-fit">{renderAction("segment")}</div>
-                  </div>
-                  <div className="w-full">
-                    {form.edit == "segment" ? (
-                      <Select
-                        onChange={(e: any) =>
-                          handleStore({ segment: e.target.value })
-                        }
-                        value={store?.segment}
-                        placeholder="Selecione seu segmento"
-                        name="lojaTipo"
-                        options={groupOptions.map((item: any) => {
-                          return {
-                            name: item.title,
-                            value: item.id,
-                          };
-                        })}
-                      />
-                    ) : (
-                      storeTypes.filter((item) => item.id == store?.segment)[0]
-                        ?.title ?? "Informe o segmento da sua loja"
-                    )}
-                  </div>
-                </form>
-                {/*  */}
-
-                <form
-                  onSubmit={(e: any) => handleSubmit(e)}
-                  method="POST"
-                  className="grid gap-4 border-b pb-8 mb-0"
-                >
-                  <div className="flex items-center">
-                    <div className="w-full">
-                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                        Valores de entrega
-                      </h4>
-                    </div>
-                    <div className="w-fit">{renderAction("frete")}</div>
-                  </div>
-                  <div className="w-full">
-                    {form.edit == "frete" ? (
-                      <div className="grid gap-4">
-                        <div className="grid gap-2">
-                          <label className="font-medium">
-                            Você possui serviço de entrega?
-                          </label>
-                          <div className="flex gap-4">
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="is_delivery_fee_active"
-                                value="1"
-                                checked={!!store?.is_delivery_fee_active}
-                                onChange={(e) =>
-                                  handleStore({
-                                    is_delivery_fee_active: Number(
-                                      e.target.value
-                                    ),
-                                  })
-                                }
-                              />
-                              <span>Sim</span>
-                            </label>
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="is_delivery_fee_active"
-                                value="0"
-                                checked={!store?.is_delivery_fee_active}
-                                onChange={(e) =>
-                                  handleStore({
-                                    is_delivery_fee_active: Number(
-                                      e.target.value
-                                    ),
-                                  })
-                                }
-                              />
-                              <span>Não</span>
-                            </label>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                          <label className="font-medium">
-                            Valor do KM rodado
-                          </label>
-                          <div className="relative">
-                            <Input
-                              type="text"
-                              className="w-full"
-                              value={store?.default_delivery_fee}
-                              onChange={(e) =>
-                                handleStore({
-                                  default_delivery_fee: e.target.value,
-                                })
-                              }
-                            />
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-help group">
-                              <Icon
-                                icon="fa-info-circle"
-                                className="text-zinc-400"
-                              />
-                              <div className="absolute hidden group-hover:block right-0 bg-zinc-800 text-white p-2 rounded text-sm w-48">
-                                Valor cobrado por quilômetro rodado na entrega
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                          <label className="font-medium">
-                            Região de atendimento
-                          </label>
-                          <MultiSelect
-                            name="deliveryRegions"
-                            placeholder="Selecione as regiões"
-                            value={store?.deliveryRegions}
-                            onChange={(values) =>
-                              handleStore({ deliveryRegions: values })
-                            }
-                            options={deliveryRegionsOptions}
-                            className="min-h-[46px] relative"
-                            isMulti={true}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <>Informe as regras do frete</>
-                    )}
-                  </div>
-                </form>
+                <FormLocation
+                  form={form}
+                  store={store}
+                  handleStore={handleStore}
+                  handleZipCode={handleZipCode}
+                  handleSubmit={handleSubmit}
+                  renderAction={renderAction}
+                />
+                {/* SEGMENTO */}
+                <SegmentForm
+                  store={store}
+                  form={form}
+                  groupOptions={groupOptions}
+                  storeTypes={storeTypes}
+                  handleStore={handleStore}
+                  handleSubmit={handleSubmit}
+                  renderAction={renderAction}
+                />
+                
+                {/* VALORES DE ENTREGA */}
+                <FreteForm
+                  store={store}
+                  form={form}
+                  handleStore={handleStore}
+                  handleSubmit={handleSubmit}
+                  renderAction={renderAction}
+                  deliveryRegionsOptions={deliveryRegionsOptions}
+                />
+                
               </div>
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
                 <HelpCard list={page.help_list} />
