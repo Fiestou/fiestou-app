@@ -8,11 +8,13 @@ interface ProfileUploaderProps {
     loading: boolean;
   };
 
-  handleSubmitProfile: (e: any) => void;
+  handleSubmitProfile: (e: React.FormEvent) => void;
   handleStore: (value: any) => void;
 
-  handleProfilePreview: (e: any) => Promise<any>;
-  handleProfileRemove: (e: any) => void;
+  handleProfilePreview: (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => Promise<string>;
+  handleProfileRemove: () => void;
 
   handleProfile: {
     preview: string;
@@ -34,11 +36,26 @@ export default function ProfileUploader({
   handleProfile,
   renderAction,
 }: ProfileUploaderProps) {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Preview separado
+    const preview = await handleProfilePreview(e);
+
+    // Enviar o File REAL pro store
+    handleStore({
+      profile: {
+        files: file,
+        preview,
+      },
+    });
+  };
+
   return (
     <form
-      onSubmit={(e: any) => handleSubmitProfile(e)}
+      onSubmit={handleSubmitProfile}
       method="POST"
-      acceptCharset="UTF-8"
       encType="multipart/form-data"
       className="grid gap-4 border-b pb-8 mb-0"
     >
@@ -49,18 +66,11 @@ export default function ProfileUploader({
             <FileInput
               name="profile"
               id="profile"
-              onChange={async (e: any) => {
-                handleStore({
-                  profile: {
-                    files: await handleProfilePreview(e),
-                  },
-                });
-              }}
+              onChange={handleChange}
               rounded
-              placeholder="Abrir"
               aspect="aspect-square"
               loading={form.loading}
-              remove={(e: any) => handleProfileRemove(e)}
+              remove={handleProfileRemove}
               preview={handleProfile.preview}
             />
           ) : (
