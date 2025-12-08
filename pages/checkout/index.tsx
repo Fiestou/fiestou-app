@@ -1,7 +1,7 @@
 import Template from "@/src/template";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
-import {useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   dateBRFormat,
   findDates,
@@ -36,57 +36,30 @@ import { DeliveryItem } from "@/src/types/filtros";
 import Img from "@/src/components/utils/ImgBase";
 import { registerOrder as registerOrderService } from "@/src/services/order";
 
+// Services
+import {
+  extractDeliveryFees,
+  normalizeDeliveryItems,
+  extractCartDeliveryZip,
+  saveCartToCookies,
+} from "@/src/services/cart";
+import {
+  calculateDeliveryFees,
+  applyDeliveryToCart,
+} from "@/src/services/delivery";
+
 const FormInitialType = {
   sended: false,
   loading: false,
 };
 
+// Type movido para cart.service.ts - usando local apenas para compatibilidade
 type DeliverySummaryEntry = {
   storeId: number | null;
   storeName: string;
   storeSlug?: string;
   price: number;
   storeLogoUrl?: string | null;
-};
-
-const normalizeDeliveryItems = (items: DeliveryItem[]): DeliveryItem[] => {
-  const map = new Map<number, DeliveryItem>();
-
-  items.forEach((item) => {
-    const storeId = Number(item?.store_id);
-    const price = Number(item?.price);
-
-    if (!Number.isFinite(storeId) || !Number.isFinite(price)) {
-      return;
-    }
-
-    map.set(storeId, { price, store_id: storeId });
-  });
-
-  return Array.from(map.values());
-};
-
-const extractDeliveryFees = (items: Array<CartType>): DeliveryItem[] => {
-  return items
-    .map((item) => {
-      const fee = Number(item?.details?.deliveryFee);
-      const storeSource =
-        item?.details?.deliveryStoreId ??
-        (typeof item?.product?.store === "object"
-          ? (item?.product?.store as any)?.id
-          : item?.product?.store);
-      const storeId = Number(storeSource);
-
-      if (!Number.isFinite(fee) || !Number.isFinite(storeId)) {
-        return null;
-      }
-
-      return {
-        price: fee,
-        store_id: storeId,
-      } as DeliveryItem;
-    })
-    .filter((item): item is DeliveryItem => !!item);
 };
 
 export async function getServerSideProps(ctx: any) {
@@ -371,77 +344,23 @@ export default function Checkout({
     }
   }, [products]);
 
-  const applyDeliveryFees = (
+  // Wrapper para aplicar frete usando o service de delivery
+  const applyDeliveryFeesLocal = (
     fees: DeliveryItem[],
     sanitizedZip: string,
     baseCart: CartType[]
   ): boolean => {
-    if (!fees.length) {
-      toast.error("Não conseguimos calcular o frete para este CEP.");
+    // Usa o service para aplicar o frete
+    const result = applyDeliveryToCart(baseCart, fees, sanitizedZip);
+
+    if (!result.success) {
+      toast.error(result.message ?? "Não conseguimos calcular o frete para este CEP.");
       return false;
     }
 
-    const formattedZip = formatCep(sanitizedZip);
-    const feeMap = new Map<number, number>();
-
-    fees.forEach((fee) => {
-      const storeId = Number(fee?.store_id);
-      if (!Number.isFinite(storeId)) {
-        return;
-      }
-      feeMap.set(storeId, Number(fee?.price) || 0);
-    });
-
-    const missingStores = new Set<string>();
-
-    const updatedCart = baseCart.map((item) => {
-      const productStore = item?.product?.store ?? {};
-      const storeSource =
-        item?.details?.deliveryStoreId ??
-        (typeof productStore === "object"
-          ? (productStore as any)?.id
-          : productStore);
-      const storeId = Number(storeSource);
-
-      const details = { ...(item.details ?? {}) };
-      details.deliveryZipCode = sanitizedZip;
-      details.deliveryZipCodeFormatted = formattedZip;
-
-      if (Number.isFinite(storeId) && feeMap.has(storeId)) {
-        details.deliveryStoreId = storeId;
-        details.deliveryFee = feeMap.get(storeId) ?? 0;
-      } else {
-        delete details.deliveryFee;
-        missingStores.add(
-          (productStore as any)?.companyName ??
-            (productStore as any)?.title ??
-            item?.product?.title ??
-            `Produto #${item?.product?.id ?? ""}`
-        );
-      }
-
-      return {
-        ...item,
-        details,
-      };
-    });
-
-    if (missingStores.size) {
-      const list = Array.from(missingStores).filter(Boolean);
-      toast.error(
-        list.length
-          ? `Não conseguimos calcular o frete para: ${list.join(", ")}.`
-          : "Não conseguimos calcular o frete para este CEP."
-      );
-      return false;
-    }
-
-    setCartItems(updatedCart);
-
-    if (typeof window !== "undefined") {
-      Cookies.set("fiestou.cart", JSON.stringify(updatedCart), {
-        expires: 7,
-      });
+    if (result.updatedCart) {
+      setCartItems(result.updatedCart);
+      saveCartToCookies(result.updatedCart);
     }
 
     setDeliveryPrice(normalizeDeliveryItems(fees));
@@ -510,24 +429,11 @@ export default function Checkout({
     return result;
   }, [deliveryPrice, storesById]);
 
-  const cartDeliveryZip = useMemo(() => {
-    const itemWithZip = cartItems.find(
-      (cartItem: any) =>
-        cartItem?.details?.deliveryZipCode ||
-        cartItem?.details?.deliveryZipCodeFormatted
-    );
-
-    if (!itemWithZip) {
-      return "";
-    }
-
-    const rawZip =
-      itemWithZip.details?.deliveryZipCode ??
-      itemWithZip.details?.deliveryZipCodeFormatted ??
-      "";
-    const sanitized = justNumber(rawZip);
-    return sanitized.length === 8 ? sanitized : "";
-  }, [cartItems]);
+  // Usa o service para extrair o CEP do carrinho
+  const cartDeliveryZip = useMemo(
+    () => extractCartDeliveryZip(cartItems),
+    [cartItems]
+  );
 
   useEffect(() => {
     if (!cartDeliveryZip) {
@@ -654,7 +560,7 @@ export default function Checkout({
           return;
         }
 
-        const success = applyDeliveryFees(
+        const success = applyDeliveryFeesLocal(
           normalizedFees,
           sanitizedZip,
           cartItems
