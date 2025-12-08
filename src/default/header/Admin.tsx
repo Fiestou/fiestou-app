@@ -16,10 +16,10 @@ const menu = [
     title: "Pedidos",
     endpoint: "/admin/pedidos",
   },
-  {
-    title: "Produtos",
-    endpoint: "/admin/produtos",
-  },
+  // {
+  //   title: "Produtos",
+  //   endpoint: "/admin/produtos",
+  // },
   {
     title: "Solicitações de Saque",
     endpoint: "/admin/saques",
@@ -107,7 +107,9 @@ export default function Admin({
           dangerouslySetInnerHTML={{
             __html: `<style>
                       html {
-                        padding-left: ${isSidebarOpen ? "16rem" : "0"} !important;
+                        padding-left: ${
+                          isSidebarOpen ? "16rem" : "0"
+                        } !important;
                       }
                       .content-container {
                         width: calc(100% - ${isSidebarOpen ? "16rem" : "0"});

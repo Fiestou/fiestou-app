@@ -11,6 +11,7 @@ import { UserType } from "@/src/models/user";
 import NextAuth from "@/src/components/pages/acesso/NextAuth";
 import { getSession } from "next-auth/react";
 import { AuthContext } from "@/src/contexts/AuthContext";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -26,7 +27,7 @@ export async function getServerSideProps(ctx: any) {
     };
   }
 
-  let request: any = await api.content({method: 'get', url: `default` });
+  let request: any = await api.content({ method: "get", url: `default` });
 
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
@@ -44,8 +45,8 @@ const formInitial = {
   sended: false,
   loading: false,
   email: "",
-  password: '',
-  alert: "" 
+  password: "",
+  alert: "",
 };
 
 export default function Acesso({
@@ -61,6 +62,7 @@ export default function Acesso({
 
   const router = useRouter();
   const { SignIn } = useContext(AuthContext);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const [modalStatus, setModalStatus] = useState(!!modal as boolean);
   const [modalType, setModalType] = useState(modal as string);
@@ -75,11 +77,20 @@ export default function Acesso({
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (!executeRecaptcha) {
+      console.error("reCAPTCHA not loaded");
+      return;
+    }
+
     setFormValue({ loading: true, alert: "" });
+
+    // Gera o token reCAPTCHA v3
+    const recaptchaToken = await executeRecaptcha("login");
 
     const request: any = await SignIn({
       email: form.email,
       password: form.password,
+      recaptcha_token: recaptchaToken,
     });
 
     if (request.status == 422) {
@@ -96,15 +107,15 @@ export default function Acesso({
     }
   };
 
-  useEffect(()=>{
-    if (form.alert){
-      setTimeout(()=>{
+  useEffect(() => {
+    if (form.alert) {
+      setTimeout(() => {
         setFormValue({
-          alert: ""
-        })
-      }, 3000)
+          alert: "",
+        });
+      }, 3000);
     }
-  }, [form.alert])
+  }, [form.alert]);
 
   return (
     <Template
@@ -216,7 +227,8 @@ export default function Acesso({
                     className="underline text-yellow-600 font-bold"
                     href="/cadastre-se"
                   >
-                    {" "}Cadastre-se
+                    {" "}
+                    Cadastre-se
                   </Link>
                 </div>
               </form>
@@ -241,8 +253,8 @@ export default function Acesso({
             {modalType == "register"
               ? "Sua conta foi criada!"
               : modalType == "await"
-                ? "Cadastro em análise!"
-                : "Confirme seu endereço de e-mail!"}
+              ? "Cadastro em análise!"
+              : "Confirme seu endereço de e-mail!"}
           </h4>
           <div className="pt-2">
             {modalType == "register" ? (

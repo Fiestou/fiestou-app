@@ -22,7 +22,7 @@ export async function getServerSideProps(ctx: any) {
   };
 }
 
-export default function Partner({ id }: any) {
+export default function AdminPartner({ id }: any) {
   const router = useRouter();
 
   const api = new Api();
@@ -52,40 +52,42 @@ export default function Partner({ id }: any) {
     getPartner();
   }, []);
 
+  if (router.isFallback) {
+    return null;
+  }
+
   return (
-    !router.isFallback && (
-      <Template
-        header={{
-          template: "admin",
-          position: "solid",
-        }}
-      >
-        <section className="">
-          <div className="container-medium pt-12 pb-8 md:py-12">
-            <div className="flex">
-              <div className="w-full">Produtos {">"} Title</div>
-              <div className="flex items-center gap-2 whitespace-nowrap">
-                <div className="underline">Precisa de ajuda?</div>{" "}
-                <Icon icon="fa-question-circle" />
-              </div>
-            </div>
-            <div className="flex items-center mt-10">
-              <Link passHref href="/admin/parceiros/">
-                <Icon
-                  icon="fa-long-arrow-left"
-                  className="mr-6 text-2xl text-zinc-900"
-                />
-              </Link>
-              <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                Parceiro
-              </div>
+    <Template
+      header={{
+        template: "admin",
+        position: "solid",
+      }}
+    >
+      <section className="">
+        <div className="container-medium pt-12 pb-8 md:py-12">
+          <div className="flex">
+            <div className="w-full">Produtos {">"} Title</div>
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <div className="underline">Precisa de ajuda?</div>{" "}
+              <Icon icon="fa-question-circle" />
             </div>
           </div>
-        </section>
-        {!!partner && (
-          <UserEditAdmin user={partner} redirect="/admin/parceiros" />
-        )}
-      </Template>
-    )
+          <div className="flex items-center mt-10">
+            <Link passHref href="/admin/parceiros/">
+              <Icon
+                icon="fa-long-arrow-left"
+                className="mr-6 text-2xl text-zinc-900"
+              />
+            </Link>
+            <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
+              Parceiro
+            </div>
+          </div>
+        </div>
+      </section>
+      {!!partner && (
+        <UserEditAdmin user={partner} redirect="/admin/parceiros" />
+      )}
+    </Template>
   );
 }

@@ -19,7 +19,6 @@ export default function MeusDados({ page }: { page: any }) {
   const api = new Api();
 
   const [user, setUser] = useState({} as UserType);
-  const [store, setStore] = useState<any>(null);
   const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
 
@@ -30,33 +29,8 @@ export default function MeusDados({ page }: { page: any }) {
     });
 
 
-
     if (request.response) {
       setUser(request.data);
-
-      // Se for parceiro, pegar os dados 
-      if (request.data?.person === "partner") {
-        const storeRequest: any = await api.request({
-          method: "post",
-          url: "request/stores",
-          data: [
-            {
-              model: "store",
-              filter: [
-                {
-                  key: "user",
-                  value: request.data.id,
-                  compare: "=",
-                },
-              ],
-            },
-          ],
-        });
-
-        if (storeRequest?.response && storeRequest?.data?.query?.store?.[0]) {
-          setStore(storeRequest.data.query.store[0]);
-        }
-      }
     }
   };
 
@@ -159,8 +133,6 @@ export default function MeusDados({ page }: { page: any }) {
         onClose={() => setRecipientModalOpen(false)}
         status={recipientStatus}
         onCompleted={handleRecipientCompleted}
-        user={user}
-        store={store}
       />
     </Template>
   );

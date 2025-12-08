@@ -4,6 +4,7 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useState } from "react";
 import Api from "@/src/services/api";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -42,6 +43,7 @@ export default function Recuperar({
   Scripts: any;
 }) {
   const api = new Api();
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const [form, setForm] = useState(formInitial);
   const setFormValue = (value: any) => {
@@ -53,12 +55,20 @@ export default function Recuperar({
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
+    if (!executeRecaptcha) {
+      console.error("reCAPTCHA not loaded");
+      return;
+    }
+
     setFormValue({ loading: true });
+
+    // Gera o token reCAPTCHA v3
+    const recaptchaToken = await executeRecaptcha("recovery");
 
     const request: any = await api.bridge({
       method: "post",
       url: "auth/recovery",
-      data: { email: email },
+      data: { email: email, recaptcha_token: recaptchaToken },
     });
 
     if (request.response) {

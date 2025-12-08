@@ -1,13 +1,14 @@
-import Partner from "@/src/components/common/Partner";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { StoreType } from "@/src/models/store";
-import { getImage } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { PartnerType } from "@/src/models/partner";
 import { HeaderFooterType } from "@/src/models/headerFooter";
 import { DataSeoType } from "@/src/models/dataSeo";
 import { ScriptsType } from "@/src/models/scripts";
+import AdminPartner from "../admin/parceiros/[id]";
+import Partner from "@/src/components/common/Partner";
+
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
