@@ -1,105 +1,32 @@
 import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
-import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import { KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { NextApiRequest, NextApiResponse } from "next";
-import {
-  dateBRFormat,
-  findDates,
-  getAllowedRegionsDescription,
-  getImage,
-  isCEPInRegion,
-  justNumber,
-  moneyFormat,
-} from "@/src/helper";
+import { dateBRFormat, getImage, moneyFormat } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { RemoveToCart } from "@/src/components/pages/carrinho";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Img from "@/src/components/utils/ImgBase";
 import { formatCep } from "@/src/components/utils/FormMasks";
 import { CartType } from "@/src/models/cart";
-import { DeliveryItem } from "@/src/types/filtros";
 import { getProductUrl } from "@/src/urlHelpers";
 
-type DeliverySummaryEntry = {
-  key: string;
-  price: number;
-  storeId: number | null;
-  storeName: string;
-  storeSlug?: string;
-  storeLogoUrl?: string | null;
-};
-
-type DeliverySummary = {
-  total: number;
-  zipCodes: string[];
-  entries: DeliverySummaryEntry[];
-};
-
-const collectDeliverySummary = (items: Array<CartType>): DeliverySummary => {
-  const entriesMap = new Map<string, DeliverySummaryEntry>();
-  const zipCodes = new Set<string>();
-  let total = 0;
-
-  items.forEach((item) => {
-    const feeValue = Number(item?.details?.deliveryFee);
-    if (!Number.isFinite(feeValue) || feeValue < 0) {
-      return;
-    }
-
-    const storeData = item?.product?.store ?? {};
-    const rawStoreId =
-      item?.details?.deliveryStoreId ?? storeData?.id ?? storeData;
-
-    const storeId = Number(rawStoreId);
-    const hasNumericStoreId = Number.isFinite(storeId);
-    const entryKey = hasNumericStoreId
-      ? `store-${storeId}`
-      : `item-${item?.product?.id ?? Math.random()}`;
-
-    if (!entriesMap.has(entryKey)) {
-      const storeName =
-        storeData?.companyName ?? storeData?.title ?? "Loja parceira";
-      const storeSlug = storeData?.slug;
-      let storeLogoUrl: string | null = null;
-
-      if (storeData?.profile && typeof storeData.profile === "object") {
-        storeLogoUrl =
-          getImage(storeData.profile, "thumb") ||
-          getImage(storeData.profile, "sm") ||
-          getImage(storeData.profile);
-      }
-
-      entriesMap.set(entryKey, {
-        key: entryKey,
-        price: feeValue,
-        storeId: hasNumericStoreId ? storeId : null,
-        storeName,
-        storeSlug,
-        storeLogoUrl: storeLogoUrl || null,
-      });
-
-      total += feeValue;
-    }
-
-    const rawZip =
-      item?.details?.deliveryZipCode ?? item?.details?.deliveryZipCodeFormatted;
-    if (rawZip) {
-      const sanitizedZip = rawZip.toString().replace(/\D/g, "");
-      if (sanitizedZip.length >= 5) {
-        zipCodes.add(sanitizedZip);
-      }
-    }
-  });
-
-  return {
-    total,
-    zipCodes: Array.from(zipCodes),
-    entries: Array.from(entriesMap.values()),
-  };
-};
+// Services
+import {
+  DeliverySummaryEntry,
+  calculateCartResume,
+  calculateAddonsTotal,
+  saveCartToCookies,
+  CartResume,
+} from "@/src/services/cart";
+import {
+  validateCep,
+  calculateDeliveryFees,
+  applyDeliveryToCart,
+  extractProductIds,
+} from "@/src/services/delivery";
 
 export async function getServerSideProps({
   req,
@@ -159,17 +86,7 @@ export default function Carrinho({
   Scripts: any;
 }) {
   const [listCart, setListCart] = useState<CartType[]>([]);
-  const [dates, setDates] = useState<Array<any>>([]);
-  const [subtotal, setSubtotal] = useState<number>(0);
-  const [resume, setResume] = useState<{
-    subtotal: number;
-    total: number;
-    delivery: number;
-    deliveryZipCodes: string[];
-    deliveryEntries: DeliverySummaryEntry[];
-    startDate: any;
-    endDate: any;
-  }>({
+  const [resume, setResume] = useState<CartResume>({
     subtotal: 0,
     total: 0,
     delivery: 0,
@@ -183,24 +100,10 @@ export default function Carrinho({
   const [deliveryLoading, setDeliveryLoading] = useState(false);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
-  const recalcSummary = (items: Array<CartType>) => {
-    const datesHandle = items.map((item) => item.details?.dateStart);
-    const subtotalHandle = items.reduce((accumulator: number, item) => {
-      return accumulator + Number(item.total ?? 0);
-    }, 0);
-    const deliverySummary = collectDeliverySummary(items);
-
-    setDates(datesHandle);
-    setSubtotal(subtotalHandle);
-    setResume({
-      subtotal: subtotalHandle,
-      total: subtotalHandle + deliverySummary.total,
-      delivery: deliverySummary.total,
-      deliveryZipCodes: deliverySummary.zipCodes,
-      deliveryEntries: deliverySummary.entries,
-      startDate: findDates(datesHandle).minDate,
-      endDate: findDates(datesHandle).maxDate,
-    });
+  // Usa o service para recalcular resumo do carrinho
+  const recalcSummary = (items: CartType[]) => {
+    const cartResume = calculateCartResume(items);
+    setResume(cartResume);
   };
 
   const removeItemCart = (key: number) => {
@@ -212,119 +115,35 @@ export default function Carrinho({
     RemoveToCart(key);
   };
 
-  const applyDeliveryToCart = (
-    fees: DeliveryItem[],
+  // Wrapper para aplicar frete usando o service
+  const applyDeliveryToCartLocal = (
+    fees: { price: number; store_id: number }[],
     sanitizedZip: string
   ): { success: boolean; message?: string } => {
-    if (!fees.length) {
-      return {
-        success: false,
-        message: "Não conseguimos calcular o frete para este CEP.",
-      };
+    const result = applyDeliveryToCart(listCart, fees, sanitizedZip);
+
+    if (result.success && result.updatedCart) {
+      setListCart(result.updatedCart);
+      saveCartToCookies(result.updatedCart);
+      recalcSummary(result.updatedCart);
     }
 
-    const formattedZip = formatCep(sanitizedZip);
-    const feeMap = new Map<number, number>();
-
-    fees.forEach((fee: any) => {
-      const storeId = Number(
-        fee?.store_id ?? fee?.storeId ?? fee?.store ?? fee?.store_id
-      );
-      const price = Number(fee?.price);
-
-      if (Number.isFinite(storeId) && Number.isFinite(price)) {
-        feeMap.set(storeId, price);
-      }
-    });
-
-    const missingStores: string[] = [];
-
-    const updatedList = listCart.map((item) => {
-      const productStore = item?.product?.store ?? {};
-      const storeSource =
-        item?.details?.deliveryStoreId ??
-        (typeof productStore === "object" ? productStore?.id : productStore);
-      const storeId = Number(storeSource);
-
-      const details = { ...(item.details ?? {}) };
-      details.deliveryZipCode = sanitizedZip;
-      details.deliveryZipCodeFormatted = formattedZip;
-
-      if (Number.isFinite(storeId)) {
-        details.deliveryStoreId = storeId;
-        if (feeMap.has(storeId)) {
-          details.deliveryFee = feeMap.get(storeId) ?? 0;
-        } else {
-          delete details.deliveryFee;
-          missingStores.push(
-            productStore?.companyName ??
-              productStore?.title ??
-              item?.product?.title ??
-              `Produto #${item?.product?.id ?? ""}`
-          );
-        }
-      } else {
-        delete details.deliveryStoreId;
-        delete details.deliveryFee;
-        missingStores.push(
-          productStore?.companyName ??
-            productStore?.title ??
-            item?.product?.title ??
-            `Produto #${item?.product?.id ?? ""}`
-        );
-      }
-
-      return {
-        ...item,
-        details,
-      };
-    });
-
-    if (missingStores.length) {
-      const list = Array.from(new Set(missingStores.filter(Boolean)));
-      return {
-        success: false,
-        message:
-          list.length > 0
-            ? `Não conseguimos calcular o frete para: ${list.join(", ")}`
-            : "Não conseguimos calcular o frete para este CEP.",
-      };
-    }
-
-    setListCart(updatedList);
-    if (typeof window !== "undefined") {
-      Cookies.set("fiestou.cart", JSON.stringify(updatedList), { expires: 7 });
-    }
-    recalcSummary(updatedList);
-
-    return { success: true };
+    return { success: result.success, message: result.message };
   };
 
+  // Handler de cálculo de frete usando services
   const handleCalculateDelivery = async () => {
-    const sanitizedZip = justNumber(deliveryZipInput);
-
-    if (sanitizedZip.length !== 8) {
-      setDeliveryError("Informe um CEP válido para calcular o frete.");
+    // 1. Valida CEP usando service
+    const validation = validateCep(deliveryZipInput);
+    if (!validation.valid) {
+      setDeliveryError(validation.error ?? "CEP inválido");
       return;
     }
 
-    if (!isCEPInRegion(sanitizedZip)) {
-      setDeliveryError(
-        `Por enquanto atendemos apenas ${getAllowedRegionsDescription()}.`
-      );
-      return;
-    }
-
-    const productIds = listCart
-      .map((item) =>
-        Number(item?.product?.id ?? (typeof item?.product === "number" ? item.product : NaN))
-      )
-      .filter((id) => Number.isFinite(id)) as number[];
-
+    // 2. Extrai IDs de produtos usando service
+    const productIds = extractProductIds(listCart);
     if (!productIds.length) {
-      setDeliveryError(
-        "Não encontramos produtos válidos no carrinho para calcular o frete."
-      );
+      setDeliveryError("Não encontramos produtos válidos no carrinho para calcular o frete.");
       return;
     }
 
@@ -332,44 +151,23 @@ export default function Carrinho({
     setDeliveryError(null);
 
     try {
-      const response: any = await apiClient.request({
-        method: "get",
-        url: `delivery-zipcodes/${sanitizedZip}`,
-        data: { ids: productIds },
-      });
+      // 3. Calcula frete via API usando service
+      const calculation = await calculateDeliveryFees(apiClient, validation.sanitized, productIds);
 
-      const rawList =
-        Array.isArray(response?.data) && response?.data
-          ? response.data
-          : Array.isArray(response?.data?.data)
-          ? response.data.data
-          : Array.isArray(response)
-          ? response
-          : [];
-
-      const normalizedFees: DeliveryItem[] = rawList
-        .map((item: any) => ({
-          price: Number(item?.price),
-          store_id: Number(item?.store_id ?? item?.storeId ?? item?.store),
-        }))
-        .filter(
-          (fee: DeliveryItem) =>
-            Number.isFinite(fee.price) && Number.isFinite(fee.store_id)
-        );
-
-      if (!normalizedFees.length) {
-        setDeliveryError("Não conseguimos calcular o frete para este CEP.");
+      if (!calculation.success) {
+        setDeliveryError(calculation.error ?? "Não conseguimos calcular o frete.");
         return;
       }
 
-      const result = applyDeliveryToCart(normalizedFees, sanitizedZip);
+      // 4. Aplica frete ao carrinho usando service
+      const result = applyDeliveryToCartLocal(calculation.fees, validation.sanitized);
 
       if (!result.success) {
         setDeliveryError(result.message ?? "Não conseguimos calcular o frete.");
         return;
       }
 
-      setDeliveryZipInput(formatCep(sanitizedZip));
+      setDeliveryZipInput(validation.formatted);
     } catch (error: any) {
       const message =
         error?.response?.data?.error ||
@@ -648,20 +446,9 @@ export default function Carrinho({
                         </div>
                       </div>
 
-                      {/* Total de adicionais */}
+                      {/* Total de adicionais - usando service */}
                       {(() => {
-                        let totalAddons = 0;
-                        listCart.forEach((item: any) => {
-                          if (item.attributes && Array.isArray(item.attributes)) {
-                            item.attributes.forEach((attr: any) => {
-                              (attr.variations || []).forEach((v: any) => {
-                                if (v.quantity > 0 && v.price) {
-                                  totalAddons += Number(v.price) * (v.quantity || 1) * (item.quantity || 1);
-                                }
-                              });
-                            });
-                          }
-                        });
+                        const totalAddons = calculateAddonsTotal(listCart);
                         return totalAddons > 0 ? (
                           <>
                             <div className="border-t"></div>
