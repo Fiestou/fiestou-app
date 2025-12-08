@@ -333,7 +333,7 @@ export default function Pedido({
                                 )}
                                 Fornecido por:
                                 <Link
-                                  href={`/${product?.store.slug}`}
+                                  href={getStoreUrl(product?.store)}
                                   className="text-zinc-900 pl-2 font-semibold underline"
                                 >
                                   {product?.store.title}

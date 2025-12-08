@@ -6,6 +6,8 @@ import Api from "@/src/services/api";
 import { useEffect, useState } from "react";
 import { getExtenseData, moneyFormat } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { CartItem } from "@/src/components/common/cart-preview";
+import FilterWithdraw from "@/src/components/admin/withdraw/filter-withdraw/FilterWithdraw";
 
 export default function Saque() {
   const api = new Api();
@@ -15,12 +17,17 @@ export default function Saque() {
   const [withdrawList, setWithdrawList] = useState([] as Array<any>);
   const getWithdraw = async () => {
     let request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "withdraw/list",
     });
 
     setWithdrawList(request.data);
   };
+  const filteredWithdraws = withdrawList.filter(
+    (itm: any) => origin === "todos" || String(itm.status) === origin
+  );
+
+  const totalPedidos = filteredWithdraws.length;
 
   useEffect(() => {
     if (!!window) {
@@ -61,19 +68,7 @@ export default function Saque() {
               </div>
             </div>
             <div className="flex items-center gap-6 w-full md:w-fit">
-              <div>
-                <button
-                  type="button"
-                  className="rounded-xl whitespace-nowrap border py-4 text-zinc-900 font-semibold px-8"
-                >
-                  Filtrar{" "}
-                  <Icon
-                    icon="fa-chevron-down"
-                    type="far"
-                    className="text-xs ml-1"
-                  />
-                </button>
-              </div>
+              <FilterWithdraw value={origin} onChange={setOrigin} />
             </div>
           </div>
         </div>
@@ -90,7 +85,10 @@ export default function Saque() {
             </div>
             {!!withdrawList?.length &&
               withdrawList
-                .filter((itm: any) => itm.origin == origin || origin == "todos")
+                .filter(
+                  (itm: any) =>
+                    origin === "todos" || String(itm.status) === origin
+                )
                 .map((item: any, key: any) => (
                   <div
                     key={key}
@@ -115,9 +113,7 @@ export default function Saque() {
                           Em análise
                         </div>
                       ) : (
-                        <div className="rounded-md bg-zinc-100 py-2">
-                          Negado
-                        </div>
+                        <div className="rounded-md bg-red-300 py-2">Negado</div>
                       )}
                     </div>
                     <div className="w-[16rem] text-center flex gap-2">
@@ -131,7 +127,9 @@ export default function Saque() {
                   </div>
                 ))}
           </div>
-          <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div>
+          <div className="pt-4 font-semibold text-zinc-900">
+            Mostrando {totalPedidos} pedidos
+          </div>
         </div>
       </section>
     </Template>

@@ -1,5 +1,4 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import Modal from "@/src/components/utils/Modal";
 import { Button, Input, Select } from "@/src/components/ui/form";
 import {
@@ -102,16 +101,23 @@ const buildInitialForm = (): RecipientEntity => ({
 });
 
 const steps = [
+  { id: "type", label: "Tipo do cadastro" },
   { id: "identity", label: "Dados gerais" },
+  { id: "contact", label: "Contatos e endereço" },
   { id: "bank", label: "Dados bancários" },
-  { id: "partners", label: "Sócios (opcional)", only: "PJ" as RecipientTypeEnum },
+  { id: "partners", label: "Sócios", only: "PJ" as RecipientTypeEnum },
 ] as const;
 
-type Step = typeof steps[number];
+type Step = (typeof steps)[number];
 
 type StepId = Step["id"];
 
-export default function RecipientModal({ open, onClose, status, onCompleted, user, store }: RecipientModalProps) {
+export default function RecipientModal({
+  open,
+  onClose,
+  status,
+  onCompleted,
+}: RecipientModalProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [formData, setFormData] = useState<RecipientEntity>(buildInitialForm);
   const [stepIndex, setStepIndex] = useState(0);
@@ -138,14 +144,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     );
   }, [formData.type_enum]);
 
-  const currentStep = visibleSteps[Math.min(stepIndex, visibleSteps.length - 1)];
+  const currentStep =
+    visibleSteps[Math.min(stepIndex, visibleSteps.length - 1)];
 
   useEffect(() => {
     if (!open) {
-      return;
-    }
-
-    if (!user?.id) {
       return;
     }
 
@@ -261,33 +264,26 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
       return;
     }
 
-    const initialBankAccount = createBankAccount();
-    initialBankAccount.holder_type = userType === "PJ" ? "company" : "individual";
-
-    setFormData({
-      ...buildInitialForm(),
-      type_enum: userType,
-      email: user?.email || "",
-      document: user?.cpf || user?.document || "",
-      name: user?.name || "",
-      birth_date: user?.date || "",
-      company_name: userType === "PJ" && store ? store.companyName || "" : "",
-      trading_name: userType === "PJ" && store ? store.title || "" : "",
-      addresses: [],
-      phones: [],
-      bank_account: initialBankAccount,
-    });
+    setFormData(buildInitialForm());
     setStepIndex(0);
     setStepError(null);
-  }, [open, status, user, userType, store]);
+  }, [open, status]);
 
-  // Removido: partners agora são opcionais, não forçamos adicionar um automaticamente
+  useEffect(() => {
+    if (formData.type_enum === "PJ" && formData.partners.length === 0) {
+      setFormData((prev) => ({ ...prev, partners: [createPartner()] }));
+    }
+  }, [formData.type_enum, formData.partners.length]);
 
   const updateField = (field: keyof RecipientEntity, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateAddress = (index: number, field: keyof RecipientAddress, value: string) => {
+  const updateAddress = (
+    index: number,
+    field: keyof RecipientAddress,
+    value: string
+  ) => {
     setFormData((prev) => {
       const addresses = prev.addresses.map((address, idx) =>
         idx === index ? { ...address, [field]: value } : address
@@ -296,7 +292,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     });
   };
 
-  const updatePhone = (index: number, field: keyof RecipientPhone, value: string) => {
+  const updatePhone = (
+    index: number,
+    field: keyof RecipientPhone,
+    value: string
+  ) => {
     setFormData((prev) => {
       const phones = prev.phones.map((phone, idx) =>
         idx === index ? { ...phone, [field]: value } : phone
@@ -305,7 +305,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     });
   };
 
-  const updatePartner = (index: number, field: keyof RecipientPartner, value: any) => {
+  const updatePartner = (
+    index: number,
+    field: keyof RecipientPartner,
+    value: any
+  ) => {
     setFormData((prev) => {
       const partners = prev.partners.map((partner, idx) => {
         if (idx !== index) return partner;
@@ -323,11 +327,14 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
   const updateBankAccount = (field: keyof RecipientBankAccount, value: any) => {
     setFormData((prev) => ({
       ...prev,
-      bank_account: prev.bank_account ? { ...prev.bank_account, [field]: value } : createBankAccount(),
+      bank_account: prev.bank_account
+        ? { ...prev.bank_account, [field]: value }
+        : createBankAccount(),
     }));
   };
 
-  const addAddress = () => updateField("addresses", [...formData.addresses, createAddress()]);
+  const addAddress = () =>
+    updateField("addresses", [...formData.addresses, createAddress()]);
   const removeAddress = (index: number) => {
     if (formData.addresses.length === 1) return;
     updateField(
@@ -336,7 +343,8 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     );
   };
 
-  const addPhone = () => updateField("phones", [...formData.phones, createPhone()]);
+  const addPhone = () =>
+    updateField("phones", [...formData.phones, createPhone()]);
   const removePhone = (index: number) => {
     if (formData.phones.length === 1) return;
     updateField(
@@ -345,7 +353,8 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     );
   };
 
-  const addPartner = () => updateField("partners", [...formData.partners, createPartner()]);
+  const addPartner = () =>
+    updateField("partners", [...formData.partners, createPartner()]);
   const removePartner = (index: number) => {
     updateField(
       "partners",
@@ -354,18 +363,13 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
   };
 
   const validateStep = (stepId: StepId): string | null => {
+    if (stepId === "type" && !formData.type_enum) {
+      return "Selecione se o cadastro será PJ ou PF.";
+    }
+
     if (stepId === "identity") {
       if (!formData.email || !formData.document) {
         return "Email e documento são obrigatórios.";
-      }
-
-      // Valida CPF ou CNPJ
-      const isValidDocument = formData.type_enum === "PF"
-        ? maskHandle.cpf(formData.document)
-        : maskHandle.cnpj(formData.document);
-
-      if (!isValidDocument) {
-        return `${formData.type_enum === "PF" ? "CPF" : "CNPJ"} inválido.`;
       }
 
       if (formData.type_enum === "PF") {
@@ -373,9 +377,37 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
           return "Preencha nome completo e data de nascimento.";
         }
       } else {
-        if (!formData.company_name || !formData.trading_name || !formData.name) {
+        if (
+          !formData.company_name ||
+          !formData.trading_name ||
+          !formData.name
+        ) {
           return "Informe razão social, nome fantasia e representante legal.";
         }
+      }
+    }
+
+    if (stepId === "contact") {
+      const hasInvalidAddress = formData.addresses.some(
+        (address) =>
+          !address.street.trim() ||
+          !address.street_number.trim() ||
+          !address.neighborhood.trim() ||
+          !address.city.trim() ||
+          !address.state.trim() ||
+          !address.zip_code.trim()
+      );
+
+      if (hasInvalidAddress) {
+        return "Preencha todos os campos de endereço.";
+      }
+
+      const hasInvalidPhone = formData.phones.some(
+        (phone) => !phone.area_code.trim() || !phone.number.trim()
+      );
+
+      if (hasInvalidPhone) {
+        return "Informe DDD e telefone.";
       }
     }
 
@@ -398,22 +430,15 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     }
 
     if (stepId === "partners" && formData.type_enum === "PJ") {
-      // Sócios agora são OPCIONAIS - apenas valida se houver algum preenchido
-      if (formData.partners.length > 0) {
-        const invalidPartner = formData.partners.some(
-          (partner) => !partner.name.trim() || !partner.document.trim()
-        );
-        if (invalidPartner) {
-          return "Complete nome e CPF de todos os sócios informados.";
-        }
+      if (formData.partners.length === 0) {
+        return "Cadastros PJ precisam de pelo menos um sócio.";
+      }
 
-        // Valida CPF dos sócios
-        const invalidCpf = formData.partners.some(
-          (partner) => partner.document.trim() && !maskHandle.cpf(partner.document)
-        );
-        if (invalidCpf) {
-          return "Um ou mais CPFs dos sócios são inválidos.";
-        }
+      const invalidPartner = formData.partners.some(
+        (partner) => !partner.name.trim() || !partner.document.trim()
+      );
+      if (invalidPartner) {
+        return "Complete nome e CPF/CNPJ de todos os sócios.";
       }
     }
 
@@ -543,52 +568,73 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
             <span className={`${isActive ? "font-semibold" : "text-zinc-500"}`}>
               {step.label}
             </span>
-            {index !== visibleSteps.length - 1 && <span className="text-zinc-300">/</span>}
+            {index !== visibleSteps.length - 1 && (
+              <span className="text-zinc-300">/</span>
+            )}
           </div>
         );
       })}
     </div>
   );
 
+  const renderTypeStep = () => (
+    <div className="space-y-4">
+      <p className="text-zinc-600">
+        Escolha se você irá cadastrar como Pessoa Jurídica (PJ) ou Pessoa Física
+        (PF). Isso muda os dados que a Pagar.me exige para liberar seus
+        pagamentos.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {["PJ", "PF"].map((type) => {
+          const active = formData.type_enum === type;
+          return (
+            <button
+              key={type}
+              type="button"
+              onClick={() =>
+                updateField("type_enum", type as RecipientTypeEnum)
+              }
+              className={`border rounded-lg p-5 text-left transition-colors ${
+                active
+                  ? "border-red-500 bg-red-50"
+                  : "border-zinc-200 hover:border-zinc-400"
+              }`}
+            >
+              <p className="text-lg font-semibold">
+                {type === "PJ"
+                  ? "Quero vender como empresa"
+                  : "Quero vender como pessoa física"}
+              </p>
+              <p className="text-sm text-zinc-500 mt-2">
+                {type === "PJ"
+                  ? "Ideal para CNPJ com emissão de notas, permite adicionar sócios e responsáveis."
+                  : "Para autônomos e MEIs que ainda vendem com CPF."}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   const renderIdentityStep = () => (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-        <p className="font-semibold">
-          Tipo de cadastro: {formData.type_enum === "PJ" ? "Pessoa Jurídica (CNPJ)" : "Pessoa Física (CPF)"}
-        </p>
-        <p className="text-xs mt-1 text-blue-700">
-          O tipo é determinado automaticamente pela sua conta.
-        </p>
-      </div>
-
       <div className="grid gap-4">
         <Input
           name="email"
-          type="email"
           placeholder="Email principal"
           value={formData.email}
           onChange={(event) => updateField("email", event.target.value)}
-          disabled={!!user?.email}
           required
         />
         <Input
           name="document"
-          placeholder={formData.type_enum === "PJ" ? "00.000.000/0000-00" : "000.000.000-00"}
-          value={formData.type_enum === "PJ" ? formatCNPJ(formData.document) : formatCPF(formData.document)}
-          onChange={(event) => {
-            const cleaned = justNumber(event.target.value);
-            updateField("document", cleaned);
-          }}
-          disabled={!!(user?.cpf || user?.document)}
+          placeholder={formData.type_enum === "PJ" ? "CNPJ" : "CPF"}
+          value={formData.document}
+          onChange={(event) => updateField("document", event.target.value)}
           required
         />
       </div>
-
-      {(user?.email || user?.cpf || user?.document) && (
-        <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-xs text-gray-600">
-          💡 Para alterar email ou documento, acesse <Link href="/painel/meus-dados" className="text-blue-600 underline">Meus Dados</Link>
-        </div>
-      )}
 
       {formData.type_enum === "PJ" ? (
         <div className="grid gap-4">
@@ -596,16 +642,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
             name="company_name"
             placeholder="Razão social"
             value={formData.company_name ?? ""}
-            onChange={(event) => updateField("company_name", event.target.value)}
-            disabled={!!store?.companyName}
+            onChange={(event) =>
+              updateField("company_name", event.target.value)
+            }
             required
           />
           <Input
             name="trading_name"
             placeholder="Nome fantasia"
             value={formData.trading_name ?? ""}
-            onChange={(event) => updateField("trading_name", event.target.value)}
-            disabled={!!store?.title}
+            onChange={(event) =>
+              updateField("trading_name", event.target.value)
+            }
             required
           />
           <Input
@@ -655,23 +703,198 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
         }
         value={formData.name}
         onChange={(event) => updateField("name", event.target.value)}
-        disabled={!!user?.name}
         required
       />
 
       <Input
         name="professional_occupation"
         placeholder={
-          formData.type_enum === "PJ"
-            ? "Cargo do responsável"
-            : "Profissão"
+          formData.type_enum === "PJ" ? "Cargo do responsável" : "Profissão"
         }
         value={formData.professional_occupation ?? ""}
-        onChange={(event) => updateField("professional_occupation", event.target.value)}
+        onChange={(event) =>
+          updateField("professional_occupation", event.target.value)
+        }
       />
     </div>
   );
 
+  const renderAddresses = () => (
+    <div className="space-y-6">
+      {formData.addresses.map((address, index) => (
+        <div
+          key={`address-${index}`}
+          className="border rounded-lg p-4 space-y-3"
+        >
+          <div className="flex justify-between items-center">
+            <p className="font-semibold">Endereço {index + 1}</p>
+            {formData.addresses.length > 1 && (
+              <button
+                type="button"
+                className="text-sm text-red-600"
+                onClick={() => removeAddress(index)}
+              >
+                remover
+              </button>
+            )}
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <Select
+              name={`address-type-${index}`}
+              value={address.type ?? "Recipient"}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                updateAddress(
+                  index,
+                  "type",
+                  event.target.value as RecipientAddress["type"]
+                )
+              }
+              options={[
+                { value: "Recipient", name: "Endereço principal" },
+                { value: "Partner", name: "Endereço de sócio" },
+              ]}
+            />
+            <Input
+              name={`address-zip-${index}`}
+              placeholder="CEP"
+              value={address.zip_code}
+              onChange={(event) =>
+                updateAddress(index, "zip_code", event.target.value)
+              }
+              required
+            />
+          </div>
+          <div className="grid md:grid-cols-3 gap-3">
+            <Input
+              name={`address-street-${index}`}
+              placeholder="Rua"
+              value={address.street}
+              onChange={(event) =>
+                updateAddress(index, "street", event.target.value)
+              }
+              required
+            />
+            <Input
+              name={`address-number-${index}`}
+              placeholder="Número"
+              value={address.street_number}
+              onChange={(event) =>
+                updateAddress(index, "street_number", event.target.value)
+              }
+              required
+            />
+            <Input
+              name={`address-complement-${index}`}
+              placeholder="Complemento"
+              value={address.complementary ?? ""}
+              onChange={(event) =>
+                updateAddress(index, "complementary", event.target.value)
+              }
+            />
+          </div>
+          <div className="grid md:grid-cols-3 gap-3">
+            <Input
+              name={`address-neighborhood-${index}`}
+              placeholder="Bairro"
+              value={address.neighborhood}
+              onChange={(event) =>
+                updateAddress(index, "neighborhood", event.target.value)
+              }
+              required
+            />
+            <Input
+              name={`address-city-${index}`}
+              placeholder="Cidade"
+              value={address.city}
+              onChange={(event) =>
+                updateAddress(index, "city", event.target.value)
+              }
+              required
+            />
+            <Input
+              name={`address-state-${index}`}
+              placeholder="UF"
+              value={address.state}
+              onChange={(event) =>
+                updateAddress(index, "state", event.target.value.toUpperCase())
+              }
+              maxLength={2}
+              required
+            />
+          </div>
+        </div>
+      ))}
+      <Button style="btn-light" type="button" onClick={addAddress}>
+        Adicionar outro endereço
+      </Button>
+    </div>
+  );
+
+  const renderPhones = () => (
+    <div className="space-y-6">
+      {formData.phones.map((phone, index) => (
+        <div key={`phone-${index}`} className="border rounded-lg p-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <p className="font-semibold">Telefone {index + 1}</p>
+            {formData.phones.length > 1 && (
+              <button
+                type="button"
+                className="text-sm text-red-600"
+                onClick={() => removePhone(index)}
+              >
+                remover
+              </button>
+            )}
+          </div>
+          <div className="grid md:grid-cols-3 gap-3">
+            <Select
+              name={`phone-type-${index}`}
+              value={phone.type ?? "Recipient"}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                updatePhone(
+                  index,
+                  "type",
+                  event.target.value as RecipientPhone["type"]
+                )
+              }
+              options={[
+                { value: "Recipient", name: "Principal" },
+                { value: "Partner", name: "Sócio" },
+              ]}
+            />
+            <Input
+              name={`phone-area-code-${index}`}
+              placeholder="DDD"
+              value={phone.area_code}
+              onChange={(event) =>
+                updatePhone(index, "area_code", event.target.value)
+              }
+              required
+            />
+            <Input
+              name={`phone-number-${index}`}
+              placeholder="Número"
+              value={phone.number}
+              onChange={(event) =>
+                updatePhone(index, "number", event.target.value)
+              }
+              required
+            />
+          </div>
+        </div>
+      ))}
+      <Button style="btn-light" type="button" onClick={addPhone}>
+        Adicionar outro telefone
+      </Button>
+    </div>
+  );
+
+  const renderContactStep = () => (
+    <div className="space-y-10">
+      {renderAddresses()}
+      {renderPhones()}
+    </div>
+  );
 
   const renderBankStep = () => {
     const bank = formData.bank_account || createBankAccount();
@@ -679,7 +902,8 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     return (
       <div className="space-y-6">
         <p className="text-zinc-600">
-          Informe os dados da conta bancária onde você receberá os pagamentos. A conta deve estar no nome do titular do cadastro (CPF/CNPJ).
+          Informe os dados da conta bancária onde você receberá os pagamentos. A
+          conta deve estar no nome do titular do cadastro (CPF/CNPJ).
         </p>
 
         <div className="grid md:grid-cols-2 gap-4">
@@ -709,7 +933,10 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
             name="type"
             value={bank.type}
             onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-              updateBankAccount("type", event.target.value as "checking" | "savings")
+              updateBankAccount(
+                "type",
+                event.target.value as "checking" | "savings"
+              )
             }
             options={[
               { value: "checking", name: "Conta Corrente" },
@@ -724,14 +951,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
             name="branch_number"
             placeholder="Número da agência"
             value={bank.branch_number}
-            onChange={(event) => updateBankAccount("branch_number", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("branch_number", event.target.value)
+            }
             required
           />
           <Input
             name="branch_check_digit"
             placeholder="Dígito da agência"
             value={bank.branch_check_digit ?? ""}
-            onChange={(event) => updateBankAccount("branch_check_digit", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("branch_check_digit", event.target.value)
+            }
             maxLength={2}
           />
           <div className="col-span-1" />
@@ -742,14 +973,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
             name="account_number"
             placeholder="Número da conta (sem dígito)"
             value={bank.account_number}
-            onChange={(event) => updateBankAccount("account_number", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("account_number", event.target.value)
+            }
             required
           />
           <Input
             name="account_check_digit"
             placeholder="Dígito verificador da conta"
             value={bank.account_check_digit}
-            onChange={(event) => updateBankAccount("account_check_digit", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("account_check_digit", event.target.value)
+            }
             maxLength={5}
             required
           />
@@ -760,27 +995,39 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
             name="holder_name"
             placeholder="Nome completo do titular"
             value={bank.holder_name}
-            onChange={(event) => updateBankAccount("holder_name", event.target.value)}
+            onChange={(event) =>
+              updateBankAccount("holder_name", event.target.value)
+            }
             required
           />
           <Input
             name="holder_document"
-            placeholder={formData.type_enum === "PJ" ? "00.000.000/0000-00" : "000.000.000-00"}
-            value={formData.type_enum === "PJ" ? formatCNPJ(bank.holder_document) : formatCPF(bank.holder_document)}
-            onChange={(event) => {
-              const cleaned = justNumber(event.target.value);
-              updateBankAccount("holder_document", cleaned);
-            }}
+            placeholder={
+              formData.type_enum === "PJ" ? "CNPJ do titular" : "CPF do titular"
+            }
+            value={bank.holder_document}
+            onChange={(event) =>
+              updateBankAccount("holder_document", event.target.value)
+            }
             required
           />
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
-          <p className="font-semibold">Tipo do titular:</p>
-          <p className="text-gray-600">
-            {formData.type_enum === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"} (definido automaticamente pelo seu tipo de cadastro)
-          </p>
-        </div>
+        <Select
+          name="holder_type"
+          value={bank.holder_type}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+            updateBankAccount(
+              "holder_type",
+              event.target.value as "individual" | "company"
+            )
+          }
+          options={[
+            { value: "individual", name: "Pessoa Física" },
+            { value: "company", name: "Pessoa Jurídica" },
+          ]}
+          required
+        />
 
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm text-yellow-800">
           <p className="font-semibold mb-1">⚠️ Atenção:</p>
@@ -795,114 +1042,117 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
 
   const renderPartnersStep = () => (
     <div className="space-y-6">
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-        <p className="font-semibold">Sócios são opcionais</p>
-        <p className="text-xs mt-1 text-yellow-700">
-          Você pode adicionar sócios agora ou deixar em branco e pular esta etapa.
-        </p>
-      </div>
-
-      {formData.partners.length === 0 ? (
-        <div className="text-center py-6">
-          <p className="text-zinc-500 mb-4">Nenhum sócio adicionado</p>
-          <Button style="btn-light" type="button" onClick={addPartner}>
-            Adicionar primeiro sócio
-          </Button>
+      {formData.partners.map((partner, index) => (
+        <div
+          key={`partner-${index}`}
+          className="border rounded-lg p-4 space-y-3"
+        >
+          <div className="flex justify-between items-center">
+            <p className="font-semibold">Sócio {index + 1}</p>
+            {formData.partners.length > 1 && (
+              <button
+                type="button"
+                className="text-sm text-red-600"
+                onClick={() => removePartner(index)}
+              >
+                remover
+              </button>
+            )}
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <Input
+              name={`partner-name-${index}`}
+              placeholder="Nome completo"
+              value={partner.name}
+              onChange={(event) =>
+                updatePartner(index, "name", event.target.value)
+              }
+              required
+            />
+            <Input
+              name={`partner-email-${index}`}
+              placeholder="Email"
+              value={partner.email ?? ""}
+              onChange={(event) =>
+                updatePartner(index, "email", event.target.value)
+              }
+            />
+          </div>
+          <div className="grid md:grid-cols-3 gap-3">
+            <Input
+              name={`partner-document-${index}`}
+              placeholder="CPF"
+              value={partner.document}
+              onChange={(event) =>
+                updatePartner(index, "document", event.target.value)
+              }
+              required
+            />
+            <Input
+              name={`partner-birth-${index}`}
+              type="date"
+              placeholder="Nascimento"
+              value={partner.birth_date ?? ""}
+              onChange={(event) =>
+                updatePartner(index, "birth_date", event.target.value)
+              }
+            />
+            <Input
+              name={`partner-income-${index}`}
+              type="number"
+              placeholder="Renda mensal"
+              value={partner.monthly_income ?? ""}
+              onChange={(event) =>
+                updatePartner(
+                  index,
+                  "monthly_income",
+                  event.target.value ? Number(event.target.value) : null
+                )
+              }
+            />
+          </div>
+          <Input
+            name={`partner-occupation-${index}`}
+            placeholder="Profissão / cargo"
+            value={partner.professional_occupation ?? ""}
+            onChange={(event) =>
+              updatePartner(
+                index,
+                "professional_occupation",
+                event.target.value
+              )
+            }
+          />
+          <label className="flex items-center gap-3 text-sm text-zinc-700">
+            <input
+              type="checkbox"
+              checked={Boolean(partner.self_declared_legal_representative)}
+              onChange={(event) =>
+                updatePartner(
+                  index,
+                  "self_declared_legal_representative",
+                  event.target.checked
+                )
+              }
+            />
+            É representante legal da empresa
+          </label>
         </div>
-      ) : (
-        <>
-          {formData.partners.map((partner, index) => (
-            <div key={`partner-${index}`} className="border rounded-lg p-4 space-y-3">
-              <div className="flex justify-between items-center">
-                <p className="font-semibold">Sócio {index + 1}</p>
-                <button
-                  type="button"
-                  className="text-sm text-red-600"
-                  onClick={() => removePartner(index)}
-                >
-                  remover
-                </button>
-              </div>
-              <div className="grid md:grid-cols-2 gap-3">
-                <Input
-                  name={`partner-name-${index}`}
-                  placeholder="Nome completo"
-                  value={partner.name}
-                  onChange={(event) => updatePartner(index, "name", event.target.value)}
-                  required
-                />
-                <Input
-                  name={`partner-email-${index}`}
-                  type="email"
-                  placeholder="Email"
-                  value={partner.email ?? ""}
-                  onChange={(event) => updatePartner(index, "email", event.target.value)}
-                />
-              </div>
-              <div className="grid md:grid-cols-3 gap-3">
-                <Input
-                  name={`partner-document-${index}`}
-                  placeholder="000.000.000-00"
-                  value={formatCPF(partner.document)}
-                  onChange={(event) => {
-                    const cleaned = justNumber(event.target.value);
-                    updatePartner(index, "document", cleaned);
-                  }}
-                  required
-                />
-                <Input
-                  name={`partner-birth-${index}`}
-                  type="date"
-                  placeholder="Nascimento"
-                  value={partner.birth_date ?? ""}
-                  onChange={(event) => updatePartner(index, "birth_date", event.target.value)}
-                />
-                <Input
-                  name={`partner-income-${index}`}
-                  type="number"
-                  placeholder="Renda mensal"
-                  value={partner.monthly_income ?? ""}
-                  onChange={(event) =>
-                    updatePartner(
-                      index,
-                      "monthly_income",
-                      event.target.value ? Number(event.target.value) : null
-                    )
-                  }
-                />
-              </div>
-              <Input
-                name={`partner-occupation-${index}`}
-                placeholder="Profissão / cargo"
-                value={partner.professional_occupation ?? ""}
-                onChange={(event) =>
-                  updatePartner(index, "professional_occupation", event.target.value)
-                }
-              />
-              <label className="flex items-center gap-3 text-sm text-zinc-700">
-                <input
-                  type="checkbox"
-                  checked={Boolean(partner.self_declared_legal_representative)}
-                  onChange={(event) =>
-                    updatePartner(index, "self_declared_legal_representative", event.target.checked)
-                  }
-                />
-                É representante legal da empresa
-              </label>
-            </div>
-          ))}
-          <Button style="btn-light" type="button" onClick={addPartner}>
-            Adicionar outro sócio
-          </Button>
-        </>
-      )}
+      ))}
+      <Button style="btn-light" type="button" onClick={addPartner}>
+        Adicionar outro sócio
+      </Button>
     </div>
   );
 
   const renderStepContent = () => {
     switch (currentStep.id) {
+      case "type":
+        return renderTypeStep();
       case "identity":
         return renderIdentityStep();
+      case "contact":
+        return renderContactStep();
       case "bank":
         return renderBankStep();
       case "partners":
@@ -949,12 +1199,18 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
             Voltar
           </Button>
           <Button
-            style={stepIndex === visibleSteps.length - 1 ? "btn-success" : "btn-yellow"}
+            style={
+              stepIndex === visibleSteps.length - 1
+                ? "btn-success"
+                : "btn-yellow"
+            }
             type="button"
             loading={isSubmitting}
             onClick={handleNext}
           >
-            {stepIndex === visibleSteps.length - 1 ? "Enviar para análise" : "Continuar"}
+            {stepIndex === visibleSteps.length - 1
+              ? "Enviar para análise"
+              : "Continuar"}
           </Button>
         </div>
       </div>
