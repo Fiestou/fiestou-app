@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { Label } from "../../ui/form";
 import Img from "@/src/components/utils/ImgBase";
 import Api from "@/src/services/api";
@@ -9,8 +15,8 @@ import { Categorie, Group } from "@/src/types/filtros";
 const MAX = 3;
 
 type Props = {
-  value?: string[];                          // ids pré-selecionados
-  onChange?: (id: number) => void;           // legado: emite só adição
+  value?: string[]; // ids pré-selecionados
+  onChange?: (id: number) => void; // legado: emite só adição
   onToggle?: (id: number, selected: boolean) => void; // novo: add/remove
 };
 
@@ -30,10 +36,14 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
 
   // callbacks refs
   const onChangeRef = useRef<Props["onChange"]>(onChange);
-  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   const onToggleRef = useRef<Props["onToggle"]>(onToggle);
-  useEffect(() => { onToggleRef.current = onToggle; }, [onToggle]);
+  useEffect(() => {
+    onToggleRef.current = onToggle;
+  }, [onToggle]);
 
   // ===== 1) Carrega grupos (com name/icon)
   useEffect(() => {
@@ -41,7 +51,10 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
     (async () => {
       try {
         setLoading(true);
-        const request: any = await api.request({ method: "get", url: "group/targetadcpbl" });
+        const request: any = await api.request({
+          method: "get",
+          url: "group/targetadcpbl",
+        });
         if (!mounted) return;
         if (Array.isArray(request?.data)) {
           const groups: Group[] = request.data.map((g: any) => ({
@@ -63,13 +76,16 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // dicionário id->categoria
   const dict = useMemo(() => {
     const m = new Map<number, Categorie>();
-    for (const g of allGroups) for (const c of g.categories) m.set(Number(c.id), c);
+    for (const g of allGroups)
+      for (const c of g.categories) m.set(Number(c.id), c);
     return m;
   }, [allGroups]);
 
@@ -127,19 +143,22 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
   }, [selectedIds]);
 
   // ===== 4) Clique: toggle respeitando MAX
-  const handleSelect = useCallback((element: Categorie) => {
-    const id = toNum(element.id);
-    setSelectedElements((prev) => {
-      const exists = prev.some((el) => toNum(el.id) === id);
-      if (exists) {
-        return prev.filter((el) => toNum(el.id) !== id);
-      }
-      if (prev.length >= MAX) return prev;
-      // pega meta completa do dict para manter name/icon
-      const meta = dict.get(id) ?? element;
-      return [...prev, { ...meta, id }];
-    });
-  }, [dict]);
+  const handleSelect = useCallback(
+    (element: Categorie) => {
+      const id = toNum(element.id);
+      setSelectedElements((prev) => {
+        const exists = prev.some((el) => toNum(el.id) === id);
+        if (exists) {
+          return prev.filter((el) => toNum(el.id) !== id);
+        }
+        if (prev.length >= MAX) return prev;
+        // pega meta completa do dict para manter name/icon
+        const meta = dict.get(id) ?? element;
+        return [...prev, { ...meta, id }];
+      });
+    },
+    [dict]
+  );
 
   const atLimit = selectedElements.length >= MAX;
 
@@ -168,7 +187,11 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
                     tabIndex={isDisabled ? -1 : 0}
                     className={`border rounded p-2 transition
                       ${isChecked ? "border-zinc-800" : "hover:border-zinc-300"}
-                      ${isDisabled ? "opacity-50 pointer-events-none" : "cursor-pointer"}
+                      ${
+                        isDisabled
+                          ? "opacity-50 pointer-events-none"
+                          : "cursor-pointer"
+                      }
                     `}
                     onClick={() => handleSelect(element)}
                     title={element.name}

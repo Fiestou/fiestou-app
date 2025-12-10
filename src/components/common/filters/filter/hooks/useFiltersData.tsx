@@ -1,4 +1,3 @@
-// hooks/useFiltersData.ts
 import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { GroupsResponse, Categorie } from "@/src/types/filtros";

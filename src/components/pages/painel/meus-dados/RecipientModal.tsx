@@ -24,7 +24,7 @@ interface RecipientModalProps {
   onClose: () => void;
   status?: RecipientStatusResponse | null;
   onCompleted?: (recipient: RecipientType) => void;
-  user?: UserType;
+  user?: any;
   store?: any;
 }
 
@@ -117,6 +117,8 @@ export default function RecipientModal({
   onClose,
   status,
   onCompleted,
+  user,
+  store,
 }: RecipientModalProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [formData, setFormData] = useState<RecipientEntity>(buildInitialForm);
@@ -127,12 +129,11 @@ export default function RecipientModal({
   const userType: RecipientTypeEnum = useMemo(() => {
     if (!user?.id) return "PF";
 
-    const doc = user?.cpf || user?.document || '';
+    const doc = user?.cpf || user?.document || "";
     const cleanDoc = justNumber(doc); // Remove caracteres não-numéricos
 
     return cleanDoc.length === 14 ? "PJ" : "PF";
   }, [user?.id, user?.cpf, user?.document]);
-
 
   useEffect(() => {
     setIsMounted(true);
@@ -189,29 +190,27 @@ export default function RecipientModal({
         professional_occupation: recipient.professional_occupation || "",
 
         // endereços vindos do back, convertidos pro tipo do form
-        addresses:
-          recipient.addresses?.map((addr: AddressType) => ({
-            id: addr.id,
-            type: "Recipient" as const,
-            partner_document: addr.partner_document ?? "",
-            street: addr.street ?? "",
-            complementary: addr.complementary ?? "",
-            street_number: addr.street_number ?? "",
-            neighborhood: addr.neighborhood ?? "",
-            city: addr.city ?? "",
-            state: addr.state ?? "",
-            zip_code: addr.zip_code ?? "",
-            reference_point: addr.reference_point ?? "",
-          })) ?? [createAddress()],
+        addresses: recipient.addresses?.map((addr: AddressType) => ({
+          id: addr.id,
+          type: "Recipient" as const,
+          partner_document: addr.partner_document ?? "",
+          street: addr.street ?? "",
+          complementary: addr.complementary ?? "",
+          street_number: addr.street_number ?? "",
+          neighborhood: addr.neighborhood ?? "",
+          city: addr.city ?? "",
+          state: addr.state ?? "",
+          zip_code: addr.zip_code ?? "",
+          reference_point: addr.reference_point ?? "",
+        })) ?? [createAddress()],
 
-        phones:
-          recipient.phones?.map((phone: PhoneType) => ({
-            id: phone.id,
-            type: "Recipient" as const,
-            partner_document: phone.partner_document ?? "",
-            area_code: phone.area_code ?? "",
-            number: phone.number ?? "",
-          })) ?? [createPhone()],
+        phones: recipient.phones?.map((phone: PhoneType) => ({
+          id: phone.id,
+          type: "Recipient" as const,
+          partner_document: phone.partner_document ?? "",
+          area_code: phone.area_code ?? "",
+          number: phone.number ?? "",
+        })) ?? [createPhone()],
 
         partners:
           recipient.partners?.map((partner: any) => ({
@@ -231,32 +230,35 @@ export default function RecipientModal({
 
         configs: remoteConfig
           ? {
-            ...createConfig(),
-            ...remoteConfig,
-            transfer_enabled: Boolean(remoteConfig.transfer_enabled),
-            anticipation_enabled: Boolean(remoteConfig.anticipation_enabled),
-          }
+              ...createConfig(),
+              ...remoteConfig,
+              transfer_enabled: Boolean(remoteConfig.transfer_enabled),
+              anticipation_enabled: Boolean(remoteConfig.anticipation_enabled),
+            }
           : createConfig(),
 
         bank_account: recipient.bank_account
           ? {
-            ...createBankAccount(),
-            bank: recipient.bank_account.bank ?? "",
-            branch_number: recipient.bank_account.branch_number ?? "",
-            branch_check_digit: recipient.bank_account.branch_check_digit ?? "",
-            account_number: recipient.bank_account.account_number ?? "",
-            account_check_digit: recipient.bank_account.account_check_digit ?? "",
-            holder_name: recipient.bank_account.holder_name ?? "",
-            holder_type: userType === "PJ" ? "company" : "individual",
-            holder_document: recipient.bank_account.holder_document ?? "",
-            type:
-              (recipient.bank_account.type as "checking" | "savings") ?? "checking",
-          }
+              ...createBankAccount(),
+              bank: recipient.bank_account.bank ?? "",
+              branch_number: recipient.bank_account.branch_number ?? "",
+              branch_check_digit:
+                recipient.bank_account.branch_check_digit ?? "",
+              account_number: recipient.bank_account.account_number ?? "",
+              account_check_digit:
+                recipient.bank_account.account_check_digit ?? "",
+              holder_name: recipient.bank_account.holder_name ?? "",
+              holder_type: userType === "PJ" ? "company" : "individual",
+              holder_document: recipient.bank_account.holder_document ?? "",
+              type:
+                (recipient.bank_account.type as "checking" | "savings") ??
+                "checking",
+            }
           : (() => {
-            const acc = createBankAccount();
-            acc.holder_type = userType === "PJ" ? "company" : "individual";
-            return acc;
-          })(),
+              const acc = createBankAccount();
+              acc.holder_type = userType === "PJ" ? "company" : "individual";
+              return acc;
+            })(),
       });
 
       setStepIndex(0);
@@ -500,13 +502,13 @@ export default function RecipientModal({
       partners:
         formData.type_enum === "PJ"
           ? formData.partners.map((partner) => ({
-            ...partner,
-            document: justNumber(partner.document),
-            monthly_income: partner.monthly_income ?? null,
-            self_declared_legal_representative: Boolean(
-              partner.self_declared_legal_representative
-            ),
-          }))
+              ...partner,
+              document: justNumber(partner.document),
+              monthly_income: partner.monthly_income ?? null,
+              self_declared_legal_representative: Boolean(
+                partner.self_declared_legal_representative
+              ),
+            }))
           : [],
 
       configs: {
@@ -547,7 +549,6 @@ export default function RecipientModal({
     }
   };
 
-
   const StepIndicator = () => (
     <div className="flex items-center gap-2 flex-wrap">
       {visibleSteps.map((step, index) => {
@@ -556,12 +557,13 @@ export default function RecipientModal({
         return (
           <div key={step.id} className="flex items-center gap-2 text-sm">
             <span
-              className={`w-6 h-6 rounded-full flex items-center justify-center border ${isActive
-                ? "bg-zinc-900 text-white"
-                : isDone
+              className={`w-6 h-6 rounded-full flex items-center justify-center border ${
+                isActive
+                  ? "bg-zinc-900 text-white"
+                  : isDone
                   ? "bg-green-500 text-white"
                   : "bg-white text-zinc-600"
-                }`}
+              }`}
             >
               {index + 1}
             </span>
@@ -1032,8 +1034,9 @@ export default function RecipientModal({
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm text-yellow-800">
           <p className="font-semibold mb-1">⚠️ Atenção:</p>
           <p>
-            Os dados bancários devem pertencer ao mesmo CPF/CNPJ informado no cadastro.
-            A Pagar.me pode solicitar comprovantes adicionais antes de liberar os repasses.
+            Os dados bancários devem pertencer ao mesmo CPF/CNPJ informado no
+            cadastro. A Pagar.me pode solicitar comprovantes adicionais antes de
+            liberar os repasses.
           </p>
         </div>
       </div>
