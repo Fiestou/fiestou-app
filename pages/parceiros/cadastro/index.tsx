@@ -1,13 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/router";
 import Template from "@/src/template";
+import Api from "@/src/services/api";
+import { useSegmentGroups } from "@/src/hooks/useSegmentGroups";
+import { preRegisterPartner, completePartnerRegister, PartnerStoreData } from "@/src/services/partner";
+import { PreUser } from "@/src/types/user";
 import Step1UserData from "./Step1UserData";
 import Step2PersonType from "./Step2PersonType";
 import Step3PJBusiness from "./Step3PJBusiness";
 import StepFinalReview from "./StepFinalReview";
-import { useSegmentGroups } from "@/src/hooks/useSegmentGroups";
-import Api from "@/src/services/api";
-import { useRouter } from "next/router";
-import { PreUser } from "@/src/types/user";
 
 type StepId = 1 | 2 | 3 | 4;
 
@@ -107,18 +108,17 @@ export default function PartnerSignupWizard() {
         return;
       }
 
-      // documento (CPF/CNPJ)
-      const doc =
-        store.personType === "pj"
-          ? digits(store.cnpj || store.document)
-          : digits(store.cpf || store.document);
+      // Validação do documento (CPF/CNPJ)
+      const doc = store.personType === "pj"
+        ? digits(store.cnpj || store.document)
+        : digits(store.cpf || store.document);
 
       if (!(doc.length === 11 || doc.length === 14)) {
         alert("Documento inválido. Informe um CPF (11) ou CNPJ (14) válido.");
         return;
       }
 
-      // dados do pré-usuário
+      // Validações básicas
       const nameForUser = (preUser.name ?? "").trim();
       const emailForUser = (preUser.email ?? "").trim().toLowerCase();
       const phoneDigits = digits(preUser.phone);
@@ -129,69 +129,50 @@ export default function PartnerSignupWizard() {
       if (phoneDigits.length < 10) { alert("Informe um telefone válido (DDD + número)."); return; }
       if (passwordForUser.length < 8) { alert("Defina uma senha com pelo menos 8 caracteres."); return; }
 
-      const preUserPayload = {
+      // 1) Pré-registro
+      const preResp = await preRegisterPartner(api, {
         name: nameForUser,
         email: emailForUser,
         phone: phoneDigits,
         password: passwordForUser,
-        person: "partner",
-      };
-
-      const preResp = await api.bridge<{ response: boolean; code?: string; message?: string }>({
-        method: "post",
-        url: "auth/pre-register",
-        data: preUserPayload,
       });
 
-      if (!preResp?.response && preResp?.code !== "email_already_registered") {
-        alert(preResp?.message || "Não foi possível pré-registrar o usuário.");
+      if (!preResp?.response && (preResp as any)?.code !== "email_already_registered") {
+        alert(preResp?.message || preResp?.error || "Não foi possível pré-registrar o usuário.");
         return;
       }
 
-      // -------- NORMALIZAÇÃO DOS CAMPOS DE ENDEREÇO --------
-      // aplica "Não Preenchido" quando vier vazio e envia CEP só com dígitos
-      const addrFallback = (v?: string) => (v && v.toString().trim() ? v : "Não Preenchido");
-      const zipcodeDigits = digits(store.zipcode); // "12345678"
-
-      // 2) COMPLETE REGISTER (StoresController@CompleteRegister)
-      const dataToSend = {
-        // usuário
+      // 2) Complete Register
+      const storeData: PartnerStoreData = {
         name: nameForUser,
         email: emailForUser,
         phone: phoneDigits,
         password: passwordForUser,
         personType: store.personType || "pf",
-        // loja (comuns)
         document: doc,
         companyName: store.companyName || store.title || store.name || "",
         hasDelivery: !!store.hasDelivery,
-        birth_date: store.birth, // DD/MM/AAAA
-        segment: store.segment || undefined,
-        segmentId: store.segmentId || undefined,
-        razaoSocial: store.razaoSocial || undefined,
+        birth_date: store.birth,
+        segment: store.segment,
+        segmentId: store.segmentId,
+        razaoSocial: store.razaoSocial,
+        street: store.street || "",
+        number: store.number || "",
+        neighborhood: store.neighborhood || "",
+        complement: store.complement || "",
+        state: store.state || "",
+        city: store.city || "",
+        zipcode: store.zipcode || "",
+        referencePoint: store.referencePoint,
+      };
 
-        // endereço
-        street: addrFallback(store.street),
-        number: addrFallback(store.number),
-        neighborhood: addrFallback(store.neighborhood),
-        complement: addrFallback(store.complement),
-        state: addrFallback(store.state),
-        city: addrFallback(store.city),
-        zipcode: zipcodeDigits ? zipcodeDigits : "Não Preenchido", // backend pode formatar/validar
-        referencePoint: addrFallback(store.referencePoint),
-      } as const;
+      const result = await completePartnerRegister(api, storeData);
 
-      const req = await api.bridge<{ response: boolean; error?: string }>({
-        method: "post",
-        url: "stores/completeregister",
-        data: dataToSend,
-      });
-      console.log("Complete Register response:", req);
-      if (req.response) {
+      if (result.response) {
         try { sessionStorage.removeItem("preCadastro"); } catch {}
         router.push("/acesso");
       } else {
-        alert(req.error || "Erro ao completar o cadastro da loja.");
+        alert(result.error || "Erro ao completar o cadastro da loja.");
       }
     } catch {
       alert("Erro ao finalizar cadastro.");
