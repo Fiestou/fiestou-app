@@ -10,7 +10,7 @@ import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
 import { AuthContext } from "@/src/contexts/AuthContext";
 import { CheckMail } from "@/src/models/CheckEmail";
-import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export async function getServerSideProps(ctx: any) {
   const session: any = await getSession(ctx);
@@ -31,7 +31,7 @@ export async function getServerSideProps(ctx: any) {
   };
 }
 
-export default function Completar({ auth }: any) {
+function CompletarContent({ auth }: any) {
   const { UserLogout } = useContext(AuthContext);
   const { executeRecaptcha } = useGoogleReCaptcha();
 
@@ -184,5 +184,16 @@ export default function Completar({ auth }: any) {
         </div>
       </div>
     </Template>
+  );
+}
+
+export default function Completar(props: any) {
+  return (
+    <GoogleReCaptchaProvider
+      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+      language="pt-BR"
+    >
+      <CompletarContent {...props} />
+    </GoogleReCaptchaProvider>
   );
 }
