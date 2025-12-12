@@ -15,10 +15,11 @@ import InterrogacaoIcon from "@/src/icons/InterrogacaoIcon";
 import SettingsIcon from "@/src/icons/SettingsIcon";
 
 export default function MeusDados({ page }: { page: any }) {
-  
+
   const api = new Api();
 
   const [user, setUser] = useState({} as UserType);
+  const [store, setStore] = useState<any>(null);
   const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
 
@@ -28,9 +29,22 @@ export default function MeusDados({ page }: { page: any }) {
       url: "users/get",
     });
 
-
     if (request.response) {
       setUser(request.data);
+    }
+  };
+
+  const getStoreData = async () => {
+    try {
+      const response: any = await api.bridge({
+        method: "post",
+        url: "stores/form",
+      });
+      if (response?.response && response?.data) {
+        setStore(response.data);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados da loja:", error);
     }
   };
 
@@ -48,6 +62,7 @@ export default function MeusDados({ page }: { page: any }) {
 
   useEffect(() => {
     getUserData();
+    getStoreData();
     fetchRecipientStatus();
   }, []);
 
@@ -133,6 +148,8 @@ export default function MeusDados({ page }: { page: any }) {
         onClose={() => setRecipientModalOpen(false)}
         status={recipientStatus}
         onCompleted={handleRecipientCompleted}
+        user={user}
+        store={store}
       />
     </Template>
   );
