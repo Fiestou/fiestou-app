@@ -107,6 +107,20 @@ export default function Parceiro({ content }: { content: any }) {
     }
   };
 
+  const getStoreData = async () => {
+    try {
+      const response: any = await api.bridge({
+        method: "post",
+        url: "stores/form",
+      });
+      if (response?.response && response?.data) {
+        setStore(response.data);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados da loja:", error);
+    }
+  };
+
   const handleRecipientCompleted = (data: RecipientType) => {
     setRecipientStatus({
       completed: true,
@@ -118,6 +132,7 @@ export default function Parceiro({ content }: { content: any }) {
     if (typeof window !== "undefined") {
       getBalance();
       checkPagarmeStatus();
+      getStoreData();
       setUser(getUser);
     }
   }, []);
@@ -398,6 +413,8 @@ export default function Parceiro({ content }: { content: any }) {
         onClose={() => setRecipientModalOpen(false)}
         status={recipientStatus}
         onCompleted={handleRecipientCompleted}
+        user={user}
+        store={store}
       />
     </Template>
   );
