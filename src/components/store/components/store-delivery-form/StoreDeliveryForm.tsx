@@ -1,8 +1,7 @@
 import React from "react";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import { Input } from "../../ui/form";
-import MultiSelect from "../../ui/form/MultiSelectUi";
-
+import Input from "@/src/components/ui/form/InputUI";
+import MultiSelect from "@/src/components/ui/form/MultiSelectUi";
 interface StoreDeliveryFormProps {
   store: any;
   form: any;

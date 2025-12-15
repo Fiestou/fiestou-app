@@ -1,4 +1,4 @@
-import { Input } from "../../ui/form";
+import { Input } from "@/src/components/ui/form";
 
 export default function StoreLocationForm({
   editing,

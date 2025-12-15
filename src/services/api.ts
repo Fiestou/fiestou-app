@@ -33,8 +33,8 @@ interface ApiRequestType {
   noAppPrefix?: boolean; // << NOVO
 }
 
-const trimSlashes = (s: string) => s.replace(/\/+$/, '');
-const trimLeftSlashes = (s: string) => s.replace(/^\/+/, '');
+const trimSlashes = (s: string) => s.replace(/\/+$/, "");
+const trimLeftSlashes = (s: string) => s.replace(/^\/+/, "");
 
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
@@ -79,7 +79,6 @@ class Api {
       )
         ? (method.toLowerCase() as HttpMethod)
         : "get";
-
 
       api[requestMethod](url, data ?? {}, opts ?? {})
         .then((response: AxiosResponse) => {
@@ -198,19 +197,21 @@ class Api {
     { method = "get", url, data, opts, noAppPrefix = false }: ApiRequestType,
     ctx?: any
   ): Promise<T> {
-    const apiRest = typeof window === "undefined"
-      ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
-      : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
+    const apiRest =
+      typeof window === "undefined"
+        ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
+        : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
 
     // se pediram "sem /app", tira o /app do fim da base
-    const base = noAppPrefix
-      ? apiRest.replace(/\/app\/?$/i, "/")
-      : apiRest;
+    const base = noAppPrefix ? apiRest.replace(/\/app\/?$/i, "/") : apiRest;
 
     // monta URL final sem barras duplicadas
     const fullUrl = `${trimSlashes(base)}/${trimLeftSlashes(url)}`;
 
-    return this.connect({ method, url: fullUrl, data, opts }, ctx) as Promise<T>;
+    return this.connect(
+      { method, url: fullUrl, data, opts },
+      ctx
+    ) as Promise<T>;
   }
 
   async graph({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
@@ -239,9 +240,9 @@ class Api {
       url = `app/files/upload-base64`;
     }
 
-    if (data?.method == "remove") {
+    if (data?.method === "remove") {
       url = `app/files/remove-medias`;
-      requestMethod = "delete";
+      requestMethod = "post"; // <<< ALTERA PRA POST
     }
 
     return this.request({ method: requestMethod, url, data });

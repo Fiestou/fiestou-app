@@ -14,7 +14,7 @@ import { getImage } from "@/src/helper";
 
 interface ProductGalleryProps {
   product: ProductType;
-  layout: { isMobile: boolean };
+  layout: { isMobile?: boolean | undefined; };
   renderDetails?: () => JSX.Element;
   renderComments?: () => JSX.Element;
 }

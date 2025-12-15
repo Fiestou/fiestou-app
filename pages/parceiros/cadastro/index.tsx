@@ -39,7 +39,7 @@ export type StoreType = {
   complement?: string;
   state?: string;
   city?: string;
-  zipcode?: string;           // ex.: "12345-678"
+  zipcode?: string; // ex.: "12345-678"
   referencePoint?: string;
 };
 
@@ -48,7 +48,11 @@ export default function PartnerSignupWizard() {
   const [form, setForm] = useState({ loading: false });
   const [store, setStore] = useState<StoreType>({});
   const [preUser, setPreUser] = useState<PreUser | null>(null);
-  const { segments: elements, loading: segLoading, error: segError } = useSegmentGroups();
+  const {
+    segments: elements,
+    loading: segLoading,
+    error: segError,
+  } = useSegmentGroups();
   const api = new Api();
   const router = useRouter();
 
@@ -63,7 +67,11 @@ export default function PartnerSignupWizard() {
         return;
       }
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object" && typeof parsed.email === "string") {
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        typeof parsed.email === "string"
+      ) {
         setPreUser({
           name: typeof parsed.name === "string" ? parsed.name : "",
           email: parsed.email,
@@ -124,10 +132,22 @@ export default function PartnerSignupWizard() {
       const phoneDigits = digits(preUser.phone);
       const passwordForUser = preUser.password ?? "";
 
-      if (!nameForUser) { alert("Informe seu nome completo."); return; }
-      if (!emailForUser) { alert("Informe seu e-mail."); return; }
-      if (phoneDigits.length < 10) { alert("Informe um telefone válido (DDD + número)."); return; }
-      if (passwordForUser.length < 8) { alert("Defina uma senha com pelo menos 8 caracteres."); return; }
+      if (!nameForUser) {
+        alert("Informe seu nome completo.");
+        return;
+      }
+      if (!emailForUser) {
+        alert("Informe seu e-mail.");
+        return;
+      }
+      if (phoneDigits.length < 10) {
+        alert("Informe um telefone válido (DDD + número).");
+        return;
+      }
+      if (passwordForUser.length < 8) {
+        alert("Defina uma senha com pelo menos 8 caracteres.");
+        return;
+      }
 
       const preUserPayload = {
         name: nameForUser,
@@ -137,7 +157,11 @@ export default function PartnerSignupWizard() {
         person: "partner",
       };
 
-      const preResp = await api.bridge<{ response: boolean; code?: string; message?: string }>({
+      const preResp = await api.bridge<{
+        response: boolean;
+        code?: string;
+        message?: string;
+      }>({
         method: "post",
         url: "auth/pre-register",
         data: preUserPayload,
@@ -150,7 +174,8 @@ export default function PartnerSignupWizard() {
 
       // -------- NORMALIZAÇÃO DOS CAMPOS DE ENDEREÇO --------
       // aplica "Não Preenchido" quando vier vazio e envia CEP só com dígitos
-      const addrFallback = (v?: string) => (v && v.toString().trim() ? v : "Não Preenchido");
+      const addrFallback = (v?: string) =>
+        v && v.toString().trim() ? v : "Não Preenchido";
       const zipcodeDigits = digits(store.zipcode); // "12345678"
 
       // 2) COMPLETE REGISTER (StoresController@CompleteRegister)
@@ -188,7 +213,9 @@ export default function PartnerSignupWizard() {
       });
       console.log("Complete Register response:", req);
       if (req.response) {
-        try { sessionStorage.removeItem("preCadastro"); } catch {}
+        try {
+          sessionStorage.removeItem("preCadastro");
+        } catch {}
         router.push("/acesso");
       } else {
         alert(req.error || "Erro ao completar o cadastro da loja.");
@@ -237,12 +264,20 @@ export default function PartnerSignupWizard() {
             elements={elements}
             submitStore={submitStore}
             backStep={() => setStep(store.personType === "pj" ? 3 : 2)}
-            stepLabel={store.personType === "pj" ? "Etapa 4 de 4" : "Etapa 3 de 3"}
+            stepLabel={
+              store.personType === "pj" ? "Etapa 4 de 4" : "Etapa 3 de 3"
+            }
           />
         )}
 
-        {segLoading && <div className="text-center text-sm mt-6">Carregando segmentos…</div>}
-        {segError && <div className="text-center text-sm mt-2 text-red-600">{segError}</div>}
+        {segLoading && (
+          <div className="text-center text-sm mt-6">Carregando segmentos…</div>
+        )}
+        {segError && (
+          <div className="text-center text-sm mt-2 text-red-600">
+            {segError}
+          </div>
+        )}
       </div>
     </Template>
   );

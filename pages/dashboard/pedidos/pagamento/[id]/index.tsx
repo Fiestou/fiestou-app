@@ -2,25 +2,8 @@ import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { fetchOrderById } from "@/src/services/order";
 import { useEffect, useState } from "react";
-import {
-  CopyClipboard,
-  dateBRFormat,
-  documentIsValid,
-  findDates,
-  getBrazilianStates,
-  getImage,
-  getShorDate,
-  getZipCode,
-  justNumber,
-  moneyFormat,
-} from "@/src/helper";
-import { Button } from "@/src/components/ui/form";
+import { findDates, getZipCode, justNumber } from "@/src/helper";
 import { CardType, OrderType, PaymentType, PixType } from "@/src/models/order";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import Link from "next/link";
-import Img from "@/src/components/utils/ImgBase";
-import { deliveryToName } from "@/src/models/delivery";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
 import { LoadingSkeleton } from "../../componentes/LoadingSkeleton";
@@ -28,7 +11,6 @@ import { HeadLine } from "../../componentes/HeadLine";
 import { OrderDetailsCard } from "../../componentes/OrderDetailsCard";
 import { OrderItemsList } from "../../componentes/OrderItemsList";
 import { PaymentPanel } from "../../componentes/PaymentPanel";
-
 
 interface FormInitialType {
   sended: boolean;
@@ -92,7 +74,7 @@ export default function Pagamento({
 
   // NOVO MODELO: tudo vem dentro de order.delivery
   const deliveryAddress =
-    order?.delivery?.address ?? legacyOrder?.deliveryAddress;
+    order?.delivery_address ?? legacyOrder?.deliveryAddress ?? null;
 
   const deliverySchedule =
     order?.delivery?.schedule ?? legacyOrder?.deliverySchedule;
@@ -107,7 +89,6 @@ export default function Pagamento({
   const deliveryTo: string | undefined =
     order?.delivery?.to ?? legacyOrder?.deliveryTo;
 
-
   console.log("DELIVERY TO:", deliveryTo);
   const handleCustomer = (value: Partial<UserType>) => {
     setUser((prev) => ({ ...(prev ?? {}), ...value } as UserType));
@@ -118,7 +99,6 @@ export default function Pagamento({
     setAddress((prev) => ({ ...(prev ?? {}), ...value } as AddressType));
   };
   const [useOrderAddress, setUseOrderAddress] = useState(true);
-
 
   const [errorZipCode, setErrorZipCode] = useState(false);
   const handleZipCode = async () => {
@@ -202,7 +182,8 @@ export default function Pagamento({
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
       setExpire(
-        `${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""
+        `${minutes < 10 ? "0" : ""}${minutes}:${
+          seconds < 10 ? "0" : ""
         }${seconds}`
       );
     };
@@ -213,10 +194,7 @@ export default function Pagamento({
       if (!!expire && expire !== "expired") {
         updateExpire();
 
-        if (
-          new Date().getSeconds() === 30 ||
-          new Date().getSeconds() === 0
-        ) {
+        if (new Date().getSeconds() === 30 || new Date().getSeconds() === 0) {
           ConfirmManager();
         }
       }
@@ -302,13 +280,13 @@ export default function Pagamento({
       const resumeData =
         dates.length > 0
           ? {
-            startDate: findDates(dates).minDate,
-            endDate: findDates(dates).maxDate,
-          }
+              startDate: findDates(dates).minDate,
+              endDate: findDates(dates).maxDate,
+            }
           : {
-            startDate: fetchedOrder.createdAt,
-            endDate: fetchedOrder.createdAt,
-          };
+              startDate: fetchedOrder.createdAt,
+              endDate: fetchedOrder.createdAt,
+            };
 
       setResume(resumeData as any);
 
@@ -353,25 +331,27 @@ export default function Pagamento({
     // 1. Calcular valores corretamente
     const deliveryAmountCents = Math.round(deliveryPrice * 100); // frete em centavos
     const totalAmountCents = Math.round((order.total || 0) * 100); // total em centavos
-    
+
     // 2. Calcular subtotal dos produtos (total - frete)
     const subtotalCents = totalAmountCents - deliveryAmountCents;
 
     // 3. Preparar items do pedido com valor correto
-    const orderItems = order.items?.map((item: any, index: number) => {
-      // Se tem apenas 1 item, ele recebe todo o subtotal
-      // Se tem múltiplos items, divide proporcionalmente
-      const itemAmount = order.items.length === 1 
-        ? subtotalCents 
-        : Math.round((item.total || 0) * 100);
+    const orderItems =
+      order.items?.map((item: any, index: number) => {
+        // Se tem apenas 1 item, ele recebe todo o subtotal
+        // Se tem múltiplos items, divide proporcionalmente
+        const itemAmount =
+          order.items.length === 1
+            ? subtotalCents
+            : Math.round((item.total || 0) * 100);
 
-      return {
-        amount: itemAmount, // valor correto em centavos
-        description: item.name || "Produto",
-        quantity: item.quantity || 1,
-        code: String(item.productId || item.id || ""),
-      };
-    }) || [];
+        return {
+          amount: itemAmount, // valor correto em centavos
+          description: item.name || "Produto",
+          quantity: item.quantity || 1,
+          code: String(item.productId || item.id || ""),
+        };
+      }) || [];
 
     // 4. Verificar se a soma está correta
     const itemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
@@ -380,14 +360,14 @@ export default function Pagamento({
       deliveryAmountCents,
       totalAmountCents,
       soma: itemsSum + deliveryAmountCents,
-      bate: itemsSum + deliveryAmountCents === totalAmountCents
+      bate: itemsSum + deliveryAmountCents === totalAmountCents,
     });
 
     // Payload base
     const basePayload: any = {
       order_id: Number(orderId),
       payment_method: payment.payment_method,
-      
+
       order: {
         amount: totalAmountCents, // Total em centavos
         items: orderItems, // Items com valores corretos
@@ -401,11 +381,13 @@ export default function Pagamento({
             state: orderAddress?.state ?? "",
             city: orderAddress?.city ?? "",
             zip_code: justNumber(orderAddress?.zipCode ?? ""),
-            line_1: `${orderAddress?.street ?? ""}, ${orderAddress?.number ?? ""}`.trim(),
+            line_1: `${orderAddress?.street ?? ""}, ${
+              orderAddress?.number ?? ""
+            }`.trim(),
             line_2: orderAddress?.complement || null,
-          }
-        }
-      }
+          },
+        },
+      },
     };
 
     // CARTÃO DE CRÉDITO
@@ -417,7 +399,7 @@ export default function Pagamento({
         card: {
           number: justNumber(card?.number ?? ""),
           holder_name: String(card?.holder_name ?? ""),
-          exp_month: String(card?.exp_month ?? "").padStart(2, '0'),
+          exp_month: String(card?.exp_month ?? "").padStart(2, "0"),
           exp_year: String(card?.exp_year ?? ""),
           cvv: String(card?.cvv ?? ""),
           holder_document: justNumber(card?.holder_document ?? ""),
@@ -426,7 +408,9 @@ export default function Pagamento({
             state: orderAddress?.state ?? "",
             city: orderAddress?.city ?? "",
             zip_code: justNumber(orderAddress?.zipCode ?? ""),
-            line_1: `${orderAddress?.street ?? ""}, ${orderAddress?.number ?? ""}`.trim(),
+            line_1: `${orderAddress?.street ?? ""}, ${
+              orderAddress?.number ?? ""
+            }`.trim(),
             line_2: orderAddress?.complement || null,
           },
         },
@@ -434,14 +418,18 @@ export default function Pagamento({
     }
 
     // Split único com o valor total (sempre igual para todos os métodos)
-    basePayload.payments = [{
-      payment_method: payment.payment_method,
-      split: [{
-        type: "flat", // valor fixo em centavos
-        amount: totalAmountCents, // deve ser igual ao order.amount
-        recipient_id: order.store?.recipient_id || "acc_default",
-      }]
-    }];
+    basePayload.payments = [
+      {
+        payment_method: payment.payment_method,
+        split: [
+          {
+            type: "flat", // valor fixo em centavos
+            amount: totalAmountCents, // deve ser igual ao order.amount
+            recipient_id: order.store?.recipient_id || "acc_default",
+          },
+        ],
+      },
+    ];
 
     // PIX
     if (payment.payment_method === "pix") {
@@ -455,8 +443,8 @@ export default function Pagamento({
 
       basePayload.boleto = {
         instructions: "Pagamento referente ao pedido na Fiestou",
-        due_at: dueDate.toISOString().split('T')[0],
-        document_number: String(orderId).padStart(8, '0'),
+        due_at: dueDate.toISOString().split("T")[0],
+        document_number: String(orderId).padStart(8, "0"),
         type: "DM",
       };
     }
@@ -465,15 +453,15 @@ export default function Pagamento({
 
     // Validação antes de enviar
     const validationErrors = [];
-    
+
     if (!orderItems.length) {
       validationErrors.push("Pedido sem itens válidos");
     }
-    
+
     if (itemsSum + deliveryAmountCents !== totalAmountCents) {
       validationErrors.push("Soma dos itens + frete não confere com total");
     }
-    
+
     if (!orderAddress?.zipCode || !orderAddress?.city || !orderAddress?.state) {
       validationErrors.push("Endereço de entrega incompleto");
     }
@@ -648,5 +636,4 @@ export default function Pagamento({
       </section>
     </Template>
   );
-};
-
+}

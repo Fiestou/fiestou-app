@@ -1,8 +1,8 @@
 import axios from "axios";
 import { convertToCents, phoneAreaCode, phoneJustNumber } from "../helper";
-import { OrderType } from "@/src/models/order";
+import { OrderType, PaymentType } from "@/src/models/order";
 import { ProductOrderType } from "../models/product";
-import { PaymentType } from "@/pages/dashboard/pedidos/pagamento/[id]";
+
 import Api from "./api";
 import { AddressType } from "../models/address";
 
@@ -30,8 +30,8 @@ class Pagarme {
     const api = new Api();
 
     const handleDocument: any =
-      payment.payment_method == "credit_card"
-        ? payment.credit_card.card.holder_document
+      payment.payment_method === "credit_card"
+        ? payment.credit_card?.card.holder_document
         : order.user?.cpf ?? order.user?.document;
 
     const customer: any = {
@@ -97,7 +97,7 @@ class Pagarme {
 
       if (!!request.response) {
         await api.bridge({
-          method: 'post',
+          method: "post",
           url: "orders/processing",
           data: {
             id: order.id,

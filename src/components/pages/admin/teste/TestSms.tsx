@@ -1,4 +1,5 @@
 import { Button } from "@/src/components/ui/form";
+import { SmsOrderPayload } from "@/src/models/sms";
 import {
   ChangeDeliveryStatusSMS,
   CompleteOrderSMS,
@@ -31,91 +32,63 @@ export default function Sms({ page }: { page: any }) {
     setData({ ...data, ...value });
   };
 
+  const buildSmsPayload = (): SmsOrderPayload => {
+    return {
+      user: {
+        id: 0,
+        email: data.email,
+        name: data.name,
+        phone: data.phone,
+      },
+      deliveryStatus: "",
+      deliverySchedule: "",
+      deliveryPrice: 0,
+      deliveryTo: "",
+      total: 0,
+      platformCommission: "",
+      status: 1,
+      listItems: [],
+      freights: {
+        zipcode: "",
+        productsIds: [],
+      },
+    };
+  };
+
   const submitForm = async (e: any) => {
     e.preventDefault();
 
     setFormValue({ loading: true });
 
-    if (data.content == "register") {
-      await RegisterUserSMS(
-        { id: 0, email: data.email, name: data.name, phone: data.phone },
-        getContent("register")
-      );
+    const payload = buildSmsPayload();
+
+    if (data.content === "register") {
+      await RegisterUserSMS(payload.user, getContent("register"));
     }
 
-    if (data.content == "delivery") {
-      await ChangeDeliveryStatusSMS(
-        {
-          user: { id: 0, email: data.email, name: data.name, phone: data.phone },
-          deliveryStatus: "sent",
-          deliverySchedule: "",
-          deliveryPrice: 0,
-          total: 0,
-          platformCommission: "",
-          listItems: [],
-          status: 1,
-          deliveryTo: "",
-          freights: {
-            zipcode: "",
-            productsIds: []
-          }
-        },
-        getContent("delivery")
-      );
+    if (data.content === "delivery") {
+      payload.deliveryStatus = "sent";
+      await ChangeDeliveryStatusSMS(payload, getContent("delivery"));
     }
 
-    if (data.content == "order") {
-      await RegisterOrderSMS(
-        {
-          user: { id: 0, email: data.email, name: data.name, phone: data.phone },
-          deliveryStatus: "",
-          deliverySchedule: "",
-          deliveryPrice: 0,
-          total: 0,
-          platformCommission: "",
-          listItems: [],
-          status: 1,
-          deliveryTo: "",
-          freights: {
-            zipcode: "",
-            productsIds: []
-          }
-        },
-        [],
-        getContent("order")
-      );
+    if (data.content === "order") {
+      await RegisterOrderSMS(payload, [], getContent("order"));
     }
 
-    if (data.content == "order_complete") {
-      await CompleteOrderSMS(
-        {
-          user: { id: 0, email: data.email, name: data.name, phone: data.phone },
-          deliveryStatus: "",
-          deliverySchedule: "",
-          deliveryPrice: 0,
-          total: 0,
-          platformCommission: "",
-          listItems: [],
-          status: 1,
-          deliveryTo: "",
-          freights: {
-            zipcode: "",
-            productsIds: []
-          }
-        },
-        getContent("order_complete")
-      );
+    if (data.content === "order_complete") {
+      await CompleteOrderSMS(payload, getContent("order_complete"));
     }
 
     setFormValue({ loading: false });
   };
 
   return (
-    <form onSubmit={(e) => submitForm(e)} method="POST">
+    <form onSubmit={submitForm} method="POST">
       <div className="p-4 max-w-[32rem] mx-auto grid gap-4">
         <div className="border-b">
           <h3 className="font-semibold text-zinc-900 pb-2">Teste de SMS</h3>
         </div>
+
         <div>
           <label>E-mail</label>
           <input
@@ -124,6 +97,7 @@ export default function Sms({ page }: { page: any }) {
             onChange={(e: any) => handleData({ email: e.target.value })}
           />
         </div>
+
         <div>
           <label>Celular</label>
           <input
@@ -132,6 +106,7 @@ export default function Sms({ page }: { page: any }) {
             onChange={(e: any) => handleData({ phone: e.target.value })}
           />
         </div>
+
         <div>
           <label>Nome</label>
           <input
@@ -140,6 +115,7 @@ export default function Sms({ page }: { page: any }) {
             onChange={(e: any) => handleData({ name: e.target.value })}
           />
         </div>
+
         <div>
           <label>Conteúdo</label>
           <select
@@ -154,6 +130,7 @@ export default function Sms({ page }: { page: any }) {
             <option value="delivery">Status de entrega</option>
           </select>
         </div>
+
         <div className="grid">
           <Button loading={form.loading}>Enviar teste</Button>
         </div>

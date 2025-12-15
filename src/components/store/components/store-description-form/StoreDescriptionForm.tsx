@@ -1,4 +1,4 @@
-import { TextArea } from "../../ui/form";
+import { TextArea } from "@/src/components/ui/form";
 
 export default function StoreDescriptionForm({
   editing,

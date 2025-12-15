@@ -20,7 +20,7 @@ const MailSend = async (data: any) => {
     body: JSON.stringify(data),
   })
     .then((response) => response.text())
-    .then((result) => result)
+    .then((result) => result);
 
   return request;
 };
@@ -56,7 +56,8 @@ export const RegisterOrderMail = async (
       )}" style="width:100%;height:auto;" />`
     : "";
 
-  let address: any = order.deliveryAddress;
+  let address: any = order.deliveryAddress ?? {};
+
   address = `Local: ${address.street}, ${address.number}, ${
     address.neighborhood
   } - ${address.zipCode} | ${address.city}, ${address.state} - ${
@@ -151,7 +152,6 @@ export const PartnerNewOrderMail = async (
       subject: content.subject,
       content: html,
     };
-
   });
 };
 
@@ -186,5 +186,4 @@ export const ChangeDeliveryStatusMail = async (
     subject: content.subject,
     content: html,
   };
-
 };

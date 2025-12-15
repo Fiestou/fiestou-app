@@ -1,7 +1,7 @@
 import Template from "@/src/template";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
-import {useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   dateBRFormat,
   findDates,
@@ -48,6 +48,15 @@ type DeliverySummaryEntry = {
   price: number;
   storeLogoUrl?: string | null;
 };
+
+interface CheckoutItem {
+  attributes: any;
+  details: any;
+  product: ProductOrderType;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
 
 const normalizeDeliveryItems = (items: DeliveryItem[]): DeliveryItem[] => {
   const map = new Map<number, DeliveryItem>();
@@ -115,7 +124,6 @@ export async function getServerSideProps(ctx: any) {
     },
     ctx
   );
-
 
   const DataSeo: any = request?.data?.DataSeo ?? {};
   const Scripts: any = request?.data?.Scripts ?? {};
@@ -280,7 +288,6 @@ export default function Checkout({
       return;
     }
 
-
     const initialFees = extractDeliveryFees(cart);
 
     if (initialFees.length) {
@@ -292,7 +299,6 @@ export default function Checkout({
           item?.details?.deliveryZipCode ??
           item?.details?.deliveryZipCodeFormatted
       );
-
 
       const cartZip = zipHolder
         ? justNumber(
@@ -467,7 +473,7 @@ export default function Checkout({
       seenStores.add(storeId);
 
       const store = storesById.get(storeId);
-     
+
       let storeLogoUrl: string | null = null;
 
       if (
@@ -505,8 +511,6 @@ export default function Checkout({
       missingStoreIds,
     };
 
-  
-
     return result;
   }, [deliveryPrice, storesById]);
 
@@ -542,8 +546,6 @@ export default function Checkout({
         return;
       }
 
-      
-
       try {
         // Busca os dados do endereço pela API do ViaCEP
         const location = await getZipCode(cartDeliveryZip);
@@ -561,8 +563,6 @@ export default function Checkout({
             main: true,
           }));
         } else {
-         
-
           // Mesmo que não encontre o endereço, preenche o CEP
           setAddress((prevAddress) => ({
             ...prevAddress,
@@ -595,8 +595,6 @@ export default function Checkout({
 
   useEffect(() => {
     const sanitizedZip = justNumber(address?.zipCode ?? "");
-
-  
 
     // Se o CEP está incompleto MAS já temos um lastFetched válido, não limpa
     if (sanitizedZip.length < 8) {
@@ -711,13 +709,9 @@ export default function Checkout({
 
   const deliveryTotal = deliverySummary.total;
 
-
-
   const submitOrder = async (e: any) => {
     e.preventDefault();
 
-
-      
     if (!formattedAddressZip) {
       toast.error("Informe um CEP válido para calcular o frete.");
       return;
@@ -733,8 +727,6 @@ export default function Checkout({
       return;
     }
 
- 
-
     setForm({ ...form, loading: true });
 
     let total = deliverySummary.total;
@@ -748,7 +740,7 @@ export default function Checkout({
 
       if (!!product.id) {
         let store: StoreType = product.store ?? {};
-
+        let listItems: CheckoutItem[] = [];
         const unavailableDate = [
           ...(product?.details?.unavailable ?? []),
           cartItem.details.dateStart,
@@ -857,7 +849,6 @@ export default function Checkout({
   }, [address?.zipCode]);
 
   const renderDeliveryPrice = () => {
-
     if (!formattedAddressZip && deliverySummary.entries.length === 0) {
       return (
         <span className="text-sm text-zinc-500">

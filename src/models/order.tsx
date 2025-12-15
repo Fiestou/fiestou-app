@@ -127,11 +127,11 @@ export interface OrderPartnerBlock {
  * - blocos dedicados para payment / delivery / partner
  */
 export interface OrderType {
+  user: UserType;
   freights_orders_price: any;
   listItems: any;
   metadata: any;
   delivery_status: string;
-  user: null;
   delivery_schedule: any;
   delivery_address: any;
   subtotal: number;
@@ -140,6 +140,28 @@ export interface OrderType {
   status: number;
   total: number;
   createdAt: string;
+  updatedAt: string;
+  orderType: number;
+  platformCommission: string;
+  observation: string | null;
+  coupon: string | null;
+  couponDiscount: number | null;
+  taxRate: number;
+  OrderType: number;
+  email: string | null;
+  phone: string | null;
+  deliveryStatus: string;
+  deliverySchedule: string;
+  deliveryTo: string;
+  deliveryPrice: number;
+  freights: {
+    zipcode: string;
+    productsIds: Array<number>;
+  };
+  deliveryAddress: AddressType | null;
+  /** Meio de pagamento escolhido */
+  paymentMethod: "credit_card" | "pix" | "boleto" | null;
+  /** Usuário que fez o pedido */
 
   customer: {
     id: number;
@@ -177,9 +199,9 @@ export interface OrderType {
   delivery: {
     status: string;
     schedule: string;
-    to: string;                     // << usado no OrderDetailsCard
+    to: string; // << usado no OrderDetailsCard
     price: number;
-    priceLabel: string;             // "xx,xx"
+    priceLabel: string; // "xx,xx"
     address: AddressType;
   };
 
@@ -198,7 +220,6 @@ export interface OrderType {
   products: Array<ProductOrderType>;
 }
 
-
 /**
  * Quando queremos receber a order com a relação freights_orders_price
  * (caso o backend continue enviando essa lista).
@@ -206,8 +227,7 @@ export interface OrderType {
  * Como agora o backend já envia `user` acoplado em OrderType,
  * essa interface vira mais um "wrapper de legacy".
  */
-export interface OrderTypeResponse extends OrderType {
-  listItems?: any;
+export interface OrderTypeResponse extends Partial<OrderType> {
   freights_orders_price?: Array<{
     id: number;
     order_id: number;
@@ -215,6 +235,7 @@ export interface OrderTypeResponse extends OrderType {
     price: string;
     created_at: string;
     updated_at: string;
+    platformCommission: string;
   }>;
 }
 
@@ -253,4 +274,30 @@ export interface PaymentType {
     statement_descriptor: string;
   };
   pix?: PixType;
+}
+
+export interface CheckoutOrderPayload {
+  user: {
+    id: number;
+    email: string;
+    name: string;
+    phone: string;
+  };
+
+  deliveryStatus: string;
+  deliverySchedule: string;
+  deliveryTo: string;
+  deliveryPrice: number;
+
+  total: number;
+  platformCommission: string;
+
+  status: number;
+
+  listItems: any[];
+
+  freights: {
+    zipcode: string;
+    productsIds: number[];
+  };
 }

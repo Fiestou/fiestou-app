@@ -1,5 +1,4 @@
-import { Input } from "../../ui/form";
-
+import Input from "@/src/components/ui/form/InputUI";
 
 export default function StoreBusinessForm({
   editing,
@@ -49,9 +48,7 @@ export default function StoreBusinessForm({
             />
             <Input
               name="nome"
-              onChange={(e: any) =>
-                onChangeCompanyName(e.target.value)
-              }
+              onChange={(e: any) => onChangeCompanyName(e.target.value)}
               required
               value={companyName}
               placeholder="Nome jurídico"

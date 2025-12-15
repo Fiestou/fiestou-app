@@ -106,6 +106,41 @@ export interface ProductOrderType {
   /** preço unitário enviado ao backend para cálculo por item */
   unit_price?: number;
   total: number;
+  price: number;
+  priceSale?: number;
+  title: string;
+  id: number | string;
+  slug?: string;
+  store: StoreType;
+  gallery?: Array<ImageType>;
+  description?: string;
+  category?: Array<number | string>;
+  tags?: string;
+  attributesInfo?: Array<AttributeProductOrderType>;
+  platformCommission?: number;
+  schedulingDate?: string;
+  schedulingTime?: string;
+  schedulingPrice?: number;
+  rentalStartDate?: string;
+  rentalEndDate?: string;
+  rentalPrice?: number;
+  rentalDays?: number;
+  rentalTax?: number;
+  rentalDiscount?: number;
+  rentalDetails?: string;
+  deliveryPrice?: number;
+  deliveryDetails?: string;
+  observation?: string;
+  freeTax?: boolean;
+  comercialType?: string;
+  vehicle?: string;
+  fragility?: string;
+  assembly?: string;
+  unavailableDates?: string[];
+  schedulingPeriod?: number | null;
+  schedulingTax?: number;
+  schedulingDiscount?: number | null;
+  
 }
 
 export interface RateType {

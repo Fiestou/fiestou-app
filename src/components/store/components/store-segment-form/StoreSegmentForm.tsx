@@ -1,6 +1,6 @@
 import React from "react";
-import { Select } from "../../ui/form";
-import { Group } from "@/src/types/filtros"; // << CORRETO
+import { Group } from "@/src/types/filtros";
+import { Select } from "@/src/components/ui/form";
 
 interface StoreSegmentFormProps {
   store: any;
@@ -42,16 +42,21 @@ export default function StoreSegmentForm({
       <div className="w-full">
         {form.edit === "segment" ? (
           <Select
-            onChange={(e: any) => handleStore({ segment: e.target.value })}
-            value={store?.segment}
+            onChange={(e: any) => {
+              const val = e.target.value;
+              const found = groupOptions.find((g) => g.id == val);
+
+              handleStore({
+                segment: found?.name ?? "",
+              });
+            }}
+            value={store?.segment ?? ""}
             placeholder="Selecione seu segmento"
-            name="lojaTipo"
-            options={
-              groupOptions?.map((item) => ({
-                name: item.name,
-                value: item.id,
-              })) ?? []
-            }
+            name="segment"
+            options={groupOptions.map((item) => ({
+              name: item.name,
+              value: item.id,
+            }))}
           />
         ) : (
           storeTypes?.find((item) => item.id == store?.segment)?.title ??

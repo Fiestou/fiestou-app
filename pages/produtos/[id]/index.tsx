@@ -1,3 +1,4 @@
+// pages/produtos/[id]/index.tsx
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import Template from "@/src/template";
@@ -113,6 +114,18 @@ export async function getStaticProps(ctx: any) {
   }
 }
 
+/**
+ * Cart item shape used locally in this page (not the same as ProductOrderType).
+ * This is the recommended CartItemType described earlier.
+ */
+export interface CartItemType {
+  product: number | string | undefined;
+  attributes: AttributeProductOrderType[];
+  quantity: number;
+  details: Record<string, any>;
+  total: number;
+}
+
 export default function Produto({
   product,
   comments,
@@ -132,49 +145,59 @@ export default function Produto({
 }) {
   const api = new Api();
   const { isFallback } = useRouter();
-  const [swiperInstance, setSwiperInstance] = useState(null as any);
+  const [swiperInstance, setSwiperInstance] = useState<any>(null);
 
-  const [share, setShare] = useState(false as boolean);
+  const [share, setShare] = useState<boolean>(false);
   const baseUrl = `https://fiestou.com.br${getProductUrl(product, store)}`;
-  const [loadCart, setLoadCart] = useState(false as boolean);
-  const [blockdate, setBlockdate] = useState(Array<string>());
+  const [loadCart, setLoadCart] = useState<boolean>(false);
+  const [blockdate, setBlockdate] = useState<string[]>([]);
 
-  const [days, setDays] = useState(1);
-  const [cep, setCep] = useState("");
-  const [cepError, setCepError] = useState(false);
+  const [days, setDays] = useState<number>(1);
+  const [cep, setCep] = useState<string>("");
+  const [cepError, setCepError] = useState<boolean>(false);
   const [cepErrorMessage, setCepErrorMessage] = useState<string | null>(null);
-  const [loadingCep, setLoadingCep] = useState(false);
+  const [loadingCep, setLoadingCep] = useState<boolean>(false);
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
-  const [cartModal, setCartModal] = useState(false as boolean);
-  const [inCart, setInCart] = useState(false as boolean);
-  const [unavailable, setUnavailable] = useState([] as Array<string>);
-  const [activeVariations, setActiveVariations] = useState([] as Array<any>);
-  const [layout, setLayout] = useState({} as any);
+  const [cartModal, setCartModal] = useState<boolean>(false);
+  const [inCart, setInCart] = useState<any>(false);
+  const [unavailable, setUnavailable] = useState<string[]>([]);
+  const [activeVariations, setActiveVariations] = useState<Record<string, any>>(
+    {}
+  );
+  const [layout, setLayout] = useState<{ isMobile?: boolean }>({});
 
-  const [productToCart, setProductToCart] = useState<ProductOrderType>({
+  // productToCart uses local CartItemType
+  const initialTotal = getPriceValue(product).price ?? 0;
+  const [productToCart, setProductToCart] = useState<CartItemType>({
     product: product?.id,
     attributes: [],
     quantity: 1,
     details: {},
-    total: getPriceValue(product).price,
+    total: initialTotal,
   });
+
+  // Keep productUpdated for live refreshes
+  const [productUpdated, setProductUpdated] = useState({} as ProductType);
 
   const imageCover =
     !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
 
-  const formatMoney = (value: any): string => {
-    const num =
-      typeof value === "string"
-        ? parseFloat(value.replace(/\./g, "").replace(",", "."))
-        : Number(value);
-    return new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
-
   useEffect(() => {
-    setBlockdate(product.unavailableDates ?? []);
+    setBlockdate(product?.unavailableDates ?? []);
+  }, [product]);
+
+  // normalize productToCart when product changes (so initial object has right totals)
+  useEffect(() => {
+    setProductToCart((prev) => {
+      const basePrice = getPriceValue(product).price ?? 0;
+      return {
+        product: product?.id,
+        attributes: prev.attributes ?? [],
+        quantity: prev.quantity ?? 1,
+        details: prev.details ?? {},
+        total: basePrice,
+      };
+    });
   }, [product]);
 
   const persistDeliveryInfo = (fee: number | null, sanitizedZip?: string) => {
@@ -191,11 +214,13 @@ export default function Produto({
           typeof store?.id !== "undefined"
             ? store?.id
             : typeof product?.store === "object"
-            ? product?.store?.id
+            ? (product?.store as any)?.id
             : product?.store;
 
         const zipSanitized = sanitizedZip ?? cep.replace(/\D/g, "");
-        const zipFormatted = formatCep(zipSanitized);
+        const zipFormatted = zipSanitized
+          .replace(/^(\d{5})(\d)/, "$1-$2")
+          .slice(0, 9);
 
         nextDetails.deliveryFee = fee;
         nextDetails.deliveryZipCode = zipSanitized;
@@ -215,44 +240,40 @@ export default function Produto({
       };
     });
   };
-  const handleQuantity = (q: any) => {
-    const qtd = Number(q);
 
-    updateOrderTotal({
-      ...productToCart,
-      quantity: !!qtd ? qtd : 1,
-    });
-  };
+  // update order total based on attributes/variations and product base price
+  const updateOrderTotal = (orderUpdate: CartItemType) => {
+    let extra = 0;
 
-  const updateOrderTotal = (orderUpdate: ProductOrderType) => {
-    let price = 0;
-
-    orderUpdate.attributes.map((attr: AttributeProductOrderType) =>
-      attr.variations.map((variate, key) => {
+    (orderUpdate.attributes || []).forEach((attr) =>
+      (attr.variations || []).forEach((variate) => {
         const variatePrice =
-          typeof variate?.price == "string"
-            ? variate?.price.replace(",", ".")
-            : variate?.price;
-        price += (Number(variatePrice) ?? 1) * (variate?.quantity ?? 1);
+          typeof variate?.price === "string"
+            ? Number(variate.price.replace(",", "."))
+            : Number(variate?.price ?? 0);
+        const variateQty = Number(variate?.quantity ?? 1);
+        extra +=
+          (Number.isFinite(variatePrice) ? variatePrice : 0) * variateQty;
       })
     );
 
-    let total = getPriceValue(product).price + price;
+    const basePrice = getPriceValue(product).price ?? 0;
+    let total = Number(basePrice) + extra;
 
     if (!!orderUpdate?.details?.days) {
-      total = total * orderUpdate?.details?.days;
+      total = total * Number(orderUpdate.details.days ?? 1);
     }
 
     if (!!product?.schedulingDiscount) {
-      const schedulingDiscount = product?.schedulingDiscount ?? 1;
+      const schedulingDiscount = Number(product?.schedulingDiscount ?? 0);
       total = total - (total * schedulingDiscount) / 100;
     }
 
-    total = total * orderUpdate.quantity;
+    total = total * Number(orderUpdate.quantity ?? 1);
 
-    let handle = {
+    const handle = {
       ...orderUpdate,
-      total: total,
+      total,
     };
 
     setProductToCart(handle);
@@ -262,84 +283,91 @@ export default function Produto({
     value: VariationProductOrderType,
     attr: AttributeType
   ) => {
-    let handleVariations: any = {};
+    // work on a copy to avoid mutating state directly
+    setProductToCart((prev) => {
+      const orderUpdate: CartItemType = {
+        ...prev,
+        attributes: Array.isArray(prev.attributes) ? [...prev.attributes] : [],
+      };
 
-    let limit = attr?.limit ?? 0;
-    let orderUpdate: ProductOrderType = productToCart;
+      const foundIndex = orderUpdate.attributes.findIndex(
+        (a) => a.id === attr.id
+      );
 
-    if (
-      !orderUpdate.attributes.filter(
-        (fltr: AttributeProductOrderType) => fltr.id == attr.id
-      ).length
-    ) {
-      orderUpdate.attributes.push({
-        id: attr.id,
-        title: attr.title,
-        variations: [],
-      });
-    }
-
-    orderUpdate.attributes.map(
-      (attribute: AttributeProductOrderType, key: number) => {
-        if (attribute.id == attr.id) {
-          let variations: any = orderUpdate.attributes[key].variations;
-
-          if (attr.selectType == "radio") {
-            variations = [value];
-          }
-
-          if (attr.selectType == "checkbox") {
-            variations = !!variations.filter((item: any) => item.id == value.id)
-              .length
-              ? variations.filter((item: any) => item.id != value.id)
-              : !limit || variations.length < limit
-              ? [...variations, value]
-              : variations;
-          }
-
-          if (attr.selectType == "quantity") {
-            variations = !!variations.filter((item: any) => item.id == value.id)
-              .length
-              ? variations
-                  .map((item: any) =>
-                    item.id == value.id
-                      ? { ...item, quantity: value.quantity }
-                      : item
-                  )
-                  .filter((item: any) => !!item.quantity)
-              : [...variations, value];
-          }
-
-          orderUpdate.attributes[key].variations = variations;
-        }
+      if (foundIndex === -1) {
+        // push new attribute
+        orderUpdate.attributes.push({
+          id: attr.id,
+          title: attr.title,
+          variations: [],
+        } as AttributeProductOrderType);
       }
-    );
 
-    orderUpdate.attributes.map((attribute: AttributeProductOrderType) => {
-      attribute.variations.map((item: any) => {
-        handleVariations[item.id] = item;
+      // replace the attribute reference
+      orderUpdate.attributes = orderUpdate.attributes.map((attribute) => {
+        if (attribute.id !== attr.id) return attribute;
+
+        let variations = attribute.variations ?? [];
+
+        if (attr.selectType === "radio") {
+          variations = [value];
+        } else if (attr.selectType === "checkbox") {
+          const exists = variations.some((it: any) => it.id === value.id);
+          if (exists) {
+            variations = variations.filter((it: any) => it.id !== value.id);
+          } else {
+            const limit = attr.limit ?? 0;
+            variations =
+              !limit || variations.length < limit
+                ? [...variations, value]
+                : variations;
+          }
+        } else if (attr.selectType === "quantity") {
+          const exists = variations.some((it: any) => it.id === value.id);
+          if (exists) {
+            variations = variations
+              .map((it: any) =>
+                it.id === value.id ? { ...it, quantity: value.quantity } : it
+              )
+              .filter((it: any) => !!it.quantity);
+          } else {
+            variations = [...variations, value];
+          }
+        }
+
+        return {
+          ...attribute,
+          variations,
+        };
       });
-    });
 
-    setActiveVariations(handleVariations);
-    updateOrderTotal(orderUpdate);
+      // recompute active variations
+      const handleVariations: Record<string, any> = {};
+      orderUpdate.attributes.forEach((attribute) =>
+        (attribute.variations || []).forEach((v: any) => {
+          handleVariations[v.id] = v;
+        })
+      );
+
+      setActiveVariations(handleVariations);
+      // compute totals and return new state
+      updateOrderTotal(orderUpdate);
+      return orderUpdate;
+    });
   };
 
+  // populate in-cart / unavailable dates by looking at GetCart()
   const handleCart = (dates?: Array<string>) => {
-    let handle = GetCart()
+    const cart = GetCart();
+    let handle = cart
       .filter((item: any) => item.product == product.id)
-      .map((item: any) => item);
+      .map((i: any) => i);
+    let handleDates = [...(dates ?? unavailable)];
 
-    let handleDates = [...(!!dates ? dates : unavailable)];
-
-    if (!!handle.length) {
-      handle = handle[0];
-
-      if (!!handle?.details?.dateEnd) {
-        handleDates.push(handle?.details?.dateEnd);
-      }
-
-      setInCart(handle);
+    if (handle.length) {
+      const first = handle[0];
+      if (!!first?.details?.dateEnd) handleDates.push(first.details.dateEnd);
+      setInCart(first);
     }
 
     if (product?.availability) {
@@ -363,10 +391,8 @@ export default function Produto({
     e.preventDefault();
     setLoadCart(true);
 
-    // pegar os dados
     if (AddToCart(productToCart)) {
       setCartModal(true);
-      // Não atualiza o inCart imediatamente para permitir adicionar mais
       setTimeout(() => {
         setLoadCart(false);
       }, 500);
@@ -376,11 +402,11 @@ export default function Produto({
   };
 
   interface DetailsType {
-    dateStart?: Date;
-    dateEnd?: Date;
+    dateStart?: Date | string;
+    dateEnd?: Date | string;
     days?: number;
     schedulingDiscount?: number;
-    [key: string]: any; // permite outros campos sem erro
+    [key: string]: any;
   }
 
   const handleDetails = (detail: DetailsType) => {
@@ -389,21 +415,19 @@ export default function Produto({
       ...detail,
     };
 
-    let days = 1;
-
+    let daysCount = 1;
     const date_1 = details?.dateStart ? new Date(details.dateStart) : null;
     const date_2 = details?.dateEnd ? new Date(details.dateEnd) : null;
 
     if (date_1 && date_2) {
       const timestampDate1 = date_1.getTime();
       const timestampDate2 = date_2.getTime();
-
-      days = Math.round(
+      daysCount = Math.round(
         Math.abs(timestampDate1 - timestampDate2) / (24 * 60 * 60 * 1000)
       );
     }
 
-    setDays(!!days ? days : 1);
+    setDays(daysCount || 1);
 
     updateOrderTotal({
       ...productToCart,
@@ -411,7 +435,7 @@ export default function Produto({
         ...details,
         dateStart: dateFormat(details?.dateStart),
         dateEnd: dateFormat(details?.dateEnd),
-        days,
+        days: daysCount,
         schedulingDiscount: product?.schedulingDiscount,
       },
     });
@@ -423,8 +447,7 @@ export default function Produto({
         <div className="mt-4 md:mt-10 bg-zinc-50 p-4 lg:p-8 rounded-xl">
           <div className="font-title font-bold text-zinc-900 mb-4">
             <Icon icon="fa-comments" type="fal" className="mr-2" />
-            {comments?.length} comentário
-            {comments?.length == 1 ? "" : "s"}
+            {comments?.length} comentário{comments?.length == 1 ? "" : "s"}
           </div>
 
           <div className="grid gap-4">
@@ -534,7 +557,7 @@ export default function Produto({
     setLoadingCep(false);
   };
 
-  const [match, setMatch] = useState([] as Array<any>);
+  const [match, setMatch] = useState<any[]>([]);
   const renderMatch = async () => {
     const api = new Api();
 
@@ -549,7 +572,6 @@ export default function Produto({
           .map((prodCat: any) => {
             let slug = null;
             if (Array.isArray(categories)) {
-              // Safety check
               categories.forEach((parent: any) => {
                 parent.childs?.forEach((child: any) => {
                   if (child.id === prodCat.id) {
@@ -568,10 +590,8 @@ export default function Produto({
     setMatch(request?.data ?? []);
   };
 
-  const [productUpdated, setProductUpdated] = useState({} as ProductType);
   const getProductUpdated = async (identifier?: number | string) => {
     try {
-      // monta payload conforme identifer (prioriza id, senão slug vindo do product)
       const payload: any = identifier
         ? { id: identifier }
         : { slug: product?.slug };
@@ -582,10 +602,7 @@ export default function Produto({
         data: payload,
       });
 
-      // atualiza os dados de calendário / indisponibilidade
       handleCart(request.data.unavailable);
-
-      // atualiza o estado local que tu já tem: productUpdated
       setProductUpdated(request.data);
     } catch (err) {
       console.error("Erro ao atualizar produto:", err);
@@ -597,15 +614,12 @@ export default function Produto({
     if (typeof window === "undefined") return;
 
     const fetchUpdated = async () => {
-      // escolhe identificador: id do product (se existir) ou slug da rota
       const identifier = product?.id ?? router.query?.slug;
 
       if (identifier) {
-        // chama a mesma função que agora aceita identifier
         await getProductUpdated(identifier);
       }
 
-      // atualiza layout sem depender da referência antiga de layout
       setLayout((prev: any) => ({ ...prev, isMobile: isMobileDevice() }));
 
       if (store?.id) {
@@ -616,7 +630,37 @@ export default function Produto({
     fetchUpdated();
   }, [store, product?.id, router.query?.slug]);
 
-  // versão mobile do detalhes
+  // helper utilities
+  const getImageAttr = (imageID: any) => {
+    let imageGallery = {};
+
+    (product?.gallery ?? [])
+      .filter((img: any) => img.id == imageID)
+      .map((img: any) => {
+        imageGallery = img;
+      });
+
+    return imageGallery ?? "";
+  };
+
+  const navegateImageCarousel = (imageID: any) => {
+    const imageIndex = product?.gallery?.findIndex((img) => img.id === imageID);
+
+    if (imageIndex !== -1 && swiperInstance) {
+      swiperInstance.slideTo(imageIndex);
+    }
+  };
+
+  if (isFallback) {
+    return null;
+  }
+
+  const formatCep = (v: string) =>
+    v
+      .replace(/\D/g, "")
+      .replace(/(\d{5})(\d)/, "$1-$2")
+      .slice(0, 9);
+
   const renderDetails = () => (
     <>
       <div className="border rounded-lg p-4">
@@ -714,36 +758,6 @@ export default function Produto({
     </>
   );
 
-  const getImageAttr = (imageID: any) => {
-    let imageGallery = {};
-
-    (product?.gallery ?? [])
-      .filter((img: any) => img.id == imageID)
-      .map((img: any) => {
-        imageGallery = img;
-      });
-
-    return imageGallery ?? "";
-  };
-
-  const navegateImageCarousel = (imageID: any) => {
-    const imageIndex = product?.gallery?.findIndex((img) => img.id === imageID);
-
-    if (imageIndex !== -1 && swiperInstance) {
-      swiperInstance.slideTo(imageIndex);
-    }
-  };
-
-  if (isFallback) {
-    return null;
-  }
-
-  const formatCep = (v: string) =>
-    v
-      .replace(/\D/g, "")
-      .replace(/(\d{5})(\d)/, "$1-$2")
-      .slice(0, 9);
-
   return (
     <Template
       scripts={Scripts}
@@ -808,7 +822,7 @@ export default function Produto({
                 </div>
 
                 <div className="grid gap-6">
-                  {/* Não está aparecendo */}
+                  {/* Atributos do produto */}
                   <ProductAttributes
                     attributes={product?.attributes ?? []}
                     activeVariations={activeVariations}
@@ -851,7 +865,6 @@ export default function Produto({
                     inCart={inCart}
                     isMobile={layout.isMobile}
                   />
-
                   {/* Butões de compartilhar e salvar como favoritos */}
                   <div className="flex gap-4 border-t pt-6">
                     <LikeButton id={product?.id} style="btn-outline-light" />
@@ -867,7 +880,7 @@ export default function Produto({
                       title="Compartilhe:"
                       status={share}
                       size="sm"
-                      close={() => setShare(false as boolean)}
+                      close={() => setShare(false)}
                     >
                       <ShareModal
                         url={baseUrl}
@@ -875,14 +888,13 @@ export default function Produto({
                       />
                     </Modal>
                   </div>
+
                   {/* Dimensões do produto */}
                   <ProductDimensions product={product} />
                   <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none">
-                    {/* Selo de Pagamento seguro */}
+                    {/* Selos */}
                     <SafePaymentBadge />
-                    {/* Selo de cancelamento */}
                     <EasyCancelBadge />
-                    {/* Selo de validade */}
                     <TrustedPartnerBadge />
                   </div>
                 </div>
@@ -890,7 +902,7 @@ export default function Produto({
             </div>
           </div>
 
-          {/* Tags e cores na verão mobile */}
+          {/* Tags e cores na versão mobile */}
           <div className="grid gap-3 py-3">
             {layout.isMobile && <div>{renderDetails()}</div>}
             {layout.isMobile && <div>{renderComments()}</div>}
@@ -923,7 +935,7 @@ export default function Produto({
         }
       </style>`,
           }}
-        ></div>
+        />
       )}
     </Template>
   );

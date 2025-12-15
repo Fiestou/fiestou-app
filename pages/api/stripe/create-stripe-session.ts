@@ -54,7 +54,7 @@ export default async function handler(
       line_items: transformedItem,
       mode: "payment",
       metadata: {
-        taxa: `${order.platformCommission}%`,
+        taxa: `${order.OrderType}%`,
         nota: handleMetadata,
       },
       locale: "pt-BR",

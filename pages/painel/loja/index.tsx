@@ -17,55 +17,17 @@ import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import SelectDropdown from "../../../src/components/ui/form/SelectDropdown";
 import MultiSelect from "../../../src/components/ui/form/MultiSelectUi";
-import StoreHeader from "@/src/components/store/store-header/StoreHeader";
-import CoverSection from "@/src/components/store/cover-section/CoverSection";
-import ProfileSection from "@/src/components/store/profile-section/ProfileSection";
-import StoreTitleForm from "@/src/components/store/store-title-form/StoreTitleForm";
-import StoreDescriptionForm from "@/src/components/store/store-description-form/StoreDescriptionForm";
-import StoreBusinessForm from "@/src/components/store/store-business-form/StoreBusinessForm";
-import StoreOpenCloseForm from "@/src/components/store/store-open-close-form/StoreOpenCloseForm";
-import StoreLocationForm from "@/src/components/store/store-location-form/StoreLocationForm";
-import StoreSegmentForm from "@/src/components/store/store-segment-form/StoreSegmentForm";
-import StoreDeliveryForm from "@/src/components/store/store-delivery-form/StoreDeliveryForm";
+import StoreHeader from "@/src/components/store/components/store-header/StoreHeader";
+import CoverSection from "@/src/components/store/components/cover-section/CoverSection";
+import ProfileSection from "@/src/components/store/components/profile-section/ProfileSection";
+import StoreTitleForm from "@/src/components/store/components/store-title-form/StoreTitleForm";
+import StoreDescriptionForm from "@/src/components/store/components/store-description-form/StoreDescriptionForm";
+import StoreBusinessForm from "@/src/components/store/components/store-business-form/StoreBusinessForm";
+import StoreOpenCloseForm from "@/src/components/store/components/store-open-close-form/StoreOpenCloseForm";
+import StoreLocationForm from "@/src/components/store/components/store-location-form/StoreLocationForm";
+import StoreSegmentForm from "@/src/components/store/components/store-segment-form/StoreSegmentForm";
+import StoreDeliveryForm from "@/src/components/store/components/store-delivery-form/StoreDeliveryForm";
 import { useFiltersData } from "@/src/components/common/filters/filter/hooks/useFiltersData";
-
-export async function getServerSideProps(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const api = new Api();
-  let request: any = {};
-
-  request = await api.call(
-    {
-      method: "post",
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "store-custom",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    req
-  );
-
-  const page = request?.data?.query?.page ?? [];
-  const storeTypes = request?.data?.query.storeType ?? [];
-
-  return {
-    props: {
-      page: page[0] ?? {},
-      storeTypes: storeTypes,
-    },
-  };
-}
 
 const formInitial = {
   edit: "",
@@ -83,22 +45,43 @@ const days = [
   { value: "Holiday", name: "Feriados" },
 ];
 
-export default function Loja({
-  page,
-  storeTypes,
-}: {
-  page: any;
-  storeTypes: Array<RelationType>;
-}) {
+export default function Loja() {
   const api = new Api();
   const router = useRouter();
 
+  /* 1. ESTADOS (useState) */
+
+  const [page, setPage] = useState<any>({});
+  const [storeTypes, setStoreTypes] = useState<Array<RelationType>>([]);
   const [form, setForm] = useState(formInitial);
+  const [week, setWeek] = useState([] as Array<DayType>);
+  const [handleCover, setHandleCover] = useState(
+    {} as { preview: string; remove: number }
+  );
+  const [handleProfile, setHandleProfile] = useState(
+    {} as { preview: string; remove: number }
+  );
+  const [oldStore, setOldStore] = useState({} as StoreType);
+  const [store, setStore] = useState({} as StoreType);
+  const [groupOptions, setGroupOptions] = useState([]);
+  const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
+  const [open, setOpen] = useState(false);
+
+  const { allGroups } = useFiltersData(open, store);
+
+  /* 2. FUNÇÕES */
+
+  /* --- Form Control --- */
   const handleForm = (value: Object) => {
     setForm({ ...form, ...value });
   };
 
-  const [week, setWeek] = useState([] as Array<DayType>);
+  /* --- Store Handler --- */
+  const handleStore = async (value: Object) => {
+    setStore({ ...store, ...value });
+  };
+
+  /* --- Weekday / Horário --- */
   const handleWeek = (value: Object, day: string) => {
     let handle = store?.openClose ?? ([] as Array<DayType>);
 
@@ -112,20 +95,7 @@ export default function Loja({
     setStore({ ...store, openClose: handle });
   };
 
-  const [handleCover, setHandleCover] = useState(
-    {} as { preview: string; remove: number }
-  );
-  const [handleProfile, setHandleProfile] = useState(
-    {} as {} as { preview: string; remove: number }
-  );
-
-  const [oldStore, setOldStore] = useState({} as StoreType);
-  const [store, setStore] = useState({} as StoreType);
-  const [groupOptions, setGroupOptions] = useState([]);
-  const handleStore = async (value: Object) => {
-    setStore({ ...store, ...value });
-  };
-
+  /* --- Buscar loja --- */
   const getStore = async () => {
     let request: any = await api.bridge({
       method: "post",
@@ -153,7 +123,8 @@ export default function Loja({
     });
   };
 
-  const handleCoverRemove = async (e: any) => {
+  /* --- CAPA: remover / preview / salvar --- */
+  const handleCoverRemove = async () => {
     setHandleCover({
       preview: "",
       remove: store?.cover?.id ?? handleCover.remove,
@@ -173,15 +144,12 @@ export default function Loja({
     });
 
     const fileData = { base64, fileName: file.name };
-
     setHandleCover({ ...handleCover, preview: fileData.base64 });
-
     return fileData;
   };
 
   const handleSubmitCover = async (e: any) => {
     e.preventDefault();
-
     handleForm({ loading: true });
 
     let coverValue = store?.cover;
@@ -273,15 +241,12 @@ export default function Loja({
     });
 
     const fileData = { base64, fileName: file.name };
-
     setHandleProfile({ ...handleProfile, preview: fileData.base64 });
-
     return fileData;
   };
 
   const handleSubmitProfile = async (e: any) => {
     e.preventDefault();
-
     handleForm({ loading: true });
 
     let profileValue: any = store?.profile;
@@ -329,10 +294,7 @@ export default function Loja({
 
     handleStore({ profile: profileValue });
 
-    const handle = {
-      ...store,
-      profile: profileValue,
-    };
+    const handle = { ...store, profile: profileValue };
 
     const request: any = await api.bridge({
       method: "post",
@@ -353,24 +315,22 @@ export default function Loja({
     handleForm({ edit: "", loading: false });
   };
 
-  const maskZipCode = (value: string) => {
-    return value
-      .replace(/\D/g, "") // só números
-      .replace(/^(\d{5})(\d)/, "$1-$2") // coloca o traço
-      .slice(0, 9); // limita em 9 caracteres
-  };
+  /* --- CEP --- */
+  const maskZipCode = (value: string) =>
+    value
+      .replace(/\D/g, "")
+      .replace(/^(\d{5})(\d)/, "$1-$2")
+      .slice(0, 9);
 
   const handleZipCode = async (zipCode: string) => {
     const masked = maskZipCode(zipCode);
-    const numeric = justNumber(masked); // só números
+    const numeric = justNumber(masked);
 
-    // Atualiza o campo de CEP imediatamente com máscara
     setStore((prev: any) => ({
       ...prev,
       zipCode: masked,
     }));
 
-    // Só busca quando tiver exatamente 8 dígitos numéricos
     if (numeric.length !== 8) return;
 
     const location = await getZipCode(numeric);
@@ -387,9 +347,9 @@ export default function Loja({
     }
   };
 
+  /* --- Submit geral --- */
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
     handleForm({ loading: true });
 
     /* TO DO - TIPAR E ARRANCAR any */
@@ -409,12 +369,11 @@ export default function Loja({
     await api.request({
       method: "PUT",
       url: `app/zipcode-cities-range-stores/${store?.id}`,
-      data: {
-        ids: store?.deliveryRegions,
-      },
+      data: { ids: store?.deliveryRegions },
     });
   };
 
+  /* --- Ações de edição (renderAction) --- */
   const renderAction = (
     name: string,
     label?: { edit?: string; save?: string; cancel?: string }
@@ -460,8 +419,30 @@ export default function Loja({
     );
   };
 
-  const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
+  /* 3. USE EFFECTS */
 
+  // Buscar página e storeTypes
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      const request: any = await api.call({
+        method: "post",
+        url: "request/graph",
+        data: [
+          {
+            model: "page",
+            filter: [{ key: "slug", value: "store-custom", compare: "=" }],
+          },
+        ],
+      });
+
+      setPage(request?.data?.query?.page?.[0] ?? {});
+      setStoreTypes(request?.data?.query?.storeType ?? []);
+    };
+
+    fetchInitialData();
+  }, []);
+
+  // Buscar regiões
   useEffect(() => {
     const fetchRegions = async () => {
       try {
@@ -469,45 +450,41 @@ export default function Loja({
           method: "get",
           url: "app/zipcode-cities-range",
         });
+
         setDeliveryRegionsOptions(
           (response?.data?.data || []).map((region) => ({
             value: region.id,
             name: `${region.name} (${region.start} - ${region.finish})`,
           }))
         );
-      } catch (e) {
+      } catch {
         setDeliveryRegionsOptions([]);
       }
     };
     fetchRegions();
   }, []);
 
+  // Buscar loja
   useEffect(() => {
     if (!!window) {
       getStore();
     }
   }, []);
 
-  const [open, setOpen] = useState(false);
-
-  const { allGroups } = useFiltersData(open, store);
-
+  // Atualizar grupos
   useEffect(() => {
     if (allGroups) {
       setGroupOptions(allGroups);
     }
   }, [allGroups]);
 
+  /* 4. RENDER DO COMPONENTE */
+
   return (
     !router.isFallback && (
       <Template
-        header={{
-          template: "painel",
-          position: "solid",
-        }}
-        footer={{
-          template: "clean",
-        }}
+        header={{ template: "painel", position: "solid" }}
+        footer={{ template: "clean" }}
       >
         <StoreHeader
           title="Personalizar loja"
@@ -607,7 +584,7 @@ export default function Loja({
                   form={form}
                   name="segment"
                   groupOptions={allGroups}
-                  storeTypes={storeTypes} // quero ver de onde isso vem
+                  storeTypes={storeTypes}
                   renderAction={renderAction}
                   handleSubmit={handleSubmit}
                   handleStore={handleStore}
@@ -623,7 +600,7 @@ export default function Loja({
                 />
               </div>
               <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
-                <HelpCard list={page.help_list} />
+                <HelpCard list={page?.help_list ?? []} />
               </div>
             </div>
           </div>

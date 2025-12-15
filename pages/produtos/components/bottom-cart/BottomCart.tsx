@@ -6,7 +6,7 @@ import { useEffect } from "react";
 interface BottomCartProps {
   productToCart: { total: number } | null;
   inCart: boolean;
-  isMobile: boolean;
+  isMobile?: boolean;
 }
 
 export default function BottomCart({ productToCart, inCart, isMobile }: BottomCartProps) {
