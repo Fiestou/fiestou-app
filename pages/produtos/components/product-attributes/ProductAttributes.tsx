@@ -25,6 +25,7 @@ export default function ProductAttributes({
       typeof value === "string"
         ? parseFloat(value.replace(/\./g, "").replace(",", "."))
         : Number(value);
+
     return new Intl.NumberFormat("pt-BR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -42,42 +43,38 @@ export default function ProductAttributes({
           </div>
 
           <div className="border-b">
-            {attribute?.variations?.map((item: any, key) => (
+            {attribute.variations?.map((item: any, key) => (
               <label
                 key={key}
                 className="flex border-t py-2 gap-4 items-center"
               >
                 {(attribute.selectType === "radio" ||
                   attribute.selectType === "checkbox") && (
-                  <div className="w-fit">
-                    <div
-                      onClick={() =>
-                        updateOrder(
-                          {
-                            id: item.id,
-                            title: item.title ?? "",
-                            price: item.price,
-                            quantity: 1,
-                          },
-                          attribute
-                        )
-                      }
-                    >
-                      <Checkbox
-                        checked={!!activeVariations[item.id]}
-                        type={attribute.selectType}
-                      />
-                    </div>
+                  <div
+                    className="w-fit cursor-pointer"
+                    onClick={() =>
+                      updateOrder(
+                        {
+                          id: item.id,
+                          title: item.title ?? "",
+                          price: item.price,
+                          quantity: 1,
+                        },
+                        attribute
+                      )
+                    }
+                  >
+                    <Checkbox
+                      checked={!!activeVariations[item.id]}
+                      type={attribute.selectType}
+                    />
                   </div>
                 )}
 
-                {!!item?.image (item?.image) && (
-                  <div
-                    onClick={() => (item?.image)}
-                    className="aspect-[4/3] cursor-pointer bg-zinc-100 w-[4.5rem] relative"
-                  >
+                {!!item?.image && (
+                  <div className="aspect-[4/3] bg-zinc-100 w-[4.5rem] relative">
                     <Img
-                      src={getImage((item?.image), "thumb")}
+                      src={getImage(item.image, "thumb")}
                       className="rounded absolute w-full h-full inset-0 object-contain"
                     />
                   </div>
@@ -101,7 +98,7 @@ export default function ProductAttributes({
                 </div>
 
                 <div className="w-fit py-1 whitespace-nowrap">
-                  {!!item?.price ? `R$ ${formatMoney(item.price)}` : ""}
+                  {!!item?.price && `R$ ${formatMoney(item.price)}`}
                 </div>
 
                 {attribute.selectType === "quantity" && (
@@ -114,7 +111,7 @@ export default function ProductAttributes({
                             id: item.id,
                             title: item.title ?? "",
                             price: item.price,
-                            quantity: value ?? 1,
+                            quantity: value || 1,
                           },
                           attribute
                         )

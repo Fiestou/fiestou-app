@@ -18,7 +18,6 @@ export default function ProductDeliveryCalendar({
   unavailable = [],
   blockdate = [],
   handleDetails,
-
 }: ProductDeliveryCalendarProps) {
   if (!productToCart) return null;
 
@@ -41,7 +40,6 @@ export default function ProductDeliveryCalendar({
             onChange={handleDetails}
             availability={product?.availability ?? 1}
           />
-          
         </div>
       </div>
     </div>
