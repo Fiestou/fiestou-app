@@ -132,24 +132,20 @@ export default function Produto({
 }) {
   const api = new Api();
   const { isFallback } = useRouter();
-  const [swiperInstance, setSwiperInstance] = useState(null as any);
-
   const [share, setShare] = useState(false as boolean);
   const baseUrl = `https://fiestou.com.br${getProductUrl(product, store)}`;
   const [loadCart, setLoadCart] = useState(false as boolean);
   const [blockdate, setBlockdate] = useState(Array<string>());
-
-  const [days, setDays] = useState(1);
   const [cep, setCep] = useState("");
   const [cepError, setCepError] = useState(false);
   const [cepErrorMessage, setCepErrorMessage] = useState<string | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
-  const [cartModal, setCartModal] = useState(false as boolean);
   const [inCart, setInCart] = useState(false as boolean);
   const [unavailable, setUnavailable] = useState([] as Array<string>);
   const [activeVariations, setActiveVariations] = useState([] as Array<any>);
-  const [layout, setLayout] = useState({} as any);
+  const [isMobile, setIsMobile] = useState(false);
+  const layout = { isMobile };
 
   const [productToCart, setProductToCart] = useState<ProductOrderType>({
     product: product?.id,
@@ -161,17 +157,6 @@ export default function Produto({
 
   const imageCover =
     !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
-
-  const formatMoney = (value: any): string => {
-    const num =
-      typeof value === "string"
-        ? parseFloat(value.replace(/\./g, "").replace(",", "."))
-        : Number(value);
-    return new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
 
   useEffect(() => {
     setBlockdate(product.unavailableDates ?? []);
@@ -213,14 +198,6 @@ export default function Produto({
         ...prev,
         details: nextDetails,
       };
-    });
-  };
-  const handleQuantity = (q: any) => {
-    const qtd = Number(q);
-
-    updateOrderTotal({
-      ...productToCart,
-      quantity: !!qtd ? qtd : 1,
     });
   };
 
@@ -325,48 +302,11 @@ export default function Produto({
     updateOrderTotal(orderUpdate);
   };
 
-  const handleCart = (dates?: Array<string>) => {
-    let handle = GetCart()
-      .filter((item: any) => item.product == product.id)
-      .map((item: any) => item);
-
-    let handleDates = [...(!!dates ? dates : unavailable)];
-
-    if (!!handle.length) {
-      handle = handle[0];
-
-      if (!!handle?.details?.dateEnd) {
-        handleDates.push(handle?.details?.dateEnd);
-      }
-
-      setInCart(handle);
-    }
-
-    if (product?.availability) {
-      const today = new Date();
-      const minimumDates = Array.from(
-        { length: product.availability },
-        (_, key) => {
-          const date = new Date();
-          date.setDate(today.getDate() + key + 1);
-          return date.toISOString().split("T")[0];
-        }
-      );
-
-      handleDates = [...handleDates, ...minimumDates];
-    }
-
-    setUnavailable(handleDates);
-  };
-
   const sendToCart = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoadCart(true);
 
-    // pegar os dados
     if (AddToCart(productToCart)) {
-      setCartModal(true);
-      // Não atualiza o inCart imediatamente para permitir adicionar mais
       setTimeout(() => {
         setLoadCart(false);
       }, 500);
@@ -380,7 +320,7 @@ export default function Produto({
     dateEnd?: Date;
     days?: number;
     schedulingDiscount?: number;
-    [key: string]: any; // permite outros campos sem erro
+    [key: string]: any;
   }
 
   const handleDetails = (detail: DetailsType) => {
@@ -403,7 +343,7 @@ export default function Produto({
       );
     }
 
-    setDays(!!days ? days : 1);
+    const safeDays = !!days ? days : 1;
 
     updateOrderTotal({
       ...productToCart,
@@ -411,12 +351,12 @@ export default function Produto({
         ...details,
         dateStart: dateFormat(details?.dateStart),
         dateEnd: dateFormat(details?.dateEnd),
-        days,
+        days: safeDays,
         schedulingDiscount: product?.schedulingDiscount,
       },
     });
   };
-
+  // Não faz nada
   const renderComments = () => (
     <>
       {!!comments?.length && (
@@ -534,83 +474,12 @@ export default function Produto({
     setLoadingCep(false);
   };
 
-  const [match, setMatch] = useState([] as Array<any>);
-  const renderMatch = async () => {
-    const api = new Api();
-
-    let request: any = await api.request({
-      method: "get",
-      url: "request/products",
-      data: {
-        ignore: product.id,
-        store: store?.id ?? 0,
-        tags: (product?.tags ?? ",").split(",").filter((item) => !!item),
-        categorias: (product?.category ?? [])
-          .map((prodCat: any) => {
-            let slug = null;
-            if (Array.isArray(categories)) {
-              // Safety check
-              categories.forEach((parent: any) => {
-                parent.childs?.forEach((child: any) => {
-                  if (child.id === prodCat.id) {
-                    slug = child.slug;
-                  }
-                });
-              });
-            }
-            return slug;
-          })
-          .filter((slug: any) => !!slug),
-        limit: 10,
-      },
-    });
-
-    setMatch(request?.data ?? []);
-  };
-
-  const [productUpdated, setProductUpdated] = useState({} as ProductType);
-  const getProductUpdated = async (identifier?: number | string) => {
-    try {
-      // monta payload conforme identifer (prioriza id, senão slug vindo do product)
-      const payload: any = identifier
-        ? { id: identifier }
-        : { slug: product?.slug };
-
-      const request: any = await api.request({
-        method: "get",
-        url: "request/product",
-        data: payload,
-      });
-
-      // atualiza os dados de calendário / indisponibilidade
-      handleCart(request.data.unavailable);
-
-      // atualiza o estado local que tu já tem: productUpdated
-      setProductUpdated(request.data);
-    } catch (err) {
-      console.error("Erro ao atualizar produto:", err);
-    }
-  };
-
   const router = useRouter();
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const fetchUpdated = async () => {
-      // escolhe identificador: id do product (se existir) ou slug da rota
-      const identifier = product?.id ?? router.query?.slug;
-
-      if (identifier) {
-        // chama a mesma função que agora aceita identifier
-        await getProductUpdated(identifier);
-      }
-
-      // atualiza layout sem depender da referência antiga de layout
-      setLayout((prev: any) => ({ ...prev, isMobile: isMobileDevice() }));
-
-      if (store?.id) {
-        renderMatch();
-      }
+      setIsMobile((prev: any) => ({ ...prev, isMobile: isMobileDevice() }));
     };
 
     fetchUpdated();
@@ -662,7 +531,7 @@ export default function Produto({
                 (category: any) =>
                   !!category?.childs &&
                   !!category?.childs?.filter((child: any) =>
-                    (productUpdated?.category ?? [])
+                    (product?.category ?? [])
                       .map((cat: any) => cat.id)
                       .includes(child.id)
                   ).length && (
@@ -671,7 +540,7 @@ export default function Produto({
                         {!!category?.childs &&
                           category?.childs
                             ?.filter((child: any) =>
-                              (productUpdated?.category ?? [])
+                              (product?.category ?? [])
                                 .map((cat: any) => cat.id)
                                 .includes(child.id)
                             )
@@ -713,26 +582,6 @@ export default function Produto({
       </div>
     </>
   );
-
-  const getImageAttr = (imageID: any) => {
-    let imageGallery = {};
-
-    (product?.gallery ?? [])
-      .filter((img: any) => img.id == imageID)
-      .map((img: any) => {
-        imageGallery = img;
-      });
-
-    return imageGallery ?? "";
-  };
-
-  const navegateImageCarousel = (imageID: any) => {
-    const imageIndex = product?.gallery?.findIndex((img) => img.id === imageID);
-
-    if (imageIndex !== -1 && swiperInstance) {
-      swiperInstance.slideTo(imageIndex);
-    }
-  };
 
   if (isFallback) {
     return null;
@@ -776,7 +625,7 @@ export default function Produto({
           <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-8 items-start">
             {/* Galeria de imagens */}
             <ProductGallery
-              product={productUpdated?.id ? productUpdated : product}
+              product={product}
               layout={layout}
               renderDetails={renderDetails}
               renderComments={renderComments}
@@ -813,8 +662,6 @@ export default function Produto({
                     attributes={product?.attributes ?? []}
                     activeVariations={activeVariations}
                     updateOrder={updateOrder}
-                    getImageAttr={getImageAttr}
-                    navegateImageCarousel={navegateImageCarousel}
                   />
 
                   {/* Consulta de CEP */}
@@ -836,7 +683,6 @@ export default function Produto({
                     unavailable={unavailable}
                     blockdate={blockdate}
                     handleDetails={handleDetails}
-                    productUpdated={productUpdated}
                   />
 
                   {/* Entrega */}
@@ -867,7 +713,7 @@ export default function Produto({
                       title="Compartilhe:"
                       status={share}
                       size="sm"
-                      close={() => setShare(false as boolean)}
+                      close={() => setShare(true as boolean)}
                     >
                       <ShareModal
                         url={baseUrl}
@@ -913,18 +759,6 @@ export default function Produto({
 
       {/* Receba novidades e promoções */}
       <Newsletter />
-
-      {layout.isMobile && (
-        <div
-          dangerouslySetInnerHTML={{
-            __html: `<style>
-        #whatsapp-button {
-          margin-bottom: 4.5rem !important;
-        }
-      </style>`,
-          }}
-        ></div>
-      )}
     </Template>
   );
 }

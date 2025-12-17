@@ -5,6 +5,7 @@ export interface StoreType {
   name: string;
   slug?: string;
   companyName?: string;
+  store: (StoreType | null);
 }
 
 export interface ImageType {
@@ -83,6 +84,9 @@ export interface ProductType {
   priceLow?: number;
   medias?: Array<any>;
   name?: string;
+  data: any;
+  comments?: Array<any>;
+  productParam?: any;
 }
 
 export interface VariationProductOrderType {

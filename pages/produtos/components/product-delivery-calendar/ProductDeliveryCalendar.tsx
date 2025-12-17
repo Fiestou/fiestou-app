@@ -10,7 +10,6 @@ interface ProductDeliveryCalendarProps {
   unavailable?: Array<string>;
   blockdate?: Array<string>;
   handleDetails: (date: any) => void;
-  productUpdated?: { title?: string };
 }
 
 export default function ProductDeliveryCalendar({
@@ -19,7 +18,7 @@ export default function ProductDeliveryCalendar({
   unavailable = [],
   blockdate = [],
   handleDetails,
-  productUpdated,
+
 }: ProductDeliveryCalendarProps) {
   if (!productToCart) return null;
 
@@ -42,9 +41,7 @@ export default function ProductDeliveryCalendar({
             onChange={handleDetails}
             availability={product?.availability ?? 1}
           />
-          {!productUpdated?.title && (
-            <div className="absolute z-10 bg-white opacity-60 w-full h-full top-0 left-0"></div>
-          )}
+          
         </div>
       </div>
     </div>

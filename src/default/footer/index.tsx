@@ -45,7 +45,7 @@ export function Footer(props: FooterType) {
           className="py-2 px-4 md:px-5"
         >
           <FIcon icon="fa-whatsapp" type="fab" className="font-light text-xl" />
-          <span className="hidden md:inline-block">Chame no whats</span>
+          <span className="hidden md:inline-block h-3">Chame no whats</span>
         </Button>
       </div>
     );
