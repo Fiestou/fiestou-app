@@ -1,6 +1,6 @@
 "use client";
 
-import { AttributeType } from "@/src/models/product";
+import { AttributeType, VariationProductOrderType } from "@/src/models/product";
 import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
 import Img from "@/src/components/utils/ImgBase";
@@ -8,21 +8,17 @@ import { getImage } from "@/src/helper";
 
 interface ProductAttributesProps {
   attributes: AttributeType[];
-  activeVariations: Record<number, boolean>;
+  activeVariations: any;
   updateOrder: (
-    item: { id: string; title: string; price?: number; quantity: number },
+    item: VariationProductOrderType,
     attribute: AttributeType
   ) => void;
-  getImageAttr: (imageID: number) => any;
-  navegateImageCarousel: (imageID: number) => void;
 }
 
 export default function ProductAttributes({
   attributes,
   activeVariations,
   updateOrder,
-  getImageAttr,
-  navegateImageCarousel,
 }: ProductAttributesProps) {
   const formatMoney = (value: any): string => {
     const num =
@@ -75,13 +71,13 @@ export default function ProductAttributes({
                   </div>
                 )}
 
-                {!!item?.image && getImageAttr(item?.image) && (
+                {!!item?.image (item?.image) && (
                   <div
-                    onClick={() => navegateImageCarousel(item?.image)}
+                    onClick={() => (item?.image)}
                     className="aspect-[4/3] cursor-pointer bg-zinc-100 w-[4.5rem] relative"
                   >
                     <Img
-                      src={getImage(getImageAttr(item?.image), "thumb")}
+                      src={getImage((item?.image), "thumb")}
                       className="rounded absolute w-full h-full inset-0 object-contain"
                     />
                   </div>
