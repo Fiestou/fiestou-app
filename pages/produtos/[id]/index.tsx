@@ -32,6 +32,8 @@ import "swiper/css/zoom";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
+import { toast } from "react-toastify";
+import CartPreview from "@/src/components/common/CartPreview";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Modal from "@/src/components/utils/Modal";
 import ShareModal from "@/src/components/utils/ShareModal";
@@ -146,6 +148,10 @@ export default function Produto({
   const [activeVariations, setActiveVariations] = useState([] as Array<any>);
   const [isMobile, setIsMobile] = useState(false);
   const layout = { isMobile };
+  const router = useRouter();
+  const [showCartPreview, setShowCartPreview] = useState(false);
+  const imageCover =
+    !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
 
   const [productToCart, setProductToCart] = useState<ProductOrderType>({
     product: product?.id,
@@ -154,9 +160,6 @@ export default function Produto({
     details: {},
     total: getPriceValue(product).price,
   });
-
-  const imageCover =
-    !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
 
   useEffect(() => {
     setBlockdate(product.unavailableDates ?? []);
@@ -306,13 +309,19 @@ export default function Produto({
     e.preventDefault();
     setLoadCart(true);
 
-    if (AddToCart(productToCart)) {
-      setTimeout(() => {
-        setLoadCart(false);
-      }, 500);
+    const success = AddToCart(productToCart);
+
+    if (success) {
+      setInCart(true);
+
+      toast.success("Produto adicionado ao carrinho 🛒");
+
+      setShowCartPreview(true);
     } else {
-      setLoadCart(false);
+      toast.error("Não foi possível adicionar ao carrinho");
     }
+
+    setLoadCart(false);
   };
 
   interface DetailsType {
@@ -474,7 +483,6 @@ export default function Produto({
     setLoadingCep(false);
   };
 
-  const router = useRouter();
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -691,7 +699,7 @@ export default function Produto({
                     productToCart={productToCart}
                   />
 
-                  {/* Carrinho e total */}
+                  {/* Adicionar ao carrinho e valor total */}
                   <BottomCart
                     productToCart={productToCart}
                     inCart={inCart}
@@ -759,6 +767,25 @@ export default function Produto({
 
       {/* Receba novidades e promoções */}
       <Newsletter />
+      {layout.isMobile && (
+        <div
+          dangerouslySetInnerHTML={{
+            __html: `<style>
+        #whatsapp-button {
+          margin-bottom: 4.5rem !important;
+        }
+      </style>`,
+          }}
+        ></div>
+      )}
+      {showCartPreview && (
+        <div>
+          <CartPreview
+            isMobile={layout.isMobile}
+            onClose={() => setShowCartPreview(false)}
+          />
+        </div>
+      )}
     </Template>
   );
 }

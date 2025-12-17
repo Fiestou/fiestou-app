@@ -9,7 +9,11 @@ interface BottomCartProps {
   isMobile: boolean;
 }
 
-export default function BottomCart({ productToCart, inCart, isMobile }: BottomCartProps) {
+export default function BottomCart({
+  productToCart,
+  inCart,
+  isMobile,
+}: BottomCartProps) {
   // Ajusta padding do html quando mobile
   useEffect(() => {
     if (isMobile) {

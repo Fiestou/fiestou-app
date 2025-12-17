@@ -100,7 +100,8 @@ export default function Default({
             <nav className="hidden lg:flex order-2 gap-6">
               <Link
                 href="/"
-                className={`whitespace-nowrap transition-colors duration-200 ${params.pathname === "/"
+                className={`whitespace-nowrap transition-colors duration-200 ${
+                  params.pathname === "/"
                     ? "text-yellow-300 font-bold"
                     : "hover:text-yellow-300"
                 }`}
@@ -217,7 +218,10 @@ export default function Default({
           <div className="flex flex-col items-start text-2xl pt-20">
             <Link
               href="/"
-              className={`w-full py-3 px-6 flex items-center gap-3 ${params.pathname === "/" ? "text-yellow-300 font-bold" : "hover:text-yellow-300"
+              className={`w-full py-3 px-6 flex items-center gap-3 ${
+                params.pathname === "/"
+                  ? "text-yellow-300 font-bold"
+                  : "hover:text-yellow-300"
               }`}
             >
               <FIcon icon="fa-home" />
