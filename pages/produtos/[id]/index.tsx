@@ -490,7 +490,7 @@ export default function Produto({
   // versão mobile do detalhes
   const renderDetails = () => (
     <>
-      <div className="border rounded-lg p-4">
+      <div className="border rounded-lg p-4 border-red-500">
         <div className="text-sm grid gap-1">
           <div className="text-zinc-900">
             Fornecido por:{" "}
@@ -689,6 +689,7 @@ export default function Produto({
         <div className="container-medium">
           <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-8 items-start">
             {/* Galeria */}
+            
             <ProductGallery
               product={product}
               layout={layout}
@@ -697,7 +698,7 @@ export default function Produto({
             />
 
             {/* FORM ÚNICO */}
-            <div className="w-full md:w-1/2">
+            <div className="w-full md:w-1/2 ">
               <form onSubmit={sendToCart} method="POST">
                 {/* Cabeçalho do produto */}
                 <div className="grid md:flex gap-4 pb-4 lg:gap-10">
@@ -843,11 +844,10 @@ export default function Produto({
             </div>
           </div>
 
-          {/* MOBILE */}
-          <div className="grid gap-3 py-3">
-            {layout.isMobile && <div>{renderDetails()}</div>}
+          {/* <div className="grid gap-3 py-3">
+            
             {layout.isMobile && <div>{renderComments()}</div>}
-          </div>
+          </div> */}
         </div>
       </section>
 
