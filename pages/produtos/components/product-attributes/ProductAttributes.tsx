@@ -9,7 +9,6 @@ import { getImage } from "@/src/helper";
 interface ProductAttributesProps {
   attributes: AttributeType[];
   activeVariations: any;
-
   updateOrder: (
     item: VariationProductOrderType,
     attribute: AttributeType
@@ -43,7 +42,7 @@ export default function ProductAttributes({
             {attribute.title}
           </div>
 
-          <div className="border-b">
+          <div className="border-b rounded-md overflow-hidden">
             {attribute.variations?.map((item: any, key) => {
               const isChecked =
                 activeVariations
@@ -53,24 +52,30 @@ export default function ProductAttributes({
               return (
                 <label
                   key={key}
-                  className="flex border-t py-2 gap-4 items-center"
+                  className={`
+                    flex items-center gap-4 py-3 px-2 border-t cursor-pointer
+                    transition-colors duration-200
+                    ${
+                      isChecked
+                        ? "bg-yellow-100 border-yellow-200"
+                        : "bg-white hover:bg-zinc-50"
+                    }
+                  `}
+                  onClick={() =>
+                    updateOrder(
+                      {
+                        id: item.id,
+                        title: item.title ?? "",
+                        price: item.price,
+                        quantity: 1,
+                      },
+                      attribute
+                    )
+                  }
                 >
                   {(attribute.selectType === "radio" ||
                     attribute.selectType === "checkbox") && (
-                    <div
-                      className="w-fit cursor-pointer"
-                      onClick={() =>
-                        updateOrder(
-                          {
-                            id: item.id,
-                            title: item.title ?? "",
-                            price: item.price,
-                            quantity: 1,
-                          },
-                          attribute
-                        )
-                      }
-                    >
+                    <div className="w-fit">
                       <Checkbox
                         checked={isChecked}
                         type={attribute.selectType}
@@ -79,32 +84,19 @@ export default function ProductAttributes({
                   )}
 
                   {!!item?.image && (
-                    <div className="aspect-[4/3] bg-zinc-100 w-[4.5rem] relative">
+                    <div className="aspect-[4/3] bg-zinc-100 w-[4.5rem] relative rounded">
                       <Img
                         src={getImage(item.image, "thumb")}
-                        className="rounded absolute w-full h-full inset-0 object-contain"
+                        className="absolute inset-0 w-full h-full object-contain rounded"
                       />
                     </div>
                   )}
 
-                  <div
-                    className="w-full py-1 cursor-pointer"
-                    onClick={() =>
-                      updateOrder(
-                        {
-                          id: item.id,
-                          title: item.title ?? "",
-                          price: item.price,
-                          quantity: 1,
-                        },
-                        attribute
-                      )
-                    }
-                  >
+                  <div className="flex-1 py-1 text-zinc-900">
                     {item.title}
                   </div>
 
-                  <div className="w-fit py-1 whitespace-nowrap">
+                  <div className="w-fit py-1 whitespace-nowrap text-sm text-zinc-700">
                     {!!item?.price && `R$ ${formatMoney(item.price)}`}
                   </div>
 
