@@ -37,6 +37,7 @@ interface ButtonType {
   children: React.ReactNode;
   /** ✅ nova API recomendada */
   variant?: Variant;
+  disabled?: boolean;
 }
 
 export default function Button(attr: ButtonType) {

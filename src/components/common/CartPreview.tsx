@@ -85,10 +85,7 @@ export default function CartPreview({
     loadCart();
   };
 
-  const totalItems = cart.reduce(
-    (acc, item) => acc + (item.quantity || 1),
-    0
-  );
+  const totalItems = cart.reduce((acc, item) => acc + (item.quantity || 1), 0);
 
   const totalValue = cart.reduce(
     (acc, item) => acc + (Number(item.total) || 0),
@@ -105,15 +102,13 @@ export default function CartPreview({
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/40 z-[100]"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/40 z-[100]" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed top-0 right-0 h-full w-full max-w-[400px] bg-white z-[101]
-        rounded-tl-2xl rounded-bl-2xl shadow-2xl border-l border-zinc-200 flex flex-col">
-
+      <div
+        className="fixed top-0 right-0 h-full w-full max-w-[400px] bg-white z-[101]
+        rounded-tl-2xl rounded-bl-2xl shadow-2xl border-l border-zinc-200 flex flex-col"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-zinc-200">
           <h4 className="font-bold text-zinc-900 text-lg">
@@ -136,9 +131,18 @@ export default function CartPreview({
 
         {/* Content */}
         {loading ? (
-          <p className="text-zinc-500 text-center py-8">Carregando...</p>
+          <div>
+            <p className="text-zinc-500 text-center py-8">Carregando...</p>
+          </div>
         ) : cart.length === 0 ? (
-          <p className="text-zinc-500 text-center py-8">Carrinho vazio</p>
+          <div>
+            <p className="text-zinc-500 text-center py-8">Carrinho vazio!</p>
+            <div className="w-3/4 flex text-center items-center justify-center mx-auto">
+              <Link href="/produtos" onClick={onClose}>
+                <Button className="w-full mt-2">Ver produtos</Button>
+              </Link>
+            </div>
+          </div>
         ) : (
           <>
             {/* Items */}
@@ -164,9 +168,7 @@ export default function CartPreview({
               />
 
               <Link href="/carrinho" onClick={onClose}>
-                <Button className="w-full mt-2">
-                  Ver carrinho completo
-                </Button>
+                <Button className="w-full mt-2">Ver carrinho completo</Button>
               </Link>
             </div>
           </>

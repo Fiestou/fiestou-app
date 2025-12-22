@@ -7,12 +7,15 @@ interface BottomCartProps {
   productToCart: { total: number } | null;
   inCart: boolean;
   isMobile: boolean;
+  canAddToCart: boolean;
+  disabled?: boolean;
 }
 
 export default function BottomCart({
   productToCart,
   inCart,
   isMobile,
+  canAddToCart,
 }: BottomCartProps) {
   // Ajusta padding do html quando mobile
   useEffect(() => {
@@ -50,7 +53,17 @@ export default function BottomCart({
 
       <div className="text-center p-4">
         {!inCart ? (
-          <Button type="submit">Adicionar</Button>
+          <Button
+            type="submit"
+            disabled={!canAddToCart}
+            className={
+              !canAddToCart
+                ? "bg-zinc-300 text-zinc-600 cursor-not-allowed"
+                : "bg-yellow-400 hover:bg-yellow-500"
+            }
+          >
+            Adicionar
+          </Button>
         ) : (
           <Button href="/carrinho" className="whitespace-nowrap">
             Acessar carrinho

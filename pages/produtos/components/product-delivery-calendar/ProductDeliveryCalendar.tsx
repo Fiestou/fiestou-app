@@ -10,6 +10,7 @@ interface ProductDeliveryCalendarProps {
   unavailable?: Array<string>;
   blockdate?: Array<string>;
   handleDetails: (date: any) => void;
+  required?: boolean;
 }
 
 export default function ProductDeliveryCalendar({
