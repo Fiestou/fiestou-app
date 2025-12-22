@@ -36,7 +36,7 @@ export function Footer(props: FooterType) {
     return (
       <div
         id="whatsapp-button"
-        className="fixed z-20 m-2 md:m-4 bottom-0 right-0"
+        className="items-center fixed z-20 m-2 md:m-4 bottom-0 right-0 "
       >
         <Button
           target="_blank"

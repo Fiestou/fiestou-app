@@ -22,18 +22,38 @@ export default function ProductDeliveryCalendar({
 }: ProductDeliveryCalendarProps) {
   if (!productToCart) return null;
 
+  const hasSelectedDate = !!productToCart?.details?.dateStart;
+
   return (
     <div className="md:flex justify-between items-end gap-2">
       <div className="w-full">
         <h4 className="font-title text-zinc-900 font-bold py-4 text-sm md:text-lg">
           Para quando você precisa?
         </h4>
-        <div className="calendar relative">
-          <div className="text-xs m-4">
-            {!!productToCart?.details?.dateStart
-              ? dateBRFormat(productToCart?.details?.dateStart)
+
+        <div
+          className={`calendar relative rounded-lg border transition-colors
+            ${
+              hasSelectedDate
+                ? "border-yellow-400 bg-yellow-50"
+                : "border-zinc-300 bg-zinc-100"
+            }
+          `}
+        >
+          {/* <div
+            className={`text-xs m-4 font-medium
+              ${
+                hasSelectedDate
+                  ? "text-yellow-700"
+                  : "text-zinc-500"
+              }
+            `}
+          >
+            {hasSelectedDate
+              ? dateBRFormat(productToCart.details!.dateStart!)
               : "Selecione a data:"}
-          </div>
+          </div> */}
+
           <Calendar
             required
             unavailable={unavailable}

@@ -302,39 +302,52 @@ export default function Produto({
   }
 
   const handleDetails = (detail: DetailsType) => {
-    const details: DetailsType = {
-      ...(productToCart?.details ?? {}),
-      ...detail,
-    };
+    setProductToCart((prev) => {
+      const mergedDetails: DetailsType = {
+        ...(prev.details ?? {}),
+        ...detail,
+      };
 
-    let days = 1;
+      let days = 1;
 
-    const date_1 = details?.dateStart ? new Date(details.dateStart) : null;
-    const date_2 = details?.dateEnd ? new Date(details.dateEnd) : null;
+      const dateStart = mergedDetails?.dateStart
+        ? new Date(mergedDetails.dateStart)
+        : null;
 
-    if (date_1 && date_2) {
-      const timestampDate1 = date_1.getTime();
-      const timestampDate2 = date_2.getTime();
+      const dateEnd = mergedDetails?.dateEnd
+        ? new Date(mergedDetails.dateEnd)
+        : null;
 
-      days = Math.round(
-        Math.abs(timestampDate1 - timestampDate2) / (24 * 60 * 60 * 1000)
-      );
-    }
+      if (dateStart && dateEnd) {
+        days = Math.max(
+          1,
+          Math.round(
+            Math.abs(dateEnd.getTime() - dateStart.getTime()) /
+              (24 * 60 * 60 * 1000)
+          )
+        );
+      }
 
-    const safeDays = days || 1;
+      // ✅ Marca que a data foi escolhida
+      setHasSelectedDate(!!mergedDetails?.dateStart);
 
-    // 🔥 ATUALIZA O ESTADO DA DATA
-    setHasSelectedDate(!!details?.dateStart);
-
-    updateOrderTotal({
-      ...productToCart,
-      details: {
-        ...details,
-        dateStart: dateFormat(details?.dateStart),
-        dateEnd: dateFormat(details?.dateEnd),
-        days: safeDays,
+      const detailsWithDates = {
+        ...mergedDetails,
+        dateStart: dateFormat(mergedDetails?.dateStart),
+        dateEnd: dateFormat(mergedDetails?.dateEnd),
+        days,
         schedulingDiscount: product?.schedulingDiscount,
-      },
+      };
+
+      const updatedOrder: ProductOrderType = {
+        ...prev,
+        details: detailsWithDates,
+      };
+
+      // 🔥 recalcula o total corretamente
+      updateOrderTotal(updatedOrder);
+
+      return updatedOrder;
     });
   };
 
@@ -581,24 +594,6 @@ export default function Produto({
       .replace(/\D/g, "")
       .replace(/(\d{5})(\d)/, "$1-$2")
       .slice(0, 9);
-
-  const isAttributeValid = (attr: any) => {
-    if (!attr.variations || attr.variations.length === 0) return true;
-
-    switch (attr.selectType) {
-      case "radio":
-        return attr.variations.some((v: any) => v.selected);
-
-      case "checkbox":
-        return attr.variations.some((v: any) => v.selected);
-
-      case "quantity":
-        return attr.variations.some((v: any) => Number(v.quantity) > 0);
-
-      default:
-        return true;
-    }
-  };
 
   // 1️⃣ Normaliza os atributos do produto
   const productAttributes = Array.isArray(product?.attributes)
