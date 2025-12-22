@@ -100,6 +100,7 @@ export default function ProductGallery({
         {/* Pagination — DESATIVADA NO MOBILE */}
         <div className="swiper-pagination hidden md:block" />
       </div>
+      
 
       {/* Conteúdo lateral (desktop) */}
       <div className="hidden md:grid gap-3 py-3">
