@@ -16,7 +16,7 @@ import {
   isMobileDevice,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { AddToCart, GetCart } from "@/src/components/pages/carrinho";
 import {
@@ -145,11 +145,13 @@ export default function Produto({
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
   const [inCart, setInCart] = useState(false as boolean);
   const [unavailable, setUnavailable] = useState([] as Array<string>);
-  const [activeVariations, setActiveVariations] = useState([] as Array<any>);
+  const [activeVariations, setActiveVariations] = useState<
+    Record<string, VariationProductOrderType>
+  >({});
   const [isMobile, setIsMobile] = useState(false);
+  const [showCartPreview, setShowCartPreview] = useState(false);
   const layout = { isMobile };
   const router = useRouter();
-  const [showCartPreview, setShowCartPreview] = useState(false);
   const imageCover =
     !!product?.gallery && !!product?.gallery?.length ? product?.gallery[0] : {};
 
@@ -160,6 +162,7 @@ export default function Produto({
     details: {},
     total: getPriceValue(product).price,
   });
+  const [hasSelectedDate, setHasSelectedDate] = useState(false);
 
   useEffect(() => {
     setBlockdate(product.unavailableDates ?? []);
@@ -204,121 +207,87 @@ export default function Produto({
     });
   };
 
-  const updateOrderTotal = (orderUpdate: ProductOrderType) => {
+  const updateOrderTotal = (order: ProductOrderType) => {
     let price = 0;
 
-    orderUpdate.attributes.map((attr: AttributeProductOrderType) =>
-      attr.variations.map((variate, key) => {
-        const variatePrice =
-          typeof variate?.price == "string"
-            ? variate?.price.replace(",", ".")
-            : variate?.price;
-        price += (Number(variatePrice) ?? 1) * (variate?.quantity ?? 1);
+    order.attributes.forEach((attr: any) =>
+      attr.variations.forEach((v: any) => {
+        const p =
+          typeof v.price === "string"
+            ? Number(v.price.replace(",", "."))
+            : Number(v.price);
+
+        price += (p || 0) * (v.quantity || 1);
       })
     );
 
     let total = getPriceValue(product).price + price;
 
-    if (!!orderUpdate?.details?.days) {
-      total = total * orderUpdate?.details?.days;
+    if (order.details?.days) {
+      total *= order.details.days;
     }
 
-    if (!!product?.schedulingDiscount) {
-      const schedulingDiscount = product?.schedulingDiscount ?? 1;
-      total = total - (total * schedulingDiscount) / 100;
+    if (product?.schedulingDiscount) {
+      total -= (total * product.schedulingDiscount) / 100;
     }
 
-    total = total * orderUpdate.quantity;
+    total *= order.quantity;
 
-    let handle = {
-      ...orderUpdate,
-      total: total,
-    };
-
-    setProductToCart(handle);
+    setProductToCart((prev) => ({ ...prev, total }));
   };
 
   const updateOrder = (
     value: VariationProductOrderType,
     attr: AttributeType
   ) => {
-    let handleVariations: any = {};
+    setProductToCart((prev) => {
+      const attributes = [...prev.attributes];
 
-    let limit = attr?.limit ?? 0;
-    let orderUpdate: ProductOrderType = productToCart;
-
-    if (
-      !orderUpdate.attributes.filter(
-        (fltr: AttributeProductOrderType) => fltr.id == attr.id
-      ).length
-    ) {
-      orderUpdate.attributes.push({
-        id: attr.id,
-        title: attr.title,
-        variations: [],
-      });
-    }
-
-    orderUpdate.attributes.map(
-      (attribute: AttributeProductOrderType, key: number) => {
-        if (attribute.id == attr.id) {
-          let variations: any = orderUpdate.attributes[key].variations;
-
-          if (attr.selectType == "radio") {
-            variations = [value];
-          }
-
-          if (attr.selectType == "checkbox") {
-            variations = !!variations.filter((item: any) => item.id == value.id)
-              .length
-              ? variations.filter((item: any) => item.id != value.id)
-              : !limit || variations.length < limit
-              ? [...variations, value]
-              : variations;
-          }
-
-          if (attr.selectType == "quantity") {
-            variations = !!variations.filter((item: any) => item.id == value.id)
-              .length
-              ? variations
-                  .map((item: any) =>
-                    item.id == value.id
-                      ? { ...item, quantity: value.quantity }
-                      : item
-                  )
-                  .filter((item: any) => !!item.quantity)
-              : [...variations, value];
-          }
-
-          orderUpdate.attributes[key].variations = variations;
-        }
+      const attrIndex = attributes.findIndex((a) => a.id === attr.id);
+      if (attrIndex === -1) {
+        attributes.push({ id: attr.id, title: attr.title, variations: [] });
       }
-    );
 
-    orderUpdate.attributes.map((attribute: AttributeProductOrderType) => {
-      attribute.variations.map((item: any) => {
-        handleVariations[item.id] = item;
-      });
+      const index = attributes.findIndex((a) => a.id === attr.id);
+      let variations = [...attributes[index].variations];
+
+      if (attr.selectType === "radio") variations = [value];
+      if (attr.selectType === "checkbox") {
+        const exists = variations.find((v) => v.id === value.id);
+        variations = exists
+          ? variations.filter((v) => v.id !== value.id)
+          : variations.concat(value);
+      }
+
+      attributes[index] = { ...attributes[index], variations };
+
+      return { ...prev, attributes };
     });
-
-    setActiveVariations(handleVariations);
-    updateOrderTotal(orderUpdate);
   };
 
   const sendToCart = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!hasAllAttributesSelected) {
+      toast.error("Selecione todas as opções do produto");
+      return;
+    }
+
+    if (!hasRequiredDate) {
+      toast.error("Selecione a data de entrega");
+      return;
+    }
+
     setLoadCart(true);
 
     const success = AddToCart(productToCart);
 
     if (success) {
       setInCart(true);
-
       toast.success("Produto adicionado ao carrinho 🛒");
-
       setShowCartPreview(true);
     } else {
-      toast.error("Não foi possível adicionar ao carrinho");
+      toast.error("Não foi possível adicionar ao carrinho 🛒");
     }
 
     setLoadCart(false);
@@ -352,7 +321,10 @@ export default function Produto({
       );
     }
 
-    const safeDays = !!days ? days : 1;
+    const safeDays = days || 1;
+
+    // 🔥 ATUALIZA O ESTADO DA DATA
+    setHasSelectedDate(!!details?.dateStart);
 
     updateOrderTotal({
       ...productToCart,
@@ -365,6 +337,7 @@ export default function Produto({
       },
     });
   };
+
   // Não faz nada
   const renderComments = () => (
     <>
@@ -493,6 +466,14 @@ export default function Produto({
     fetchUpdated();
   }, [store, product?.id, router.query?.slug]);
 
+  useEffect(() => {
+    updateOrderTotal(productToCart);
+  }, [
+    productToCart.attributes,
+    productToCart.quantity,
+    productToCart.details?.days,
+  ]);
+
   // versão mobile do detalhes
   const renderDetails = () => (
     <>
@@ -601,6 +582,87 @@ export default function Produto({
       .replace(/(\d{5})(\d)/, "$1-$2")
       .slice(0, 9);
 
+  const isAttributeValid = (attr: any) => {
+    if (!attr.variations || attr.variations.length === 0) return true;
+
+    switch (attr.selectType) {
+      case "radio":
+        return attr.variations.some((v: any) => v.selected);
+
+      case "checkbox":
+        return attr.variations.some((v: any) => v.selected);
+
+      case "quantity":
+        return attr.variations.some((v: any) => Number(v.quantity) > 0);
+
+      default:
+        return true;
+    }
+  };
+
+  // 1️⃣ Normaliza os atributos do produto
+  const productAttributes = Array.isArray(product?.attributes)
+    ? product.attributes
+    : [];
+
+  // 2️⃣ Produto tem atributos?
+  const productHasAttributes = productAttributes.length > 0;
+
+  // 3️⃣ Se tem atributos, TODOS devem estar selecionados
+  const hasAllAttributesSelected = !productHasAttributes
+    ? true
+    : productAttributes.every((attribute) => {
+        const selected = productToCart.attributes.find(
+          (attr: any) => attr.id === attribute.id
+        );
+
+        return selected && selected.variations.length > 0;
+      });
+
+  // 4️⃣ Data é SEMPRE obrigatória
+  const hasRequiredDate = Boolean(hasSelectedDate);
+
+  const isAttributeValidForCart = (
+    productAttr: AttributeType,
+    selectedAttr?: AttributeProductOrderType
+  ): boolean => {
+    // Se o atributo não tem variações, não bloqueia
+    if (!productAttr.variations || productAttr.variations.length === 0) {
+      return true;
+    }
+
+    switch (productAttr.selectType) {
+      case "radio":
+      case "checkbox": {
+        // Se não existe seleção para esse atributo, é inválido
+        if (!selectedAttr) return false;
+
+        // Se existe, precisa ter ao menos 1 variação escolhida
+        return selectedAttr.variations.length > 0;
+      }
+
+      case "quantity":
+        // 🔥 quantity é sempre opcional
+        return true;
+
+      default:
+        return true;
+    }
+  };
+
+  // 5️⃣ Liberação final
+  const canAddToCart = useMemo(() => {
+    if (!product?.attributes?.length) return true;
+
+    return product.attributes.every((productAttr) => {
+      const selectedAttr = productToCart.attributes.find(
+        (attr: any) => attr.id === productAttr.id
+      );
+
+      return isAttributeValidForCart(productAttr, selectedAttr);
+    });
+  }, [product.attributes, productToCart.attributes]);
+
   return (
     <Template
       scripts={Scripts}
@@ -620,7 +682,7 @@ export default function Produto({
         content: HeaderFooter,
       }}
     >
-      <section className="">
+      <section>
         <div className="container-medium py-4 md:py-6">
           <Breadcrumbs
             links={[{ url: getProductUrl(product, store), name: "Produtos" }]}
@@ -628,51 +690,64 @@ export default function Produto({
         </div>
       </section>
 
-      <section className="">
+      <section>
         <div className="container-medium">
           <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-8 items-start">
-            {/* Galeria de imagens */}
+            {/* Galeria */}
             <ProductGallery
               product={product}
               layout={layout}
               renderDetails={renderDetails}
               renderComments={renderComments}
             />
-            {/* Fomulário de compra */}
+
+            {/* FORM ÚNICO */}
             <div className="w-full md:w-1/2">
-              <form
-                onSubmit={(e: React.FormEvent<HTMLFormElement>) =>
-                  sendToCart(e)
-                }
-                method="POST"
-              >
-                {/* Inicio do produto */}
+              <form onSubmit={sendToCart} method="POST">
+                {/* Cabeçalho do produto */}
                 <div className="grid md:flex gap-4 pb-4 lg:gap-10">
                   <div className="w-full pt-2 md:pt-0">
-                    {/* titulo */}
                     <h1 className="font-title font-bold text-zinc-900 text-3xl">
                       {product?.title}
                     </h1>
-                    {/* Venda ou aluguel */}
-                    <ProductBadges product={product} comments={comments} />
 
-                    {/* Descrição */}
+                    <ProductBadges product={product} comments={comments} />
                     <ProductDescription product={product} />
                   </div>
 
-                  {/* veja o preço aqui */}
                   <ProductPriceDisplay product={product} />
                 </div>
 
                 <div className="grid gap-6">
-                  {/* Não está aparecendo */}
+                  {/* ATRIBUTOS */}
                   <ProductAttributes
                     attributes={product?.attributes ?? []}
-                    activeVariations={activeVariations}
+                    activeVariations={productToCart.attributes}
                     updateOrder={updateOrder}
                   />
 
-                  {/* Consulta de CEP */}
+                  {/* INPUTS HIDDEN — ATRIBUTOS OBRIGATÓRIOS */}
+                  {productAttributes.map((attribute) => {
+                    const selectedAttr = productToCart.attributes.find(
+                      (attr: any) => attr.id === attribute.id
+                    );
+
+                    const hasSelection =
+                      !!selectedAttr && selectedAttr.variations.length > 0;
+
+                    return (
+                      <input
+                        key={attribute.id}
+                        type="text"
+                        name={`attribute-${attribute.id}`}
+                        value={hasSelection ? "ok" : ""}
+                        readOnly
+                        className="hidden"
+                      />
+                    );
+                  })}
+
+                  {/* CEP */}
                   <ProductShippingCalculator
                     cep={cep}
                     setCep={setCep}
@@ -684,29 +759,59 @@ export default function Produto({
                     deliveryFee={deliveryFee}
                   />
 
-                  {/* Calendário */}
+                  {/* INPUT HIDDEN — DATA */}
+                  {product?.schedulingEnabled && (
+                    <input
+                      type="text"
+                      name="deliveryDate"
+                      value={productToCart?.details?.dateStart ?? ""}
+                      readOnly
+                    />
+                  )}
+
+                  {/* CALENDÁRIO (SEM FORM) */}
                   <ProductDeliveryCalendar
                     product={product}
                     productToCart={productToCart}
                     unavailable={unavailable}
                     blockdate={blockdate}
                     handleDetails={handleDetails}
+                    required={!!product?.schedulingEnabled}
                   />
 
-                  {/* Entrega */}
+                  {/* ENTREGA */}
                   <ProductDeliveryBadge
                     product={product}
                     productToCart={productToCart}
                   />
-
-                  {/* Adicionar ao carrinho e valor total */}
+                  {/* Carrinho e total */}
                   <BottomCart
+                    disabled={!canAddToCart}
                     productToCart={productToCart}
                     inCart={inCart}
                     isMobile={layout.isMobile}
+                    canAddToCart={canAddToCart}
+                    // className={
+                    //   !canAddToCart
+                    //     ? "bg-zinc-300 text-zinc-600 cursor-not-allowed"
+                    //     : "bg-yellow-400 hover:bg-yellow-500"
+                    // }
                   />
 
-                  {/* Butões de compartilhar e salvar como favoritos */}
+                  {/* BOTÃO SUBMIT */}
+                  {/* <Button
+                    type="submit"
+                    disabled={!canAddToCart}
+                    className={
+                      !canAddToCart
+                        ? "bg-zinc-300 text-zinc-600 cursor-not-allowed"
+                        : "bg-yellow-400 hover:bg-yellow-500"
+                    }
+                  >
+                    Adicionar ao carrinho
+                  </Button> */}
+
+                  {/* AÇÕES */}
                   <div className="flex gap-4 border-t pt-6">
                     <LikeButton id={product?.id} style="btn-outline-light" />
                     <Button
@@ -717,11 +822,12 @@ export default function Produto({
                     >
                       <Icon icon="fa-share-alt" type="far" className="mx-1" />
                     </Button>
+
                     <Modal
                       title="Compartilhe:"
                       status={share}
                       size="sm"
-                      close={() => setShare(true as boolean)}
+                      close={() => setShare(false)}
                     >
                       <ShareModal
                         url={baseUrl}
@@ -729,14 +835,12 @@ export default function Produto({
                       />
                     </Modal>
                   </div>
-                  {/* Dimensões do produto */}
+
                   <ProductDimensions product={product} />
+
                   <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none">
-                    {/* Selo de Pagamento seguro */}
                     <SafePaymentBadge />
-                    {/* Selo de cancelamento */}
                     <EasyCancelBadge />
-                    {/* Selo de validade */}
                     <TrustedPartnerBadge />
                   </div>
                 </div>
@@ -744,7 +848,7 @@ export default function Produto({
             </div>
           </div>
 
-          {/* Tags e cores na verão mobile */}
+          {/* MOBILE */}
           <div className="grid gap-3 py-3">
             {layout.isMobile && <div>{renderDetails()}</div>}
             {layout.isMobile && <div>{renderComments()}</div>}
@@ -752,7 +856,6 @@ export default function Produto({
         </div>
       </section>
 
-      {/* Produtos que combinam */}
       {!!product?.combinations?.length && (
         <ProductCombinations
           product={product}
@@ -760,32 +863,30 @@ export default function Produto({
         />
       )}
 
-      {/* Produtos relacionados */}
       {(product?.suggestions ?? "1") === "1" && (
         <RelatedProducts product={product} store={store} />
       )}
 
-      {/* Receba novidades e promoções */}
       <Newsletter />
+
       {layout.isMobile && (
         <div
           dangerouslySetInnerHTML={{
             __html: `<style>
-        #whatsapp-button {
-          margin-bottom: 4.5rem !important;
-        }
-      </style>`,
+            #whatsapp-button {
+              margin-bottom: 4.5rem !important;
+            }
+          </style>`,
           }}
-        ></div>
+        />
       )}
+      {/* 
       {showCartPreview && (
-        <div>
-          <CartPreview
-            isMobile={layout.isMobile}
-            onClose={() => setShowCartPreview(false)}
-          />
-        </div>
-      )}
+        <CartPreview
+          isMobile={layout.isMobile}
+          onClose={() => setShowCartPreview(false)}
+        />
+      )} */}
     </Template>
   );
 }

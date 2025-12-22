@@ -5,7 +5,7 @@ export interface StoreType {
   name: string;
   slug?: string;
   companyName?: string;
-  store: (StoreType | null);
+  store: StoreType | null;
 }
 
 export interface ImageType {
@@ -21,11 +21,15 @@ export interface RelationType {
 }
 
 export interface VariationType {
-  id: string | number;
+  id?: string | number;
   title: string;
   price?: number;
   image?: ImageType | string;
   priceSale?: number;
+  variation?: any;
+  selected?: boolean;
+  data?: any;
+  canAddToCart?: boolean;
 }
 
 export interface AttributeType {
@@ -38,9 +42,11 @@ export interface AttributeType {
   variations: VariationType[];
   parsed?: any;
   attributes?: Array<AttributeType>;
+  required?: boolean;
 }
 
 export interface ProductType {
+  requiresDate: any;
   id: number;
   store: number | string | StoreType;
   title: string;
@@ -76,7 +82,7 @@ export interface ProductType {
   unavailableDates?: string[];
   schedulingPeriod?: number | null;
   schedulingTax?: number;
-  schedulingDiscount?: number | null
+  schedulingDiscount?: number | null;
   assembly?: string;
   status?: string | number | boolean;
   updated_at?: string;
@@ -87,6 +93,8 @@ export interface ProductType {
   data: any;
   comments?: Array<any>;
   productParam?: any;
+  ProductType?: any;
+  schedulingEnabled?: boolean;
 }
 
 export interface VariationProductOrderType {
@@ -94,6 +102,7 @@ export interface VariationProductOrderType {
   title: string;
   quantity?: number;
   price?: string | number;
+  canAddToCart?: boolean;
 }
 
 export interface AttributeProductOrderType {
@@ -110,6 +119,10 @@ export interface ProductOrderType {
   /** preço unitário enviado ao backend para cálculo por item */
   unit_price?: number;
   total: number;
+  deliveryFee?: number;
+  schedulingPeriod?: number | null;
+  schedulingTax?: number;
+  schedulingDiscount?: number | null;
 }
 
 export interface RateType {
@@ -135,7 +148,9 @@ export const getPrice = (product: any): PriceStringType => {
   const priceLow = parseFloat(product?.priceSale);
 
   return {
-    price: moneyFormat(priceLow > 0 && priceLow < priceHigh ? priceLow : priceHigh),
+    price: moneyFormat(
+      priceLow > 0 && priceLow < priceHigh ? priceLow : priceHigh
+    ),
     priceLow: moneyFormat(priceLow) ?? "",
     priceHigh: moneyFormat(priceHigh),
     priceFromFor: !product?.attributes,
