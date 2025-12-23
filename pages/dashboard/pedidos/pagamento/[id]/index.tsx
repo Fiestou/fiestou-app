@@ -1,7 +1,7 @@
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { fetchOrderById } from "@/src/services/order";
-import { useEffect, useState } from "react";
+import { useDebugValue, useEffect, useState } from "react";
 import {
   CopyClipboard,
   dateBRFormat,
@@ -97,11 +97,27 @@ export default function Pagamento({
   const deliverySchedule =
     order?.delivery?.schedule ?? legacyOrder?.deliverySchedule;
 
-  const deliveryPrice =
-    Number(order?.delivery?.priceLabel) ||
-    Number(order?.delivery?.price) ||
-    Number(legacyOrder?.deliveryPrice) ||
-    0;
+  // Calcular frete total somando os deliveryFee de cada item (para múltiplas lojas)
+  const calculateTotalDeliveryFee = () => {
+    if (!order?.items?.length) return 0;
+    
+    const totalFee = order.items.reduce((sum, item: any) => {
+      const metadata = typeof item.metadata === 'string' 
+        ? JSON.parse(item.metadata) 
+        : item.metadata;
+      
+      const fee = Number(metadata?.details?.deliveryFee || 0);
+      return sum + fee;
+    }, 0);
+    
+    // Se a soma dos deliveryFee for maior que 0, usar ela
+    // Senão, usar o delivery.price padrão
+    return totalFee > 0 
+      ? totalFee 
+      : (Number(order?.delivery?.priceLabel) || Number(order?.delivery?.price) || Number(legacyOrder?.deliveryPrice) || 0);
+  };
+
+  const deliveryPrice = calculateTotalDeliveryFee();
 
   // AQUI: agora é SEMPRE string (ou undefined)
   const deliveryTo: string | undefined =
@@ -342,6 +358,10 @@ export default function Pagamento({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    console.log("ORDER ATUALIZADO:", order);
+  }, [order]);
+
   const submitPayment = async (e: any) => {
     e.preventDefault();
 
@@ -359,28 +379,33 @@ export default function Pagamento({
 
     // 3. Preparar items do pedido com valor correto
     const orderItems = order.items?.map((item: any, index: number) => {
-      // Se tem apenas 1 item, ele recebe todo o subtotal
-      // Se tem múltiplos items, divide proporcionalmente
-      const itemAmount = order.items.length === 1 
-        ? subtotalCents 
-        : Math.round((item.total || 0) * 100);
-
+      const itemTotalCents = Math.round((item.total || 0) * 100);
+      
       return {
-        amount: itemAmount, // valor correto em centavos
+        amount: itemTotalCents,
         description: item.name || "Produto",
         quantity: item.quantity || 1,
         code: String(item.productId || item.id || ""),
       };
     }) || [];
 
-    // 4. Verificar se a soma está correta
+    // 4. Ajustar arredondamentos para garantir que a soma bata
     const itemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
+    
+    // Se a soma não bater, ajusta o primeiro item
+    if (itemsSum !== subtotalCents && orderItems.length > 0) {
+      const diff = subtotalCents - itemsSum;
+      orderItems[0].amount += diff;
+    }
+
+    // 5. Verificar se agora está correto
+    const finalItemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
     console.log("VERIFICAÇÃO:", {
-      itemsSum,
+      itemsSum: finalItemsSum,
       deliveryAmountCents,
       totalAmountCents,
-      soma: itemsSum + deliveryAmountCents,
-      bate: itemsSum + deliveryAmountCents === totalAmountCents
+      soma: finalItemsSum + deliveryAmountCents,
+      bate: finalItemsSum + deliveryAmountCents === totalAmountCents
     });
 
     // Payload base
@@ -470,8 +495,15 @@ export default function Pagamento({
       validationErrors.push("Pedido sem itens válidos");
     }
     
-    if (itemsSum + deliveryAmountCents !== totalAmountCents) {
+    if (finalItemsSum + deliveryAmountCents !== totalAmountCents) {
       validationErrors.push("Soma dos itens + frete não confere com total");
+      console.error("ERRO DE VALIDAÇÃO:", {
+        finalItemsSum,
+        deliveryAmountCents,
+        totalAmountCents,
+        soma: finalItemsSum + deliveryAmountCents,
+        diferença: totalAmountCents - (finalItemsSum + deliveryAmountCents)
+      });
     }
     
     if (!orderAddress?.zipCode || !orderAddress?.city || !orderAddress?.state) {

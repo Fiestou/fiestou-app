@@ -13,6 +13,7 @@ import {
 import { CardType, OrderType, PaymentType, PixType } from "@/src/models/order";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
+import { useEffect } from "react";
 
 interface FormInitialType {
   sended: boolean;
@@ -70,6 +71,10 @@ export const PaymentPanel = ({
   setUseOrderAddress,
 }: PaymentPanelProps) => {
   const hasPixOrBoleto = pix.status || boleto?.status;
+
+  useEffect(() => {
+   console.log('PaymentPanel - Recalculo do total do pedido', { productsCount, order, deliveryPrice });
+  }, [productsCount,order,deliveryPrice]);
 
   return (
     <div className="rounded-2xl bg-zinc-100 p-4 md:p-8 relative">
@@ -146,8 +151,9 @@ const PaymentSummaryCard = ({
   order: OrderType;
   deliveryPrice?: number;
 }) => {
-  // Calcula o subtotal somando os totais dos itens
-  const subtotal = order.items?.reduce((acc, item) => acc + (item.total || 0), 0) || 0;
+  // Calcula o subtotal: total do pedido - valor do frete
+  const freightValue = order.delivery?.price ?? deliveryPrice ?? 0;
+  const subtotal = (order.total || 0) - freightValue;
 
   return (
     <div className="grid text-sm gap-2 mb-2 py-2">
@@ -162,8 +168,8 @@ const PaymentSummaryCard = ({
       <div className="flex gap-2">
         <div className="w-full">Entrega</div>
         <div className="whitespace-nowrap">
-          {!!(order.delivery?.price ?? deliveryPrice)
-            ? `R$ ${moneyFormat(order.delivery?.price ?? deliveryPrice ?? 0)}`
+          {!!freightValue
+            ? `R$ ${moneyFormat(freightValue)}`
             : "Gratuita"}
         </div>
       </div>

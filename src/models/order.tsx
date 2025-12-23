@@ -129,6 +129,8 @@ export interface OrderPartnerBlock {
 export interface OrderType {
   freights_orders_price: any;
   listItems: any;
+  groupHash: string;
+  orderIds: number[];
   metadata: any;
   delivery_status: string;
   user: null;

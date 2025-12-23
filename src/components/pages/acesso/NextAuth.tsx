@@ -39,7 +39,11 @@ export const googleIcon = () => {
   );
 };
 
-export default function NextAuth() {
+interface SocialAuthProps {
+  showFacebook?: boolean;
+}
+
+export function SocialAuth({ showFacebook }: SocialAuthProps) {
   return (
     <button
       type="button"
@@ -49,4 +53,8 @@ export default function NextAuth() {
       <div>{googleIcon()}</div> Continuar com Google
     </button>
   );
+}
+
+export default function NextAuth() {
+  return <SocialAuth />;
 }

@@ -371,6 +371,10 @@ export default function Checkout({
     const entries: DeliverySummaryEntry[] = [];
     const seenStores = new Set<number>();
 
+    console.log('📊 deliveryPrice recebido:', deliveryPrice);
+    console.log('📊 storesById:', Array.from(storesById.entries()));
+    console.log('📊 cartItems atual:', cartItems);
+
     deliveryPrice.forEach((item) => {
       const storeId = Number(item?.store_id);
       const price = Number(item?.price);
@@ -524,13 +528,31 @@ export default function Checkout({
       setLoadingDeliveryPrice(true);
 
       try {
+        // Extrai os IDs dos produtos que estão no carrinho
+        const cartProductIds = cartItems
+          .map((item: any) => {
+            const productId = typeof item?.product === 'object' 
+              ? item?.product?.id 
+              : item?.product;
+            return Number(productId);
+          })
+          .filter((id) => Number.isFinite(id) && id > 0);
+
+        if (!cartProductIds.length) {
+          setDeliveryPrice([]);
+          setLoadingDeliveryPrice(false);
+          return;
+        }
+
         const data: any = await api.request({
           method: "get",
           url: `delivery-zipcodes/${sanitizedZip}`,
           data: {
-            ids: products.map((product: ProductType) => product.id),
+            ids: cartProductIds,
           },
         });
+
+        console.log('🚚 Resposta da API de frete:', { data, cartProductIds, sanitizedZip });
 
         const rawList: DeliveryItem[] = Array.isArray(data?.data)
           ? data.data
@@ -538,20 +560,26 @@ export default function Checkout({
           ? data
           : [];
 
-        const normalizedFees = normalizeDeliveryItems(
-          rawList
-            .map(
-              (x: any): DeliveryItem => ({
-                price: Number(x?.price) || 0,
-                store_id:
-                  Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
-              })
-            )
-            .filter(
-              (item: DeliveryItem) =>
-                Number.isFinite(item.price) && Number.isFinite(item.store_id)
-            )
-        );
+        console.log('🚚 rawList extraído:', rawList);
+
+        const mappedFees = rawList
+          .map(
+            (x: any): DeliveryItem => ({
+              price: Number(x?.price) || 0,
+              store_id:
+                Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
+            })
+          )
+          .filter(
+            (item: DeliveryItem) =>
+              Number.isFinite(item.price) && Number.isFinite(item.store_id)
+          );
+
+        console.log('🚚 Fretes mapeados:', mappedFees);
+
+        const normalizedFees = normalizeDeliveryItems(mappedFees);
+
+        console.log('🚚 Fretes normalizados:', normalizedFees);
 
         if (!normalizedFees.length) {
           setDeliveryPrice([]);
@@ -560,11 +588,15 @@ export default function Checkout({
           return;
         }
 
+        console.log('🚚 Aplicando fretes ao carrinho:', { normalizedFees, sanitizedZip, cartItems });
+
         const success = applyDeliveryFeesLocal(
           normalizedFees,
           sanitizedZip,
           cartItems
         );
+
+        console.log('🚚 Resultado da aplicação:', success);
 
         if (!success) {
           setDeliveryPrice([]);
@@ -790,7 +822,8 @@ export default function Checkout({
         return store?.companyName ?? store?.title ?? null;
       })
       .filter(Boolean);
-
+    console.log(deliverySummary)
+    console.log(missingStoresNames)
     return (
       <div className="grid gap-2">
         {deliverySummary.entries.map((entry) => {

@@ -101,7 +101,7 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
       });
     } else {
       // Inicializa form com dados do usuário/store mesmo sem recipient
-      setFormData({
+      const initialData = {
         ...buildInitialForm(),
         type_enum: userType,
         email: user?.email || "",
@@ -109,7 +109,10 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
         name: user?.name || "",
         company_name: userType === "PJ" ? (store?.companyName || store?.title || "") : null,
         trading_name: userType === "PJ" ? (store?.title || "") : null,
-      });
+        // Para PJ, garantir que tenha pelo menos um sócio
+        partners: userType === "PJ" ? [createPartner()] : [],
+      };
+      setFormData(initialData);
     }
     setStepIndex(0);
     setStepError(null);
