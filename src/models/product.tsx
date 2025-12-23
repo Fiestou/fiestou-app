@@ -95,6 +95,7 @@ export interface ProductType {
   productParam?: any;
   ProductType?: any;
   schedulingEnabled?: boolean;
+  product?: any;
 }
 
 export interface VariationProductOrderType {

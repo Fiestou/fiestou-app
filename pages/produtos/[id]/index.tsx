@@ -55,6 +55,7 @@ import ProductPriceDisplay from "../components/product-price-display/ProductPric
 import ProductDescription from "../components/product-description/ProductDescription";
 import ProductBadges from "../components/product-badges/ProductBadges";
 import ProductGallery from "../components/product-gallery/ProductGallery";
+import ProductDetails from "../components/product-details/ProductDetails";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -489,100 +490,7 @@ export default function Produto({
 
   // versão mobile do detalhes
   const renderDetails = () => (
-    <>
-      <div className="border rounded-lg p-4 border-red-500">
-        <div className="text-sm grid gap-1">
-          <div className="text-zinc-900">
-            Fornecido por:{" "}
-            <Link
-              href={getStoreUrl(store)}
-              className="font-bold hover:underline"
-            >
-              {store?.title}
-            </Link>
-          </div>
-          <div>
-            Este parceiro {product?.assembly == "on" ? "" : "não"} disponibiliza
-            montagem
-          </div>
-          <div className="py-2">
-            <div className="border-t border-dashed"></div>
-          </div>
-          <div className="grid gap-3">
-            {!!product?.color && (
-              <div className="flex items-center gap-3 text-zinc-900">
-                <div className="w-fit whitespace-nowrap">Cores:</div>
-                <div className="w-full flex items-center flex-wrap gap-1">
-                  {ColorsList.map(
-                    (color: any, key: any) =>
-                      product?.color?.indexOf(color.value) !== -1 && (
-                        <Link
-                          key={key}
-                          href={`/produtos/listagem/?cores=${color.value}`}
-                        >
-                          <div>{ColorfulRender(color)}</div>
-                        </Link>
-                      )
-                  )}
-                </div>
-              </div>
-            )}
-            <div className="w-fit whitespace-nowrap">Categorias:</div>
-            {!!categories?.length &&
-              categories.map(
-                (category: any) =>
-                  !!category?.childs &&
-                  !!category?.childs?.filter((child: any) =>
-                    (product?.category ?? [])
-                      .map((cat: any) => cat.id)
-                      .includes(child.id)
-                  ).length && (
-                    <div key={category.id} className="flex gap-2 text-zinc-950">
-                      <div className="w-full flex items-center flex-wrap gap-1">
-                        {!!category?.childs &&
-                          category?.childs
-                            ?.filter((child: any) =>
-                              (product?.category ?? [])
-                                .map((cat: any) => cat.id)
-                                .includes(child.id)
-                            )
-                            .map((child: RelationType) => (
-                              <Link
-                                key={child.id}
-                                href={`/produtos/listagem/?categoria=${child.slug}`}
-                                className="bg-zinc-100 hover:bg-zinc-200 py-1 px-2 rounded ease"
-                              >
-                                {child.title}
-                              </Link>
-                            ))}
-                      </div>
-                    </div>
-                  )
-              )}
-
-            {!!product?.tags && (
-              <div className="flex items-center gap-1 text-zinc-900">
-                <div className="w-fit whitespace-nowrap">Tags:</div>
-                <div className="w-full flex items-center flex-wrap gap-1">
-                  {product?.tags
-                    .split(",")
-                    .filter((item) => !!item)
-                    .map((item, key) => (
-                      <Link
-                        key={key}
-                        href={`/produtos/listagem/?busca=${item}`}
-                        className="bg-zinc-100 hover:bg-zinc-200 py-1 px-2 rounded ease"
-                      >
-                        {item}
-                      </Link>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </>
+    <ProductDetails product={product} store={store} categories={categories} />
   );
 
   if (isFallback) {
@@ -687,15 +595,19 @@ export default function Produto({
 
       <section>
         <div className="container-medium">
-          <div className="md:flex lg:flex-nowrap gap-4 md:gap-6 lg:gap-8 items-start">
-            {/* Galeria */}
-            
+          <div className="flex flex-col lg:flex-row lg:flex-nowrap gap-4 md:gap-6 lg:gap-8 items-start">
+            {/* WRAPPER ÚNICO */}
+
             <ProductGallery
               product={product}
+              store={store}
+              categories={categories}
               layout={layout}
               renderDetails={renderDetails}
               renderComments={renderComments}
             />
+
+            {/* 🔥 DETAILS ABAIXO DA GALERIA */}
 
             {/* FORM ÚNICO */}
             <div className="w-full md:w-1/2 ">
@@ -787,25 +699,7 @@ export default function Produto({
                     inCart={inCart}
                     isMobile={layout.isMobile}
                     canAddToCart={canAddToCart}
-                    // className={
-                    //   !canAddToCart
-                    //     ? "bg-zinc-300 text-zinc-600 cursor-not-allowed"
-                    //     : "bg-yellow-400 hover:bg-yellow-500"
-                    // }
                   />
-
-                  {/* BOTÃO SUBMIT */}
-                  {/* <Button
-                    type="submit"
-                    disabled={!canAddToCart}
-                    className={
-                      !canAddToCart
-                        ? "bg-zinc-300 text-zinc-600 cursor-not-allowed"
-                        : "bg-yellow-400 hover:bg-yellow-500"
-                    }
-                  >
-                    Adicionar ao carrinho
-                  </Button> */}
 
                   {/* AÇÕES */}
                   <div className="flex gap-4 border-t pt-6">
@@ -843,11 +737,6 @@ export default function Produto({
               </form>
             </div>
           </div>
-
-          {/* <div className="grid gap-3 py-3">
-            
-            {layout.isMobile && <div>{renderComments()}</div>}
-          </div> */}
         </div>
       </section>
 
