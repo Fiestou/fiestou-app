@@ -22,10 +22,38 @@ import Modal from "@/src/components/utils/Modal";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { deliveryTypes } from "@/src/models/delivery";
 import Pagarme from "@/src/services/pagarme";
+import { getStoreUrl } from "@/src/urlHelpers";
 const formInitial = {
   edit: "",
   loading: false,
 };
+
+export async function getServerSideProps(ctx: any) {
+  const api = new Api();
+  const params = ctx.params;
+
+  const orderId = parseInt(params.id);
+
+  console.log('🚀 ~ file: index.tsx:313 ~ getServerSideProps ~ orderId:', orderId);
+
+  let request: any = await api.content({
+    method: "get",
+    url: "order",
+  });
+
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
+  const DataSeo = request?.data?.DataSeo ?? {};
+  const Scripts = request?.data?.Scripts ?? {};
+
+  return {
+    props: {
+      orderId: parseInt(params.id),
+      HeaderFooter,
+      DataSeo,
+      Scripts,
+    },
+  };
+}
 
 export default function Pedido({
   orderId,
@@ -90,6 +118,7 @@ export default function Pedido({
   };
 
   const [resume, setResume] = useState({} as any);
+  useEffect(() => {console.log('🚀 ~ file: index.tsx:313 ~ products:', products);}, [products]);
 
   const renderDelivery = () => {
     if (!order?.id) return null;
@@ -170,8 +199,11 @@ export default function Pedido({
   };
   
   const getOrder = async () => {
+    console.log('🚀 ~ file: index.tsx:313 ~ getOrder ~ orderId:', orderId);
     const fetchedOrder: OrderType | null =
       (await fetchOrderById(api, orderId)) ?? ({} as OrderType);
+
+    console.log('🚀 ~ file: index.tsx:313 ~ getOrder ~ fetchedOrder:', fetchedOrder);
 
     if (!fetchedOrder?.id) {
       return {
@@ -182,11 +214,30 @@ export default function Pedido({
     }
 
     // ------------------------------
-    // 1. Produtos (fonte do item)
+    // 1. Produtos - merge items com products completos
     // ------------------------------
-    const products = fetchedOrder.items?.map((item) => item.productId) ?? [];
-
-    setProducts(products);
+    const productsWithFullData = fetchedOrder.items?.map((item: any) => {
+      // Encontra o produto completo com galeria
+      const fullProduct = fetchedOrder.products?.find(
+        (p: any) => p.id === item.productId
+      );
+      
+      return {
+        ...item,
+        metadata: {
+          ...item.metadata,
+          product: {
+            ...item.metadata?.product,
+            // Sobrescreve com dados completos incluindo galeria
+            ...fullProduct,
+          }
+        }
+      };
+    }) || [];
+    console.log('🚀 ~ file: index.tsx:313 ~ getOrder ~ productsWithFullData:', productsWithFullData)
+    
+    ;
+    setProducts(productsWithFullData);
 
     // ------------------------------
     // 2. Datas do agendamento
@@ -216,6 +267,7 @@ export default function Pedido({
     // ------------------------------
     // 3. Salva o pedido completo
     // ------------------------------
+    console.log('🚀 ~ file: index.tsx:313 ~ getOrder ~ fetchedOrder:', fetchedOrder);
     setOrder(fetchedOrder);
   };
 
@@ -306,58 +358,70 @@ export default function Pedido({
                       Itens do pedido
                     </h4>
                     {!!products &&
-                      products.map((product: any, key: any) => (
-                        <div key={key}>
-                          <div className="flex items-center gap-6">
-                            <div className="w-fit">
-                              <div className="aspect-square bg-zinc-200 w-[6rem] rounded-xl">
-                                {!!product?.gallery?.length && (
-                                  <Img
-                                    src={getImage(product?.gallery[0], "thumb")}
-                                    className="w-full h-full object-contain"
-                                  />
-                                )}
+                      products.map((item: any, key: any) => {
+                        const productData = item?.metadata?.product;
+                        console.log('🚀 productData:', productData);
+                        console.log('🚀 productData.gallery:', productData?.gallery);
+                        return (
+                          <div key={key}>
+                            <div className="flex items-center gap-6">
+                              <div className="w-fit">
+                                <div className="aspect-square bg-zinc-200 w-[6rem] rounded-xl">
+                                  {!!productData?.gallery?.length && (
+                                    <Img
+                                      src={getImage(productData.gallery[0], "thumb")}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                            <div className="grid gap-1 w-full">
-                              <div className="font-title text-lg font-bold text-zinc-900">
-                                <Link href={`/produtos/${product?.id}`}>
-                                  {product.title}
-                                </Link>
-                              </div>
-                              <div className="text-sm">
-                                {!!product.sku && (
-                                  <>
-                                    sku #{product.sku} <br />
-                                  </>
-                                )}
-                                Fornecido por:
-                                <Link
-                                  href={getStoreUrl(product?.store)}
-                                  className="text-zinc-900 pl-2 font-semibold underline"
-                                >
-                                  {product?.store.title}
-                                </Link>
-                              </div>
+                              <div className="grid gap-1 w-full">
+                                <div className="font-title text-lg font-bold text-zinc-900">
+                                  <Link href={`/produtos/${item?.productId}`}>
+                                    {item.name || productData?.title}
+                                  </Link>
+                                </div>
+                                <div className="text-sm">
+                                  <div>
+                                    Quantidade: {item.quantity} | Valor unitário: R$ {moneyFormat(item.unitPrice)}
+                                  </div>
+                                  {!!productData?.sku && (
+                                    <>
+                                      sku #{productData.sku} <br />
+                                    </>
+                                  )}
+                                  {productData?.store?.title && (
+                                    <>
+                                      Fornecido por:
+                                      <Link
+                                        href={getStoreUrl(productData.store)}
+                                        className="text-zinc-900 pl-2 font-semibold underline"
+                                      >
+                                        {productData.store.title}
+                                      </Link>
+                                    </>
+                                  )}
+                                </div>
 
-                              <div className="mt-2">
-                                <Button
-                                  type="button"
-                                  onClick={() => openMoralRating(product)}
-                                  style="btn-transparent"
-                                  className="whitespace-nowrap text-sm font-semibold text-zinc-900 p-0 ease hover:text-yellow-500"
-                                >
-                                  <Icon icon="fa-comment" />
-                                  avaliar produto
-                                </Button>
+                                <div className="mt-2">
+                                  <Button
+                                    type="button"
+                                    onClick={() => openMoralRating({ ...productData, id: item.productId })}
+                                    style="btn-transparent"
+                                    className="whitespace-nowrap text-sm font-semibold text-zinc-900 p-0 ease hover:text-yellow-500"
+                                  >
+                                    <Icon icon="fa-comment" />
+                                    avaliar produto
+                                  </Button>
+                                </div>
                               </div>
                             </div>
+                            <div className="py-6">
+                              <hr />
+                            </div>
                           </div>
-                          <div className="py-6">
-                            <hr />
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </div>
                 </div>
 
@@ -415,12 +479,12 @@ export default function Pedido({
                           {resume.endDate != resume.startDate
                             ? `- ${dateBRFormat(resume.endDate)}`
                             : ""}{" "}
-                          |{order.delivery_schedule}
+                          | {order.delivery?.schedule}
                       </div>
                       <div className="">
                         Valor de entrega:{" "}
-                        {!!order?.delivery_price
-                            ? `R$ ${moneyFormat(order.delivery_price)}`
+                        {!!order?.delivery?.price
+                            ? `R$ ${moneyFormat(order.delivery.price)}`
                             : "Gratuita"}
                       </div>
                     </div>
@@ -435,18 +499,18 @@ export default function Pedido({
                         </div>
                         <div className="text-sm">
                           <div>
-                            {order?.delivery_address?.street},{" "}
-                            {order?.delivery_address?.number}
+                            {order?.delivery?.address?.street},{" "}
+                            {order?.delivery?.address?.number}
                           </div>
-                          <div>{order?.delivery_address?.neighborhood}</div>
-                          <div>CEP: {order?.delivery_address?.zipCode}</div>
+                          <div>{order?.delivery?.address?.neighborhood}</div>
+                          <div>CEP: {order?.delivery?.address?.zipCode}</div>
                           <div>
-                            {order?.delivery_address?.city} |{" "}
-                            {order?.delivery_address?.state} -{" "}
-                            {order?.delivery_address?.country}
+                            {order?.delivery?.address?.city} |{" "}
+                            {order?.delivery?.address?.state} -{" "}
+                            {order?.delivery?.address?.country}
                           </div>
                           <div>
-                            complemento: {order?.delivery_address?.complement}
+                            complemento: {order?.delivery?.address?.complement}
                           </div>
                         </div>
                       </div>
@@ -510,14 +574,14 @@ export default function Pedido({
                           <div className="flex gap-2">
                             <div className="w-full">Subtotal de produtos</div>
                             <div className="whitespace-nowrap">
-                              R$ {moneyFormat(order.subtotal)}
+                              R$ {moneyFormat((order.total || 0) - (order.delivery?.price || 0))}
                             </div>
                           </div>
                           <div className="flex gap-2">
                             <div className="w-full">Frete</div>
                             <div className="whitespace-nowrap">
-                              {!!order.delivery_price
-                                ? `R$ ${moneyFormat(order.delivery_price)}`
+                              {!!order.delivery?.price
+                                ? `R$ ${moneyFormat(order.delivery.price)}`
                                 : "Grátis"}
                             </div>
                           </div>

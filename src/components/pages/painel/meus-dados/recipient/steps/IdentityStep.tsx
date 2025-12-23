@@ -20,7 +20,7 @@ export default function IdentityStep({ data, onChange }: Props) {
         <div className="grid gap-4">
           <Input name="company_name" placeholder="Razão social" value={data.company_name ?? ""} onChange={(e) => onChange("company_name", e.target.value)} required />
           <Input name="trading_name" placeholder="Nome fantasia" value={data.trading_name ?? ""} onChange={(e) => onChange("trading_name", e.target.value)} required />
-          <Input name="annual_revenue" type="number" placeholder="Faturamento anual" value={data.annual_revenue ?? ""} onChange={(e) => onChange("annual_revenue", e.target.value ? Number(e.target.value) : null)} />
+          <Input name="annual_revenue" type="number" placeholder="Faturamento anual (R$)" value={data.annual_revenue ?? ""} onChange={(e) => onChange("annual_revenue", e.target.value ? Number(e.target.value) : null)} required />
         </div>
       ) : (
         <div className="grid gap-4">

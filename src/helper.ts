@@ -307,6 +307,15 @@ export function getImage(image: any, size?: string) {
     return !!img?.base_url ? img.base_url + img.permanent_url : "";
   }
 
+  // Novo formato: { url: 'http://...', sizes: { thumb: '/path/...', ... } }
+  if (img?.url && img?.sizes) {
+    const baseUrl = img.url.split('/storage/')[0] + '/storage';
+    const sizeKey = size || 'lg';
+    const relativePath = img.sizes[sizeKey] || img.sizes.default;
+    return relativePath ? baseUrl + relativePath : img.url;
+  }
+
+  // Formato antigo: { base_url: '...', details: { sizes: {...} } }
   if (!!img?.base_url && !!img?.details?.sizes) {
     const url =
       img.base_url +

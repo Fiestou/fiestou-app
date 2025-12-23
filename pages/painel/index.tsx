@@ -204,10 +204,9 @@ export default function Parceiro({ content }: { content: any }) {
                     {recipientStatus?.completed && (
                       <p className="mt-2 text-sm font-semibold text-green-600">
                         Código recebedor: {" "}
-                        {((recipientStatus?.recipient as any)) ||
-                          ((recipientStatus?.recipient as any)
-                            ? String((recipientStatus?.recipient as any).id)
-                            : "N/A")}
+                        {(recipientStatus?.recipient as any) ||
+                          (recipientStatus?.recipient as any)||
+                          "N/A"}
                       </p>
                     )}
                   </div>
