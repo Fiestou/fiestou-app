@@ -1,5 +1,4 @@
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import Link from "next/link";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import {
@@ -18,7 +17,7 @@ import {
 import { Button } from "@/src/components/ui/form";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
-import { AddToCart, GetCart } from "@/src/components/pages/carrinho";
+import { AddToCart } from "@/src/components/pages/carrinho";
 import {
   AttributeProductOrderType,
   ProductOrderType,
@@ -26,7 +25,6 @@ import {
 } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
 import Newsletter from "@/src/components/common/Newsletter";
-import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
 import "swiper/css";
 import "swiper/css/zoom";
 import "swiper/css/navigation";
@@ -37,10 +35,9 @@ import CartPreview from "@/src/components/common/CartPreview";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Modal from "@/src/components/utils/Modal";
 import ShareModal from "@/src/components/utils/ShareModal";
-import { RelationType } from "@/src/models/relation";
 import LikeButton from "@/src/components/ui/LikeButton";
 import RelatedProducts from "../components/related-products/RelatedProducts";
-import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
+import { getProductUrl } from "@/src/urlHelpers";
 import ProductCombinations from "../components/product-combinations/ProductCombinations";
 import TrustedPartnerBadge from "../components/trusted-partner-badge/TrustedPartnerBadge";
 import EasyCancelBadge from "../components/easy-cancel-badge/EasyCancelBadge";
@@ -146,9 +143,9 @@ export default function Produto({
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
   const [inCart, setInCart] = useState(false as boolean);
   const [unavailable, setUnavailable] = useState([] as Array<string>);
-  const [activeVariations, setActiveVariations] = useState<
-    Record<string, VariationProductOrderType>
-  >({});
+  // const [activeVariations, setActiveVariations] = useState<
+  //   Record<string, VariationProductOrderType>
+  // >({});
   const [isMobile, setIsMobile] = useState(false);
   const [showCartPreview, setShowCartPreview] = useState(false);
   const layout = { isMobile };
@@ -553,7 +550,7 @@ export default function Produto({
     }
   };
 
-  // 5️⃣ Liberação final
+  // Revisar função
   const canAddToCart = useMemo(() => {
     if (!product?.attributes?.length) return true;
 
@@ -595,146 +592,173 @@ export default function Produto({
 
       <section>
         <div className="container-medium">
-          <div className="flex flex-col lg:flex-row lg:flex-nowrap gap-4 md:gap-6 lg:gap-8 items-start">
+          <div className="w-full grid grid-cols-1  md:grid-cols-2 gap-8">
             {/* WRAPPER ÚNICO */}
 
-            <ProductGallery
-              product={product}
-              store={store}
-              categories={categories}
-              layout={layout}
-              renderDetails={renderDetails}
-              renderComments={renderComments}
-            />
+            <div className="w-full gap-4 ">
+              <ProductGallery
+                product={product}
+                store={store}
+                categories={categories}
+                layout={layout}
+                renderDetails={renderDetails}
+                renderComments={renderComments}
+              />
 
-            {/* 🔥 DETAILS ABAIXO DA GALERIA */}
+              <ProductDetails
+                product={product}
+                store={store}
+                categories={categories}
+                mobileMode={isMobile}
+              />
+              <div className="grid gap-4 mt-6">
+                <ProductDimensions product={product} />
 
-            {/* FORM ÚNICO */}
-            <div className="w-full md:w-1/2 ">
-              <form onSubmit={sendToCart} method="POST">
-                {/* Cabeçalho do produto */}
-                <div className="grid md:flex gap-4 pb-4 lg:gap-10">
-                  <div className="w-full pt-2 md:pt-0">
-                    <h1 className="font-title font-bold text-zinc-900 text-3xl">
-                      {product?.title}
-                    </h1>
-
-                    <ProductBadges product={product} comments={comments} />
-                    <ProductDescription product={product} />
-                  </div>
-
-                  <ProductPriceDisplay product={product} />
+                <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none pt-6">
+                  <SafePaymentBadge />
+                  <EasyCancelBadge />
+                  <TrustedPartnerBadge />
+                </div>
+              </div>
+              <div className="flex items-center gap-6 border-t pt-6">
+                {/* FAVORITAR */}
+                <div className="flex items-center gap-2">
+                  <span>Favoritar</span>
+                  <LikeButton id={product?.id} style="btn-outline-light" />
                 </div>
 
-                <div className="grid gap-6">
-                  {/* ATRIBUTOS */}
-                  <ProductAttributes
-                    attributes={product?.attributes ?? []}
-                    activeVariations={productToCart.attributes}
-                    updateOrder={updateOrder}
+                {/* COMPARTILHAR */}
+                <div className="flex items-center gap-2">
+                  <span>Compartilhar:</span>
+
+                  <Button
+                    onClick={() => setShare(true)}
+                    type="button"
+                    style="btn-outline-light"
+                    className="p-4"
+                  >
+                    <Icon icon="fa-share-alt" type="far" className="mx-1" />
+                  </Button>
+                </div>
+
+                {/* MODAL (fora do fluxo visual) */}
+                <Modal
+                  title="Compartilhe:"
+                  status={share}
+                  size="sm"
+                  close={() => setShare(false)}
+                >
+                  <ShareModal
+                    url={baseUrl}
+                    title={`${store?.title} - Fiestou`}
                   />
+                </Modal>
+              </div>
+            </div>
 
-                  {/* INPUTS HIDDEN — ATRIBUTOS OBRIGATÓRIOS */}
-                  {productAttributes.map((attribute) => {
-                    const selectedAttr = productToCart.attributes.find(
-                      (attr: any) => attr.id === attribute.id
-                    );
+            <div>
+              <div className="w-full">
+                <form onSubmit={sendToCart} method="POST">
+                  {/* Cabeçalho do produto */}
+                  <div className="grid md:flex gap-4 pb-4 lg:gap-10">
+                    <div className="w-full pt-2 md:pt-0">
+                      <div className="flex flex-row gap-2 justify-between items-center">
+                        <h1 className="font-title font-bold text-zinc-900 text-3xl">
+                          {product?.title}
+                        </h1>
 
-                    const hasSelection =
-                      !!selectedAttr && selectedAttr.variations.length > 0;
+                        <ProductPriceDisplay product={product} />
+                      </div>
+                      <ProductBadges product={product} comments={comments} />
+                      <ProductDescription product={product} />
+                    </div>
+                  </div>
 
-                    return (
-                      <input
-                        key={attribute.id}
-                        type="text"
-                        name={`attribute-${attribute.id}`}
-                        value={hasSelection ? "ok" : ""}
-                        readOnly
-                        className="hidden"
-                      />
-                    );
-                  })}
-
-                  {/* CEP */}
-                  <ProductShippingCalculator
-                    cep={cep}
-                    setCep={setCep}
-                    formatCep={formatCep}
-                    loadingCep={loadingCep}
-                    handleCheckCep={handleCheckCep}
-                    cepError={cepError}
-                    cepErrorMessage={cepErrorMessage}
-                    deliveryFee={deliveryFee}
-                  />
-
-                  {/* INPUT HIDDEN — DATA */}
-                  {product?.schedulingEnabled && (
-                    <input
-                      type="text"
-                      name="deliveryDate"
-                      value={productToCart?.details?.dateStart ?? ""}
-                      readOnly
+                  <div className="grid gap-6">
+                    {/* ATRIBUTOS */}
+                    <ProductAttributes
+                      attributes={product?.attributes ?? []}
+                      activeVariations={productToCart.attributes}
+                      updateOrder={updateOrder}
                     />
-                  )}
 
-                  {/* CALENDÁRIO (SEM FORM) */}
-                  <ProductDeliveryCalendar
-                    product={product}
-                    productToCart={productToCart}
-                    unavailable={unavailable}
-                    blockdate={blockdate}
-                    handleDetails={handleDetails}
-                    required={!!product?.schedulingEnabled}
-                  />
+                    {/* INPUTS HIDDEN — ATRIBUTOS OBRIGATÓRIOS */}
+                    {productAttributes.map((attribute) => {
+                      const selectedAttr = productToCart.attributes.find(
+                        (attr: any) => attr.id === attribute.id
+                      );
 
-                  {/* ENTREGA */}
-                  <ProductDeliveryBadge
-                    product={product}
-                    productToCart={productToCart}
-                  />
-                  {/* Carrinho e total */}
-                  <BottomCart
-                    disabled={!canAddToCart}
-                    productToCart={productToCart}
-                    inCart={inCart}
-                    isMobile={layout.isMobile}
-                    canAddToCart={canAddToCart}
-                  />
+                      const hasSelection =
+                        !!selectedAttr && selectedAttr.variations.length > 0;
 
-                  {/* AÇÕES */}
-                  <div className="flex gap-4 border-t pt-6">
-                    <LikeButton id={product?.id} style="btn-outline-light" />
-                    <Button
-                      onClick={() => setShare(true)}
-                      type="button"
-                      style="btn-outline-light"
-                      className="p-4"
-                    >
-                      <Icon icon="fa-share-alt" type="far" className="mx-1" />
-                    </Button>
+                      return (
+                        <input
+                          key={attribute.id}
+                          type="text"
+                          name={`attribute-${attribute.id}`}
+                          value={hasSelection ? "ok" : ""}
+                          readOnly
+                          className="hidden"
+                        />
+                      );
+                    })}
 
-                    <Modal
-                      title="Compartilhe:"
-                      status={share}
-                      size="sm"
-                      close={() => setShare(false)}
-                    >
-                      <ShareModal
-                        url={baseUrl}
-                        title={`${store?.title} - Fiestou`}
+                    {/* INPUT HIDDEN — DATA */}
+                    {product?.schedulingEnabled && (
+                      <input
+                        type="text"
+                        name="deliveryDate"
+                        value={productToCart?.details?.dateStart ?? ""}
+                        readOnly
                       />
-                    </Modal>
-                  </div>
+                    )}
 
-                  <ProductDimensions product={product} />
+                    {/* CALENDÁRIO (SEM FORM) */}
+                    <ProductDeliveryCalendar
+                      product={product}
+                      productToCart={productToCart}
+                      unavailable={unavailable}
+                      blockdate={blockdate}
+                      handleDetails={handleDetails}
+                      required={!!product?.schedulingEnabled}
+                    />
 
-                  <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none">
-                    <SafePaymentBadge />
-                    <EasyCancelBadge />
-                    <TrustedPartnerBadge />
+                    {/* Constulte o Frete */}
+                    <ProductShippingCalculator
+                      cep={cep}
+                      setCep={setCep}
+                      formatCep={formatCep}
+                      loadingCep={loadingCep}
+                      handleCheckCep={handleCheckCep}
+                      cepError={cepError}
+                      cepErrorMessage={cepErrorMessage}
+                      deliveryFee={deliveryFee}
+                    />
+
+                    <ProductDetails
+                      product={product}
+                      store={store}
+                      categories={categories}
+                      mobileMode={!isMobile}
+                    />
+
+                    {/* Carrinho e total */}
+                    <BottomCart
+                      disabled={!canAddToCart}
+                      productToCart={productToCart}
+                      inCart={inCart}
+                      isMobile={layout.isMobile}
+                      canAddToCart={canAddToCart}
+                    />
+
+                    {/* Disponível para Entrega */}
+                    <ProductDeliveryBadge
+                      product={product}
+                      productToCart={productToCart}
+                    />
                   </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           </div>
         </div>
@@ -764,13 +788,13 @@ export default function Produto({
           }}
         />
       )}
-      {/* 
+
       {showCartPreview && (
         <CartPreview
           isMobile={layout.isMobile}
           onClose={() => setShowCartPreview(false)}
         />
-      )} */}
+      )}
     </Template>
   );
 }

@@ -102,13 +102,10 @@ export default function CartPreview({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/40 z-[100]" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
 
       {/* Drawer */}
-      <div
-        className="fixed top-0 right-0 h-full w-full max-w-[400px] bg-white z-[101]
-        rounded-tl-2xl rounded-bl-2xl shadow-2xl border-l border-zinc-200 flex flex-col"
-      >
+      <div className="  fixed top-0 right-0 pt-2 w-96 h-[80vh]   bg-white flex flex-col shadow-lg z-50   rounded-l-2xl ">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-zinc-200">
           <h4 className="font-bold text-zinc-900 text-lg">

@@ -9,15 +9,17 @@ interface ProductDetailsProps {
   product: ProductType;
   store: StoreType;
   categories: any[];
+  mobileMode?: boolean;
 }
 
 export default function ProductDetails({
   product,
   store,
   categories,
+  mobileMode = false,
 }: ProductDetailsProps) {
   return (
-    <div>
+    <div className={mobileMode ? "block" : "hidden"}>
       <div className="text-sm grid gap-1">
         {/* Loja */}
         <div className="text-zinc-900">

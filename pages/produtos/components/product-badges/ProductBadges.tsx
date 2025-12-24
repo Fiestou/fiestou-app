@@ -9,7 +9,10 @@ interface ProductBadgesProps {
   comments: CommentType[];
 }
 
-export default function ProductBadges({ product, comments }: ProductBadgesProps) {
+export default function ProductBadges({
+  product,
+  comments,
+}: ProductBadgesProps) {
   if (!product) return null;
 
   return (
@@ -34,12 +37,13 @@ export default function ProductBadges({ product, comments }: ProductBadgesProps)
       )}
 
       {/* Tipo comercial */}
-      <Badge style="light">
-        {(product.comercialType as string)
-          .charAt(0)
-          .toUpperCase() +
+      <div>
+        <span>Disponível para:</span>
+        <Badge style="light">
+        {(product.comercialType as string).charAt(0).toUpperCase() +
           (product.comercialType as string).slice(1)}
       </Badge>
+      </div>
     </div>
   );
 }
