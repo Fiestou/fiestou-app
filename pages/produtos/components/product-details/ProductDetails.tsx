@@ -16,10 +16,9 @@ export default function ProductDetails({
   product,
   store,
   categories,
-  mobileMode = false,
 }: ProductDetailsProps) {
   return (
-    <div className={mobileMode ? "block" : "hidden"}>
+    <div>
       <div className="text-sm grid gap-1">
         {/* Loja */}
         <div className="text-zinc-900">
