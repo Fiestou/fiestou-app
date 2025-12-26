@@ -552,16 +552,20 @@ export default function Produto({
 
   // Revisar função
   const canAddToCart = useMemo(() => {
-    if (!product?.attributes?.length) return true;
+    const attributes = Array.isArray(product?.attributes)
+      ? product.attributes
+      : [];
 
-    return product.attributes.every((productAttr) => {
+    if (attributes.length === 0) return true;
+
+    return attributes.every((productAttr) => {
       const selectedAttr = productToCart.attributes.find(
         (attr: any) => attr.id === productAttr.id
       );
 
       return isAttributeValidForCart(productAttr, selectedAttr);
     });
-  }, [product.attributes, productToCart.attributes]);
+  }, [product?.attributes, productToCart.attributes]);
 
   return (
     <Template
