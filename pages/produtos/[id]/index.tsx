@@ -550,22 +550,9 @@ export default function Produto({
     }
   };
 
-  // Revisar função
   const canAddToCart = useMemo(() => {
-    const attributes = Array.isArray(product?.attributes)
-      ? product.attributes
-      : [];
-
-    if (attributes.length === 0) return true;
-
-    return attributes.every((productAttr) => {
-      const selectedAttr = productToCart.attributes.find(
-        (attr: any) => attr.id === productAttr.id
-      );
-
-      return isAttributeValidForCart(productAttr, selectedAttr);
-    });
-  }, [product?.attributes, productToCart.attributes]);
+    return hasAllAttributesSelected && hasRequiredDate;
+  }, [hasAllAttributesSelected, hasRequiredDate]);
 
   return (
     <Template
@@ -740,7 +727,7 @@ export default function Produto({
                       cepErrorMessage={cepErrorMessage}
                       deliveryFee={deliveryFee}
                     />
-
+                    {/* Categorias na versão mobile */}
                     <div className="block md:hidden">
                       <ProductDetails
                         product={product}

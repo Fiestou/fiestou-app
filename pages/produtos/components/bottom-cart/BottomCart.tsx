@@ -57,9 +57,9 @@ export default function BottomCart({
             type="submit"
             disabled={!canAddToCart}
             className={
-              !canAddToCart
-                ? "bg-zinc-300 text-zinc-600 cursor-not-allowed"
-                : "bg-yellow-400 hover:bg-yellow-500"
+              canAddToCart
+                ? "bg-yellow-400 hover:bg-yellow-500 cursor-pointer"
+                : "bg-zinc-300 text-zinc-600 cursor-not-allowed pointer-events-none"
             }
           >
             Adicionar
