@@ -605,12 +605,14 @@ export default function Produto({
                 renderComments={renderComments}
               />
 
-              <ProductDetails
-                product={product}
-                store={store}
-                categories={categories}
-                mobileMode={isMobile}
-              />
+              <div className="hidden md:block">
+                <ProductDetails
+                  product={product}
+                  store={store}
+                  categories={categories}
+                />
+              </div>
+
               <div className="grid gap-4 mt-6">
                 <ProductDimensions product={product} />
 
@@ -735,12 +737,13 @@ export default function Produto({
                       deliveryFee={deliveryFee}
                     />
 
-                    <ProductDetails
-                      product={product}
-                      store={store}
-                      categories={categories}
-                      mobileMode={!isMobile}
-                    />
+                    <div className="block md:hidden">
+                      <ProductDetails
+                        product={product}
+                        store={store}
+                        categories={categories}
+                      />
+                    </div>
 
                     {/* Carrinho e total */}
                     <BottomCart
