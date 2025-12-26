@@ -143,9 +143,6 @@ export default function Produto({
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
   const [inCart, setInCart] = useState(false as boolean);
   const [unavailable, setUnavailable] = useState([] as Array<string>);
-  // const [activeVariations, setActiveVariations] = useState<
-  //   Record<string, VariationProductOrderType>
-  // >({});
   const [isMobile, setIsMobile] = useState(false);
   const [showCartPreview, setShowCartPreview] = useState(false);
   const layout = { isMobile };
@@ -522,35 +519,7 @@ export default function Produto({
   // 4️⃣ Data é SEMPRE obrigatória
   const hasRequiredDate = Boolean(hasSelectedDate);
 
-  const isAttributeValidForCart = (
-    productAttr: AttributeType,
-    selectedAttr?: AttributeProductOrderType
-  ): boolean => {
-    // Se o atributo não tem variações, não bloqueia
-    if (!productAttr.variations || productAttr.variations.length === 0) {
-      return true;
-    }
-
-    switch (productAttr.selectType) {
-      case "radio":
-      case "checkbox": {
-        // Se não existe seleção para esse atributo, é inválido
-        if (!selectedAttr) return false;
-
-        // Se existe, precisa ter ao menos 1 variação escolhida
-        return selectedAttr.variations.length > 0;
-      }
-
-      case "quantity":
-        // 🔥 quantity é sempre opcional
-        return true;
-
-      default:
-        return true;
-    }
-  };
-
-  const canAddToCart = useMemo(() => {
+    const canAddToCart = useMemo(() => {
     return hasAllAttributesSelected && hasRequiredDate;
   }, [hasAllAttributesSelected, hasRequiredDate]);
 
