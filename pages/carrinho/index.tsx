@@ -41,7 +41,7 @@ export async function getServerSideProps({
   const cart = !!parse ? JSON.parse(parse) : [];
 
   let request: any = await api.content({
-    method: 'get',
+    method: "get",
     url: "default",
   });
 
@@ -143,7 +143,9 @@ export default function Carrinho({
     // 2. Extrai IDs de produtos usando service
     const productIds = extractProductIds(listCart);
     if (!productIds.length) {
-      setDeliveryError("Não encontramos produtos válidos no carrinho para calcular o frete.");
+      setDeliveryError(
+        "Não encontramos produtos válidos no carrinho para calcular o frete."
+      );
       return;
     }
 
@@ -152,15 +154,24 @@ export default function Carrinho({
 
     try {
       // 3. Calcula frete via API usando service
-      const calculation = await calculateDeliveryFees(apiClient, validation.sanitized, productIds);
+      const calculation = await calculateDeliveryFees(
+        apiClient,
+        validation.sanitized,
+        productIds
+      );
 
       if (!calculation.success) {
-        setDeliveryError(calculation.error ?? "Não conseguimos calcular o frete.");
+        setDeliveryError(
+          calculation.error ?? "Não conseguimos calcular o frete."
+        );
         return;
       }
 
       // 4. Aplica frete ao carrinho usando service
-      const result = applyDeliveryToCartLocal(calculation.fees, validation.sanitized);
+      const result = applyDeliveryToCartLocal(
+        calculation.fees,
+        validation.sanitized
+      );
 
       if (!result.success) {
         setDeliveryError(result.message ?? "Não conseguimos calcular o frete.");
@@ -179,9 +190,7 @@ export default function Carrinho({
     }
   };
 
-  const handleDeliveryZipKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>
-  ) => {
+  const handleDeliveryZipKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
       handleCalculateDelivery();
@@ -238,13 +247,19 @@ export default function Carrinho({
                       </Link>
                       <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900">
                         Meu carrinho
+                        <Icon
+                          icon="fa-shopping-cart"
+                          className="text-xl lg:text-3xl"
+                        />
                       </div>
                     </div>
                   </div>
 
                   {!!listCart.length &&
                     listCart.map((item, key) => {
-                      const deliveryFeeValue = Number(item.details?.deliveryFee);
+                      const deliveryFeeValue = Number(
+                        item.details?.deliveryFee
+                      );
                       const hasDeliveryFee =
                         Number.isFinite(deliveryFeeValue) &&
                         deliveryFeeValue >= 0;
@@ -322,56 +337,107 @@ export default function Carrinho({
                                 </div>
 
                                 {/* Adicionais/Atributos */}
-                                {item.attributes && Array.isArray(item.attributes) && item.attributes.length > 0 && (() => {
-                                  const attributesWithSelected = item.attributes
-                                    .map((attr: any) => ({
-                                      ...attr,
-                                      selectedVariations: (attr.variations || []).filter((v: any) => v.quantity > 0)
-                                    }))
-                                    .filter((attr: any) => attr.selectedVariations.length > 0);
+                                {item.attributes &&
+                                  Array.isArray(item.attributes) &&
+                                  item.attributes.length > 0 &&
+                                  (() => {
+                                    const attributesWithSelected =
+                                      item.attributes
+                                        .map((attr: any) => ({
+                                          ...attr,
+                                          selectedVariations: (
+                                            attr.variations || []
+                                          ).filter((v: any) => v.quantity > 0),
+                                        }))
+                                        .filter(
+                                          (attr: any) =>
+                                            attr.selectedVariations.length > 0
+                                        );
 
-                                  if (attributesWithSelected.length === 0) return null;
+                                    if (attributesWithSelected.length === 0)
+                                      return null;
 
-                                  return (
-                                    <div className="mt-2 pt-2 border-t border-zinc-200">
-                                      {attributesWithSelected.map((attr: any, attrIdx: number) => (
-                                        <div key={attrIdx} className="mb-3 last:mb-0">
-                                          <p className="text-xs font-bold text-zinc-800 mb-1">{attr.title}</p>
-                                          {attr.selectedVariations.map((variation: any, varIdx: number) => {
-                                            const price = variation.price || variation.priceValue || 0;
-                                            const numPrice = typeof price === 'string' ? parseFloat(price.replace(',', '.')) : Number(price);
-                                            const quantity = variation.quantity || 1;
-                                            const totalPrice = numPrice * quantity;
+                                    return (
+                                      <div className="mt-2 pt-2 border-t border-zinc-200">
+                                        {attributesWithSelected.map(
+                                          (attr: any, attrIdx: number) => (
+                                            <div
+                                              key={attrIdx}
+                                              className="mb-3 last:mb-0"
+                                            >
+                                              <p className="text-xs font-bold text-zinc-800 mb-1">
+                                                {attr.title}
+                                              </p>
+                                              {attr.selectedVariations.map(
+                                                (
+                                                  variation: any,
+                                                  varIdx: number
+                                                ) => {
+                                                  const price =
+                                                    variation.price ||
+                                                    variation.priceValue ||
+                                                    0;
+                                                  const numPrice =
+                                                    typeof price === "string"
+                                                      ? parseFloat(
+                                                          price.replace(
+                                                            ",",
+                                                            "."
+                                                          )
+                                                        )
+                                                      : Number(price);
+                                                  const quantity =
+                                                    variation.quantity || 1;
+                                                  const totalPrice =
+                                                    numPrice * quantity;
 
-                                            return (
-                                              <div key={varIdx} className="ml-2 mb-2">
-                                                <div className="flex justify-between items-center gap-2 text-sm text-zinc-700">
-                                                  <span className="flex items-center gap-1.5">
-                                                    <span className="text-zinc-400">•</span>
-                                                    <span>{variation.title}</span>
-                                                  </span>
-                                                  {numPrice > 0 && (
-                                                    <span className="text-zinc-500 font-medium whitespace-nowrap text-xs">
-                                                      R$ {moneyFormat(numPrice)}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                {quantity > 1 && numPrice > 0 && (
-                                                  <div className="flex justify-between items-center gap-2 text-xs text-zinc-500 ml-4 mt-0.5">
-                                                    <span>Qtd: {quantity}</span>
-                                                    <span className="text-cyan-600 font-semibold">
-                                                      R$ {moneyFormat(totalPrice)}
-                                                    </span>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  );
-                                })()}
+                                                  return (
+                                                    <div
+                                                      key={varIdx}
+                                                      className="ml-2 mb-2"
+                                                    >
+                                                      <div className="flex justify-between items-center gap-2 text-sm text-zinc-700">
+                                                        <span className="flex items-center gap-1.5">
+                                                          <span className="text-zinc-400">
+                                                            •
+                                                          </span>
+                                                          <span>
+                                                            {variation.title}
+                                                          </span>
+                                                        </span>
+                                                        {numPrice > 0 && (
+                                                          <span className="text-zinc-500 font-medium whitespace-nowrap text-xs">
+                                                            R${" "}
+                                                            {moneyFormat(
+                                                              numPrice
+                                                            )}
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                      {quantity > 1 &&
+                                                        numPrice > 0 && (
+                                                          <div className="flex justify-between items-center gap-2 text-xs text-zinc-500 ml-4 mt-0.5">
+                                                            <span>
+                                                              Qtd: {quantity}
+                                                            </span>
+                                                            <span className="text-cyan-600 font-semibold">
+                                                              R${" "}
+                                                              {moneyFormat(
+                                                                totalPrice
+                                                              )}
+                                                            </span>
+                                                          </div>
+                                                        )}
+                                                    </div>
+                                                  );
+                                                }
+                                              )}
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
 
                                 {hasDeliveryFee && (
                                   <div className="flex gap-1 items-center mt-1">
@@ -406,7 +472,8 @@ export default function Carrinho({
                       href={`${process.env.APP_URL}/produtos`}
                       className="md:text-lg px-4 py-2 md:py-4 md:px-8"
                     >
-                      Acessar mais produtos
+                      <Icon icon="fa-shopping-bag" type="far" /> Acessar mais
+                      produtos
                     </Button>
                   </div>
                 </div>

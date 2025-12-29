@@ -108,7 +108,7 @@ export async function getStaticProps(ctx: any) {
         DataSeo: DataSeo,
         Scripts: Scripts,
       },
-      revalidate: 60 * 60 * 3,
+      revalidate: 60 * 60 * 3, // 3 horas
     };
   }
 }
@@ -280,7 +280,9 @@ export default function Produto({
     if (success) {
       setInCart(true);
       toast.success("Produto adicionado ao carrinho 🛒");
-      setShowCartPreview(true);
+
+      // 🔥 REDIRECIONA APÓS ADICIONAR
+      router.push("/produtos?openCart=1");
     } else {
       toast.error("Não foi possível adicionar ao carrinho 🛒");
     }
@@ -519,7 +521,7 @@ export default function Produto({
   // 4️⃣ Data é SEMPRE obrigatória
   const hasRequiredDate = Boolean(hasSelectedDate);
 
-    const canAddToCart = useMemo(() => {
+  const canAddToCart = useMemo(() => {
     return hasAllAttributesSelected && hasRequiredDate;
   }, [hasAllAttributesSelected, hasRequiredDate]);
 
