@@ -25,8 +25,8 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
             setContentForm(prev => ({
                 ...prev,
                 ...content,
-                addresses: content.addresses?.length ? content.addresses : prev.addresses,
-                phones: content.phones?.length ? content.phones : prev.phones,
+                addresses: content.addresses?.length ? content.addresses : (prev?.addresses ?? []),
+                phones: content.phones?.length ? content.phones : (prev?.phones ?? []),
             }));
         }
     }, [content]);
