@@ -237,6 +237,34 @@ const PixBoletoCard = ({
             </a>
           </div>
         </div>
+
+        {boleto?.line && (
+          <div className="mt-4 px-4 py-3 bg-zinc-100 rounded">
+            <div className="text-xs text-zinc-500 mb-1">Linha digitável:</div>
+            <div className="text-sm break-all font-mono">{boleto.line}</div>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  navigator.clipboard.writeText(String(boleto.line));
+                } catch (e) {
+                  CopyClipboard("boleto-line-hidden");
+                }
+              }}
+              className="font-semibold pt-2 text-cyan-600 text-sm"
+            >
+              <Icon icon="fa-copy" className="mr-1" />
+              Copiar linha
+            </button>
+            <input
+              type="text"
+              id="boleto-line-hidden"
+              value={boleto.line ?? ""}
+              readOnly
+              className="absolute h-0 w-0 opacity-0 overflow-hidden"
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -250,11 +278,16 @@ const PixBoletoCard = ({
         </div>
         <div className="w-full max-w-[16rem] mx-auto">
           {!!pix.qrcode ? (
-            <img src={pix.qrcode} className="w-full" />
+            <img src={pix.qrcode} className="w-full" alt="QR Code PIX" />
           ) : (
-            <div className="aspect-square border rounded" />
+            <div className="aspect-square border rounded flex items-center justify-center text-gray-400">
+              <span className="text-sm">Gerando QR Code...</span>
+            </div>
           )}
         </div>
+        <p className="text-xs text-gray-500 text-center mt-2">
+          Escaneie o QR Code ou copie o código abaixo
+        </p>
         <div className="px-3 pt-6">
           <div className="px-4 py-3 bg-zinc-100 rounded">
             <div className="text-sm line-clamp-3 break-all">{pix.code}</div>
