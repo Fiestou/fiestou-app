@@ -2,9 +2,10 @@ import { OrderType } from "@/src/models/order";
 import Api from "@/src/services/api";
 
 /**
- * Fetch order by id using the bridge API and return a normalized OrderType or null
+ * Fetch order by id (or groupHash) using the bridge API and return a normalized OrderType or null
+ * Now supports the new grouped order structure from Yuri's backend updates
  */
-export async function fetchOrderById(api?: Api, orderId?: number): Promise<OrderType | null> {
+export async function fetchOrderById(api?: Api, orderId?: number | string): Promise<OrderType | null> {
   try {
     const client = api ?? new Api();
     const req: any = await client.bridge({
@@ -12,9 +13,46 @@ export async function fetchOrderById(api?: Api, orderId?: number): Promise<Order
       url: `order/${orderId}`,
     });
 
-    const order: OrderType = req?.order ?? req?.data?.data ?? req?.data ?? null;
+    // Nova estrutura: { order: { ... } } ou formato antigo
+    const orderData = req?.data?.order ?? req?.order ?? req?.data?.data ?? req?.data ?? null;
 
-    return order ?? null;
+    if (!orderData) return null;
+
+    // Mapeia a nova estrutura para o formato esperado pelos componentes
+    const normalizedOrder: any = {
+      ...orderData,
+      id: orderData.id ?? orderData.mainOrderId,
+      // Customer pode vir como objeto ou precisa ser mapeado
+      user: orderData.customer ?? orderData.user,
+      // Delivery data
+      delivery: orderData.delivery ?? {
+        to: orderData.deliveryTo,
+        schedule: orderData.deliverySchedule,
+        price: orderData.deliveryTotal ?? orderData.deliveryPrice,
+        address: orderData.deliveryAddress,
+      },
+      // Items - API do Yuri retorna listItems, frontend espera items
+      items: orderData.items ?? orderData.listItems ?? [],
+      listItems: orderData.items ?? orderData.listItems ?? [],
+      // Products
+      products: orderData.products ?? orderData.productsData ?? [],
+      // Totals
+      total: orderData.total,
+      subtotal: orderData.subtotal,
+      deliveryTotal: orderData.deliveryTotal,
+      // Status
+      status: orderData.status,
+      delivery_status: orderData.deliveryStatus ?? orderData.delivery_status,
+      // Metadata
+      metadata: orderData.payment ?? orderData.metadata,
+      // Store info
+      store: orderData.store,
+      stores: orderData.stores,
+      // Created at
+      createdAt: orderData.createdAt ?? orderData.created_at,
+    };
+
+    return normalizedOrder as OrderType;
   } catch (err) {
     console.error("fetchOrderById error:", err);
     return null;
@@ -24,19 +62,48 @@ export async function fetchOrderById(api?: Api, orderId?: number): Promise<Order
 const api = new Api();
 /**
  * Tipagens básicas (ajusta conforme o backend for evoluindo)
+ * Atualizado para suportar a nova estrutura de pedidos agrupados (multi-loja)
  */
+export interface OrderCustomer {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+export interface OrderStore {
+  id: number;
+  slug?: string;
+  title?: string;
+  companyName?: string;
+  partnerName?: string;
+  partnerEmail?: string;
+  orderTotal?: number;
+  orderId?: number;
+}
+
 export interface Order {
   id: number;
-  user: number;
+  groupHash?: string;
+  mainOrderId?: number;
+  orderIds?: number[];
+  ordersCount?: number;
+  user: number | OrderCustomer;
+  customer?: OrderCustomer;
   store: number | null;
+  stores?: OrderStore[];
   total: number;
   subtotal?: number;
+  deliveryTotal?: number;
   deliveryPrice?: number;
   platformCommission?: number;
   paying?: number;
-  status: number;
-  created_at: string;
-  updated_at: string;
+  status: number | string;
+  statusText?: string;
+  deliveryStatus?: string;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
   // qualquer coisa extra
   [key: string]: any;
 }
