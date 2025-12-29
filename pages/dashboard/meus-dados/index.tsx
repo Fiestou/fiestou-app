@@ -1,6 +1,7 @@
 import Api from "@/src/services/api";
 import { UserType } from "@/src/models/user";
 import UserEdit from "@/src/components/shared/UserEdit";
+import UserDataSimple from "@/src/components/shared/UserDataSimple";
 import { useRouter } from "next/router";
 import HelpCard from "@/src/components/common/HelpCard";
 import Template from "@/src/template";
@@ -117,7 +118,11 @@ export default function MeusDados({
                     {message}
                   </div>
                 )}
-                <UserEdit user={user} />
+                {user.type === 'client' ? (
+                  <UserDataSimple user={user} />
+                ) : (
+                  <UserEdit user={user} />
+                )}
               </div>
               <div className="w-full max-w-[24rem]">
                 <HelpCard list={page.help_list} />

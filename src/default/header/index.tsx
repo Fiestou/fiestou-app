@@ -49,11 +49,11 @@ export function Header(props: HeaderType) {
     return <Default params={params} user={user} />;
   }
 
-  if (params.template == "painel" && user.person == "partner") {
+  if (params.template == "painel" && user.type === "partner") {
     return <Painel params={params} user={user} />;
   }
 
-  if (params.template == "admin" && user.person == "master") {
+  if (params.template == "admin" && user.type === "master") {
     return <Admin params={params} user={user} />;
   }
 

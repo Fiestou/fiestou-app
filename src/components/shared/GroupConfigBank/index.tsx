@@ -11,9 +11,10 @@ import { getStore } from '@/src/contexts/AuthContext';
 interface Props {
     title: string;
     recipientId?: number;
+    initialData?: BankAccountTypeRecipient;
 }
 
-const GroupConfigBank: React.FC<Props> = ({ title, recipientId }) => {
+const GroupConfigBank: React.FC<Props> = ({ title, recipientId, initialData }) => {
     const [open, setOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [contentForm, setContentForm] = useState<BankAccountTypeRecipient>({} as BankAccountTypeRecipient);
@@ -26,7 +27,8 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId }) => {
         try {
             console.log("Submitting form with contentForm:", recipientId);
             if (!recipientId) {
-                toast.error("ID do recebedor não encontrado.");
+                console.warn("Recipient ainda não cadastrado no Pagar.me");
+                toast.warning("Para editar esses dados, primeiro conclua o cadastro no Pagar.me clicando em 'Concluir cadastro agora'.");
                 return;
             }
 
@@ -140,14 +142,37 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId }) => {
                         account_number: bankAccount.account_number ?? "",
                         account_check_digit: bankAccount.account_check_digit ?? "",
                     });
+                } else if (initialData) {
+                    // Usa dados iniciais como fallback
+                    console.log("Usando initialData como fallback:", initialData);
+                    setContentForm({
+                        title: initialData.title ?? initialData.holder_name ?? "",
+                        bank: initialData.bank ?? "",
+                        branch_number: initialData.branch_number ?? "",
+                        branch_check_digit: initialData.branch_check_digit ?? "",
+                        account_number: initialData.account_number ?? "",
+                        account_check_digit: initialData.account_check_digit ?? "",
+                    });
                 }
             } catch (err) {
                 console.error("Erro ao buscar saque:", err);
+                // Em caso de erro, usa dados iniciais como fallback
+                if (initialData) {
+                    console.log("Erro na API, usando initialData:", initialData);
+                    setContentForm({
+                        title: initialData.title ?? initialData.holder_name ?? "",
+                        bank: initialData.bank ?? "",
+                        branch_number: initialData.branch_number ?? "",
+                        branch_check_digit: initialData.branch_check_digit ?? "",
+                        account_number: initialData.account_number ?? "",
+                        account_check_digit: initialData.account_check_digit ?? "",
+                    });
+                }
             }
         };
 
         fetchWithdrawData();
-    }, []);
+    }, [initialData]);
 
     useEffect(() => {
         console.log("contentForm updated:", contentForm);

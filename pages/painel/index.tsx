@@ -96,7 +96,6 @@ export default function Parceiro({ content }: { content: any }) {
   const [store, setStore] = useState<any>(null);
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
   const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
-  console.log("recipientStatus:", recipientStatus);
 
   const checkPagarmeStatus = async () => {
     try {
@@ -142,11 +141,6 @@ export default function Parceiro({ content }: { content: any }) {
       getOrders(user.id);
     }
   }, [user?.id]);
-
-  useEffect(() => {
-   console.log("user changed:", recipientStatus?.recipient);
-  }, [recipientStatus]);
-
 
   const safeOrders = Array.isArray(orders) ? orders : [];
   const hasOrders = safeOrders.length > 0;

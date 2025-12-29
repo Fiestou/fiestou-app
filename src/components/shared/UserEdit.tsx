@@ -31,16 +31,76 @@ export default function UserEdit({ user }: { user: UserType }) {
   const [content, setContent] = useState<RecipientType>();
   const [storeId, setStoreId] = useState<any>();
 
+  // Cria dados a partir do user como fallback
+  const buildFromUser = (): RecipientType => {
+    const userAddr = (user as any)?.address?.[0];
+    const userPhone = user?.phone?.replace(/\D/g, "") || "";
+    const userBank = (user as any)?.bankAccounts?.[0];
+    const doc = user?.cpf || user?.document || "";
+    const isPJ = doc.replace(/\D/g, "").length === 14;
+
+    return {
+      recipient: null,
+      id: undefined as any,
+      store_id: undefined as any,
+      partner_id: "",
+      code: "",
+      type_enum: isPJ ? "PJ" : "PF",
+      type: isPJ ? "company" : "individual",
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      document: doc,
+      company_name: null,
+      trading_name: null,
+      birth_date: user?.date ?? "",
+      monthly_income: "",
+      professional_occupation: null,
+      addresses: userAddr ? [{
+        id: 0,
+        street: userAddr.street ?? "",
+        complementary: userAddr.complement ?? "",
+        street_number: String(userAddr.number ?? ""),
+        neighborhood: userAddr.neighborhood ?? "",
+        city: userAddr.city ?? "",
+        state: userAddr.state ?? "",
+        zip_code: userAddr.zipCode ?? "",
+        reference_point: "",
+      }] : [],
+      phones: userPhone.length >= 10 ? [{
+        id: 0,
+        area_code: userPhone.slice(0, 2),
+        number: userPhone.slice(2),
+      }] : [],
+      config: {},
+      partners: [],
+      annual_revenue: null,
+      created_at: "",
+      updated_at: "",
+      bank_account: userBank ? {
+        bank: userBank.bank ?? "",
+        branch_number: userBank.agence ?? "",
+        branch_check_digit: userBank.agenceDigit ?? "",
+        account_number: userBank.accountNumber ?? "",
+        account_check_digit: userBank.accountDigit ?? "",
+        holder_name: userBank.title ?? user?.name ?? "",
+        holder_type: isPJ ? "company" : "individual",
+        holder_document: doc,
+        type: userBank.type === "savings" ? "savings" : "checking",
+      } : undefined,
+    };
+  };
+
   const getRecipientCode = async (storeId: string) => {
     try {
       const res: any = await api.bridge({
         method: "GET",
         url: `info/recipient/${storeId}`,
-        // se essa rota estiver fora de /api/app, passe noAppPrefix: true
       });
 
       if (!res?.response || !res?.data) {
-        toast.error("Não foi possível carregar o recebedor.");
+        // Usa dados do usuário como fallback quando não existe recipient
+        console.log("Recipient não encontrado, usando dados do usuário como fallback");
+        setContent(buildFromUser());
         return;
       }
 
@@ -67,7 +127,7 @@ export default function UserEdit({ user }: { user: UserType }) {
         // converte address {..} para addresses [{..}]
         addresses: d.address
           ? [{
-            id: 0, // se vier no payload, use d.address.id
+            id: 0,
             street: d.address.street ?? "",
             complementary: d.address.complementary ?? "",
             street_number: d.address.street_number ?? "",
@@ -82,13 +142,12 @@ export default function UserEdit({ user }: { user: UserType }) {
         // converte phone {..} para phones [{..}]
         phones: d.phone
           ? [{
-            id: 0, // se vier no payload, use d.phone.id
+            id: 0,
             area_code: d.phone.area_code ?? "",
             number: d.phone.number ?? "",
           }]
           : [],
 
-        // se quiser expor o bloco bancário direto no content
         config: {},
         partners: [],
         annual_revenue: null,
@@ -98,8 +157,9 @@ export default function UserEdit({ user }: { user: UserType }) {
 
       setContent(mapped);
     } catch (error) {
-      console.error("Complete o cadastro:", error);
-      toast.error("Erro ao carregar recebedor.");
+      console.error("Erro ao carregar recipient, usando fallback:", error);
+      // Usa dados do usuário como fallback em caso de erro
+      setContent(buildFromUser());
     }
   };
 
@@ -131,6 +191,7 @@ export default function UserEdit({ user }: { user: UserType }) {
       <GroupConfigBank
         title="Contas bancárias"
         recipientId={content?.id}
+        initialData={content?.bank_account as any}
       />
 
       <GroupConfig

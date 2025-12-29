@@ -44,8 +44,8 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
             const address = contentForm?.addresses?.[0];
 
             if (!contentForm?.id) {
-                console.error("ID do recebedor está undefined!");
-                alert("Erro interno: ID do recebedor não encontrado.");
+                console.warn("Recipient ainda não cadastrado no Pagar.me");
+                toast.warning("Para editar esses dados, primeiro conclua o cadastro no Pagar.me clicando em 'Concluir cadastro agora'.");
                 return;
             }
 
@@ -221,7 +221,7 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
                                     ...contentForm,
                                     addresses: [
                                         {
-                                            ...contentForm.addresses?.[0],
+                                            ...(contentForm?.addresses?.[0] ?? {}),
                                             street: value
                                         }
                                     ]
@@ -239,7 +239,7 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
                                     ...contentForm,
                                     addresses: [
                                         {
-                                            ...contentForm.addresses?.[0],
+                                            ...(contentForm?.addresses?.[0] ?? {}),
                                             street_number: value
                                         }
                                     ]
@@ -257,7 +257,7 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
                                     ...contentForm,
                                     addresses: [
                                         {
-                                            ...contentForm.addresses?.[0],
+                                            ...(contentForm?.addresses?.[0] ?? {}),
                                             neighborhood: value
                                         }
                                     ]
@@ -275,7 +275,7 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
                                     ...contentForm,
                                     addresses: [
                                         {
-                                            ...contentForm.addresses?.[0],
+                                            ...(contentForm?.addresses?.[0] ?? {}),
                                             complementary: value
                                         }
                                     ]
@@ -293,7 +293,7 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
                                     ...contentForm,
                                     addresses: [
                                         {
-                                            ...contentForm.addresses?.[0],
+                                            ...(contentForm?.addresses?.[0] ?? {}),
                                             state: value
                                         }
                                     ]
@@ -311,7 +311,7 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
                                     ...contentForm,
                                     addresses: [
                                         {
-                                            ...contentForm.addresses?.[0],
+                                            ...(contentForm?.addresses?.[0] ?? {}),
                                             city: value
                                         }
                                     ]
@@ -329,7 +329,7 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
                                     ...contentForm,
                                     addresses: [
                                         {
-                                            ...contentForm.addresses?.[0],
+                                            ...(contentForm?.addresses?.[0] ?? {}),
                                             zip_code: value
                                         }
                                     ]
@@ -347,7 +347,7 @@ const GroupConfigUsers: React.FC<Props> = ({ title, content }) => {
                                     ...contentForm,
                                     addresses: [
                                         {
-                                            ...contentForm.addresses?.[0],
+                                            ...(contentForm?.addresses?.[0] ?? {}),
                                             reference_point: value
                                         }
                                     ]
