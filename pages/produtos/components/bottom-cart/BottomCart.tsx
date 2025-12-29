@@ -2,6 +2,7 @@
 
 import { Button } from "@/src/components/ui/form";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation"; // <‑ import do router
 
 interface BottomCartProps {
   productToCart: { total: number } | null;
@@ -17,6 +18,8 @@ export default function BottomCart({
   isMobile,
   canAddToCart,
 }: BottomCartProps) {
+  const router = useRouter(); // <‑ hook do router
+
   // Ajusta padding do html quando mobile
   useEffect(() => {
     if (isMobile) {
@@ -40,6 +43,11 @@ export default function BottomCart({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num);
+  };
+
+  // Função simples para redirecionar
+  const handleAddClick = () => {
+    router.push("/produtos?openCart=1");
   };
 
   return (

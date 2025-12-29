@@ -115,7 +115,11 @@ export default function CartPreview({
               ? "Carrinho vazio"
               : `${totalItems} ${
                   totalItems === 1 ? "item" : "itens"
-                } no carrinho`}
+                } no carrinho `}
+            <Icon
+              icon="fa-shopping-cart"
+              className="text-base lg:text-lg mr-2"
+            />
           </h4>
 
           <button
@@ -165,7 +169,13 @@ export default function CartPreview({
               />
 
               <Link href="/carrinho" onClick={onClose}>
-                <Button className="w-full mt-2">Ver carrinho completo</Button>
+                <Button className="w-full mt-2">
+                  <Icon
+                    icon="fa-shopping-cart"
+                    className="text-base lg:text-lg mr-2"
+                  />
+                  Ver carrinho completo
+                </Button>
               </Link>
             </div>
           </>
