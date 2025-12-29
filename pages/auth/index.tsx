@@ -68,8 +68,14 @@ export default function Auth({ auth }: any) {
 
       if (!auth.user.status) {
         window.location.href = "/cadastre-se/completar";
-      } else {
+      } else if (user.type === "master") {
+        window.location.href = "/admin";
+      } else if (user.type === "partner") {
         window.location.href = "/painel";
+      } else if (user.type === "delivery") {
+        window.location.href = "/entregador";
+      } else {
+        window.location.href = "/dashboard";
       }
     } else {
       window.location.href = "/acesso";

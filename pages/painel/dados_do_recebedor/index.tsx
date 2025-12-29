@@ -68,7 +68,7 @@ export default function MeusDados({ page }: { page: any }) {
 
   const shouldShowRecipientBanner =
     !!user?.id &&
-    user?.person === "partner" &&
+    user?.type === "partner" &&
     recipientStatus &&
     !recipientStatus.completed;
 

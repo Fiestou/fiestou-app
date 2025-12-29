@@ -101,18 +101,62 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
       });
     } else {
       // Inicializa form com dados do usuário/store mesmo sem recipient
-      const initialData = {
+      // Preenche endereço automaticamente se usuário tiver
+      const userAddr = user?.address?.[0];
+      const initialAddresses = userAddr ? [{
+        id: undefined,
+        type: "Recipient" as const,
+        partner_document: "",
+        street: userAddr.street || "",
+        complementary: userAddr.complement || "",
+        street_number: String(userAddr.number || ""),
+        neighborhood: userAddr.neighborhood || "",
+        city: userAddr.city || "",
+        state: userAddr.state || "",
+        zip_code: userAddr.zipCode || "",
+        reference_point: "",
+      }] : [createAddress()];
+
+      // Preenche telefone automaticamente se usuário tiver
+      const userPhone = user?.phone?.replace(/\D/g, "") || "";
+      const initialPhones = userPhone.length >= 10 ? [{
+        id: undefined,
+        type: "Recipient" as const,
+        partner_document: "",
+        area_code: userPhone.slice(0, 2),
+        number: userPhone.slice(2),
+      }] : [createPhone()];
+
+      // Preenche conta bancária automaticamente se usuário tiver
+      const userBank = (user as any)?.bankAccounts?.[0];
+      const initialBank = userBank ? {
+        ...createBankAccount(),
+        bank: userBank.bank || "",
+        branch_number: userBank.agence || "",
+        branch_check_digit: userBank.agenceDigit || "",
+        account_number: userBank.accountNumber || "",
+        account_check_digit: userBank.accountDigit || "",
+        holder_name: userBank.title || user?.name || "",
+        holder_type: (userType === "PJ" ? "company" : "individual") as "individual" | "company",
+        holder_document: user?.cpf || user?.document || store?.document || "",
+        type: (userBank.type === "savings" ? "savings" : "checking") as "checking" | "savings",
+      } : (() => { const acc = createBankAccount(); acc.holder_type = userType === "PJ" ? "company" : "individual"; return acc; })();
+
+      setFormData({
         ...buildInitialForm(),
         type_enum: userType,
         email: user?.email || "",
         document: user?.cpf || user?.document || store?.document || "",
         name: user?.name || "",
+        birth_date: user?.date || "",
         company_name: userType === "PJ" ? (store?.companyName || store?.title || "") : null,
         trading_name: userType === "PJ" ? (store?.title || "") : null,
+        addresses: initialAddresses,
+        phones: initialPhones,
+        bank_account: initialBank,
         // Para PJ, garantir que tenha pelo menos um sócio
         partners: userType === "PJ" ? [createPartner()] : [],
-      };
-      setFormData(initialData);
+      });
     }
     setStepIndex(0);
     setStepError(null);
