@@ -62,11 +62,16 @@ export default function Pedidos({ orders = [], page = { help_list: [] } }: Pedid
                   >
                     <div className="order-1 md:order-1 w-[45%] md:w-full md:max-w-[14rem]">
                       <div className="font-title text-zinc-900 font-semibold">
-                        pedido #{item.id}
+                        pedido #{item.mainOrderId || item.id}
+                        {item.ordersCount && item.ordersCount > 1 && (
+                          <span className="text-xs text-zinc-500 ml-1">
+                            (+{item.ordersCount - 1})
+                          </span>
+                        )}
                       </div>
                       {/* <div className="text-sm">{item.title}</div> */}
                       <div className="text-sm pt-1">
-                        {getExtenseData(item.createdAt)}
+                        {getExtenseData(item.createdAt || item.created_at)}
                       </div>
                     </div>
                     <div className="order-3 md:order-1 w-[45%] md:w-full md:max-w-[8rem]">
@@ -76,9 +81,9 @@ export default function Pedidos({ orders = [], page = { help_list: [] } }: Pedid
                       </div>
                     </div>
                     <div className="order-2 md:order-1 text-right md:text-center w-[45%] md:w-full md:max-w-[8rem]">
-                      {item?.status === 1 ? (
+                      {item?.status === 1 || item?.status === "paid" ? (
                         <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
-                          pago
+                          {item.statusText || "pago"}
                         </div>
                       ) : item?.metadata?.status === "expired" ? (
                         <div className="bg-red-100 text-red-700 rounded text-sm inline-block px-2 py-1">
@@ -86,17 +91,17 @@ export default function Pedidos({ orders = [], page = { help_list: [] } }: Pedid
                         </div>
                       ) : item?.status === 0 ? (
                         <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
-                          em aberto
+                          {item.statusText || "em aberto"}
                         </div>
                       ) : (
                         <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
-                          processando
+                          {item.statusText || "processando"}
                         </div>
                       )}
                     </div>
                     <div className="order-4 md:order-1 text-right md:text-center w-[45%] md:w-fit">
                       <Link
-                        href={`/dashboard/pedidos/${item.orderIds[0]}`}
+                        href={`/dashboard/pedidos/${item.mainOrderId || item.orderIds?.[0] || item.id}`}
                         className="text-zinc-900 text-sm underline whitespace-nowrap font-bold"
                       >
                         detalhes

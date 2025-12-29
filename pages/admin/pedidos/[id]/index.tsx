@@ -72,24 +72,35 @@ export default function OrderDetails() {
   const [loading, setLoading] = useState(true);
 
   const getOrderDetails = async () => {
-    if (!id) return;     
+    if (!id) return;
 
     try {
       const request = (await api.bridge({
         method: "get",
-        url: `orders/list/${id}`,
+        url: `order/${id}`,
       })) as ApiResponse;
 
-      const orderData = request?.data ?? request;
+      // Nova estrutura: { order: { ... } } ou formato antigo
+      const orderData = request?.data?.order ?? request?.order ?? request?.data ?? request;
 
       if (orderData) {
-        const listItems = JSON.parse(orderData.listItems || "[]");
+        // Lista de itens pode vir como array ou string JSON
+        let listItems = [];
+        if (Array.isArray(orderData.items)) {
+          listItems = orderData.items;
+        } else if (typeof orderData.listItems === 'string') {
+          listItems = JSON.parse(orderData.listItems || "[]");
+        } else if (Array.isArray(orderData.listItems)) {
+          listItems = orderData.listItems;
+        }
 
+        // Endereço de entrega pode vir em delivery.address ou deliveryAddress
         let deliveryAddress: DeliveryAddress;
+        const rawAddress = orderData.delivery?.address ?? orderData.deliveryAddress;
 
-        if (typeof orderData.deliveryAddress === 'string') {
+        if (typeof rawAddress === 'string') {
           try {
-            deliveryAddress = JSON.parse(orderData.deliveryAddress);
+            deliveryAddress = JSON.parse(rawAddress);
           } catch (error) {
             deliveryAddress = {
               street: '',
@@ -102,13 +113,31 @@ export default function OrderDetails() {
             };
           }
         } else {
-          deliveryAddress = orderData.deliveryAddress as DeliveryAddress;
+          deliveryAddress = rawAddress as DeliveryAddress || {
+            street: '',
+            number: '',
+            neighborhood: '',
+            city: '',
+            state: '',
+            zipCode: '',
+            complement: ''
+          };
         }
+
+        // Mapeia cliente para formato esperado
+        const user = orderData.customer ?? orderData.user ?? {};
 
         setOrder({
           ...orderData,
+          id: orderData.id ?? orderData.mainOrderId,
           listItems,
           deliveryAddress,
+          user,
+          deliveryTo: orderData.delivery?.to ?? orderData.deliveryTo,
+          deliverySchedule: orderData.delivery?.schedule ?? orderData.deliverySchedule,
+          deliveryStatus: orderData.delivery?.status ?? orderData.deliveryStatus,
+          deliveryPrice: orderData.deliveryTotal ?? orderData.delivery?.price ?? orderData.deliveryPrice,
+          productsData: orderData.products ?? orderData.productsData,
         });
       }
     } catch (error) {
