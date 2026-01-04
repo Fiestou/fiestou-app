@@ -178,9 +178,13 @@ export const getPriceValue = (product: any): PriceNumberType => {
 };
 
 export interface CommentType {
+  id: number | string;
   user: {
     name: string;
   };
   text: string;
   rate: number;
+  rating: number;
+  description: string;
+  comment: string;
 }

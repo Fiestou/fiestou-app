@@ -25,7 +25,12 @@ interface ProductGalleryProps {
   renderComments?: () => JSX.Element;
 }
 
-export default function ProductGallery({ product }: ProductGalleryProps) {
+export default function ProductGallery({
+  product,
+  renderComments,
+  renderDetails,
+  layout,
+}: ProductGalleryProps) {
   const [swiperInstance, setSwiperInstance] = useState<any>(null);
 
   if (!product?.gallery?.length) return null;
