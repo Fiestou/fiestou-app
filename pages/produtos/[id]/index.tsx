@@ -19,7 +19,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { AddToCart } from "@/src/components/pages/carrinho";
 import {
-  AttributeProductOrderType,
   ProductOrderType,
   VariationProductOrderType,
 } from "@/src/models/product";
@@ -31,7 +30,6 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 import { toast } from "react-toastify";
-import CartPreview from "@/src/components/common/CartPreview";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Modal from "@/src/components/utils/Modal";
 import ShareModal from "@/src/components/utils/ShareModal";
@@ -280,8 +278,6 @@ export default function Produto({
     if (success) {
       setInCart(true);
       toast.success("Produto adicionado ao carrinho 🛒");
-
-      // 🔥 REDIRECIONA APÓS ADICIONAR
       router.push("/produtos?openCart=1");
     } else {
       toast.error("Não foi possível adicionar ao carrinho 🛒");
@@ -554,7 +550,7 @@ export default function Produto({
 
       <section>
         <div className="container-medium">
-          <div className="w-full grid grid-cols-1  md:grid-cols-2 gap-8">
+          <div className="w-full grid grid-cols-1 gap-1 md:grid-cols-2 md:gap-8">
             {/* WRAPPER ÚNICO */}
 
             <div className="w-full gap-4 ">
@@ -574,49 +570,52 @@ export default function Produto({
                   categories={categories}
                 />
               </div>
-
               <div className="grid gap-4 mt-6">
-                <ProductDimensions product={product} />
+                <div className="hidden md:block">
+                  <ProductDimensions product={product} />
+                </div>
 
-                <div className="border grid gap-2 rounded-md p-3 text-[.85rem] leading-none pt-6">
+                <div className="border gap-2 rounded-md p-3 text-[.85rem] leading-none pt-6 hidden md:block">
                   <SafePaymentBadge />
                   <EasyCancelBadge />
                   <TrustedPartnerBadge />
                 </div>
               </div>
-              <div className="flex items-center gap-6 border-t pt-6">
-                {/* FAVORITAR */}
-                <div className="flex items-center gap-2">
-                  <span>Favoritar</span>
-                  <LikeButton id={product?.id} style="btn-outline-light" />
-                </div>
+              <div className="items-center gap-6 border-t pt-6 hidden md:block">
+                <div className="flex gap-4">
+                  {/* FAVORITAR */}
+                  <div className="flex items-center gap-2">
+                    <span>Favoritar</span>
+                    <LikeButton id={product?.id} style="btn-outline-light" />
+                  </div>
 
-                {/* COMPARTILHAR */}
-                <div className="flex items-center gap-2">
-                  <span>Compartilhar:</span>
+                  {/* COMPARTILHAR */}
+                  <div className="flex items-center gap-2">
+                    <span>Compartilhar:</span>
 
-                  <Button
-                    onClick={() => setShare(true)}
-                    type="button"
-                    style="btn-outline-light"
-                    className="p-4"
+                    <Button
+                      onClick={() => setShare(true)}
+                      type="button"
+                      style="btn-outline-light"
+                      className="p-4"
+                    >
+                      <Icon icon="fa-share-alt" type="far" className="mx-1" />
+                    </Button>
+                  </div>
+
+                  {/* MODAL (fora do fluxo visual) */}
+                  <Modal
+                    title="Compartilhe:"
+                    status={share}
+                    size="sm"
+                    close={() => setShare(false)}
                   >
-                    <Icon icon="fa-share-alt" type="far" className="mx-1" />
-                  </Button>
+                    <ShareModal
+                      url={baseUrl}
+                      title={`${store?.title} - Fiestou`}
+                    />
+                  </Modal>
                 </div>
-
-                {/* MODAL (fora do fluxo visual) */}
-                <Modal
-                  title="Compartilhe:"
-                  status={share}
-                  size="sm"
-                  close={() => setShare(false)}
-                >
-                  <ShareModal
-                    url={baseUrl}
-                    title={`${store?.title} - Fiestou`}
-                  />
-                </Modal>
               </div>
             </div>
 
@@ -639,13 +638,16 @@ export default function Produto({
                   </div>
 
                   <div className="grid gap-6">
+                    {/* DETALHES DO PRODUTO - Esconder na versão desktop */}
+                    <div className="block md:hidden">
+                      <ProductDimensions product={product} />
+                    </div>
                     {/* ATRIBUTOS */}
                     <ProductAttributes
                       attributes={product?.attributes ?? []}
                       activeVariations={productToCart.attributes}
                       updateOrder={updateOrder}
                     />
-
                     {/* INPUTS HIDDEN — ATRIBUTOS OBRIGATÓRIOS */}
                     {productAttributes.map((attribute) => {
                       const selectedAttr = productToCart.attributes.find(
@@ -666,7 +668,6 @@ export default function Produto({
                         />
                       );
                     })}
-
                     {/* INPUT HIDDEN — DATA */}
                     {product?.schedulingEnabled && (
                       <input
@@ -676,7 +677,6 @@ export default function Produto({
                         readOnly
                       />
                     )}
-
                     {/* CALENDÁRIO (SEM FORM) */}
                     <ProductDeliveryCalendar
                       product={product}
@@ -686,7 +686,6 @@ export default function Produto({
                       handleDetails={handleDetails}
                       required={!!product?.schedulingEnabled}
                     />
-
                     {/* Constulte o Frete */}
                     <ProductShippingCalculator
                       cep={cep}
@@ -698,6 +697,13 @@ export default function Produto({
                       cepErrorMessage={cepErrorMessage}
                       deliveryFee={deliveryFee}
                     />
+                    <div className="block md:hidden">
+                      <ProductDeliveryBadge
+                        product={product}
+                        productToCart={productToCart}
+                      />
+                    </div>
+
                     {/* Categorias na versão mobile */}
                     <div className="block md:hidden">
                       <ProductDetails
@@ -707,6 +713,13 @@ export default function Produto({
                       />
                     </div>
 
+                    {/* Adicionar os comentário aqui */}
+
+                    <div className="border gap-4 rounded-md p-3 text-[.85rem] block md:hidden">
+                      <SafePaymentBadge />
+                      <EasyCancelBadge />
+                      <TrustedPartnerBadge />
+                    </div>
                     {/* Carrinho e total */}
                     <BottomCart
                       disabled={!canAddToCart}
@@ -715,12 +728,59 @@ export default function Produto({
                       isMobile={layout.isMobile}
                       canAddToCart={canAddToCart}
                     />
-
                     {/* Disponível para Entrega */}
-                    <ProductDeliveryBadge
-                      product={product}
-                      productToCart={productToCart}
-                    />
+                    <div className="hidden md:block">
+                      <ProductDeliveryBadge
+                        product={product}
+                        productToCart={productToCart}
+                      />
+                    </div>
+                    {/* Favotirar e compartilhar */}
+                    <div className="flex items-center justify-center gap-6 border-t pt-6">
+                      <div className="block md:hidden">
+                        <div className="flex gap-4">
+                          {/* FAVORITAR */}
+                          <div className="flex items-center gap-2">
+                            <span>Favoritar</span>
+                            <LikeButton
+                              id={product?.id}
+                              style="btn-outline-light"
+                            />
+                          </div>
+
+                          {/* COMPARTILHAR */}
+                          <div className="flex items-center gap-2">
+                            <span>Compartilhar:</span>
+
+                            <Button
+                              onClick={() => setShare(true)}
+                              type="button"
+                              style="btn-outline-light"
+                              className="p-4"
+                            >
+                              <Icon
+                                icon="fa-share-alt"
+                                type="far"
+                                className="mx-1"
+                              />
+                            </Button>
+                          </div>
+
+                          {/* MODAL (fora do fluxo visual) */}
+                          <Modal
+                            title="Compartilhe:"
+                            status={share}
+                            size="sm"
+                            close={() => setShare(false)}
+                          >
+                            <ShareModal
+                              url={baseUrl}
+                              title={`${store?.title} - Fiestou`}
+                            />
+                          </Modal>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </form>
               </div>
@@ -751,13 +811,6 @@ export default function Produto({
             }
           </style>`,
           }}
-        />
-      )}
-
-      {showCartPreview && (
-        <CartPreview
-          isMobile={layout.isMobile}
-          onClose={() => setShowCartPreview(false)}
         />
       )}
     </Template>
