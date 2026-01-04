@@ -105,7 +105,7 @@ export default function CartPreview({
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="  fixed top-0 right-0 pt-16 w-96 h-[80vh] bg-white flex flex-col shadow-lg z-50 rounded-l-2xl ">
+      <div className="fixed top-16 right-0 pt-2 w-96 h-[80vh] bg-white flex flex-col shadow-lg z-50 rounded-bl-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-zinc-200">
           <h4 className="font-bold text-zinc-900 text-lg">
@@ -160,7 +160,7 @@ export default function CartPreview({
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-zinc-50 border-t border-zinc-200">
+            <div className="p-4 bg-zinc-50 border-t border-zinc-200 rounded-bl-[10px]">
               <CartSummary
                 cart={cart}
                 totalValue={totalValue}
