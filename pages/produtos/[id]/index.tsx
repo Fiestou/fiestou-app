@@ -51,6 +51,7 @@ import ProductDescription from "../components/product-description/ProductDescrip
 import ProductBadges from "../components/product-badges/ProductBadges";
 import ProductGallery from "../components/product-gallery/ProductGallery";
 import ProductDetails from "../components/product-details/ProductDetails";
+import ProductComments from "../components/product-comments/ProductComments";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -344,51 +345,6 @@ export default function Produto({
     });
   };
 
-  // Não faz nada
-  const renderComments = () => (
-    <>
-      {!!comments?.length && (
-        <div className="mt-4 md:mt-10 bg-zinc-50 p-4 lg:p-8 rounded-xl">
-          <div className="font-title font-bold text-zinc-900 mb-4">
-            <Icon icon="fa-comments" type="fal" className="mr-2" />
-            {comments?.length} comentário
-            {comments?.length == 1 ? "" : "s"}
-          </div>
-
-          <div className="grid gap-4">
-            {comments.map((item: CommentType, key: any) => (
-              <div key={key} className="border-t pt-4">
-                <div className="flex gap-2 items-center">
-                  <div className="w-full">
-                    <div className="text-zinc-900 font-bold text-sm">
-                      {item.user?.name ?? ""}
-                    </div>
-                    <div className="flex gap-1 text-xs">
-                      {[1, 2, 3, 4, 5].map((value: number) => (
-                        <label key={value}>
-                          <Icon
-                            icon="fa-star"
-                            type="fa"
-                            className={`${
-                              item.rate >= value
-                                ? "text-yellow-500"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="pt-3 text-sm">{item.text}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </>
-  );
-
   const handleCheckCep = async () => {
     setCepError(false);
     setCepErrorMessage(null);
@@ -560,7 +516,6 @@ export default function Produto({
                 categories={categories}
                 layout={layout}
                 renderDetails={renderDetails}
-                renderComments={renderComments}
               />
 
               <div className="hidden md:block">
@@ -579,6 +534,10 @@ export default function Produto({
                   <SafePaymentBadge />
                   <EasyCancelBadge />
                   <TrustedPartnerBadge />
+                </div>
+
+                <div className="w-full hidden md:block">
+                  <ProductComments comments={comments} />
                 </div>
               </div>
               <div className="items-center gap-6 border-t pt-6 hidden md:block">
@@ -714,6 +673,9 @@ export default function Produto({
                     </div>
 
                     {/* Adicionar os comentário aqui */}
+                    <div className="block md:hidden">
+                      <ProductComments comments={comments} />
+                    </div>
 
                     <div className="border gap-4 rounded-md p-3 text-[.85rem] block md:hidden">
                       <SafePaymentBadge />
