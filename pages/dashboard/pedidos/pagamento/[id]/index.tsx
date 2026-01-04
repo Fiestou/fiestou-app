@@ -175,7 +175,7 @@ export default function Pagamento({
       const handle = await fetchOrderById(api, orderId);
 
       if (handle && handle.status === 1) {
-        window.location.href = `/dashboard/pedidos/${orderId}`;
+        window.location.href = `/dashboard/pedidos`;
       }
     } catch (err) {
       console.error("ConfirmManager error:", err);
@@ -194,7 +194,7 @@ export default function Pagamento({
       if (attempts === 0) {
         attempts--;
         alert("Algo deu errado ao processar seu pagamento. Tente novamente.");
-        window.location.href = `/dashboard/pedidos/${orderId}`;
+        window.location.href = `/dashboard/pedidos`;
       }
     }, 1000);
 
@@ -242,7 +242,7 @@ export default function Pagamento({
         alert(
           "Seu código de pagamento via pix não é mais válido. Tente novamente."
         );
-        window.location.href = `/dashboard/pedidos/${orderId}`;
+        window.location.href = `/dashboard/pedidos`;
       }
     }, 1000);
 
