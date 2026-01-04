@@ -18,18 +18,45 @@ export async function fetchOrderById(api?: Api, orderId?: number | string): Prom
 
     if (!orderData) return null;
 
+    // Parse metadata se vier como string JSON
+    let parsedMetadata = orderData.metadata;
+    if (typeof parsedMetadata === 'string') {
+      try {
+        parsedMetadata = JSON.parse(parsedMetadata);
+      } catch (e) {
+        parsedMetadata = {};
+      }
+    }
+
+    // Parse deliverySchedule - novo formato do Yuri: { date, period, time }
+    const rawSchedule = orderData.deliverySchedule ?? orderData.delivery?.schedule ?? orderData.delivery_schedule;
+    let scheduleDate: string | null = null;
+    let scheduleDisplay: string | null = null;
+
+    if (rawSchedule && typeof rawSchedule === 'object') {
+      // Novo formato estruturado: { date: "2025-01-10", period: "Manhã", time: "09:00 - 12:00" }
+      scheduleDate = rawSchedule.date ?? null;
+      const parts = [rawSchedule.period, rawSchedule.time].filter(Boolean);
+      scheduleDisplay = parts.length > 0 ? parts.join(' - ') : null;
+    } else if (typeof rawSchedule === 'string') {
+      // Formato legado: string simples como "Manha - 09:00 as 12:00"
+      scheduleDisplay = rawSchedule;
+    }
+
     // Mapeia a nova estrutura para o formato esperado pelos componentes
     const normalizedOrder: any = {
       ...orderData,
       id: orderData.id ?? orderData.mainOrderId,
       // Customer pode vir como objeto ou precisa ser mapeado
       user: orderData.customer ?? orderData.user,
-      // Delivery data
-      delivery: orderData.delivery ?? {
-        to: orderData.deliveryTo,
-        schedule: orderData.deliverySchedule,
-        price: orderData.deliveryTotal ?? orderData.deliveryPrice,
-        address: orderData.deliveryAddress,
+      // Delivery data (suporta snake_case e camelCase, mescla com campos legados)
+      delivery: {
+        to: orderData.delivery?.to ?? orderData.deliveryTo ?? orderData.delivery_to,
+        schedule: scheduleDisplay,
+        scheduleDate: scheduleDate,
+        price: orderData.delivery?.price ?? orderData.deliveryTotal ?? orderData.deliveryPrice ?? orderData.delivery_price,
+        address: orderData.delivery?.address ?? orderData.deliveryAddress ?? orderData.delivery_address,
+        status: orderData.delivery?.status ?? orderData.deliveryStatus ?? orderData.delivery_status,
       },
       // Items - API do Yuri retorna listItems, frontend espera items
       items: orderData.items ?? orderData.listItems ?? [],
@@ -43,8 +70,14 @@ export async function fetchOrderById(api?: Api, orderId?: number | string): Prom
       // Status
       status: orderData.status,
       delivery_status: orderData.deliveryStatus ?? orderData.delivery_status,
-      // Metadata
-      metadata: orderData.payment ?? orderData.metadata,
+      // Metadata (mescla payment com metadata original)
+      metadata: {
+        ...(parsedMetadata ?? {}),
+        ...(orderData.payment ?? {}),
+        // scheduleStart agora vem do deliverySchedule.date
+        scheduleStart: scheduleDate ?? parsedMetadata?.scheduleStart ?? orderData.payment?.scheduleStart,
+        scheduleEnd: scheduleDate ?? parsedMetadata?.scheduleEnd ?? orderData.payment?.scheduleEnd,
+      },
       // Store info
       store: orderData.store,
       stores: orderData.stores,

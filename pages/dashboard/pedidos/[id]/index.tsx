@@ -6,6 +6,7 @@ import { fetchOrderById } from "@/src/services/order";
 import { OrderType } from "@/src/models/order";
 import { RateType } from "@/src/models/product";
 import { findDates } from "@/src/helper";
+import { getStoreUrl } from "@/src/urlHelpers";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useEffect, useRef, useState } from "react";
 import Pagarme from "@/src/services/pagarme";
@@ -22,6 +23,37 @@ const formInitial = {
   edit: "",
   loading: false,
 };
+
+// Helper para agrupar itens por loja
+interface StoreGroup {
+  storeId: number | string;
+  storeName: string;
+  storeSlug?: string;
+  items: any[];
+}
+
+function groupItemsByStore(items: any[]): StoreGroup[] {
+  const groups: Record<string, StoreGroup> = {};
+
+  items.forEach((item) => {
+    const store = item?.metadata?.product?.store;
+    const storeId = store?.id || store?.slug || 'unknown';
+    const storeName = store?.title || store?.name || 'Loja';
+    const storeSlug = store?.slug;
+
+    if (!groups[storeId]) {
+      groups[storeId] = {
+        storeId,
+        storeName,
+        storeSlug,
+        items: [],
+      };
+    }
+    groups[storeId].items.push(item);
+  });
+
+  return Object.values(groups);
+}
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -237,17 +269,42 @@ export default function Pedido({
                     </div>
                   )}
 
-                  {/* Itens do pedido */}
+                  {/* Itens do pedido - Agrupados por loja */}
                   <div className="grid">
                     <h4 className="text-xl md:text-2xl text-zinc-800 pb-6">
                       Itens do pedido
                     </h4>
-                    {products?.map((item: any, key: number) => (
-                      <OrderItemCard
-                        key={key}
-                        item={item}
-                        onRate={openRatingModal}
-                      />
+                    {groupItemsByStore(products || []).map((storeGroup, groupKey) => (
+                      <div key={groupKey} className="mb-6">
+                        {/* Header da loja - só mostra se tem mais de uma loja */}
+                        {groupItemsByStore(products || []).length > 1 && (
+                          <div className="bg-zinc-100 rounded-lg p-3 mb-4 flex items-center gap-2">
+                            <Icon icon="fa-store" className="text-zinc-500" />
+                            <span className="font-semibold text-zinc-800">
+                              {storeGroup.storeSlug ? (
+                                <Link
+                                  href={getStoreUrl({ slug: storeGroup.storeSlug })}
+                                  className="hover:underline hover:text-cyan-600"
+                                >
+                                  {storeGroup.storeName}
+                                </Link>
+                              ) : (
+                                storeGroup.storeName
+                              )}
+                            </span>
+                            <span className="text-sm text-zinc-500">
+                              ({storeGroup.items.length} {storeGroup.items.length === 1 ? 'item' : 'itens'})
+                            </span>
+                          </div>
+                        )}
+                        {storeGroup.items.map((item: any, itemKey: number) => (
+                          <OrderItemCard
+                            key={itemKey}
+                            item={item}
+                            onRate={openRatingModal}
+                          />
+                        ))}
+                      </div>
                     ))}
                   </div>
                 </div>

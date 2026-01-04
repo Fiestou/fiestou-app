@@ -1,5 +1,7 @@
 import { Button } from "@/src/components/ui/form";
 import { dateBRFormat, getShorDate, moneyFormat } from "@/src/helper";
+import { deliveryToName } from "@/src/models/delivery";
+import Icon from "@/src/icons/fontAwesome/FIcon";
 import AddressCard from "./AddressCard";
 import PaymentMethodDisplay from "./PaymentMethodDisplay";
 import OrderTotalSection from "./OrderTotalSection";
@@ -16,10 +18,15 @@ interface OrderSummaryProps {
       transaction_type?: string;
       installments?: number;
       pdf?: string;
+      url?: string;
+      scheduleStart?: string;
+      scheduleEnd?: string;
     };
     delivery?: {
+      to?: string;
       price?: number;
       schedule?: string;
+      scheduleDate?: string;
       address?: {
         street?: string;
         number?: string;
@@ -60,18 +67,33 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
   const subtotal = order.subtotal || ((order.total || 0) - (order.delivery?.price || 0));
   const deliveryPrice = order.deliveryTotal || order.delivery?.price;
 
+  // Data de agendamento - usa delivery.scheduleDate (novo), resume, ou metadata como fallback
+  const scheduleStartDate = order.delivery?.scheduleDate || resume?.startDate || order.metadata?.scheduleStart;
+  const scheduleEndDate = resume?.endDate || order.metadata?.scheduleEnd;
+
   return (
     <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
       {/* Botão de pagamento para pedidos em aberto */}
       {order.status === 0 && (
         <div>
-          <Button
-            style="btn-success"
-            className="w-full"
-            href={`/dashboard/pedidos/pagamento/${order.id}`}
-          >
-            Efetuar pagamento
-          </Button>
+          {order.metadata?.url ? (
+            <Button
+              style="btn-success"
+              className="w-full"
+              href={order.metadata.url}
+              target="_blank"
+            >
+              Continuar pagamento
+            </Button>
+          ) : (
+            <Button
+              style="btn-success"
+              className="w-full"
+              href={`/dashboard/pedidos/pagamento/${order.id}`}
+            >
+              Efetuar pagamento
+            </Button>
+          )}
           <div className="border-t -mx-8 my-8"></div>
         </div>
       )}
@@ -104,26 +126,62 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
 
       <div className="grid gap-6">
         {/* Informações do pedido */}
-        <div className="grid text-sm">
+        <div className="grid gap-2 text-sm">
           <div className="text-zinc-900">
             Pedido nº <b>{order.id}</b>
           </div>
-          <div>Realizado em {getShorDate(order.createdAt)}</div>
-          {resume?.startDate && (
-            <div>
-              Agendado para: {dateBRFormat(resume.startDate)}{" "}
-              {resume.endDate && resume.endDate !== resume.startDate
-                ? `- ${dateBRFormat(resume.endDate)}`
-                : ""}{" "}
-              | {order.delivery?.schedule}
+          <div className="text-zinc-600">Realizado em {getShorDate(order.createdAt)}</div>
+        </div>
+
+        {/* Agendamento - Destacado (mostra se tem data OU horário) */}
+        {(scheduleStartDate || order.delivery?.schedule) && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-yellow-700 font-semibold mb-2">
+              <Icon icon="fa-calendar" className="text-sm" />
+              <span>Agendamento</span>
             </div>
-          )}
-          <div>
-            Valor de entrega:{" "}
+            {scheduleStartDate && (
+              <div className="flex items-center gap-2 text-zinc-700 mb-1">
+                <span className="text-zinc-600">Data:</span>
+                <span className="font-semibold text-zinc-900">
+                  {dateBRFormat(scheduleStartDate)}
+                  {scheduleEndDate && scheduleEndDate !== scheduleStartDate
+                    ? ` até ${dateBRFormat(scheduleEndDate)}`
+                    : ""}
+                </span>
+              </div>
+            )}
+            {order.delivery?.schedule && (
+              <div className="flex items-center gap-2 text-zinc-700">
+                <Icon icon="fa-clock" className="text-sm text-yellow-600" />
+                <span className="text-zinc-600">Horário:</span>
+                <span className="font-semibold text-zinc-900">{order.delivery.schedule}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Instrução de entrega - Destacado */}
+        {order.delivery?.to && (
+          <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-cyan-700 font-semibold mb-1">
+              <Icon icon="fa-truck" className="text-sm" />
+              <span>Instrução de entrega</span>
+            </div>
+            <div className="text-zinc-900 font-medium">
+              {deliveryToName[order.delivery.to] || order.delivery.to}
+            </div>
+          </div>
+        )}
+
+        {/* Valor de entrega */}
+        <div className="flex justify-between text-sm">
+          <span className="text-zinc-600">Valor de entrega:</span>
+          <span className="font-medium text-zinc-900">
             {order.delivery?.price
               ? `R$ ${moneyFormat(order.delivery.price)}`
               : "Gratuita"}
-          </div>
+          </span>
         </div>
 
         <div>
