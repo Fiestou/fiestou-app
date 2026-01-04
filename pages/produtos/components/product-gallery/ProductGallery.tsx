@@ -13,7 +13,6 @@ import Img from "@/src/components/utils/ImgBase";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { ProductType } from "@/src/models/product";
 import { getImage } from "@/src/helper";
-import ProductDetails from "../product-details/ProductDetails";
 import { StoreType } from "@/src/models/store";
 
 interface ProductGalleryProps {
@@ -25,20 +24,15 @@ interface ProductGalleryProps {
   renderComments?: () => JSX.Element;
 }
 
-export default function ProductGallery({
-  product,
-  renderComments,
-  renderDetails,
-  layout,
-}: ProductGalleryProps) {
+export default function ProductGallery({ product }: ProductGalleryProps) {
   const [swiperInstance, setSwiperInstance] = useState<any>(null);
 
   if (!product?.gallery?.length) return null;
 
   return (
-    <div className="sticky md:relative top-0 left-0  z-[10]">
-      <div className="relative bg-white -mx-4 md:mx-0 md:mb-10 gap-2">
-        {/* Swiper */}
+    <div className="sticky md:relative top-0 left-0 z-[10]">
+      <div className="relative bg-white -mx-4 md:mx-0 md:mb-10">
+        {/* Carrossel de imagens */}
         <Swiper
           onSwiper={setSwiperInstance}
           zoom
@@ -57,38 +51,48 @@ export default function ProductGallery({
           className="border-y md:border md:rounded-md"
         >
           {product.gallery.map(
-            (img, key) =>
+              (img, key) =>
               !!img?.details?.sizes?.lg && (
-                <SwiperSlide key={key}>
-                  <div className="w-full">
+                  <SwiperSlide key={key}>
+                    <div className="w-full">
                     <div className="flex justify-center items-center px-1 md:px-2">
                       <div className="swiper-zoom-container h-[200px] overflow-hidden">
-                        <Img
-                          src={getImage(img)}
+                            <Img
+                              src={getImage(img)}
                           className="w-full h-full object-cover rounded-md"
                         />
-                      </div>
+                          </div>
                     </div>
                   </div>
-                </SwiperSlide>
-              )
+                  </SwiperSlide>
+                )
           )}
         </Swiper>
 
-        {/* Botões */}
+        {/* Botões do carrossel */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 z-[5] p-2">
-          <button className="swiper-gallery-prev bg-[#ffc820] bg-opacity-50 hover:bg-opacity-70 text-white p-4 rounded-full relative">
-            <Icon icon="fa-chevron-left" className="absolute center-icon" />
+          <button
+            type="button"
+            className="swiper-gallery-prev bg-[#ffc820] text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
+          >
+            <Icon
+              icon="fa-chevron-left"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            />
           </button>
         </div>
-
         <div className="absolute top-1/2 right-0 -translate-y-1/2 z-[5] p-2">
-          <button className="swiper-gallery-next bg-[#ffc820] bg-opacity-50 hover:bg-opacity-70 text-white p-4 rounded-full relative">
-            <Icon icon="fa-chevron-right" className="absolute center-icon" />
+          <button
+            type="button"
+            className="swiper-gallery-next bg-[#ffc820] text-white bg-opacity-50 hover:bg-opacity-70 ease text-sm p-4 rounded-full relative"
+          >
+            <Icon
+              icon="fa-chevron-right"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            />
           </button>
         </div>
-
-        <div className="swiper-pagination hidden md:block" />
+        <div className="swiper-pagination bg-fuchsia-950"></div>
       </div>
     </div>
   );

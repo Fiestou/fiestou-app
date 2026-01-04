@@ -540,40 +540,42 @@ export default function Produto({
                   <ProductComments comments={comments} />
                 </div>
               </div>
-              <div className="items-center gap-6 border-t pt-6 hidden md:block">
-                <div className="flex gap-4">
-                  {/* FAVORITAR */}
-                  <div className="flex items-center gap-2">
-                    <span>Favoritar</span>
-                    <LikeButton id={product?.id} style="btn-outline-light" />
-                  </div>
+              <div className="flex items-center justify-center gap-6 border-t pt-6 ">
+                <div className="hidden md:block">
+                  <div className="flex gap-4">
+                    {/* FAVORITAR */}
+                    <div className="flex items-center gap-2">
+                      <span>Favoritar</span>
+                      <LikeButton id={product?.id} style="btn-outline-light" />
+                    </div>
 
-                  {/* COMPARTILHAR */}
-                  <div className="flex items-center gap-2">
-                    <span>Compartilhar:</span>
+                    {/* COMPARTILHAR */}
+                    <div className="flex items-center gap-2">
+                      <span>Compartilhar:</span>
 
-                    <Button
-                      onClick={() => setShare(true)}
-                      type="button"
-                      style="btn-outline-light"
-                      className="p-4"
+                      <Button
+                        onClick={() => setShare(true)}
+                        type="button"
+                        style="btn-outline-light"
+                        className="p-4"
+                      >
+                        <Icon icon="fa-share-alt" type="far" className="mx-1" />
+                      </Button>
+                    </div>
+
+                    {/* MODAL (fora do fluxo visual) */}
+                    <Modal
+                      title="Compartilhe:"
+                      status={share}
+                      size="sm"
+                      close={() => setShare(false)}
                     >
-                      <Icon icon="fa-share-alt" type="far" className="mx-1" />
-                    </Button>
+                      <ShareModal
+                        url={baseUrl}
+                        title={`${store?.title} - Fiestou`}
+                      />
+                    </Modal>
                   </div>
-
-                  {/* MODAL (fora do fluxo visual) */}
-                  <Modal
-                    title="Compartilhe:"
-                    status={share}
-                    size="sm"
-                    close={() => setShare(false)}
-                  >
-                    <ShareModal
-                      url={baseUrl}
-                      title={`${store?.title} - Fiestou`}
-                    />
-                  </Modal>
                 </div>
               </div>
             </div>
