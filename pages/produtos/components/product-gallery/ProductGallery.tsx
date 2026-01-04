@@ -34,9 +34,8 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
       <div className="relative bg-white -mx-4 md:mx-0 md:mb-10">
         {/* Carrossel de imagens */}
         <Swiper
-          onSwiper={setSwiperInstance}
-          zoom
-          loop
+          onSwiper={(swiper) => setSwiperInstance(swiper)}
+          zoom={true}
           spaceBetween={0}
           modules={[Zoom, Pagination, Navigation, Autoplay]}
           autoplay={{ delay: 3000, disableOnInteraction: false }}
@@ -51,22 +50,22 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
           className="border-y md:border md:rounded-md"
         >
           {product.gallery.map(
-              (img, key) =>
+            (img, key) =>
               !!img?.details?.sizes?.lg && (
-                  <SwiperSlide key={key}>
-                    <div className="w-full">
+                <SwiperSlide key={key}>
+                  <div className="w-full">
                     <div className="flex justify-center items-center px-1 md:px-2">
                       <div className="swiper-zoom-container h-[200px] overflow-hidden">
-                            <Img
-                              src={getImage(img)}
+                        <Img
+                          src={getImage(img)}
                           className="w-full h-full object-cover rounded-md"
                         />
-                          </div>
+                      </div>
                     </div>
                   </div>
-                  </SwiperSlide>
-                )
-          )}
+                </SwiperSlide>
+              )
+          )}{" "}
         </Swiper>
 
         {/* Botões do carrossel */}
