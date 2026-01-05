@@ -6,7 +6,6 @@ import { fetchOrderById } from "@/src/services/order";
 import { OrderType } from "@/src/models/order";
 import { RateType } from "@/src/models/product";
 import { findDates } from "@/src/helper";
-import { getStoreUrl } from "@/src/urlHelpers";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useEffect, useRef, useState } from "react";
 import Pagarme from "@/src/services/pagarme";
@@ -283,7 +282,7 @@ export default function Pedido({
                             <span className="font-semibold text-zinc-800">
                               {storeGroup.storeSlug ? (
                                 <Link
-                                  href={getStoreUrl({ slug: storeGroup.storeSlug })}
+                                  href={`/${storeGroup.storeSlug}`}
                                   className="hover:underline hover:text-cyan-600"
                                 >
                                   {storeGroup.storeName}
