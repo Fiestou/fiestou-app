@@ -575,15 +575,24 @@ export default function Pagamento({
 
       formFeedback["loading"] = false;
 
+      console.log("RESPONSE COMPLETA:", response);
+
       // Verifica se não houve erro (sucesso)
-      if (!response?.error) {
-        const data = response || {};
+      if (!response?.error && response?.response) {
+        const data = response?.data || {};
+
+        console.log("DATA EXTRAÍDA:", data);
+        console.log("STATUS:", data?.status);
 
         if (payment.payment_method === "credit_card") {
           if (data?.status === "paid") {
-            CardManager();
             formFeedback["sended"] = true;
+            console.log("PAGAMENTO APROVADO! Redirecionando...");
+            // Redirecionar imediatamente para a página do pedido
+            window.location.href = `/dashboard/pedidos/${orderId}`;
+            return;
           } else {
+            console.error("Status não é 'paid':", data?.status);
             formFeedback = {
               ...formFeedback,
               sended: false,
