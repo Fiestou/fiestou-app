@@ -68,7 +68,7 @@ export default function OrderItemCard({ item, onRate }: OrderItemCardProps) {
               <>
                 Fornecido por:
                 <Link
-                  href={getStoreUrl(productData.store)}
+                  href={getStoreUrl(productData.store as any)}
                   className="text-zinc-900 pl-2 font-semibold underline"
                 >
                   {productData.store.title}
@@ -99,7 +99,7 @@ export default function OrderItemCard({ item, onRate }: OrderItemCardProps) {
           )}
 
           {/* Detalhes/Observações do item */}
-          {!!item.metadata?.details && (
+          {!!item.metadata?.details && typeof item.metadata.details === 'string' && (
             <div className="mt-2 text-xs text-zinc-500 italic">
               {item.metadata.details}
             </div>

@@ -458,14 +458,59 @@ export default function Pagamento({
       };
     }
 
-    // Split único com o valor total (sempre igual para todos os métodos)
+    // SPLIT POR LOJA - Criar um split para cada loja com seu recipient_id
+    // Agrupar items por loja e calcular valores
+    const storeGroups: Record<string, { 
+      recipientId: string; 
+      itemsTotal: number; 
+      deliveryFee: number;
+    }> = {};
+
+    order.items?.forEach((item: any) => {
+      // Parse metadata se necessário
+      let metadata = item.metadata;
+      if (typeof metadata === 'string') {
+        try {
+          metadata = JSON.parse(metadata);
+        } catch {
+          metadata = {};
+        }
+      }
+
+      // Pegar store do metadata ou do produto
+      const store = metadata?.product?.store || item?.product?.store;
+      const recipientId = store?.recipient_id || "acc_default";
+      const itemTotal = Math.round((item.total || 0) * 100);
+      const deliveryFee = Number(metadata?.details?.deliveryFee || 0);
+
+      if (!storeGroups[recipientId]) {
+        storeGroups[recipientId] = {
+          recipientId,
+          itemsTotal: 0,
+          deliveryFee: 0,
+        };
+      }
+
+      storeGroups[recipientId].itemsTotal += itemTotal;
+      storeGroups[recipientId].deliveryFee += Math.round(deliveryFee * 100);
+    });
+
+    // Se não conseguiu agrupar por lojas, usar o valor total para um único recipient
+    const splits = Object.values(storeGroups).length > 0
+      ? Object.values(storeGroups).map(group => ({
+          type: "flat",
+          amount: group.itemsTotal + group.deliveryFee, // Produtos + frete da loja
+          recipient_id: group.recipientId,
+        }))
+      : [{
+          type: "flat",
+          amount: totalAmountCents,
+          recipient_id: order.store?.recipient_id || "acc_default",
+        }];
+
     basePayload.payments = [{
       payment_method: payment.payment_method,
-      split: [{
-        type: "flat", // valor fixo em centavos
-        amount: totalAmountCents, // deve ser igual ao order.amount
-        recipient_id: order.store?.recipient_id || "acc_default",
-      }]
+      split: splits,
     }];
 
     // PIX
@@ -530,8 +575,9 @@ export default function Pagamento({
 
       formFeedback["loading"] = false;
 
-      if (response?.response) {
-        const data = response?.data || {};
+      // Verifica se não houve erro (sucesso)
+      if (!response?.error) {
+        const data = response || {};
 
         if (payment.payment_method === "credit_card") {
           if (data?.status === "paid") {
@@ -590,6 +636,7 @@ export default function Pagamento({
           ...formFeedback,
           sended: false,
           feedback:
+            response?.data?.message || response?.message || 
             "Algo deu errado ao processar seu pagamento. Tente novamente.",
         };
       }
