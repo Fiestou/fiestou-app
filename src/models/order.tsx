@@ -127,8 +127,10 @@ export interface OrderPartnerBlock {
  * - blocos dedicados para payment / delivery / partner
  */
 export interface OrderType {
-  freights_orders_price: any;
-  listItems: any;
+  ordersCount?: number;
+  mainOrderId: number;
+  freights_orders_price?: any;
+  listItems?: any;
   groupHash: string;
   orderIds: number[];
   metadata: any;
@@ -140,6 +142,7 @@ export interface OrderType {
   delivery_price: number | undefined;
   id: number;
   status: number;
+  statusText?: string;
   total: number;
   createdAt: string;
 

@@ -71,7 +71,7 @@ export default function Pedidos({ orders = [], page = { help_list: [] } }: Pedid
                       </div>
                       {/* <div className="text-sm">{item.title}</div> */}
                       <div className="text-sm pt-1">
-                        {getExtenseData(item.createdAt || item.created_at)}
+                        {getExtenseData(item.createdAt)}
                       </div>
                     </div>
                     <div className="order-3 md:order-1 w-[45%] md:w-full md:max-w-[8rem]">
@@ -81,7 +81,7 @@ export default function Pedidos({ orders = [], page = { help_list: [] } }: Pedid
                       </div>
                     </div>
                     <div className="order-2 md:order-1 text-right md:text-center w-[45%] md:w-full md:max-w-[8rem]">
-                      {item?.status === 1 || item?.status === "paid" ? (
+                      {item?.status === 1 ? (
                         <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
                           {item.statusText || "pago"}
                         </div>
