@@ -35,6 +35,7 @@ interface ProductData {
 }
 
 interface Order {
+  order: any;
   id: number;
   created_at: string;
   status: string;
@@ -61,6 +62,7 @@ interface Order {
 }
 
 interface ApiResponse {
+  order: any;
   data: Order;
 }
 
@@ -180,8 +182,9 @@ export default function OrderDetails() {
     return cleaned.length === 8 ? `${cleaned.slice(0, 5)}-${cleaned.slice(5)}` : cep;
   };
 
-  const deliveryStatusMap = {
-    pending: "⌛ Pagamento",
+  const deliveryStatusMap: Record<string, string> = {
+    paid: "� Em separação",
+    pending: "⌛ Aguardando pagamento",
     processing: "👍 Em separação",
     sent: "📦 Enviado",
     transiting: "🚚 Em trânsito",
@@ -190,7 +193,10 @@ export default function OrderDetails() {
     canceled: "❌ Cancelado",
     waitingWithdrawl: "⏱️ Aguardando retirada",
     collect: "🚚 Chegando para recolher",
-    complete: "✅ Concluído"
+    complete: "✅ Concluído",
+    failed: "❌ Pagamento não aprovado",
+    refunded: "💰 Reembolsado",
+    preparing: "📦 Preparando pedido",
   };
 
   function getExtenseData(data_informada = "", pos = "") {
@@ -356,7 +362,10 @@ export default function OrderDetails() {
 
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-3">Status de Processo</h2>
-                <p>{deliveryStatusMap[order.deliveryStatus as keyof typeof deliveryStatusMap]}</p>
+                <p>
+                  {deliveryStatusMap[order.deliveryStatus as keyof typeof deliveryStatusMap] || 
+                   `Status: ${order.deliveryStatus}`}
+                </p>
               </div>
               
             </div>

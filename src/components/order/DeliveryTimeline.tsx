@@ -11,6 +11,7 @@ export default function DeliveryTimeline({ deliveryStatus, createdAt }: Delivery
   const valid = deliveryTypes.filter(
     (item) => !["canceled", "returned"].includes(item.value)
   );
+  console.log("DeliveryTimeline deliveryStatus:", deliveryStatus);
 
   const active = valid.findIndex((step) => step.value === deliveryStatus);
 
