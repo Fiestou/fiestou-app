@@ -43,7 +43,7 @@ export default function ProductPriceDisplay({
           <div className="text-sm">a partir de:</div>
         )}
 
-        <h3 className="font-bold text-4xl lg:text-3xl text-zinc-800">
+        <h3 className="font-bold text-2xl lg:text-3xl text-zinc-800">
           R${formatMoney(finalPrice)}
         </h3>
       </div>

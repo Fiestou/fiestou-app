@@ -40,9 +40,9 @@ export default function ProductBadges({
       <div>
         <span>Disponível para:</span>
         <Badge style="light">
-        {(product.comercialType as string).charAt(0).toUpperCase() +
-          (product.comercialType as string).slice(1)}
-      </Badge>
+          {(product.comercialType as string).charAt(0).toUpperCase() +
+            (product.comercialType as string).slice(1)}
+        </Badge>
       </div>
     </div>
   );

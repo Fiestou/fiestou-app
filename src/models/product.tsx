@@ -43,6 +43,8 @@ export interface AttributeType {
   parsed?: any;
   attributes?: Array<AttributeType>;
   required?: boolean;
+  imageID?: string | number;
+  data?: any;
 }
 
 export interface ProductType {

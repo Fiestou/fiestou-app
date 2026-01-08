@@ -9,6 +9,8 @@ import { getImage } from "@/src/helper";
 interface ProductAttributesProps {
   attributes: AttributeType[];
   activeVariations: any;
+  getImageAttr: (imageID: number) => any;
+  navegateImageCarousel: (imageID: number) => void;
   updateOrder: (
     item: VariationProductOrderType,
     attribute: AttributeType
@@ -92,9 +94,7 @@ export default function ProductAttributes({
                     </div>
                   )}
 
-                  <div className="flex-1 py-1 text-zinc-900">
-                    {item.title}
-                  </div>
+                  <div className="flex-1 py-1 text-zinc-900">{item.title}</div>
 
                   <div className="w-fit py-1 whitespace-nowrap text-sm text-zinc-700">
                     {!!item?.price && `R$ ${formatMoney(item.price)}`}
