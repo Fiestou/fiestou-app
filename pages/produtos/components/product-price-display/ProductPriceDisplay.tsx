@@ -29,7 +29,7 @@ export default function ProductPriceDisplay({
   };
 
   return (
-    <div className="w-fit md:text-right leading-tight pt-4 md:pt-0">
+    <div className="w-fit md:text-right leading-tight md:pt-0">
       <div className="whitespace-nowrap">
         {price.priceFromFor && !!price.priceLow ? (
           <div className="text-sm">

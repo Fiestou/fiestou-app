@@ -584,7 +584,7 @@ export default function Produto({
                   {/* Cabeçalho do produto */}
                   <div className="grid md:flex gap-4 pb-4 lg:gap-10">
                     <div className="w-full pt-2 md:pt-0">
-                      <div className="flex flex-row gap-2 justify-between items-center">
+                      <div className="flex flex-col md:flex-row gap-2 justify-between md:items-center">
                         <h1 className="font-title font-bold text-zinc-900 text-lg md:text-xl">
                           {product?.title}
                         </h1>
