@@ -2,7 +2,7 @@
 
 import { Button } from "@/src/components/ui/form";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation"; // <‑ import do router
+import { useRouter } from "next/navigation";
 
 interface BottomCartProps {
   productToCart: { total: number } | null;
@@ -18,7 +18,7 @@ export default function BottomCart({
   isMobile,
   canAddToCart,
 }: BottomCartProps) {
-  const router = useRouter(); // <‑ hook do router
+  const router = useRouter();
 
   // Ajusta padding do html quando mobile
   useEffect(() => {

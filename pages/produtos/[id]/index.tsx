@@ -107,7 +107,6 @@ export async function getStaticProps(ctx: any) {
         DataSeo: DataSeo,
         Scripts: Scripts,
       },
-      revalidate: 60 * 60 * 3, // 3 horas
     };
   }
 }
@@ -143,7 +142,6 @@ export default function Produto({
   const [inCart, setInCart] = useState(false as boolean);
   const [unavailable, setUnavailable] = useState([] as Array<string>);
   const [isMobile, setIsMobile] = useState(false);
-  const [showCartPreview, setShowCartPreview] = useState(false);
   const layout = { isMobile };
   const router = useRouter();
   const imageCover =
@@ -587,12 +585,13 @@ export default function Produto({
                   <div className="grid md:flex gap-4 pb-4 lg:gap-10">
                     <div className="w-full pt-2 md:pt-0">
                       <div className="flex flex-row gap-2 justify-between items-center">
-                        <h1 className="font-title font-bold text-zinc-900 text-3xl">
+                        <h1 className="font-title font-bold text-zinc-900 text-lg md:text-xl">
                           {product?.title}
                         </h1>
 
                         <ProductPriceDisplay product={product} />
                       </div>
+
                       <ProductBadges product={product} comments={comments} />
                       <ProductDescription product={product} />
                     </div>
@@ -608,6 +607,8 @@ export default function Produto({
                       attributes={product?.attributes ?? []}
                       activeVariations={productToCart.attributes}
                       updateOrder={updateOrder}
+                      getImageAttr={getImage}
+                      navegateImageCarousel={() => {}}
                     />
                     {/* INPUTS HIDDEN — ATRIBUTOS OBRIGATÓRIOS */}
                     {productAttributes.map((attribute) => {
