@@ -30,7 +30,7 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
   if (!product?.gallery?.length) return null;
 
   return (
-    <div className="sticky md:relative top-0 left-0 z-[10]">
+    <div className="sticky">
       <div className="relative bg-white -mx-4 md:mx-0 md:mb-10">
         {/* Carrossel de imagens */}
         <Swiper
@@ -91,7 +91,7 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
             />
           </button>
         </div>
-        <div className="swiper-pagination bg-fuchsia-950"></div>
+        <div className="swiper-pagination hidden md:block bg-fuchsia-950"></div>
       </div>
     </div>
   );
