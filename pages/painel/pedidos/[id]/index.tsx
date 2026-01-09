@@ -2,7 +2,7 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
-import { fetchOrderById } from "@/src/services/order";
+import { getOrderById } from "@/src/services/order";
 import { OrderType, OrderTypeResponse } from "@/src/models/order";
 import {
   getExtenseData,
@@ -50,7 +50,7 @@ export default function Pedido() {
     if (!id) return;
 
     (async () => {
-      const fetched = await fetchOrderById(api, id);
+      const fetched = await getOrderById(id);
       if (fetched) {
         setOrder(fetched as OrderType);
         setDeliveryStatus((fetched as any)?.delivery_status ?? "pending");

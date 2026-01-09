@@ -3,38 +3,27 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
 import { getExtenseData, moneyFormat } from "@/src/helper";
-import Api from "@/src/services/api";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { OrderStatusBadge } from "@/src/components/order";
+import { useEffect, useState } from "react";
+import { getOrdersByCustomer } from "@/src/services/order";
+import { getUser } from "@/src/contexts/AuthContext";
 
-export async function getServerSideProps(ctx: any) {
-  const api = new Api();
+export default function Pedidos() {
+  const [orders, setOrders] = useState<Array<any>>([]);
+  const [loading, setLoading] = useState(true);
 
-  let request: any = await api.bridge(
-    {
-      method: "get",
-      url: "orders/list",
-    },
-    ctx
-  );
-
-  if (request?.status === 401) {
-    return {
-      redirect: {
-        destination: "/acesso",
-        permanent: false,
-      },
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const user = getUser();
+      if (user?.id) {
+        const data = await getOrdersByCustomer(user.id);
+        setOrders(Array.isArray(data) ? data : []);
+      }
+      setLoading(false);
     };
-  }
-
-  return {
-    props: {
-      orders: Array.isArray(request?.data) ? request.data : [],
-    },
-  };
-}
-
-export default function Pedidos({ orders }: { orders: Array<any> }) {
+    fetchOrders();
+  }, []);
   return (
     <Template
       header={{
@@ -96,7 +85,15 @@ export default function Pedidos({ orders }: { orders: Array<any> }) {
               <div className="w-[32rem]">Status</div>
               <div className="w-[22rem]">Ações</div>
             </div>
-            {!!orders &&
+            {loading ? (
+              <div className="border-t p-8 text-center text-zinc-500">
+                Carregando pedidos...
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="border-t p-8 text-center text-zinc-500">
+                Nenhum pedido encontrado
+              </div>
+            ) : (
               orders.map((order, key) => (
                 <div
                   key={key}
@@ -156,7 +153,8 @@ export default function Pedidos({ orders }: { orders: Array<any> }) {
                     </Button>
                   </div>
                 </div>
-              ))}
+              ))
+            )}
           </div>
           {orders && orders.length > 0 && (
             <div className="pt-4 text-sm text-zinc-500">
