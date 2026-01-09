@@ -317,7 +317,7 @@ export default function Pedido() {
                     )
                   </div>
                   <div>
-                    {order?.delivery?.to}, {order?.delivery?.schedule}
+                    {order?.delivery?.to}, {order?.delivery?.schedule?.date ? `${order.delivery.schedule.date} - ${order.delivery.schedule.period} (${order.delivery.schedule.time})` : (typeof order?.delivery?.schedule === 'string' ? order.delivery.schedule : 'Não informado')}
                   </div>
                   <div>
                     {order?.delivery?.address?.street},{" "}

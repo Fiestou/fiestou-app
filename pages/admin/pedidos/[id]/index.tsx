@@ -45,6 +45,18 @@ interface Order {
   deliverySchedule: string;
   deliveryStatus: string;
   deliveryPrice: number | string;
+  delivery?: {
+    status?: string;
+    schedule?: {
+      date: string;
+      period: string;
+      time: string;
+    };
+    to?: string;
+    price?: number;
+    priceLabel?: string;
+    address?: DeliveryAddress;
+  };
   user: {
     name: string;
     email: string;
@@ -352,8 +364,8 @@ export default function OrderDetails() {
               </div>
 
               <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-3">Entrega ({getDeliveryPriceLabel(order.deliveryPrice)})</h2>
-                <p>{order.deliveryTo}, {order.deliverySchedule}</p>
+              <h2 className="text-lg font-semibold mb-3">Entrega ({getDeliveryPriceLabel((order.deliveryPrice || order.delivery?.price) as number)})</h2>
+                <p>{order.deliveryTo || order.delivery?.to}, {order.delivery?.schedule?.date ? `${order.delivery.schedule.date} - ${order.delivery.schedule.period} (${order.delivery.schedule.time})` : order.deliverySchedule}</p>
                 <p>{(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.street) || 'N/A'}, {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.number) || 'N/A'}, {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.neighborhood) || 'N/A'}</p>
                 <p>CEP: {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.zipCode) ? formatCEP(order.deliveryAddress.zipCode) : 'N/A'}</p>
                 <p>Complemento: {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.complement) || 'N/A'}</p>
