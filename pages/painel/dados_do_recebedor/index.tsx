@@ -8,45 +8,18 @@ import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useEffect, useState } from "react";
 import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
-import { RecipientEntity, RecipientStatusResponse } from "@/src/models/recipient";
+import { RecipientStatusResponse, RecipientType } from "@/src/models/Recipient";
 import { getRecipientStatus } from "@/src/services/recipients";
-
-export async function getServerSideProps(ctx: any) {
-  const api = new Api();
-
-  const request: any = await api.call(
-    {
-      method: 'post',
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "account",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
-
-  let page: any = request?.data?.query?.page[0] ?? {};
-
-  return {
-    props: {
-      page: page,
-    },
-  };
-}
+import HelpCardConfig from "@/src/components/common/HelpCardConfig";
+import InterrogacaoIcon from "@/src/icons/InterrogacaoIcon";
+import SettingsIcon from "@/src/icons/SettingsIcon";
 
 export default function MeusDados({ page }: { page: any }) {
+
   const api = new Api();
 
   const [user, setUser] = useState({} as UserType);
+  const [store, setStore] = useState<any>(null);
   const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
 
@@ -56,19 +29,31 @@ export default function MeusDados({ page }: { page: any }) {
       url: "users/get",
     });
 
-
     if (request.response) {
       setUser(request.data);
     }
   };
 
+  const getStoreData = async () => {
+    try {
+      const response: any = await api.bridge({
+        method: "post",
+        url: "stores/form",
+      });
+      if (response?.response && response?.data) {
+        setStore(response.data);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados da loja:", error);
+    }
+  };
+
   const fetchRecipientStatus = async () => {
-    // TODO: trocar getRecipientStatus por chamada real ao backend (Aguardando Backend)
     const status = await getRecipientStatus();
     setRecipientStatus(status);
   };
 
-  const handleRecipientCompleted = (data: RecipientEntity) => {
+  const handleRecipientCompleted = (data: RecipientType) => {
     setRecipientStatus({
       completed: true,
       recipient: data,
@@ -77,12 +62,13 @@ export default function MeusDados({ page }: { page: any }) {
 
   useEffect(() => {
     getUserData();
+    getStoreData();
     fetchRecipientStatus();
   }, []);
 
   const shouldShowRecipientBanner =
     !!user?.id &&
-    user?.person === "partner" &&
+    user?.type === "partner" &&
     recipientStatus &&
     !recipientStatus.completed;
 
@@ -102,11 +88,11 @@ export default function MeusDados({ page }: { page: any }) {
             <Breadcrumbs
               links={[
                 { url: "/painel", name: "Painel" },
-                { url: "/painel/meus-dados", name: "Meus dados" },
+                { url: "/painel/Dados_do_recebedor", name: "Dados_do_recebedor" },
               ]}
             />
           </div>
-          <div className="grid md:flex gap-4 items-center w-full">
+          <div className="grid md:flex gap-4 items-center w-full border-b pb-8 mb-0">
             <div className="w-full flex items-center">
               <Link passHref href="/painel">
                 <Icon
@@ -115,7 +101,7 @@ export default function MeusDados({ page }: { page: any }) {
                 />
               </Link>
               <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                <span className="font-title font-bold">Meus dados</span>
+                <span className="font-title font-bold">Dados do recebedor</span>
               </div>
             </div>
           </div>
@@ -145,8 +131,13 @@ export default function MeusDados({ page }: { page: any }) {
               <div className="w-full grid gap-8">
                 <UserEdit user={user} />
               </div>
-              <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
-                <HelpCard list={page.help_list} />
+              <div className="w-full md:max-w-[18rem] lg:max-w-[24rem] flex flex-col gap-6">
+                <HelpCardConfig help_text="Realizamos o pagamento aos fornecedores automaticamente por meio de split de pagamento, com o valor sendo creditado diretamente em sua conta. 
+
+                " help_title="Por que isso é importante?" help_icon={<SettingsIcon />} help_complete="Saiba mais:" />
+                <HelpCardConfig help_text="A seção de configurações é apenas para visualização, pois seus parâmetros são definidos pelo Fiestou, conforme descrito nos termos de aceite.
+
+                " help_title="Configurações" help_icon={<InterrogacaoIcon />} help_complete={"Confira:"} />
               </div>
             </div>
           </div>
@@ -157,6 +148,8 @@ export default function MeusDados({ page }: { page: any }) {
         onClose={() => setRecipientModalOpen(false)}
         status={recipientStatus}
         onCompleted={handleRecipientCompleted}
+        user={user}
+        store={store}
       />
     </Template>
   );

@@ -26,7 +26,9 @@ export async function getStaticProps(ctx: GetStaticPropsContext) {
   const DataSeo = request?.data?.DataSeo ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const Dashboard = request?.data?.Dashboard ?? {};
-
+  console.log('Dashboard', Dashboard);
+  console.log('HeaderFooter', HeaderFooter);
+  console.log('DataSeo', DataSeo);
   return {
     props: {
       HeaderFooter: HeaderFooter,
@@ -109,10 +111,10 @@ export default function Dashboard({ HeaderFooter, Dashboard }: any) {
         </div>
       </section>
       <section>
-        {!!Dashboard?.board_desc && (
-          <div className="pt-4">{Dashboard?.board_desc ?? ""}</div>
-        )}
         <div className="container-medium pb-14">
+          {!!Dashboard?.board_desc && (
+            <div className="pb-6 text-zinc-600">{Dashboard?.board_desc ?? ""}</div>
+          )}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
             {menuDashboard.map((item) => (
               <Link key={item.title} href={`/${item.endpoint}`} passHref>

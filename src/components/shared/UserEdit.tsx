@@ -2,15 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Input, Select, TextArea } from "@/src/components/ui/form";
 import Api from "@/src/services/api";
-import { useRouter } from "next/router";
 import { UserType } from "@/src/models/user";
-import Img from "@/src/components/utils/ImgBase";
-import FileInput from "@/src/components/ui/form/FileInputUI";
-import { getExtenseData } from "@/src/helper";
 import { formatName, formatPhone } from "src/components/utils/FormMasks";
+import GroupConfigUsers from "./GroupConfigUsers";
+import GroupConfigBank from "./GroupConfigBank";
+import GroupConfigBasicUser from "./GroupConfigBasicUser";
+import GroupConfig from "./GroupConfig";
+import { getStore } from "@/src/contexts/AuthContext";
+import { RecipientType } from "@/src/models/Recipient";
+import { toast } from "react-toastify";
 
 const formInitial = {
   edit: "",
@@ -25,438 +28,185 @@ export default function UserEdit({ user }: { user: UserType }) {
     setForm({ ...form, ...value });
   };
 
-  const [oldUser, setOldUser] = useState(user as UserType);
-  const [content, setContent] = useState(user as UserType);
-  const handleContent = async (value: Object) => {
-    setContent({ ...content, ...value });
+  const [content, setContent] = useState<RecipientType>();
+  const [storeId, setStoreId] = useState<any>();
+
+  // Cria dados a partir do user como fallback
+  const buildFromUser = (): RecipientType => {
+    const userAddr = (user as any)?.address?.[0];
+    const userPhone = user?.phone?.replace(/\D/g, "") || "";
+    const userBank = (user as any)?.bankAccounts?.[0];
+    const doc = user?.cpf || user?.document || "";
+    const isPJ = doc.replace(/\D/g, "").length === 14;
+
+    return {
+      recipient: null,
+      id: undefined as any,
+      store_id: undefined as any,
+      partner_id: "",
+      code: "",
+      type_enum: isPJ ? "PJ" : "PF",
+      type: isPJ ? "company" : "individual",
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      document: doc,
+      company_name: null,
+      trading_name: null,
+      birth_date: user?.date ?? "",
+      monthly_income: "",
+      professional_occupation: null,
+      addresses: userAddr ? [{
+        id: 0,
+        street: userAddr.street ?? "",
+        complementary: userAddr.complement ?? "",
+        street_number: String(userAddr.number ?? ""),
+        neighborhood: userAddr.neighborhood ?? "",
+        city: userAddr.city ?? "",
+        state: userAddr.state ?? "",
+        zip_code: userAddr.zipCode ?? "",
+        reference_point: "",
+      }] : [],
+      phones: userPhone.length >= 10 ? [{
+        id: 0,
+        area_code: userPhone.slice(0, 2),
+        number: userPhone.slice(2),
+      }] : [],
+      config: {},
+      partners: [],
+      annual_revenue: null,
+      created_at: "",
+      updated_at: "",
+      bank_account: userBank ? {
+        bank: userBank.bank ?? "",
+        branch_number: userBank.agence ?? "",
+        branch_check_digit: userBank.agenceDigit ?? "",
+        account_number: userBank.accountNumber ?? "",
+        account_check_digit: userBank.accountDigit ?? "",
+        holder_name: userBank.title ?? user?.name ?? "",
+        holder_type: isPJ ? "company" : "individual",
+        holder_document: doc,
+        type: userBank.type === "savings" ? "savings" : "checking",
+      } : undefined,
+    };
   };
+
+  const getRecipientCode = async (storeId: string) => {
+    try {
+      const res: any = await api.bridge({
+        method: "GET",
+        url: `info/recipient/${storeId}`,
+      });
+
+      if (!res?.response || !res?.data) {
+        // Usa dados do usuário como fallback quando não existe recipient
+        console.log("Recipient não encontrado, usando dados do usuário como fallback");
+        setContent(buildFromUser());
+        return;
+      }
+
+      const d = res.data;
+
+      // mapeia address/phone (objetos) -> arrays esperados pelos componentes
+      const mapped: RecipientType = {
+        recipient: null,
+        id: d.id,
+        store_id: d.store_id,
+        partner_id: d.partner_id,
+        code: d.code ?? "",
+        type_enum: d.type_enum ?? "",
+        type: d.type ?? "individual",
+        name: d.name ?? "",
+        email: d.email ?? "",
+        document: d.document ?? "",
+        company_name: d.company_name ?? null,
+        trading_name: d.trading_name ?? null,
+        birth_date: d.birth_date ?? "",
+        monthly_income: d.monthly_income ?? "",
+        professional_occupation: d.professional_occupation ?? null,
+
+        // converte address {..} para addresses [{..}]
+        addresses: d.address
+          ? [{
+            id: 0,
+            street: d.address.street ?? "",
+            complementary: d.address.complementary ?? "",
+            street_number: d.address.street_number ?? "",
+            neighborhood: d.address.neighborhood ?? "",
+            city: d.address.city ?? "",
+            state: d.address.state ?? "",
+            zip_code: d.address.zip_code ?? "",
+            reference_point: d.address.reference_point ?? "",
+          }]
+          : [],
+
+        // converte phone {..} para phones [{..}]
+        phones: d.phone
+          ? [{
+            id: 0,
+            area_code: d.phone.area_code ?? "",
+            number: d.phone.number ?? "",
+          }]
+          : [],
+
+        config: {},
+        partners: [],
+        annual_revenue: null,
+        created_at: "",
+        updated_at: ""
+      };
+
+      setContent(mapped);
+    } catch (error) {
+      console.error("Erro ao carregar recipient, usando fallback:", error);
+      // Usa dados do usuário como fallback em caso de erro
+      setContent(buildFromUser());
+    }
+  };
+
+  useEffect(() => {
+    if (!!window) {
+      setStoreId(getStore());
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("storeId changed:", storeId);
+    if (storeId) {
+      getRecipientCode(storeId);
+    }
+  }, [storeId]);
 
   const [handleProfile, setHandleProfile] = useState({
     remove: 0,
     preview: user?.profile?.preview ?? "",
   });
 
-  const handleProfileRemove = async (e: any) => {
-    setHandleProfile({
-      preview: "",
-      remove: content?.profile?.id ?? handleProfile.remove,
-    });
-
-    handleContent({ profile: {} });
-  };
-
-  const handleProfilePreview = async (e: any) => {
-    const file = e.target.files[0];
-
-    const base64: any = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-
-    const fileData = { base64, fileName: file.name };
-
-    setHandleProfile({ ...handleProfile, preview: fileData.base64 });
-
-    return fileData;
-  };
-
-  const handleSubmitFile = async (e: any) => {
-    e.preventDefault();
-
-    handleForm({ loading: true });
-
-    let profileValue = content?.profile;
-
-    if (!!handleProfile.remove) {
-      const request = await api
-        .media({
-          dir: "user",
-          app: user.id,
-          index: user.id,
-          method: "remove",
-          medias: [handleProfile.remove],
-        })
-        .then((res: any) => res);
-
-      if (request.response && !!request.removed) {
-        profileValue = {};
-      }
-    }
-
-    if (!!content?.profile?.files) {
-      const upload = await api
-        .media({
-          dir: "user",
-          app: user.id,
-          index: user.id,
-          method: "upload",
-          medias: [content?.profile?.files],
-        })
-        .then((data: any) => data);
-
-      if (upload.response && !!upload.medias[0].status) {
-        const media = upload.medias[0].media;
-        media["details"] = JSON.parse(media.details);
-
-        profileValue = {
-          id: media.id,
-          base_url: media.base_url,
-          permanent_url: media.permanent_url,
-          details: media.details,
-          preview: media.base_url + media.details?.sizes["lg"],
-        };
-      }
-    }
-
-    handleContent({ profile: profileValue });
-
-    const handle = {
-      ...content,
-      profile: profileValue,
-      id: user.id,
-    };
-
-    const request: any = await api.bridge({
-      method: 'post',
-      url: "users/update",
-      data: handle,
-    });
-
-    if (request.response) {
-      setContent(handle);
-      setOldUser(Object.assign({}, handle));
-
-      setHandleProfile({
-        preview: profileValue?.preview,
-        remove: 0,
-      });
-    }
-
-    handleForm({ edit: "", loading: false });
-  };
-
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-
-    handleForm({ loading: true });
-
-    const handle: UserType = {
-      ...content,
-      id: user.id,
-    };
-
-    const request: any = await api.bridge({
-      method: 'post',
-      url: "users/update",
-      data: handle,
-    });
-
-    if (request.response) {
-      setOldUser(handle);
-      handleContent(handle);
-    }
-
-    handleForm({ edit: "", loading: false });
-  };
-
-  const renderAction = (
-    name: string,
-    label?: { edit?: string; save?: string; cancel?: string }
-  ) => {
-    return form.edit == name ? (
-      <div className="flex gap-4 md:gap-10">
-        <Button
-          onClick={(e: any) => {
-            handleForm({ edit: "" });
-            setContent(oldUser);
-            setHandleProfile({
-              preview: oldUser?.profile?.preview ?? "",
-              remove: 0,
-            });
-          }}
-          type="button"
-          style="btn-link"
-        >
-          {label?.cancel ? label.cancel : "Cancelar"}
-        </Button>
-        <Button
-          loading={form.edit == name && form.loading}
-          className="py-2 px-4"
-        >
-          {label?.save ? label.save : "Salvar"}
-        </Button>
-      </div>
-    ) : !form.loading ? (
-      <Button
-        onClick={(e: any) => {
-          handleForm({ edit: name });
-          setContent(oldUser);
-        }}
-        type="button"
-        style="btn-link"
-      >
-        {label?.edit ? label.edit : "Editar"}
-      </Button>
-    ) : (
-      <button type="button" className="p-0 font-bold opacity-50">
-        {label?.edit ? label.edit : "Editar"}
-      </button>
-    );
-  };
 
   return (
     <>
-      <form
-        onSubmit={(e: any) => handleSubmit(e)}
-        method="POST"
-        className="grid gap-4 border-y py-8 my-0"
-      >
-        <div className="flex items-center">
-          <div className="w-full">
-            <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-              Nome completo
-            </h4>
-          </div>
-          <div className="w-fit text-sm md:text-base">{renderAction("name")}</div>
-        </div>
-        <div className="w-full text-sm md:text-base">
-          {form.edit == "name" ? (
-            <input
-              className="form-control"
-              value={content?.name ?? ""}
-              onChange={(e: any) => handleContent({ name: formatName(e.target.value) })}
-              placeholder="Digite o nome aqui"
-            />
-          ) : (
-            oldUser?.name ? formatName(oldUser.name) : "Informe seu nome"
-          )}
-        </div>
-      </form>
-      <form
-        onSubmit={(e: any) => handleSubmit(e)}
-        method="POST"
-        className="grid gap-4 border-b pb-8 mb-0"
-      >
-        <div className="flex items-center">
-          <div className="w-full">
-            <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-              Endereço de email
-            </h4>
-          </div>
-          <div className="w-fit text-sm md:text-base">
-            {renderAction("email")}
-          </div>
-        </div>
-        <div className="w-full text-sm md:text-base">
-          {form.edit == "email" ? (
-            <input
-              className="form-control"
-              onChange={(e: any) => handleContent({ email: e.target.value })}
-              defaultValue={content?.email}
-              placeholder="Digite o e-mail aqui"
-            />
-          ) : (
-            oldUser?.email ?? "Informe seu e-mail"
-          )}
-        </div>
-      </form>
-      {/*  */}
-      <form
-        onSubmit={(e: any) => handleSubmit(e)}
-        method="POST"
-        className="grid gap-4 border-b pb-8 mb-0"
-      >
-        <div className="flex items-center">
-          <div className="w-full">
-            <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-              Data de Nascimento
-            </h4>
-          </div>
-          <div className="w-fit text-sm md:text-base">
-            {renderAction("date")}
-          </div>
-        </div>
-        <div className="w-full text-sm md:text-base">
-          {form.edit == "date" ? (
-            <input
-              className="form-control"
-              type="date"
-              onChange={(e: any) => handleContent({ date: e.target.value })}
-              defaultValue={content?.date}
-              placeholder="Digite a sua data de nascimento aqui"
-            />
-          ) : content?.date ? (
-            getExtenseData(content?.date)
-          ) : (
-            "Informe sua data de nascimento"
-          )}
-        </div>
-      </form>
-      {/*  */}
-      <form
-        onSubmit={(e: any) => handleSubmit(e)}
-        method="POST"
-        className="grid gap-4 border-b pb-8 mb-0"
-      >
-        <div className="flex items-center">
-          <div className="w-full">
-            <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-              Sexo
-            </h4>
-          </div>
-          <div className="w-fit text-sm md:text-base">
-            {renderAction("gender")}
-          </div>
-        </div>
-        <div className="w-full text-sm md:text-base">
-          {form.edit == "gender" ? (
-            <Select
-              name="sexo"
-              value={content?.gender}
-              onChange={(e: any) => handleContent({ gender: e.target.value })}
-              options={[
-                {
-                  name: "Masculino",
-                  value: "male",
-                },
-                {
-                  name: "Feminino",
-                  value: "female",
-                },
-                {
-                  name: "Outro",
-                  value: "other",
-                },
-              ]}
-            />
-          ) : content?.gender == "male" ? (
-            "Masculino"
-          ) : content?.gender == "female" ? (
-            "Feminino"
-          ) : content?.gender == "other" ? (
-            "Outro"
-          ) : (
-            "Insira seu sexo"
-          )}
-        </div>
-      </form>
-      {/*  */}
-      <form
-        onSubmit={(e: any) => handleSubmit(e)}
-        method="POST"
-        className="grid gap-4 border-b pb-8 mb-0"
-      >
-        <div className="flex items-center">
-          <div className="w-full">
-            <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-              Número de telefone
-            </h4>
-          </div>
-          <div className="w-fit text-sm md:text-base">{renderAction("phone")}</div>
-        </div>
-        <div className="w-full text-sm md:text-base">
-          {form.edit == "phone" ? (
-            <input
-              className="form-control"
-              name="celular"
-              value={content?.phone ?? ""}
-              onChange={(e: any) => handleContent({ phone: formatPhone(e.target.value) })}
-              placeholder="Digite o número de celular aqui"
-            />
-          ) : (
-            oldUser?.phone ? formatPhone(oldUser.phone) : "Informe seu número de celular"
-          )}
-        </div>
-      </form>
-      {/* 
-      <form
-        onSubmit={(e: any) => handleSubmit(e)}
-        method="POST"
-        className="grid gap-4 border-b pb-8 mb-0"
-      >
-        <div className="flex items-center">
-          <div className="w-full">
-            <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-              Documento de identidade (RG)
-            </h4>
-          </div>
-          <div className="w-fit text-sm md:text-base">{renderAction("rg")}</div>
-        </div>
-        <div className="w-full text-sm md:text-base">
-          {form.edit == "rg" ? (
-            <Input
-              name="rg"
-              onChange={(e: any) => handleContent({ rg: e.target.value })}
-              value={content?.rg}
-              placeholder="Digite o seu RG"
-            />
-          ) : (
-            oldUser?.rg ?? "Informe seu RG"
-          )}
-        </div>
-      </form>
+      <GroupConfigBasicUser content={content} />
 
-      <form
-        onSubmit={(e: any) => handleSubmit(e)}
-        method="POST"
-        className="grid gap-4 border-b pb-8 mb-0"
-      >
-        <div className="flex items-center">
-          <div className="w-full">
-            <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-              Cadastro de Pessoas Físicas (CPF)
-            </h4>
-          </div>
-          <div className="w-fit text-sm md:text-base">
-            {renderAction("cpf")}
-          </div>
-        </div>
-        <div className="w-full text-sm md:text-base">
-          {form.edit == "cpf" ? (
-            <Input
-              name="cpf"
-              onChange={(e: any) => handleContent({ cpf: e.target.value })}
-              value={content?.cpf}
-              placeholder="Digite o seu CPF"
-            />
-          ) : (
-            oldUser?.cpf ?? "Informe seu CPF"
-          )}
-        </div>
-      </form>
-      <form
-        onSubmit={(e: any) => handleSubmit(e)}
-        method="POST"
-        className="grid gap-4 border-b pb-8 mb-0"
-      >
-        <div className="flex items-center">
-          <div className="w-full">
-            <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-              Contato de emergência
-            </h4>
-          </div>
-          <div className="w-fit text-sm md:text-base">
-            {renderAction("phoneSecondary")}
-          </div>
-        </div>
-        <div className="w-full text-sm md:text-base">
-          {form.edit == "phoneSecondary" ? (
-            <Input
-              name="contato"
-              onChange={(e: any) =>
-                handleContent({ phoneSecondary: e.target.value })
-              }
-              value={content?.phoneSecondary}
-              placeholder="Digite um contato de emergência"
-            />
-          ) : (
-            oldUser?.phoneSecondary ?? "Informe seu contato de emergência"
-          )}
-        </div>
-      </form>
-      */}
+      <GroupConfigUsers title="Pessoa Física" content={content} />
+
+      <GroupConfigBank
+        title="Contas bancárias"
+        recipientId={content?.id}
+        initialData={content?.bank_account as any}
+      />
+
+      <GroupConfig
+        title="Configurações"
+        content={{
+          autoTransfer: "Sim",
+          transferFrequency: "Mensal",
+          transferDay: "Dia 15",
+          autoAdvance: "Sim",
+          advanceType: "Full",
+          advanceVolume: "50",
+          advanceDays: "Dia X",
+        }}
+      />
+
     </>
   );
 }

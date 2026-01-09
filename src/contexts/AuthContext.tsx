@@ -72,7 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!Cookies.get("fiestou.authtoken");
 
   async function SignIn({ email, password, recaptcha_token }: SignInData) {
-    const expires = { expires: 14 };
+    // Cookie expira em 365 dias (1 ano) - mesmo tempo do JWT_TTL no backend
+    const expires = { expires: 365 };
 
     Cookies.remove("fiestou.authtoken");
     Cookies.remove("fiestou.user");
@@ -130,12 +131,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return {} as UserType;
       }
       
-      if (user?.person == "master") {
+      if (user?.type === "master") {
         Router.push("/admin");
-      }else if (user?.person == "partner") {
+      } else if (user?.type === "partner") {
         Router.push("/painel");
-      }else if (user.person == "delivery") {
-        Router.push("/delivery");
+      } else if (user?.type === "delivery") {
+        Router.push("/entregador");
       } else if (!Cookies.get("fiestou.cart")) {
         Router.push("/dashboard");
       } else {

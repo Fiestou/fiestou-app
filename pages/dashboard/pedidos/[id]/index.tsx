@@ -1,34 +1,65 @@
-import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
+import { fetchOrderById } from "@/src/services/order";
 import { OrderType } from "@/src/models/order";
-import Payment from "@/src/services/payment";
 import { RateType } from "@/src/models/product";
-import {
-  dateBRFormat,
-  findDates,
-  getExtenseData,
-  getImage,
-  getShorDate,
-  moneyFormat,
-} from "@/src/helper";
-import Img from "@/src/components/utils/ImgBase";
-import { Button, Label, TextArea } from "@/src/components/ui/form";
-import { useEffect, useRef, useState } from "react";
-import Modal from "@/src/components/utils/Modal";
+import { findDates } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { deliveryTypes } from "@/src/models/delivery";
+import { useEffect, useRef, useState } from "react";
 import Pagarme from "@/src/services/pagarme";
-import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
+import {
+  OrderStatusBadge,
+  DeliveryTimeline,
+  OrderItemCard,
+  OrderSummary,
+  RatingModal,
+  CancelOrderModal,
+} from "@/src/components/order";
+
+const formInitial = {
+  edit: "",
+  loading: false,
+};
+
+// Helper para agrupar itens por loja
+interface StoreGroup {
+  storeId: number | string;
+  storeName: string;
+  storeSlug?: string;
+  items: any[];
+}
+
+function groupItemsByStore(items: any[]): StoreGroup[] {
+  const groups: Record<string, StoreGroup> = {};
+
+  items.forEach((item) => {
+    const store = item?.metadata?.product?.store;
+    const storeId = store?.id || store?.slug || 'unknown';
+    const storeName = store?.title || store?.name || 'Loja';
+    const storeSlug = store?.slug;
+
+    if (!groups[storeId]) {
+      groups[storeId] = {
+        storeId,
+        storeName,
+        storeSlug,
+        items: [],
+      };
+    }
+    groups[storeId].items.push(item);
+  });
+
+  return Object.values(groups);
+}
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
   const params = ctx.params;
 
   let request: any = await api.content({
-    method: 'get',
+    method: "get",
     url: "order",
   });
 
@@ -38,18 +69,13 @@ export async function getServerSideProps(ctx: any) {
 
   return {
     props: {
-      orderId: params.id,
-      HeaderFooter: HeaderFooter,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
+      orderId: parseInt(params.id),
+      HeaderFooter,
+      DataSeo,
+      Scripts,
     },
   };
 }
-
-const formInitial = {
-  edit: "",
-  loading: false,
-};
 
 export default function Pedido({
   orderId,
@@ -69,7 +95,7 @@ export default function Pedido({
     setForm({ ...form, ...value });
   };
 
-  const [cancel, setCancel] = useState(false as boolean);
+  const [cancel, setCancel] = useState(false);
   const [order, setOrder] = useState({} as OrderType);
   const [products, setProducts] = useState([] as Array<any>);
 
@@ -79,14 +105,13 @@ export default function Pedido({
   };
 
   const [modalRating, setModalRating] = useState(false);
-  const openMoralRating = (product: any) => {
+  const openRatingModal = (product: any) => {
     handleRate({ product: product });
     setModalRating(true);
   };
 
-  const submitRate = async (e: any) => {
+  const submitRate = async (e: React.FormEvent) => {
     e.preventDefault();
-
     handleForm({ loading: true });
 
     const handle = {
@@ -95,7 +120,7 @@ export default function Pedido({
     };
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "comments/register",
       data: handle,
     });
@@ -109,124 +134,61 @@ export default function Pedido({
 
   const submitCancel = async () => {
     const pagarme = new Pagarme();
-
-    const request = await pagarme.cancelOrder(order);
+    await pagarme.cancelOrder(order);
   };
 
   const [resume, setResume] = useState({} as any);
 
-  const renderDelivery = () => {
-    let checked = false;
+  const getOrder = async () => {
+    const fetchedOrder: OrderType | null =
+      (await fetchOrderById(api, orderId)) ?? ({} as OrderType);
 
-    let render = [];
-
-    render.push(
-      <div key={order.id} className="relative flex pb-8">
-        <div className="absolute top-0 left-0 border-l-2 border-dashed h-full ml-3"></div>
-        <div className="w-fit relative">
-          <div className="p-3 relative bg-green-400 rounded-full">
-            <Icon
-              icon="fa-check"
-              className="text-white absolute text-xs mt-[1px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-              type="far"
-            />
-          </div>
-        </div>
-        <div className="w-full pl-3">
-          <div className="font-bold text-zinc-900">
-            Pedido realizado - {getShorDate(order.created_at)}
-          </div>
-          <div className="text-sm">Seu pedido já está em nosso sistema.</div>
-        </div>
-      </div>
-    );
-
-    const validDeliveryTypes = deliveryTypes.filter(
-      (item: any) => !["canceled", "returned"].includes(item.value)
-    );
-    const checkedLevel = validDeliveryTypes
-      .map((item: any) => item.value)
-      .indexOf(order.deliveryStatus);
-
-    validDeliveryTypes.map((item: any, key) => {
-      render.push(
-        <div
-          key={key}
-          className={`${checkedLevel < key && "opacity-40"} relative flex`}
-        >
-          <div className="w-fit relative bg-white">
-            {validDeliveryTypes.length - 1 != key && (
-              <div className="absolute top-0 left-0 w-full h-full">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 border-l-2 border-dashed h-full"></div>
-              </div>
-            )}
-            <div className={`bg-white relative rounded-full`}>
-              <div
-                className={`${
-                  key < checkedLevel
-                    ? "bg-green-400"
-                    : checkedLevel == key
-                    ? "bg-yellow-300"
-                    : "bg-zinc-400"
-                } p-3 rounded-full relative`}
-              >
-                {(checkedLevel > key ||
-                  checkedLevel == validDeliveryTypes.length - 1) && (
-                  <Icon
-                    icon="fa-check"
-                    className="text-white absolute text-xs mt-[1px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                    type="far"
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="w-full pl-3 pb-8">
-            <div className="font-bold text-zinc-900">{item.name}</div>
-            <div className="text-sm">{item.description}</div>
-          </div>
-        </div>
-      );
-    });
-
-    return render;
-  };
-
-  const getOrder = async (attempts?: number) => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "orders/get",
-      data: {
-        id: orderId,
-      },
-    });
-
-    if (!request?.response) {
-      return {
-        redirect: {
-          permanent: false,
-          destination: "/dashboard/pedidos",
-        },
-      };
+    if (!fetchedOrder?.id) {
+      return;
     }
 
-    const handle: OrderType = request?.data ?? {};
+    // Produtos - merge items com products completos
+    const productsWithFullData =
+      fetchedOrder.items?.map((item: any) => {
+        const fullProduct = fetchedOrder.products?.find(
+          (p: any) => p.id === item.productId
+        );
 
-    let dates: any = [];
-    let products: any = [];
+        return {
+          ...item,
+          metadata: {
+            ...item.metadata,
+            product: {
+              ...item.metadata?.product,
+              ...fullProduct,
+            },
+          },
+        };
+      }) || [];
 
-    handle.listItems?.map((item: any) => {
-      dates.push(item.details.dateStart);
-      products.push(item.product);
+    setProducts(productsWithFullData);
+
+    // Datas do agendamento
+    const dates: string[] = [];
+    fetchedOrder.items?.forEach((item) => {
+      const rawDetails = item.metadata?.raw_item?.details;
+      if (rawDetails?.dateStart) dates.push(rawDetails.dateStart);
+      if (rawDetails?.dateEnd) dates.push(rawDetails.dateEnd);
     });
+
+    if (dates.length === 0 && fetchedOrder.metadata?.scheduleStart) {
+      dates.push(fetchedOrder.metadata.scheduleStart);
+      dates.push(
+        fetchedOrder.metadata.scheduleEnd ?? fetchedOrder.metadata.scheduleStart
+      );
+    }
 
     setResume({
       startDate: findDates(dates).minDate,
       endDate: findDates(dates).maxDate,
-    } as any);
+    });
 
-    setOrder(handle);
-    setProducts(products);
+    setOrder(fetchedOrder);
   };
 
   const initialized = useRef(false);
@@ -254,7 +216,8 @@ export default function Pedido({
     >
       {!!order?.id ? (
         <>
-          <section className="">
+          {/* Breadcrumbs */}
+          <section>
             <div className="container-medium pt-12">
               <div className="pb-4">
                 <Breadcrumbs
@@ -267,10 +230,13 @@ export default function Pedido({
             </div>
           </section>
 
-          <section className="">
+          {/* Conteúdo principal */}
+          <section>
             <div className="container-medium pb-12">
               <div className="grid md:flex align-top gap-10 md:gap-20">
+                {/* Coluna esquerda - Timeline e itens */}
                 <div className="w-full">
+                  {/* Header do pedido */}
                   <div className="flex items-center mb-10">
                     <Link passHref href="/dashboard/pedidos">
                       <Icon
@@ -282,274 +248,75 @@ export default function Pedido({
                       <span className="font-title font-bold">
                         Pedido #{order.id}
                       </span>
-                      {order.status == -1 ? (
-                        <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
-                          processando
-                        </div>
-                      ) : order.status == 1 ? (
-                        <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
-                          pago
-                        </div>
-                      ) : order.status == -2 ||
-                        order?.metadata?.status == "expired" ? (
-                        <div className="bg-red-100 text-red-700 rounded text-sm inline-block px-2 py-1">
-                          cancelado
-                        </div>
-                      ) : (
-                        <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
-                          em aberto
-                        </div>
-                      )}
+                      <OrderStatusBadge
+                        status={order.status}
+                        metadataStatus={order.metadata?.status}
+                      />
                     </div>
                   </div>
 
-                  {order?.metadata?.status != "expired" && (
+                  {/* Timeline de entrega */}
+                  {order?.metadata?.status !== "expired" && (
                     <div>
-                      <div className="grid">{renderDelivery()}</div>
+                      <DeliveryTimeline
+                        deliveryStatus={order.delivery?.status || (order as any).delivery_status}
+                        createdAt={order.createdAt}
+                      />
                       <div className="py-10">
                         <hr />
                       </div>
                     </div>
                   )}
+
+                  {/* Itens do pedido - Agrupados por loja */}
                   <div className="grid">
                     <h4 className="text-xl md:text-2xl text-zinc-800 pb-6">
                       Itens do pedido
                     </h4>
-                    {!!products &&
-                      products.map((product: any, key: any) => (
-                        <div key={key}>
-                          <div className="flex items-center gap-6">
-                            <div className="w-fit">
-                              <div className="aspect-square bg-zinc-200 w-[6rem] rounded-xl">
-                                {!!product?.gallery?.length && (
-                                  <Img
-                                    src={getImage(product?.gallery[0], "thumb")}
-                                    className="w-full h-full object-contain"
-                                  />
-                                )}
-                              </div>
-                            </div>
-                            <div className="grid gap-1 w-full">
-                              <div className="font-title text-lg font-bold text-zinc-900">
-                              <Link href={getProductUrl(product)}>
-                                {product.title}
-                              </Link>
-                            </div>
-                              <div className="text-sm">
-                                {!!product.sku && (
-                                  <>
-                                    sku #{product.sku} <br />
-                                  </>
-                                )}
-                                Fornecido por:
+                    {groupItemsByStore(products || []).map((storeGroup, groupKey) => (
+                      <div key={groupKey} className="mb-6">
+                        {/* Header da loja - só mostra se tem mais de uma loja */}
+                        {groupItemsByStore(products || []).length > 1 && (
+                          <div className="bg-zinc-100 rounded-lg p-3 mb-4 flex items-center gap-2">
+                            <Icon icon="fa-store" className="text-zinc-500" />
+                            <span className="font-semibold text-zinc-800">
+                              {storeGroup.storeSlug ? (
                                 <Link
-                                  href={getStoreUrl(product?.store)}
-                                  className="text-zinc-900 pl-2 font-semibold underline"
+                                  href={`/${storeGroup.storeSlug}`}
+                                  className="hover:underline hover:text-cyan-600"
                                 >
-                                  {product?.store.title}
+                                  {storeGroup.storeName}
                                 </Link>
-                              </div>
-
-                              <div className="mt-2">
-                                <Button
-                                  type="button"
-                                  onClick={() => openMoralRating(product)}
-                                  style="btn-transparent"
-                                  className="whitespace-nowrap text-sm font-semibold text-zinc-900 p-0 ease hover:text-yellow-500"
-                                >
-                                  <Icon icon="fa-comment" />
-                                  avaliar produto
-                                </Button>
-                              </div>
-                            </div>
+                              ) : (
+                                storeGroup.storeName
+                              )}
+                            </span>
+                            <span className="text-sm text-zinc-500">
+                              ({storeGroup.items.length} {storeGroup.items.length === 1 ? 'item' : 'itens'})
+                            </span>
                           </div>
-                          <div className="py-6">
-                            <hr />
-                          </div>
-                        </div>
-                      ))}
+                        )}
+                        {storeGroup.items.map((item: any, itemKey: number) => (
+                          <OrderItemCard
+                            key={itemKey}
+                            item={item}
+                            onRate={openRatingModal}
+                          />
+                        ))}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
+                {/* Coluna direita - Resumo */}
                 <div className="w-full md:max-w-[28rem]">
-                  <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
-                    {order.status == 0 && (
-                      <div>
-                        <Button
-                          style="btn-success"
-                          className="w-full"
-                          href={`/dashboard/pedidos/pagamento/${order.id}`}
-                        >
-                          Efetuar pagamento
-                        </Button>
-                        <div className="border-t -mx-8 my-8"></div>
-                      </div>
-                    )}
+                  <OrderSummary
+                    order={order as any}
+                    products={products}
+                    resume={resume}
+                  />
 
-                    {order.status == -1 && (
-                      <div>
-                        <div className="bg-zinc-50 text-center p-2 text-zinc-800 rounded">
-                          Aguardando confirmação de pagamento...
-                        </div>
-
-                        {!!order.metadata?.transaction_type &&
-                          order.metadata?.transaction_type == "boleto" && (
-                            <div className="grid pt-4 -mb-2">
-                              <a
-                                rel="noreferrer"
-                                href={order.metadata?.pdf}
-                                target="_blank"
-                                className="font-semibold text-center rounded-md hover:underline text-cyan-600 hover:text-cyan-800 ease"
-                              >
-                                Visualizar boleto
-                              </a>
-                            </div>
-                          )}
-                        <div className="border-t -mx-8 my-8"></div>
-                      </div>
-                    )}
-
-                    <div className="font-title font-bold text-zinc-900 text-xl mb-6">
-                      Resumo
-                    </div>
-                    <div className="grid gap-6">
-                      <div className="grid text-sm">
-                        <div className="text-zinc-900">
-                          Pedido nº <b>{order.id}</b>
-                        </div>
-                        <div className="">
-                          Realizado em {getShorDate(order.created_at)}
-                        </div>
-                        <div className="">
-                          Agendado para: {dateBRFormat(resume.startDate)}{" "}
-                          {resume.endDate != resume.startDate
-                            ? `- ${dateBRFormat(resume.endDate)}`
-                            : ""}{" "}
-                          |{order.deliverySchedule}
-                        </div>
-                        <div className="">
-                          Valor de entrega:{" "}
-                          {!!order?.deliveryPrice
-                            ? `R$ ${moneyFormat(order.deliveryPrice)}`
-                            : "Gratuita"}
-                        </div>
-                      </div>
-
-                      <div>
-                        <hr className="my-0" />
-                      </div>
-
-                      <div className="grid gap-2">
-                        <div className="text-zinc-900 font-bold">
-                          Endereço de entrega
-                        </div>
-                        <div className="text-sm">
-                          <div>
-                            {order?.deliveryAddress?.street},{" "}
-                            {order?.deliveryAddress?.number}
-                          </div>
-                          <div>{order?.deliveryAddress?.neighborhood}</div>
-                          <div>CEP: {order?.deliveryAddress?.zipCode}</div>
-                          <div>
-                            {order?.deliveryAddress?.city} |{" "}
-                            {order?.deliveryAddress?.state} -{" "}
-                            {order?.deliveryAddress?.country}
-                          </div>
-                          <div>
-                            complemento: {order?.deliveryAddress?.complement}
-                          </div>
-                        </div>
-                      </div>
-
-                      {!!order.metadata && (
-                        <>
-                          <div>
-                            <hr className="my-0" />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <div className="text-zinc-900 font-bold">
-                              Pagamento
-                              {/* {getExtenseData(order.metadata.paid_at)} */}
-                            </div>
-                            <div className="text-sm flex items-center gap-2">
-                              {!!order.metadata?.payment_method &&
-                              order.metadata?.payment_method == "pix" ? (
-                                <>
-                                  <Img
-                                    src="/images/pagarme/pix-icon.png"
-                                    className="w-[1.75rem]"
-                                  />
-                                  <div className="w-full">PIX</div>
-                                </>
-                              ) : !!order.metadata?.transaction_type &&
-                                order.metadata?.transaction_type == "boleto" ? (
-                                <>
-                                  <Img
-                                    src="/images/pagarme/document-icon.png"
-                                    className="w-[1.75rem]"
-                                  />
-                                  <div className="w-full">Boleto bancário</div>
-                                </>
-                              ) : (
-                                <>
-                                  <Img
-                                    src="/images/pagarme/card-icon.png"
-                                    className="w-[1.75rem]"
-                                  />
-                                  <div className="w-full">
-                                    Cartão de crédito :{" "}
-                                    {order.metadata?.installments ?? "1"}x
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      <div>
-                        <hr className="my-0" />
-                      </div>
-
-                      <div className="grid gap-2">
-                        <div className="text-zinc-900 font-bold mb-2">
-                          Total da compra
-                        </div>
-                        <div className="grid gap-2 text-sm">
-                          <div className="flex gap-2">
-                            <div className="w-full">Subtotal de produtos</div>
-                            <div className="whitespace-nowrap">
-                              R$ {moneyFormat(order.total)}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="w-full">Frete</div>
-                            <div className="whitespace-nowrap">
-                              {!!order.deliveryPrice
-                                ? `R$ ${moneyFormat(order.deliveryPrice)}`
-                                : "Grátis"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <hr className="my-0" />
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <div className="w-full font-title text-zinc-900 font-bold">
-                          TOTAL
-                        </div>
-                        <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
-                          R$ {moneyFormat(order.total)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {order.status != -2 && false && (
+                  {order.status !== -2 && false && (
                     <button
                       type="button"
                       onClick={() => setCancel(true)}
@@ -563,132 +330,30 @@ export default function Pedido({
             </div>
           </section>
 
-          <Modal
-            title="Cancelar pedido"
-            status={cancel}
-            close={() => setCancel(false)}
-          >
-            <div className="grid gap-6">
-              <div className="text-center">
-                Ao cancelar seu pedido, uma taxa de serviço poderá ser cobrada e
-                seus itens voltarão para o estoque. Deseja mesmo continuar?
-              </div>
-              <div className="grid gap-2 justify-center">
-                <Button
-                  type="button"
-                  style="btn-danger"
-                  className="text-sm"
-                  onClick={() => submitCancel()}
-                >
-                  Continuar e cancelar pedido
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => setCancel(false)}
-                  className="text-center text-sm mx-auto block mt-4 hover:underline text-zinc-950 ease"
-                >
-                  Voltar
-                </button>
-              </div>
-            </div>
-          </Modal>
+          {/* Modal de cancelamento */}
+          <CancelOrderModal
+            isOpen={cancel}
+            onClose={() => setCancel(false)}
+            onConfirm={submitCancel}
+          />
 
-          <Modal
-            title="Avaliação de produto"
-            status={modalRating}
-            close={() => setModalRating(false)}
-          >
-            <form
-              onSubmit={(e: any) => submitRate(e)}
-              className="flex flex-col gap-4"
-            >
-              {!!order?.status ? (
-                <>
-                  <div className="">
-                    <div className="flex items-center gap-6">
-                      <div className="w-fit">
-                        <div className="aspect-square bg-zinc-200 w-[4rem] rounded-full relative overflow-hidden">
-                          {!!getImage(rate.product?.gallery) && (
-                            <Img
-                              src={getImage(rate.product?.gallery, "thumb")}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid w-full">
-                        <div className="font-title font-semibold text-zinc-900">
-                          {rate.product?.title}
-                        </div>
-                        <div className="text-sm">sku #{rate.product?.sku}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="md:flex items-center gap-4">
-                    <div className="relative">
-                      <Label className="pt-1">
-                        O que você achou do produto?
-                      </Label>
-                      <div className="opacity-0 h-0 absolute mt-3 left-1/2 top-0 -translate-x-1/2">
-                        {!rate.rate && (
-                          <input
-                            type="checkbox"
-                            required
-                            className="inline-block"
-                          />
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((value: number) => (
-                        <label
-                          key={value}
-                          className="cursor-pointer"
-                          onClick={() => handleRate({ rate: value })}
-                        >
-                          <Icon
-                            icon="fa-star"
-                            type={rate.rate >= value ? "fa" : "fal"}
-                            className={`${
-                              rate.rate >= value
-                                ? "text-yellow-400"
-                                : "text-gray-400"
-                            }  ease text-lg hover:text-yellow-600`}
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="">
-                    <Label>Deixe seu comentário</Label>
-                    <TextArea
-                      rows="5"
-                      onChange={(e: any) =>
-                        handleRate({ comment: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="grid">
-                    <Button loading={!!form.loading}>Enviar</Button>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-7">
-                  <div className="mx-auto max-w-[24rem] mb-6">
-                    É necessário que efetue o pagamento do seu pedido para fazer
-                    sua avaliação ao produto.
-                  </div>
-                  <div>
-                    <Button href={order?.metadata?.url}>
-                      Efetuar pagamento
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </form>
-          </Modal>
+          {/* Modal de avaliação */}
+          <RatingModal
+            isOpen={modalRating}
+            onClose={() => setModalRating(false)}
+            onSubmit={submitRate}
+            product={rate.product}
+            rate={rate.rate || 0}
+            comment={rate.comment}
+            onRateChange={(value) => handleRate({ rate: value })}
+            onCommentChange={(value) => handleRate({ comment: value })}
+            loading={form.loading}
+            orderStatus={order.status}
+            paymentUrl={order.metadata?.url}
+          />
         </>
       ) : (
+        /* Loading skeleton */
         <div className="cursor-wait container-medium animate-pulse">
           <div className="flex pt-10 md:pt-16 gap-10">
             <div className="w-full grid gap-4">

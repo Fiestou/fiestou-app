@@ -44,18 +44,10 @@ export const PARTNER_MENU: Array<{
   //   url: "/painel/chat",
   // },
   {
-    name: "Conta bancária",
-    icon: "fa-university",
-    description:
-      "",
-    url: "/painel/conta",
-  },
-  {
-    name: "Seus dados",
+    name: "Dados do recebedor",
     icon: "fa-user-circle",
-    description:
-      "",
-    url: "/painel/meus-dados",
+    description:'',
+    url: "/painel/dados_do_recebedor",
   },
   {
     name: "Personalizar loja",

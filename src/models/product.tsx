@@ -102,7 +102,9 @@ export interface ProductOrderType {
   product: any;
   attributes: any;
   quantity: number;
-  details?: Record<string, any>;
+  details?: Object | any;
+  /** preço unitário enviado ao backend para cálculo por item */
+  unit_price?: number;
   total: number;
 }
 
