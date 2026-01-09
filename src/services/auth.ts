@@ -45,7 +45,7 @@ export async function registerClient(
       data: {
         ...data,
         phone: phoneClean,
-        person: data.person ?? "client",
+        type: data.type ?? "client",
       },
     });
 
