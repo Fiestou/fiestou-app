@@ -69,7 +69,7 @@ function CompletarContent({ auth }: any) {
     const request: any = await api.bridge({
       method: 'post',
       url: "users/update",
-      data: { ...data, origin: "complete", person:checkmail.user.person, recaptcha_token: recaptchaToken },
+      data: { ...data, origin: "complete", type: checkmail.user.type, recaptcha_token: recaptchaToken },
     });
 
     if (!!request.response) {
