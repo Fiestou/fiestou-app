@@ -1,8 +1,7 @@
 import axios from "axios";
 import { convertToCents, phoneAreaCode, phoneJustNumber } from "../helper";
-import { OrderType } from "@/src/models/order";
+import { OrderType, PaymentType } from "@/src/models/order";
 import { ProductOrderType } from "../models/product";
-import { PaymentType } from "@/pages/dashboard/pedidos/pagamento/[id]";
 import Api from "./api";
 import { AddressType } from "../models/address";
 
@@ -31,8 +30,8 @@ class Pagarme {
 
     const handleDocument: any =
       payment.payment_method == "credit_card"
-        ? payment.credit_card.card.holder_document
-        : order.user?.cpf ?? order.user?.document;
+        ? payment.credit_card?.card.holder_document
+        : (order.user as any)?.cpf ?? (order.user as any)?.document;
 
     const customer: any = {
       address: {
@@ -48,8 +47,8 @@ class Pagarme {
       email: order.user?.email,
       document: handleDocument,
       code: order.user?.id,
-      gender: order.user?.gender,
-      birthdate: order.user?.date,
+      gender: (order.user as any)?.gender,
+      birthdate: (order.user as any)?.date,
       metadata: {
         orderID: order.id,
       },
@@ -70,13 +69,13 @@ class Pagarme {
       shipping: {
         address: {
           country: "BR",
-          state: order.deliveryAddress?.state,
-          city: order.deliveryAddress?.city,
-          zip_code: order.deliveryAddress?.zipCode,
-          line_1: order.deliveryAddress?.street,
-          line_2: order.deliveryAddress?.number,
+          state: (order.delivery?.address || order.delivery_address)?.state,
+          city: (order.delivery?.address || order.delivery_address)?.city,
+          zip_code: (order.delivery?.address || order.delivery_address)?.zipCode,
+          line_1: (order.delivery?.address || order.delivery_address)?.street,
+          line_2: (order.delivery?.address || order.delivery_address)?.number,
         },
-        amount: convertToCents(order?.deliveryPrice ?? 0),
+        amount: convertToCents(order?.delivery?.price ?? order?.delivery_price ?? 0),
         description: "delivery",
         recipient_name: order.user?.name,
         recipient_phone: order.user?.phone,
