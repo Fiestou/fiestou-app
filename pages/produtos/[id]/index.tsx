@@ -236,19 +236,48 @@ export default function Produto({
       const attributes = [...prev.attributes];
 
       const attrIndex = attributes.findIndex((a) => a.id === attr.id);
+
       if (attrIndex === -1) {
-        attributes.push({ id: attr.id, title: attr.title, variations: [] });
+        attributes.push({
+          id: attr.id,
+          title: attr.title,
+          variations: [],
+        });
       }
 
       const index = attributes.findIndex((a) => a.id === attr.id);
       let variations = [...attributes[index].variations];
 
-      if (attr.selectType === "radio") variations = [value];
+      // ✅ RADIO
+      if (attr.selectType === "radio") {
+        variations = [value];
+      }
+
+      // ✅ CHECKBOX
       if (attr.selectType === "checkbox") {
         const exists = variations.find((v) => v.id === value.id);
         variations = exists
           ? variations.filter((v) => v.id !== value.id)
           : variations.concat(value);
+      }
+
+      // ✅ QUANTITY (🔥 O QUE FALTAVA)
+      if (attr.selectType === "quantity") {
+        const existsIndex = variations.findIndex((v) => v.id === value.id);
+
+        const qty = Number(value.quantity ?? 0);
+
+        if (qty > 0) {
+          const updatedValue = { ...value, quantity: qty };
+
+          if (existsIndex >= 0) {
+            variations[existsIndex] = updatedValue;
+          } else {
+            variations.push(updatedValue);
+          }
+        } else {
+          variations = variations.filter((v) => v.id !== value.id);
+        }
       }
 
       attributes[index] = { ...attributes[index], variations };
@@ -465,10 +494,15 @@ export default function Produto({
           (attr: any) => attr.id === attribute.id
         );
 
-        return selected && selected.variations.length > 0;
+        if (!selected) return false;
+
+        if (attribute.selectType === "quantity") {
+          return selected.variations.some((v: any) => Number(v.quantity) > 0);
+        }
+
+        return selected.variations.length > 0;
       });
 
-  // 4️⃣ Data é SEMPRE obrigatória
   const hasRequiredDate = Boolean(hasSelectedDate);
 
   const canAddToCart = useMemo(() => {

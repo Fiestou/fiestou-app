@@ -106,6 +106,7 @@ export interface VariationProductOrderType {
   quantity?: number;
   price?: string | number;
   canAddToCart?: boolean;
+  
 }
 
 export interface AttributeProductOrderType {
