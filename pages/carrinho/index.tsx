@@ -321,7 +321,7 @@ export default function Carrinho({
                                 </h3>
                               </div>
                             </div>
-                            <div className="flex items-end">
+                            <div className="flex">
                               <div className="w-full text-sm text-zinc-600 pt-2">
                                 <div className="flex gap-1">
                                   Data:
