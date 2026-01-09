@@ -127,6 +127,7 @@ export interface OrderPartnerBlock {
  * - blocos dedicados para payment / delivery / partner
  */
 export interface OrderType {
+  platformCommission: any;
   ordersCount?: number;
   mainOrderId: number;
   freights_orders_price?: any;
@@ -135,7 +136,13 @@ export interface OrderType {
   orderIds: number[];
   metadata: any;
   delivery_status: string;
-  user: null;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    phone?: string;
+    hash?: string;
+  } | null;
   delivery_schedule: any;
   delivery_address: any;
   subtotal: number;
@@ -180,12 +187,16 @@ export interface OrderType {
   };
 
   delivery: {
-    status: string;
-    schedule: string;
-    to: string;                     // << usado no OrderDetailsCard
-    price: number;
-    priceLabel: string;             // "xx,xx"
-    address: AddressType;
+    status?: string;
+    schedule?: {
+      date: string;        // "2026-01-05"
+      period: string;      // "manhã", "tarde", "noite"
+      time: string;        // "09:00 - 12:00"
+    };
+    to?: string;         // << usado no OrderDetailsCard
+    price?: number;
+    priceLabel?: string; // "xx,xx"
+    address?: AddressType;
   };
 
   items: Array<{
