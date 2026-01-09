@@ -111,7 +111,7 @@ class Api {
       if (!!ctx?.req) {
         const authtoken = !!ctx?.req.cookies
           ? ctx.req.cookies["fiestou.authtoken"]
-          : token;
+          : getAuthToken();
 
         if (!!authtoken) {
           api.defaults.headers["Authorization"] = `Bearer ${authtoken}`;

@@ -52,7 +52,11 @@ export async function fetchOrderById(api?: Api, orderId?: number | string): Prom
       // Delivery data (suporta snake_case e camelCase, mescla com campos legados)
       delivery: {
         to: orderData.delivery?.to ?? orderData.deliveryTo ?? orderData.delivery_to,
-        schedule: scheduleDisplay,
+        schedule: orderData.delivery?.schedule ?? {
+          date: scheduleDate || '',
+          period: '',
+          time: scheduleDisplay || ''
+        },
         scheduleDate: scheduleDate,
         price: orderData.delivery?.price ?? orderData.deliveryTotal ?? orderData.deliveryPrice ?? orderData.delivery_price,
         address: orderData.delivery?.address ?? orderData.deliveryAddress ?? orderData.delivery_address,

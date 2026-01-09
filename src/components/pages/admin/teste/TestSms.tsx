@@ -46,6 +46,17 @@ export default function Sms({ page }: { page: any }) {
     if (data.content == "delivery") {
       await ChangeDeliveryStatusSMS(
         {
+          id: 0,
+          groupHash: "",
+          mainOrderId: 0,
+          orderIds: [],
+          metadata: {},
+          delivery_status: "sent",
+          delivery_schedule: "",
+          delivery_address: {},
+          subtotal: 0,
+          delivery_price: 0,
+          createdAt: new Date().toISOString(),
           user: { id: 0, email: data.email, name: data.name, phone: data.phone },
           deliveryStatus: "sent",
           deliverySchedule: "",
@@ -59,7 +70,7 @@ export default function Sms({ page }: { page: any }) {
             zipcode: "",
             productsIds: []
           }
-        },
+        } as any,
         getContent("delivery")
       );
     }
@@ -67,6 +78,17 @@ export default function Sms({ page }: { page: any }) {
     if (data.content == "order") {
       await RegisterOrderSMS(
         {
+          id: 0,
+          groupHash: "",
+          mainOrderId: 0,
+          orderIds: [],
+          metadata: {},
+          delivery_status: "",
+          delivery_schedule: "",
+          delivery_address: {},
+          subtotal: 0,
+          delivery_price: 0,
+          createdAt: new Date().toISOString(),
           user: { id: 0, email: data.email, name: data.name, phone: data.phone },
           deliveryStatus: "",
           deliverySchedule: "",
@@ -80,7 +102,7 @@ export default function Sms({ page }: { page: any }) {
             zipcode: "",
             productsIds: []
           }
-        },
+        } as any,
         [],
         getContent("order")
       );
@@ -89,6 +111,17 @@ export default function Sms({ page }: { page: any }) {
     if (data.content == "order_complete") {
       await CompleteOrderSMS(
         {
+          id: 0,
+          groupHash: "",
+          mainOrderId: 0,
+          orderIds: [],
+          metadata: {},
+          delivery_status: "",
+          delivery_schedule: "",
+          delivery_address: {},
+          subtotal: 0,
+          delivery_price: 0,
+          createdAt: new Date().toISOString(),
           user: { id: 0, email: data.email, name: data.name, phone: data.phone },
           deliveryStatus: "",
           deliverySchedule: "",
@@ -102,7 +135,7 @@ export default function Sms({ page }: { page: any }) {
             zipcode: "",
             productsIds: []
           }
-        },
+        } as any,
         getContent("order_complete")
       );
     }
