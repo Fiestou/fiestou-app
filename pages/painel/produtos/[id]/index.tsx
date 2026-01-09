@@ -156,17 +156,28 @@ export default function CreateProduct() {
       }
     }
 
-    return sanitize({
+    const payload: any = {
       ...data,
       attributes: data.attributes,
       category: categoryPipe,
       combinations: combinationIds,
       suggestions: data.suggestions ? 1 : 0,
       status: data?.status ?? 1,
-    });
+    };
+
+    // Ensure numeric fields are properly typed
+    if (data.id) {
+      payload.id = Number(data.id);
+    }
+    if (data.store) {
+      payload.store = Number(data.store);
+    }
+
+    return sanitize(payload);
   };
 
   const SearchProducts = async (search: string): Promise<any[]> => {
+    console.log("Searching products for:");
     if (search.length >= 3) {
       const request: any = await api.request({
         method: "get",
@@ -268,6 +279,8 @@ export default function CreateProduct() {
       setSubimitStatus("register_content");
 
       const payload = buildPayload();
+
+      console.log("Payload to submit:", payload);
 
       const request: any = await api.bridge({
         method: "post",

@@ -1,11 +1,12 @@
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useEffect, useState } from "react";
 
-interface OptionType {
-  value: any;
+export type OptionType = {
+  value: string;
+  name: string | React.ReactNode; // ← permitir ReactNode
+  disabled?: boolean;
   icon?: string;
-  name?: string;
-}
+};
 
 interface SelectDropdownType {
   name: string;

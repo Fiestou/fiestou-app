@@ -46,9 +46,10 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
   const getOrders = async () => {
     let request: any = await api.bridge({
       method: "post",
-      url: "suborders/list",
+      url: "orders/customer-list",
       data: {
         customer: id,
+        store: store,
       },
     });
 
@@ -117,22 +118,22 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
                   Compras
                 </h3>
                 <div className="grid gap-6">
-                  {orders.map((suborder: any, key: any) => (
+                  {orders.map((order: any, key: any) => (
                     <div
                       key={key}
                       className="p-4 md:p-6 border rounded-md lg:rounded-2xl grid gap-2"
                     >
                       <div className="flex justify-between font-bold text-zinc-950">
-                        <div>#{suborder.order.id}</div>
-                        <div>R$ {moneyFormat(suborder.total)}</div>
+                        <div>#{order.id}</div>
+                        <div>R$ {moneyFormat(order.total)}</div>
                       </div>
                       <div className="flex justify-between text-zinc-400">
-                        <div>{getExtenseData(suborder.created_at)}</div>
+                        <div>{getExtenseData(order.created_at)}</div>
                         <div></div>
                       </div>
 
                       <div className="flex gap-4 pt-4 text-sm">
-                        {suborder.order?.metadata?.payment_status == "paid" ? (
+                        {order?.metadata?.payment_status == "paid" ? (
                           <div className="inline-block text-sm py-3 px-5 rounded-md bg-green-400 text-white">
                             pago
                           </div>

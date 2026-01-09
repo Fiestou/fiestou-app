@@ -9,6 +9,14 @@ export const deliveryTypes = [
   {
     name: "Em separação",
     icon: "👍",
+    value: "paid",
+    background: "bg-blue-400",
+    description:
+      "Seu pedido já esta em nosso sistema e estamos preparando para envio.",
+  },
+  {
+    name: "Em separação",
+    icon: "👍",
     value: "processing",
     background: "bg-blue-400",
     description:
@@ -72,7 +80,7 @@ export const deliveryTypes = [
   },
 ];
 
-export const deliveryToName: any = {
+export const deliveryToName: Record<string, string> = {
   reception: "Entregar na portaria",
   door: "Deixar na porta",
   for_me: "Estarei para receber",

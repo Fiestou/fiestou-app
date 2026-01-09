@@ -1,14 +1,13 @@
 import Template from "@/src/template";
 import Api from "@/src/services/api";
-import { useEffect, useState } from "react";
+import { fetchOrderById } from "@/src/services/order";
+import { useDebugValue, useEffect, useState } from "react";
 import {
   CopyClipboard,
   dateBRFormat,
   documentIsValid,
   findDates,
-  generateDocumentNumber,
   getBrazilianStates,
-  getCurrentDate,
   getImage,
   getShorDate,
   getZipCode,
@@ -16,53 +15,20 @@ import {
   moneyFormat,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
-import { OrderType } from "@/src/models/order";
+import { CardType, OrderType, PaymentType, PixType } from "@/src/models/order";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
 import Img from "@/src/components/utils/ImgBase";
-
-import Pagarme from "@/src/services/pagarme";
 import { deliveryToName } from "@/src/models/delivery";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
-import { getProductUrl } from "@/src/urlHelpers";
+import { LoadingSkeleton } from "../../componentes/LoadingSkeleton";
+import { HeadLine } from "../../componentes/HeadLine";
+import { OrderDetailsCard } from "../../componentes/OrderDetailsCard";
+import { OrderItemsList } from "../../componentes/OrderItemsList";
+import { PaymentPanel } from "../../componentes/PaymentPanel";
 
-export interface CardType {
-  number: number;
-  holder_name: string;
-  exp_month: number;
-  exp_year: number;
-  cvv: number;
-  holder_document: string;
-  billing_address: {
-    line_1: string;
-    line_2: string;
-    zip_code: string;
-    city: string;
-    state: string;
-    country: string;
-  };
-}
-
-export interface PaymentType {
-  payment_method: "credit_card" | "pix" | "boleto";
-  credit_card: {
-    card: CardType;
-    operation_type: string;
-    installments: number;
-    statement_descriptor: string;
-  };
-  pix: PixType;
-}
-
-export interface PixType {
-  status: boolean;
-  expires_in: number;
-  code?: string;
-  qrcode?: string;
-  time: string;
-}
 
 interface FormInitialType {
   sended: boolean;
@@ -75,7 +41,7 @@ export async function getServerSideProps(ctx: any) {
   const params = ctx.params;
 
   let request: any = await api.content({
-    method: 'get',
+    method: "get",
     url: "order",
   });
 
@@ -86,9 +52,9 @@ export async function getServerSideProps(ctx: any) {
   return {
     props: {
       orderId: params.id,
-      HeaderFooter: HeaderFooter,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
+      HeaderFooter,
+      DataSeo,
+      Scripts,
     },
   };
 }
@@ -106,30 +72,71 @@ export default function Pagamento({
 }) {
   const api = new Api();
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormInitialType>({
     sended: false,
     loading: false,
-  } as FormInitialType);
-  const handleForm = (value: Object) => {
-    setForm({ ...form, ...value });
+    feedback: "",
+  });
+  const handleForm = (value: Partial<FormInitialType>) => {
+    setForm((prev) => ({ ...prev, ...value }));
   };
 
-  const [installments, setInstallments] = useState(1 as number);
-
+  const [installments, setInstallments] = useState(1);
   const [user, setUser] = useState({} as UserType);
   const [order, setOrder] = useState({} as OrderType);
 
-  const handleCustomer = (value: any) => {
-    setOrder({ ...order, user: { ...order.user, ...value } });
+  // novo bloco de delivery (modelo novo)
+  const legacyOrder = order as any;
+
+  console.log("LEGACY ORDER:", order);
+
+  // NOVO MODELO: tudo vem dentro de order.delivery
+  const deliveryAddress =
+    order?.delivery?.address ?? legacyOrder?.deliveryAddress;
+
+  const deliverySchedule =
+    order?.delivery?.schedule ?? legacyOrder?.deliverySchedule;
+
+  // Calcular frete total somando os deliveryFee de cada item (para múltiplas lojas)
+  const calculateTotalDeliveryFee = () => {
+    if (!order?.items?.length) return 0;
+    
+    const totalFee = order.items.reduce((sum, item: any) => {
+      const metadata = typeof item.metadata === 'string' 
+        ? JSON.parse(item.metadata) 
+        : item.metadata;
+      
+      const fee = Number(metadata?.details?.deliveryFee || 0);
+      return sum + fee;
+    }, 0);
+    
+    // Se a soma dos deliveryFee for maior que 0, usar ela
+    // Senão, usar o delivery.price padrão
+    return totalFee > 0 
+      ? totalFee 
+      : (Number(order?.delivery?.priceLabel) || Number(order?.delivery?.price) || Number(legacyOrder?.deliveryPrice) || 0);
   };
 
-  const [address, setAddress] = useState({} as AddressType | any);
-  const handleAddress = (value: any) => {
-    setAddress((old: any) => ({ ...old, ...value }));
-  };
-  const [useOrderAddress, setUseOrderAddress] = useState(true as boolean);
+  const deliveryPrice = calculateTotalDeliveryFee();
 
-  const [errorZipCode, setErrorZipCode] = useState(false as boolean);
+  // AQUI: agora é SEMPRE string (ou undefined)
+  const deliveryTo: string | undefined =
+    order?.delivery?.to ?? legacyOrder?.deliveryTo;
+
+
+  console.log("DELIVERY TO:", deliveryTo);
+  const handleCustomer = (value: Partial<UserType>) => {
+    setUser((prev) => ({ ...(prev ?? {}), ...value } as UserType));
+  };
+
+  const [address, setAddress] = useState({} as AddressType);
+  const handleAddress = (value: Partial<AddressType>) => {
+    setAddress((prev) => ({ ...(prev ?? {}), ...value } as AddressType));
+  };
+  const [useOrderAddress, setUseOrderAddress] = useState(true);
+
+
+  const [errorZipCode, setErrorZipCode] = useState(false);
   const handleZipCode = async () => {
     const handle: any = await getZipCode(address.zipCode);
 
@@ -137,7 +144,6 @@ export default function Pagamento({
       setErrorZipCode(true);
     } else {
       setErrorZipCode(false);
-
       handleAddress({
         street: handle.logradouro,
         neighborhood: handle.bairro,
@@ -148,33 +154,31 @@ export default function Pagamento({
     }
   };
 
-  const [products, setProducts] = useState([] as Array<any>);
+  const [products, setProducts] = useState<Array<any>>([]);
   const [resume, setResume] = useState({} as any);
-  const [placeholder, setPlaceholder] = useState(true as boolean);
+  const [placeholder, setPlaceholder] = useState(true);
 
-  const [expire, setExpire] = useState("start" as string);
-  const [pix, setPix] = useState({
+  const [expire, setExpire] = useState("start");
+  const [pix, setPix] = useState<PixType>({
+    status: false,
     expires_in: 300,
-  } as PixType);
-  const handlePix = (value: any) => {
-    setPix({ ...pix, ...value });
+  });
+  const handlePix = (value: Partial<PixType>) => {
+    setPix((prev) => ({ ...prev, ...value } as PixType));
   };
 
-  const [boleto, setBoleto] = useState({} as any);
+  const [boleto, setBoleto] = useState<any>({});
 
   const ConfirmManager = async () => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "orders/get",
-      data: {
-        id: orderId,
-      },
-    });
+    try {
+      // Usa o serviço centralizado para obter o pedido atualizado
+      const handle = await fetchOrderById(api, orderId);
 
-    const handle: OrderType = request?.data ?? {};
-
-    if (handle.status == 1) {
-      window.location.href = `/dashboard/pedidos/${orderId}`;
+      if (handle && handle.status === 1) {
+        window.location.href = `/dashboard/pedidos`;
+      }
+    } catch (err) {
+      console.error("ConfirmManager error:", err);
     }
   };
 
@@ -187,11 +191,10 @@ export default function Pagamento({
         ConfirmManager();
       }
 
-      if (attempts == 0) {
+      if (attempts === 0) {
         attempts--;
-
         alert("Algo deu errado ao processar seu pagamento. Tente novamente.");
-        window.location.href = `/dashboard/pedidos/${orderId}`;
+        window.location.href = `/dashboard/pedidos`;
       }
     }, 1000);
 
@@ -223,21 +226,23 @@ export default function Pagamento({
     updateExpire();
 
     const interval = setInterval(() => {
-      if (!!expire && expire != "expired") {
+      if (!!expire && expire !== "expired") {
         updateExpire();
 
-        if (new Date().getSeconds() === 30 || new Date().getSeconds() === 0) {
+        if (
+          new Date().getSeconds() === 30 ||
+          new Date().getSeconds() === 0
+        ) {
           ConfirmManager();
         }
       }
 
-      if (expire == "expire") {
+      if (expire === "expire") {
         setExpire("");
-
         alert(
           "Seu código de pagamento via pix não é mais válido. Tente novamente."
         );
-        window.location.href = `/dashboard/pedidos/${orderId}`;
+        window.location.href = `/dashboard/pedidos`;
       }
     }, 1000);
 
@@ -249,227 +254,412 @@ export default function Pagamento({
   };
 
   const [card, setCard] = useState({} as CardType);
-  const handleCard = (value: any) => {
-    setCard((old: any) => ({ ...old, ...value }));
+  const handleCard = (value: Partial<CardType>) => {
+    setCard((prev) => ({ ...(prev ?? {}), ...value } as CardType));
   };
 
-  const [payment, setPayment] = useState({
+  const [payment, setPayment] = useState<PaymentType>({
     payment_method: "credit_card",
-  } as PaymentType);
-  const handlePayment = (value: any) => {
-    setPayment({ ...payment, ...value });
+  });
+  const handlePayment = (value: Partial<PaymentType>) => {
+    setPayment((prev) => ({ ...(prev ?? {}), ...value } as PaymentType));
   };
 
   const getOrder = async () => {
     setPlaceholder(true);
 
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "orders/get",
-      data: {
-        id: orderId,
-      },
-    });
-    
-    if (!request.response){
-      
-      window.location.href = `/dashboard/meus-dados`;
-      if (typeof window !== 'undefined'){
-        localStorage.setItem('message', 'Por favor insira todas as informações necessárias para finalizar o pagamento.')
-      }
-     
-      return;
-    }
-
-    const handle: OrderType = request?.data;
-
-      let dates: any = [];
-      let products: any = [];
-
-      handle.listItems?.map((item: any) => {
-        dates.push(item.details.dateStart);
-        products.push(item.product);
+    try {
+      // agora bate na rota GET /order/{id}
+      const request: any = await api.bridge({
+        method: "get",
+        url: `order/${orderId}`,
       });
 
-      setResume({
-        startDate: findDates(dates).minDate,
-        endDate: findDates(dates).maxDate,
-      } as any);
+      console.log("ORDER FETCHED:", request);
 
-      setOrder(handle);
-      setProducts(products);
+      const fetchedOrder: OrderType | undefined = request?.order;
 
-      if (!!handle?.user) setUser(handle.user);
+      if (!fetchedOrder) {
+        // se quiser, pode redirecionar aqui
+        // window.location.href = `/dashboard/pedidos/${orderId}`;
+        setPlaceholder(false);
+        return;
+      }
+
+      // salva o pedido no estado
+      setOrder(fetchedOrder);
+
+      // ---------------------------------------
+      // Monta as datas a partir de items[].metadata.details
+      // (ou do formato antigo metadata.raw_item.details, se existir)
+      // ---------------------------------------
+      const dates: string[] = [];
+
+      fetchedOrder.items?.forEach((item: any) => {
+        let rawMeta: any = item.metadata;
+
+        if (typeof rawMeta === "string") {
+          try {
+            rawMeta = JSON.parse(rawMeta);
+          } catch {
+            rawMeta = {};
+          }
+        }
+
+        // novo formato: metadata.details
+        // legado: metadata.raw_item.details
+        const rawDetails =
+          rawMeta?.details ?? rawMeta?.raw_item?.details ?? null;
+
+        if (rawDetails?.dateStart) dates.push(rawDetails.dateStart);
+        if (rawDetails?.dateEnd) dates.push(rawDetails.dateEnd);
+      });
+
+      const resumeData =
+        dates.length > 0
+          ? {
+            startDate: findDates(dates).minDate,
+            endDate: findDates(dates).maxDate,
+          }
+          : {
+            startDate: fetchedOrder.createdAt,
+            endDate: fetchedOrder.createdAt,
+          };
+
+      setResume(resumeData as any);
+
+      // ---------------------------------------
+      // Produtos para o OrderItemsList
+      // (agora vêm em order.products)
+      // ---------------------------------------
+      const productsList = fetchedOrder.products ?? [];
+      console.log("SET PRODUCTS:", productsList);
+      setProducts(productsList);
+
+      // ---------------------------------------
+      // Usuário (agora vem em order.customer)
+      // ---------------------------------------
+      const fetchedUser = fetchedOrder.customer ?? null;
+      if (fetchedUser) {
+        setUser({
+          id: fetchedUser.id,
+          name: fetchedUser.name,
+          email: fetchedUser.email,
+          phone: fetchedUser.phone,
+        } as UserType);
+      }
+    } finally {
       setPlaceholder(false);
+    }
   };
 
   useEffect(() => {
     getOrder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    console.log("ORDER ATUALIZADO:", order);
+  }, [order]);
 
   const submitPayment = async (e: any) => {
     e.preventDefault();
 
-    let formFeedback: any = {
-      loading: true,
-      feedback: "",
-    };
-
+    let formFeedback: any = { loading: true, feedback: "" };
     handleForm(formFeedback);
 
-    const handlePayment: any = payment;
+    const orderAddress: any = useOrderAddress ? deliveryAddress : address;
 
-    const orderAddress: any = useOrderAddress ? order.deliveryAddress : address;
+    // 1. Calcular valores corretamente
+    const deliveryAmountCents = Math.round(deliveryPrice * 100); // frete em centavos
+    const totalAmountCents = Math.round((order.total || 0) * 100); // total em centavos
+    
+    // 2. Calcular subtotal dos produtos (total - frete)
+    const subtotalCents = totalAmountCents - deliveryAmountCents;
 
-    if (handlePayment.payment_method == "credit_card") {
-      delete handlePayment["pix"];
-      delete handlePayment["boleto"];
+    // 3. Preparar items do pedido com valor correto
+    const orderItems = order.items?.map((item: any, index: number) => {
+      const itemTotalCents = Math.round((item.total || 0) * 100);
+      
+      return {
+        amount: itemTotalCents,
+        description: item.name || "Produto",
+        quantity: item.quantity || 1,
+        code: String(item.productId || item.id || ""),
+      };
+    }) || [];
 
-      handlePayment["credit_card"] = {
+    // 4. Ajustar arredondamentos para garantir que a soma bata
+    const itemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
+    
+    // Se a soma não bater, ajusta o primeiro item
+    if (itemsSum !== subtotalCents && orderItems.length > 0) {
+      const diff = subtotalCents - itemsSum;
+      orderItems[0].amount += diff;
+    }
+
+    // 5. Verificar se agora está correto
+    const finalItemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
+    console.log("VERIFICAÇÃO:", {
+      itemsSum: finalItemsSum,
+      deliveryAmountCents,
+      totalAmountCents,
+      soma: finalItemsSum + deliveryAmountCents,
+      bate: finalItemsSum + deliveryAmountCents === totalAmountCents
+    });
+
+    // Payload base
+    const basePayload: any = {
+      order_id: Number(orderId),
+      payment_method: payment.payment_method,
+      
+      order: {
+        amount: totalAmountCents, // Total em centavos
+        items: orderItems, // Items com valores corretos
+        shipping: {
+          description: "delivery",
+          amount: deliveryAmountCents, // IMPORTANTE: incluir o valor do frete
+          recipient_name: user.name || "Cliente",
+          recipient_phone: user.phone || "",
+          address: {
+            country: "BR",
+            state: orderAddress?.state ?? "",
+            city: orderAddress?.city ?? "",
+            zip_code: justNumber(orderAddress?.zipCode ?? ""),
+            line_1: `${orderAddress?.street ?? ""}, ${orderAddress?.number ?? ""}`.trim(),
+            line_2: orderAddress?.complement || null,
+          }
+        }
+      }
+    };
+
+    // CARTÃO DE CRÉDITO
+    if (payment.payment_method === "credit_card") {
+      basePayload.credit_card = {
+        installments: Number(installments) || 1,
+        statement_descriptor: "FIESTOU",
+        operation_type: "auth_and_capture",
         card: {
-          ...card,
+          number: justNumber(card?.number ?? ""),
+          holder_name: String(card?.holder_name ?? ""),
+          exp_month: String(card?.exp_month ?? "").padStart(2, '0'),
+          exp_year: String(card?.exp_year ?? ""),
+          cvv: String(card?.cvv ?? ""),
+          holder_document: justNumber(card?.holder_document ?? ""),
           billing_address: {
             country: "BR",
-            state: orderAddress?.state,
-            city: orderAddress?.city,
-            zip_code: orderAddress?.zipCode,
-            line_1: orderAddress?.street,
-            line_2: orderAddress?.number,
+            state: orderAddress?.state ?? "",
+            city: orderAddress?.city ?? "",
+            zip_code: justNumber(orderAddress?.zipCode ?? ""),
+            line_1: `${orderAddress?.street ?? ""}, ${orderAddress?.number ?? ""}`.trim(),
+            line_2: orderAddress?.complement || null,
           },
         },
-        operation_type: "auth_and_capture",
-        installments: installments,
-        statement_descriptor: "FIESTOU",
       };
     }
 
-    if (handlePayment.payment_method == "pix") {
-      delete handlePayment["credit_card"];
-      delete handlePayment["boleto"];
+    // SPLIT POR LOJA - Criar um split para cada loja com seu recipient_id
+    // Agrupar items por loja e calcular valores
+    const storeGroups: Record<string, { 
+      recipientId: string; 
+      itemsTotal: number; 
+      deliveryFee: number;
+    }> = {};
 
-      handlePayment["pix"] = { expires_in: pix.expires_in };
+    order.items?.forEach((item: any) => {
+      // Parse metadata se necessário
+      let metadata = item.metadata;
+      if (typeof metadata === 'string') {
+        try {
+          metadata = JSON.parse(metadata);
+        } catch {
+          metadata = {};
+        }
+      }
+
+      // Pegar store do metadata ou do produto
+      const store = metadata?.product?.store || item?.product?.store;
+      const recipientId = store?.recipient_id || "acc_default";
+      const itemTotal = Math.round((item.total || 0) * 100);
+      const deliveryFee = Number(metadata?.details?.deliveryFee || 0);
+
+      if (!storeGroups[recipientId]) {
+        storeGroups[recipientId] = {
+          recipientId,
+          itemsTotal: 0,
+          deliveryFee: 0,
+        };
+      }
+
+      storeGroups[recipientId].itemsTotal += itemTotal;
+      storeGroups[recipientId].deliveryFee += Math.round(deliveryFee * 100);
+    });
+
+    // Se não conseguiu agrupar por lojas, usar o valor total para um único recipient
+    const splits = Object.values(storeGroups).length > 0
+      ? Object.values(storeGroups).map(group => ({
+          type: "flat",
+          amount: group.itemsTotal + group.deliveryFee, // Produtos + frete da loja
+          recipient_id: group.recipientId,
+        }))
+      : [{
+          type: "flat",
+          amount: totalAmountCents,
+          recipient_id: order.store?.recipient_id || "acc_default",
+        }];
+
+    basePayload.payments = [{
+      payment_method: payment.payment_method,
+      split: splits,
+    }];
+
+    // PIX
+    if (payment.payment_method === "pix") {
+      basePayload.pix_expires_in = 300;
     }
 
-    if (handlePayment.payment_method == "boleto") {
-      delete handlePayment["credit_card"];
-      delete handlePayment["pix"];
+    // BOLETO
+    if (payment.payment_method === "boleto") {
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 3);
 
-      handlePayment["boleto"] = {
-        instructions: "Pagar até o vencimento",
-        due_at: getCurrentDate(1),
-        document_number: generateDocumentNumber(),
+      basePayload.boleto = {
+        instructions: "Pagamento referente ao pedido na Fiestou",
+        due_at: dueDate.toISOString().split('T')[0],
+        document_number: String(orderId).padStart(8, '0'),
         type: "DM",
       };
     }
 
-    const pagarme = new Pagarme();
+    console.log("PAYLOAD FINAL:", basePayload);
 
-    const request = await pagarme.createOrder(
-      order,
-      handlePayment,
-      orderAddress
-    );
+    // Validação antes de enviar
+    const validationErrors = [];
+    
+    if (!orderItems.length) {
+      validationErrors.push("Pedido sem itens válidos");
+    }
+    
+    if (finalItemsSum + deliveryAmountCents !== totalAmountCents) {
+      validationErrors.push("Soma dos itens + frete não confere com total");
+      console.error("ERRO DE VALIDAÇÃO:", {
+        finalItemsSum,
+        deliveryAmountCents,
+        totalAmountCents,
+        soma: finalItemsSum + deliveryAmountCents,
+        diferença: totalAmountCents - (finalItemsSum + deliveryAmountCents)
+      });
+    }
+    
+    if (!orderAddress?.zipCode || !orderAddress?.city || !orderAddress?.state) {
+      validationErrors.push("Endereço de entrega incompleto");
+    }
 
-    formFeedback["loading"] = false;
-
-    if (!!request.response) {
-      const handle: any = request.data;
-
-      if (payment.payment_method == "credit_card") {
-        if (handle?.status == "paid") {
-          CardManager();
-
-          formFeedback["sended"] = true;
-        } else {
-          formFeedback = {
-            ...formFeedback,
-            sended: false,
-            feedback: "Os dados fornecidos não são válidos. Tente novamente.",
-          };
-        }
-      }
-
-      if (payment.payment_method == "pix") {
-        if (handle?.status == "paid" || handle?.status == "pending") {
-          const handleCharge: any = !!handle?.charges?.length
-            ? handle?.charges[0].last_transaction
-            : {};
-
-          PixManager({
-            status: true,
-            code: handleCharge.qr_code,
-            qrcode: handleCharge.qr_code_url,
-            time: handleCharge.expires_at,
-          });
-
-          formFeedback["sended"] = true;
-        } else {
-          formFeedback = {
-            ...formFeedback,
-            sended: false,
-            feedback:
-              "Algo deu errado ao processar seu pagamento. Tente novamente.",
-          };
-        }
-      }
-
-      if (payment.payment_method == "boleto") {
-        if (handle?.status == "paid" || handle?.status == "pending") {
-          const handleCharge: any = !!handle?.charges?.length
-            ? handle?.charges[0].last_transaction
-            : {};
-
-          BoletoManager(handleCharge);
-
-          formFeedback["sended"] = true;
-        } else {
-          formFeedback = {
-            ...formFeedback,
-            sended: false,
-            feedback: "Os dados fornecidos não são válidos. Tente novamente.",
-          };
-        }
-      }
-    } else {
+    if (validationErrors.length) {
       formFeedback = {
         ...formFeedback,
+        loading: false,
         sended: false,
-        feedback:
-          "Algo deu errado ao processar seu pagamento. Tente novamente.",
+        feedback: validationErrors.join(", "),
+      };
+      handleForm(formFeedback);
+      return;
+    }
+
+    try {
+      const response: any = await api.bridge({
+        method: "post",
+        url: "checkout/store",
+        data: basePayload,
+      });
+
+      formFeedback["loading"] = false;
+
+      console.log("RESPONSE COMPLETA:", response);
+
+      // Verifica se não houve erro (sucesso)
+      if (!response?.error && response?.response) {
+        const data = response?.data || {};
+
+        console.log("DATA EXTRAÍDA:", data);
+        console.log("STATUS:", data?.status);
+
+        if (payment.payment_method === "credit_card") {
+          if (data?.status === "paid") {
+            formFeedback["sended"] = true;
+            console.log("PAGAMENTO APROVADO! Redirecionando...");
+            // Redirecionar imediatamente para a página do pedido
+            window.location.href = `/dashboard/pedidos/${orderId}`;
+            return;
+          } else {
+            console.error("Status não é 'paid':", data?.status);
+            formFeedback = {
+              ...formFeedback,
+              sended: false,
+              feedback:
+                "Os dados fornecidos não foram aprovados. Tente novamente.",
+            };
+          }
+        }
+
+        if (payment.payment_method === "pix") {
+          if (data?.status === "paid" || data?.status === "pending") {
+            const tx = data?.charges?.[0]?.last_transaction || {};
+            PixManager({
+              status: true,
+              code: tx.qr_code,
+              qrcode: tx.qr_code_url,
+              time: tx.expires_at,
+              expires_in: pix.expires_in,
+            });
+            formFeedback["sended"] = true;
+          } else {
+            formFeedback = {
+              ...formFeedback,
+              sended: false,
+              feedback: "Não foi possível gerar o PIX. Tente novamente.",
+            };
+          }
+        }
+
+        if (payment.payment_method === "boleto") {
+          if (data?.status === "paid" || data?.status === "pending") {
+            const tx = data?.charges?.[0]?.last_transaction || {};
+            BoletoManager({
+              status: true,
+              pdf: tx?.pdf,
+              due_at: tx?.due_at,
+              line: tx?.line,
+            });
+            formFeedback["sended"] = true;
+          } else {
+            formFeedback = {
+              ...formFeedback,
+              sended: false,
+              feedback: "Não foi possível gerar o boleto. Tente novamente.",
+            };
+          }
+        }
+      } else {
+        formFeedback = {
+          ...formFeedback,
+          sended: false,
+          feedback:
+            response?.data?.message || response?.message || 
+            "Algo deu errado ao processar seu pagamento. Tente novamente.",
+        };
+      }
+    } catch (err) {
+      console.error("ERRO AO PROCESSAR PAGAMENTO:", err);
+      formFeedback = {
+        ...formFeedback,
+        loading: false,
+        sended: false,
+        feedback: "Falha de comunicação com o servidor. Tente novamente.",
       };
     }
 
     handleForm(formFeedback);
-  };
-
-  const headLine = () => {
-    return (
-      <div className="md:pb-6 md:border-b">
-        <div className="pb-4">
-          <Breadcrumbs
-            links={[
-              { url: "/dashboard", name: "Dashboard" },
-              { url: "/dashboard/pedidos", name: "Pedidos" },
-              {
-                url: `/dashboard/pedidos/${orderId}`,
-                name: "Pedido",
-              },
-            ]}
-          />
-        </div>
-        <div className="flex items-center">
-          <Link passHref href={`/dashboard/pedidos/${orderId}`}>
-            <Icon
-              icon="fa-long-arrow-left"
-              className="mr-4 md:mr-6 text-2xl text-zinc-900"
-            />
-          </Link>
-          <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900">
-            Pagamento
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -484,738 +674,60 @@ export default function Pagamento({
         position: "solid",
         content: HeaderFooter,
       }}
-      footer={{
-        template: "clean",
-      }}
+      footer={{ template: "clean" }}
     >
       <section className="py-6 md:py-10">
         <div className="container-medium">
           {placeholder ? (
-            <div className="grid md:flex gap-6 md:gap-10">
-              <div className="w-full grid gap-4">
-                <div className="bg-zinc-200 rounded-md animate-pulse py-10"></div>
-                <div className="bg-zinc-200 rounded-md animate-pulse py-10 h-[20rem]"></div>
-              </div>
-              <div className="w-full md:max-w-[28rem]">
-                <div className="bg-zinc-200 rounded-md animate-pulse py-10 h-[20rem]"></div>
-              </div>
-            </div>
+            <LoadingSkeleton />
           ) : (
-            <form className="" onSubmit={(e: any) => submitPayment(e)}>
+            <form onSubmit={submitPayment}>
               <div className="grid md:flex items-start gap-10">
                 <div className="grid gap-6 order-1 md:order-0 w-full">
-                  <div className="hidden md:block">{headLine()}</div>
-
+                  <div className="hidden md:block">
+                    <HeadLine orderId={orderId} />
+                  </div>
                   <div className="grid gap-6 md:gap-10">
-                    <div className="grid">
-                      <h4 className="text-xl md:text-2xl text-zinc-800">
-                        Detalhes do pedido
-                      </h4>
-                      <div className="grid border rounded-xl p-2 text-sm mt-4">
-                        <div className="flex gap-2 py-2 px-3 bg-zinc-100 rounded-md">
-                          <div className="text-zinc-900 font-bold w-full max-w-[10rem]">
-                            Pedido
-                          </div>
-                          <div className="">#{order.id}</div>
-                        </div>
-
-                        <div className="flex gap-2 py-2 px-3 rounded-md">
-                          <div className="text-zinc-900 font-bold w-full max-w-[10rem]">
-                            Realizado em
-                          </div>
-                          <div className="">
-                            {getShorDate(order.created_at)}
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 py-2 px-3 bg-zinc-100 rounded-md">
-                          <div className="text-zinc-900 font-bold w-full max-w-[10rem]">
-                            Agendado para
-                          </div>
-                          <div className="">
-                            {dateBRFormat(resume.startDate)}{" "}
-                            {resume.endDate != resume.startDate
-                              ? `- ${dateBRFormat(resume.endDate)}`
-                              : ""}{" "}
-                            |{order.deliverySchedule}
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 py-2 px-3 rounded-md">
-                          <div className="text-zinc-900 font-bold w-full max-w-[10rem]">
-                            Endereço de entrega
-                          </div>
-                          <div className="">
-                            <div>
-                              {order?.deliveryAddress?.street},{" "}
-                              {order?.deliveryAddress?.number} -{" "}
-                              {order?.deliveryAddress?.neighborhood}
-                            </div>
-                            <div>
-                              CEP: {order?.deliveryAddress?.zipCode} |{" "}
-                              {order?.deliveryAddress?.city} |{" "}
-                              {order?.deliveryAddress?.state} -{" "}
-                              {order?.deliveryAddress?.country}
-                            </div>
-                            <div>
-                              {order?.deliveryAddress?.complement} |{" "}
-                              {deliveryToName[order?.deliveryTo]}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid pb-4 md:pb-8">
-                      <h4 className="text-xl md:text-2xl text-zinc-800">
-                        Itens do pedido
-                      </h4>
-
-                      {!!products &&
-                        products.map((product: any, key: any) => (
-                          <div key={key} className="py-6">
-                            <div className="flex items-center gap-6">
-                              <div className="w-fit">
-                                <div className="aspect-square bg-zinc-200 w-[6rem] rounded-xl">
-                                  {!!product?.gallery?.length && (
-                                    <Img
-                                      src={getImage(
-                                        product?.gallery[0],
-                                        "thumb"
-                                      )}
-                                      className="w-full h-full object-contain"
-                                    />
-                                  )}
-                                </div>
-                              </div>
-                              <div className="grid gap-1 w-full">
-                                <div className="font-title text-lg font-bold text-zinc-900">
-                                  <Link href={getProductUrl(product)}>
-                                    {product.title}
-                                  </Link>
-                                </div>
-                                <div className="text-sm">
-                                  {!!product.sku && (
-                                    <>
-                                      sku #{product.sku} <br />
-                                    </>
-                                  )}
-                                  Fornecido por:
-                                  <div className="text-zinc-900 pl-2 inline-block font-semibold underline">
-                                    {product?.store.title}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
+                    <OrderDetailsCard
+                      order={order}
+                      resume={resume}
+                      deliveryAddress={deliveryAddress}
+                      deliverySchedule={deliverySchedule}
+                      deliveryTo={deliveryTo} // já é string amigável
+                    />
+                    <OrderItemsList products={products} />
                   </div>
                 </div>
 
                 <div className="order-0 md:order-1 w-full md:max-w-[28rem] relative grid gap-4">
-                  <div className="block md:hidden">{headLine()}</div>
-
-                  <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
-                    <div className="hidden md:block font-title font-bold text-zinc-900 text-xl mb-4">
-                      Resumo
-                    </div>
-
-                    <div className="grid text-sm gap-2 mb-2 py-2">
-                      <div className="flex gap-2">
-                        <div className="w-full">
-                          Subtotal ({products.length}{" "}
-                          {products.length == 1 ? "item" : "itens"})
-                        </div>
-                        <div className="whitespace-nowrap">
-                          R${" "}
-                          {moneyFormat(
-                            order.total - (order?.deliveryPrice ?? 0)
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <div className="w-full">Entrega</div>
-                        <div className="whitespace-nowrap">
-                          {!!order?.deliveryPrice
-                            ? `R$ ${moneyFormat(order.deliveryPrice)}`
-                            : "Gratuita"}
-                        </div>
-                      </div>
-
-                      <div className="border-t"></div>
-
-                      <div className="flex gap-2">
-                        <div className="w-full text-zinc-900 font-bold">
-                          Total
-                        </div>
-                        <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
-                          R$ {moneyFormat(order.total)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {!!form.feedback && !form.sended && (
-                      <div className="p-4 bg-red-500 text-white rounded-xl mb-4 flex justify-between">
-                        <span className="leading-tight">
-                          Os dados são inválidos para cobranças. Tente
-                          novamente.
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleForm({ feedback: "" })}
-                        >
-                          <Icon icon="fa-times" />
-                        </button>
-                      </div>
-                    )}
-
-                    {!!boleto?.status ? (
-                      <div className="bg-white rounded-xl p-4 text-center">
-                        <div className="mb-4">
-                          <div className="text-sm">Vencimento para:</div>
-                          <div className="text-xl text-zinc-900 font-bold">
-                            {dateBRFormat(boleto?.due_at)}
-                          </div>
-                        </div>
-                        <div className="w-full max-w-[16rem] mx-auto grid gap-2">
-                          <div>Disponível para download</div>
-                          <div>
-                            <a
-                              rel="noreferrer"
-                              href={boleto?.pdf}
-                              target="_blank"
-                              className="font-semibold inline-block mx-auto py-2 px-4 border rounded-md hover:underline border-cyan-600 text-cyan-600 hover:border-cyan-800 hover:text-cyan-800 ease"
-                            >
-                              Baixar boleto
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    ) : !!pix?.status ? (
-                      <div className="bg-white rounded-xl p-4">
-                        <div className="text-center mb-4">
-                          <div className="text-sm">Expira em:</div>
-                          <div className="text-3xl text-zinc-900 font-bold">
-                            {expire}
-                          </div>
-                        </div>
-                        <div className="w-full max-w-[16rem] mx-auto">
-                          {!!pix.qrcode ? (
-                            <img src={pix.qrcode} className="w-full" />
-                          ) : (
-                            <div className="aspect-square border rounded"></div>
-                          )}
-                        </div>
-                        <div className="px-3 pt-6">
-                          <div className="px-4 py-3 bg-zinc-100 rounded">
-                            <div className="text-sm line-clamp-3 break-all">
-                              {pix.code}
-                            </div>
-                          </div>
-                          <div className="text-center">
-                            <input
-                              type="text"
-                              id="pix-code"
-                              defaultValue={pix.code}
-                              className="absolute h-0 w-0 opacity-0 overflow-hidden"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => CopyClipboard("pix-code")}
-                              className="font-semibold pt-3 pb-2 text-cyan-600"
-                            >
-                              <Icon icon="fa-copy" className="mr-2" />
-                              COPIAR
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-xl grid">
-                        {!user.phone && (
-                          <div className="p-3 md:p-4 grid gap-4 border-b">
-                            <div className="form-group mt-1">
-                              <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                Celular para contato
-                              </label>
-                              <input
-                                type="text"
-                                onChange={(e: any) =>
-                                  handleCustomer({
-                                    phone: justNumber(
-                                      e.target.value
-                                    ).toString(),
-                                  })
-                                }
-                                value={order.user?.phone ?? ""}
-                                required
-                                className="form-control"
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="">
-                          <div
-                            onClick={(e: any) =>
-                              handlePayment({ payment_method: "credit_card" })
-                            }
-                            className={`p-3 md:p-4 cursor-pointer flex gap-2 items-center`}
-                          >
-                            <div
-                              className={`border ${payment.payment_method == "credit_card"
-                                  ? "border-zinc-400"
-                                  : "border-zinc-300"
-                                } w-[1rem] rounded-full h-[1rem] relative`}
-                            >
-                              {payment.payment_method == "credit_card" && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                              )}
-                            </div>
-                            <div className="leading-tight text-zinc-900 font-semibold flex items-center gap-1">
-                              <Img
-                                src="/images/pagarme/card-icon.png"
-                                className="w-[1.75rem]"
-                              />
-                              <div className="w-full">CARTÃO DE CRÉDITO</div>
-                            </div>
-                          </div>
-
-                          {payment.payment_method == "credit_card" && (
-                            <div className="px-3 md:px-4 pb-3 md:pb-4">
-                              <div className="bg-zinc-100 mb-2 py-2 px-3 text-xs rounded-md">
-                                * Os dados de pagamento não ficam salvos em
-                                nossa base de dados
-                              </div>
-
-                              <div className="grid grid-cols-2 items-start gap-4">
-                                <div className="form-group">
-                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    Titular
-                                  </label>
-                                  <input
-                                    type="text"
-                                    onChange={(e: any) =>
-                                      handleCard({
-                                        holder_name: e.target.value,
-                                      })
-                                    }
-                                    required
-                                    className="form-control"
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    CPF/CNPJ
-                                  </label>
-                                  <input
-                                    type="tel"
-                                    onChange={(e: any) =>
-                                      handleCard({
-                                        holder_document: (
-                                          justNumber(e.target.value) ?? ""
-                                        ).toString(),
-                                      })
-                                    }
-                                    value={card?.holder_document ?? ""}
-                                    required
-                                    className="form-control"
-                                  />
-                                  {(card?.holder_document ?? "").length > 8 &&
-                                    !documentIsValid(card?.holder_document) && (
-                                      <div className="text-[0.7rem] opacity-65">
-                                        * Insira um documento válido
-                                      </div>
-                                    )}
-                                </div>
-                              </div>
-
-                              {!useOrderAddress && (
-                                <div className="grid md:grid-cols-4 items-end gap-x-4">
-                                  <div className="form-group col-span-4">
-                                    <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                      CEP
-                                    </label>
-                                    <input
-                                      required
-                                      value={address.zipCode ?? ""}
-                                      className="form-control"
-                                      onChange={(e: any) =>
-                                        handleAddress({
-                                          zipCode: e.target.value,
-                                        })
-                                      }
-                                      onBlur={() => handleZipCode()}
-                                    />
-                                  </div>
-
-                                  <div className="form-group col-span-3">
-                                    <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                      Rua
-                                    </label>
-                                    <input
-                                      required
-                                      value={address.street ?? ""}
-                                      className="form-control"
-                                      onChange={(e: any) =>
-                                        handleAddress({
-                                          street: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  </div>
-
-                                  <div className="form-group col-span-1">
-                                    <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                      Número
-                                    </label>
-                                    <input
-                                      required
-                                      value={address.number ?? ""}
-                                      className="form-control"
-                                      onChange={(e: any) => {
-                                        handleAddress({
-                                          number: justNumber(e.target.value),
-                                        });
-                                      }}
-                                    />
-                                  </div>
-
-                                  {errorZipCode ? (
-                                    <>
-                                      <div className="form-group col-span-1">
-                                        <label className="float">Estado</label>
-                                        <select
-                                          required
-                                          value={address.state ?? ""}
-                                          className="form-control"
-                                          onChange={(e: any) =>
-                                            handleAddress({
-                                              state: e.target.value,
-                                            })
-                                          }
-                                        >
-                                          {getBrazilianStates.map(
-                                            (uf: string) => (
-                                              <option key={uf}>{uf}</option>
-                                            )
-                                          )}
-                                        </select>
-                                      </div>
-                                      <div className="form-group col-span-3">
-                                        <label className="float">Cidade</label>
-                                        <input
-                                          required
-                                          value={address.city ?? ""}
-                                          className="form-control"
-                                          onChange={(e: any) =>
-                                            handleAddress({
-                                              city: e.target.value,
-                                            })
-                                          }
-                                        />
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <>
-                                      {address?.zipCode && address?.city && (
-                                        <div className="col-span-4 mt-2 text-xs text-center bg-gray-100 rounded-md py-2 text-gray-950">
-                                          {address?.city}
-                                          {address?.state &&
-                                            ` - ${address?.state}`}
-                                          {address?.country && (
-                                            <span className="font-bold">
-                                              , {address?.country}
-                                            </span>
-                                          )}
-                                        </div>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
-                              )}
-
-                              <div className="flex gap-1 text-xs mt-2">
-                                <input
-                                  type="checkbox"
-                                  onChange={(e: any) =>
-                                    setUseOrderAddress(e.target.checked)
-                                  }
-                                  checked={useOrderAddress}
-                                />
-                                <div>
-                                  Usar endereço de entrega para faturamento
-                                </div>
-                              </div>
-
-                              <div className="border-t mb-5 mt-4"></div>
-
-                              <div className="form-group">
-                                <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                  Número do Cartão
-                                </label>
-                                <input
-                                  type="tel"
-                                  onChange={(e: any) =>
-                                    handleCard({
-                                      number: (
-                                        justNumber(e.target.value) ?? ""
-                                      ).toString(),
-                                    })
-                                  }
-                                  value={card?.number ?? ""}
-                                  required
-                                  className="form-control appearance-none"
-                                />
-                              </div>
-
-                              <div className="grid grid-cols-3 gap-4">
-                                <div className="form-group">
-                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    Validade
-                                  </label>
-                                  <div className="flex items-center px-1 border border-zinc-300 rounded-lg">
-                                    <div className="w-[5rem]">
-                                      <select
-                                        id="expiry_month"
-                                        name="expiry_month"
-                                        required
-                                        onChange={(e: any) =>
-                                          handleCard({
-                                            exp_month: justNumber(
-                                              e.target.value
-                                            ),
-                                          })
-                                        }
-                                        className="form-control px-2 border-0 text-sm appearance-none"
-                                      >
-                                        <option value="">Mês</option>
-                                        <option value="01">01</option>
-                                        <option value="02">02</option>
-                                        <option value="03">03</option>
-                                        <option value="04">04</option>
-                                        <option value="05">05</option>
-                                        <option value="06">06</option>
-                                        <option value="07">07</option>
-                                        <option value="08">08</option>
-                                        <option value="09">09</option>
-                                        <option value="10">10</option>
-                                        <option value="11">11</option>
-                                        <option value="12">12</option>
-                                      </select>
-                                    </div>
-                                    <div className="w-fit">/</div>
-                                    <div className="w-full">
-                                      <select
-                                        id="expiry_year"
-                                        name="expiry_year"
-                                        required
-                                        onChange={(e: any) =>
-                                          handleCard({
-                                            exp_year: justNumber(
-                                              e.target.value
-                                            ),
-                                          })
-                                        }
-                                        className="form-control px-2 border-0 text-sm appearance-none"
-                                      >
-                                        <option value="">Ano</option>
-                                        {Array.from(
-                                          new Array(21),
-                                          (val, index) =>
-                                            new Date().getFullYear() + index
-                                        ).map((year) => (
-                                          <option key={year} value={year}>
-                                            {year}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="form-group">
-                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    CVV/CVC
-                                  </label>
-                                  <input
-                                    type="tel"
-                                    onChange={(e: any) =>
-                                      handleCard({
-                                        cvv: (
-                                          justNumber(e.target.value) ?? ""
-                                        ).toString(),
-                                      })
-                                    }
-                                    value={card?.cvv ?? ""}
-                                    required
-                                    className="form-control appearance-none"
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    Parcelas
-                                  </label>
-                                  <select
-                                    required
-                                    className="form-control appearance-none"
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                      setInstallments(parseInt(justNumber(e.target.value), 10))
-                                    }
-                                  >
-                                    <option value={1}>1x</option>
-                                    <option value={2}>2x</option>
-                                    <option value={3}>3x</option>
-                                    <option value={4}>4x</option>
-                                    <option value={5}>5x</option>
-                                  </select>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="border-t">
-                          <div
-                            onClick={(e: any) =>
-                              handlePayment({ payment_method: "boleto" })
-                            }
-                            className={`p-3 md:p-4 cursor-pointer flex gap-2 items-center`}
-                          >
-                            <div
-                              className={`border ${payment.payment_method == "boleto"
-                                  ? "border-zinc-400"
-                                  : "border-zinc-300"
-                                } w-[1rem] rounded-full h-[1rem] relative`}
-                            >
-                              {payment.payment_method == "boleto" && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                              )}
-                            </div>
-
-                            <div className="leading-tight text-zinc-900 font-semibold flex items-center gap-1">
-                              <Img
-                                src="/images/pagarme/document-icon.png"
-                                className="w-[1.75rem]"
-                              />
-                              <div className="w-full">BOLETO</div>
-                            </div>
-                          </div>
-
-                          {payment.payment_method == "boleto" && (
-                            <div className="px-3 md:px-4 pb-3 md:pb-4 grid gap-4">
-                              <div className="bg-zinc-100 py-2 px-3 text-xs rounded-md">
-                                * Ao confirmar, será gerado um boleto para
-                                pagamento.
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="border-t">
-                          <div
-                            onClick={(e: any) =>
-                              handlePayment({ payment_method: "pix" })
-                            }
-                            className={`p-3 md:p-4 cursor-pointer flex gap-2 items-center`}
-                          >
-                            <div
-                              className={`border ${payment.payment_method == "pix"
-                                  ? "border-zinc-400"
-                                  : "border-zinc-300"
-                                } w-[1rem] rounded-full h-[1rem] relative`}
-                            >
-                              {payment.payment_method == "pix" && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[.5rem] h-[.5rem] bg-yellow-400 rounded-full"></div>
-                              )}
-                            </div>
-
-                            <div className="leading-tight text-zinc-900 font-semibold flex items-center gap-1">
-                              <Img
-                                src="/images/pagarme/pix-icon.png"
-                                className="w-[1.75rem]"
-                              />
-                              <div className="w-full">PIX</div>
-                            </div>
-                          </div>
-
-                          {payment.payment_method == "pix" && (
-                            <div className="px-3 md:px-4 pb-3 md:pb-4 grid gap-4">
-                              {!user.cpf && (
-                                <div className="form-group mt-1">
-                                  <label className="absolute top-0 left-0 ml-2 -mt-2 bg-white px-2 text-xs">
-                                    CPF/CNPJ
-                                  </label>
-                                  <input
-                                    type="tel"
-                                    onChange={(e: any) =>
-                                      handleCustomer({
-                                        cpf: (
-                                          justNumber(e.target.value) ?? ""
-                                        ).toString(),
-                                        document: (
-                                          justNumber(e.target.value) ?? ""
-                                        ).toString(),
-                                      })
-                                    }
-                                    placeholder="Digite seu CPF ou CNPJ..."
-                                    value={order.user?.document ?? ""}
-                                    required
-                                    className="form-control placeholder:italic"
-                                  />
-                                  {(order.user?.document ?? "").length > 10 &&
-                                    !documentIsValid(order.user?.document) && (
-                                      <div className="text-[0.75rem] opacity-50">
-                                        * Insira um documento válido
-                                      </div>
-                                    )}
-                                </div>
-                              )}
-
-                              <div className="bg-zinc-100 py-2 px-3 text-xs rounded-md">
-                                * Ao confirmar, será gerado um código para
-                                pagamento via pix. Utilize o QRcode ou o código{" "}
-                                {`"copiar e colar"`} para efetuar o pagamento no
-                                aplicativo do seu banco.
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {form.loading && (
-                      <div className="absolute inset-0 w-full h-full bg-white opacity-50 cursor-wait"></div>
-                    )}
-
-                    {!pix.status && !boleto?.status && (
-                      <div className="grid mt-4">
-                        <Button
-                          loading={form.loading}
-                          checked={form.sended || pix.status}
-                          style="btn-success"
-                          className="py-6 px-3"
-                          disable={
-                            (payment.payment_method == "pix" &&
-                              !documentIsValid(order.user?.document)) ||
-                            (payment.payment_method == "credit_card" &&
-                              !documentIsValid(card?.holder_document) &&
-                              true)
-                          }
-                        >
-                          Confirmar e pagar
-                        </Button>
-                      </div>
-                    )}
-
-                    <div className="mt-4 border-t pt-4 flex justify-center">
-                      <Img
-                        src="/images/pagarme/selo-flags.png"
-                        className="w-full max-w-[16rem]"
-                      />
-                    </div>
+                  <div className="block md:hidden">
+                    <HeadLine orderId={orderId} />
                   </div>
+
+                  <PaymentPanel
+                    order={order}
+                    productsCount={products.length}
+                    deliveryPrice={deliveryPrice}
+                    form={form}
+                    handleForm={handleForm}
+                    pix={pix}
+                    boleto={boleto}
+                    expire={expire}
+                    user={user}
+                    card={card}
+                    payment={payment}
+                    installments={installments}
+                    address={address}
+                    useOrderAddress={useOrderAddress}
+                    errorZipCode={errorZipCode}
+                    handleCard={handleCard}
+                    handlePayment={handlePayment}
+                    handleCustomer={handleCustomer}
+                    handleAddress={handleAddress}
+                    handleZipCode={handleZipCode}
+                    setInstallments={setInstallments}
+                    setUseOrderAddress={setUseOrderAddress}
+                  />
                 </div>
               </div>
             </form>
@@ -1224,4 +736,5 @@ export default function Pagamento({
       </section>
     </Template>
   );
-}
+};
+

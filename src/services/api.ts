@@ -2,8 +2,6 @@ import axios, { AxiosResponse } from "axios";
 import Cookies from "js-cookie";
 import { serializeParam } from "../helper";
 
-const token = Cookies.get("fiestou.authtoken");
-
 const getPublicBaseUrl = () =>
   process.env.NEXT_PUBLIC_BASE_URL ?? process.env.BASE_URL ?? "";
 
@@ -21,16 +19,81 @@ export const api = axios.create({
   },
 });
 
-if (token) {
-  api.defaults.headers["Authorization"] = `Bearer ${token}`;
-}
+// Função para obter token atual (lê dinamicamente do cookie)
+const getAuthToken = () => Cookies.get("fiestou.authtoken");
+
+// Função para limpar sessão e redirecionar (APENAS quando token realmente expirou)
+const handleSessionExpired = () => {
+  if (typeof window !== "undefined") {
+    const isProtectedRoute =
+      window.location.pathname.includes("/dashboard") ||
+      window.location.pathname.includes("/painel");
+
+    const isAuthPage =
+      window.location.pathname.includes("/acesso") ||
+      window.location.pathname.includes("/logout") ||
+      window.location.pathname.includes("/cadastre-se");
+
+    // Só redireciona se estava em rota protegida e não está em página de auth
+    if (isProtectedRoute && !isAuthPage) {
+      Cookies.remove("fiestou.authtoken");
+      Cookies.remove("fiestou.user");
+      window.location.href = "/acesso?expired=1";
+    }
+  }
+};
+
+// Interceptador de REQUEST - adiciona token atualizado em cada requisição
+api.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken();
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Interceptador de RESPONSE - detecta sessão expirada (401/403)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const hadToken = !!getAuthToken();
+    const errorMessage = error?.response?.data?.message || "";
+
+    // Só trata como sessão expirada se:
+    // 1. Status é 401 (Unauthorized)
+    // 2. Tinha um token (estava logado)
+    // 3. Mensagem indica token expirado/inválido
+    const isTokenError =
+      status === 401 &&
+      hadToken &&
+      (errorMessage.toLowerCase().includes("token") ||
+       errorMessage.toLowerCase().includes("unauthenticated") ||
+       errorMessage.toLowerCase().includes("expired") ||
+       errorMessage === "");
+
+    if (isTokenError) {
+      console.warn("[Auth] Token expirado ou inválido. Verificando redirecionamento...");
+      handleSessionExpired();
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 interface ApiRequestType {
   method?: string;
   url: string;
   data?: any;
   opts?: Object;
+  noAppPrefix?: boolean; // << NOVO
 }
+
+const trimSlashes = (s: string) => s.replace(/\/+$/, '');
+const trimLeftSlashes = (s: string) => s.replace(/^\/+/, '');
 
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
@@ -75,6 +138,7 @@ class Api {
       )
         ? (method.toLowerCase() as HttpMethod)
         : "get";
+
 
       api[requestMethod](url, data ?? {}, opts ?? {})
         .then((response: AxiosResponse) => {
@@ -190,16 +254,22 @@ class Api {
   }
 
   async bridge<T>(
-    { method = "get", url, data, opts }: ApiRequestType,
+    { method = "get", url, data, opts, noAppPrefix = false }: ApiRequestType,
     ctx?: any
   ): Promise<T> {
-    const apiRest =
-      typeof window === "undefined"
-        ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
-        : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
+    const apiRest = typeof window === "undefined"
+      ? process.env.INTERNAL_API_REST ?? process.env.API_REST ?? ""
+      : process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "";
 
-    url = `${apiRest}${url}`;
-    return this.connect({ method, url, data, opts }, ctx) as Promise<T>;
+    // se pediram "sem /app", tira o /app do fim da base
+    const base = noAppPrefix
+      ? apiRest.replace(/\/app\/?$/i, "/")
+      : apiRest;
+
+    // monta URL final sem barras duplicadas
+    const fullUrl = `${trimSlashes(base)}/${trimLeftSlashes(url)}`;
+
+    return this.connect({ method, url: fullUrl, data, opts }, ctx) as Promise<T>;
   }
 
   async graph({ method = "post", url, data, opts }: ApiRequestType, ctx?: any) {
