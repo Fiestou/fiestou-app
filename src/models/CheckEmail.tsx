@@ -9,7 +9,7 @@ export interface CheckMail {
     name: string
     email: string
     phone: string
-    person: string
+    type: string
+    person?: string
     status: number
   }
-  
