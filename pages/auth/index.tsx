@@ -1,4 +1,4 @@
-import { AuthContext } from "@/src/contexts/AuthContext";
+import { AuthContext, getUserType } from "@/src/contexts/AuthContext";
 import Api, { api } from "@/src/services/api";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { getSession } from "next-auth/react";
@@ -66,13 +66,14 @@ export default function Auth({ auth }: any) {
 
       api.defaults.headers["Authorization"] = `Bearer ${auth.token}`;
 
+      const userType = getUserType(user);
       if (!auth.user.status) {
         window.location.href = "/cadastre-se/completar";
-      } else if (user.type === "master") {
+      } else if (userType === "master") {
         window.location.href = "/admin";
-      } else if (user.type === "partner") {
+      } else if (userType === "partner") {
         window.location.href = "/painel";
-      } else if (user.type === "delivery") {
+      } else if (userType === "delivery") {
         window.location.href = "/entregador";
       } else {
         window.location.href = "/dashboard";
