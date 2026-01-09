@@ -13,8 +13,8 @@ export default function User({ user }: { user: UserType }) {
     <div className="md:relative">
       <Button
         style="btn-transparent"
-        href={user.person == "client" ? "/dashboard" : "/acesso"}
-        onClick={() => (user.person == "client" ? setDropdown(true) : {})}
+        href={user.type === "client" ? "/dashboard" : "/acesso"}
+        onClick={() => (user.type === "client" ? setDropdown(true) : {})}
         className="hover:text-yellow-300 ease text-left"
       >
         <div className="flex items-center gap-2 lg:gap-3 leading-tight cursor-pointer">

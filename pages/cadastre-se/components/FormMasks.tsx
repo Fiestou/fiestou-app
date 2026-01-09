@@ -63,12 +63,14 @@ export const formatCep = (value: string): string => {
 };
 
 /* Name Formatting (first letter uppercase) */
-export const formatName = (value: string): string => {
+export const formatName = (value: unknown): string => {
+  if (typeof value !== 'string') return '';
+  
   return value
-    .toLowerCase() /* Converts everything to lowercase */
-    .split(" ") /* Splits into words */
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) /* First letter uppercase */
-    .join(" "); /* Joins the words again */
+    .toLowerCase()
+    .split(" ")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 /* Email Validation */

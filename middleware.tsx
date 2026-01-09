@@ -26,19 +26,23 @@ export async function middleware(req: any) {
       return NextResponse.redirect(permanentLink);
     }
 
+    // Redireciona usuários logados que acessam /acesso para seu painel apropriado
     if (url.includes("/acesso")) {
-      permanentLink.pathname = "/admin";
+      if (user.type === "master") {
+        permanentLink.pathname = "/admin";
+      } else if (user.type === "partner") {
+        permanentLink.pathname = "/painel";
+      } else if (user.type === "delivery") {
+        permanentLink.pathname = "/entregador";
+      } else {
+        permanentLink.pathname = "/dashboard";
+      }
       return NextResponse.redirect(permanentLink);
     }
 
-    if (url.includes("/acesso")) {
-      permanentLink.pathname =
-        user.person == "client" ? "/dashboard" : "/painel";
-      return NextResponse.redirect(permanentLink);
-    }
-
+    // Partner não pode acessar dashboard (exceto pedidos) nem admin
     if (
-      user.person == "partner" &&
+      user.type === "partner" &&
       (url.includes("/dashboard") || url.includes("/admin")) &&
       !url.includes("/dashboard/pedidos")
     ) {
@@ -46,16 +50,18 @@ export async function middleware(req: any) {
       return NextResponse.redirect(permanentLink);
     }
 
+    // Client não pode acessar painel nem admin
     if (
-      user.person == "client" &&
+      user.type === "client" &&
       (url.includes("/painel/") || url.includes("/admin"))
     ) {
       permanentLink.pathname = "/dashboard";
       return NextResponse.redirect(permanentLink);
     }
 
+    // Master não pode acessar dashboard nem painel
     if (
-      user.person == "master" &&
+      user.type === "master" &&
       (url.includes("/dashboard") || url.includes("/painel/"))
     ) {
       permanentLink.pathname = "/admin";

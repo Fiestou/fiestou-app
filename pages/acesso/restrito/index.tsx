@@ -6,7 +6,7 @@ import { decode as base64_decode } from "base-64";
 import { FormEvent, useContext, useState } from "react";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import { AuthContext } from "@/src/contexts/AuthContext";
-import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 interface PageQueryType {
   ref: string | "";
@@ -19,7 +19,7 @@ const FormInitialType = {
   password: "",
 };
 
-export default function Restrito() {
+function RestritoContent() {
   const { SignIn } = useContext(AuthContext);
   const { executeRecaptcha } = useGoogleReCaptcha();
 
@@ -134,5 +134,16 @@ export default function Restrito() {
         </div>
       </div>
     </Template>
+  );
+}
+
+export default function Restrito() {
+  return (
+    <GoogleReCaptchaProvider
+      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+      language="pt-BR"
+    >
+      <RestritoContent />
+    </GoogleReCaptchaProvider>
   );
 }

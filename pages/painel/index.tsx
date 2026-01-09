@@ -10,12 +10,20 @@ import { Button } from "@/src/components/ui/form";
 import { Chart } from "@/src/components/utils/Chart";
 import DobleIcon from "@/src/icons/fontAwesome/FDobleIcon";
 import Api from "@/src/services/api";
-import { BalanceType } from "@/src/models/order";
 import { PARTNER_MENU } from "@/src/default/header/Painel";
 import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
-import { RecipientEntity, RecipientStatusResponse } from "@/src/models/recipient";
+import { RecipientStatusResponse, RecipientType } from "@/src/models/Recipient";
 import { getRecipientStatus } from "@/src/services/recipients";
+import { getOrdersByCustomer } from "@/src/services/order";
 
+type BalanceType = {
+  cash: number;
+  payments: number;
+  promises: number;
+  orders: number;
+};
+
+// 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
@@ -54,6 +62,7 @@ export default function Parceiro({ content }: { content: any }) {
   const api = new Api();
 
   const [balance, setBalance] = useState({} as BalanceType);
+
   const getBalance = async () => {
     let request: any = await api.bridge({
       method: "post",
@@ -70,25 +79,24 @@ export default function Parceiro({ content }: { content: any }) {
     });
   };
 
-  const [orders, setOrders] = useState([] as Array<any>);
-  const getOrders = async () => {
-    let request: any = await api.bridge({
-      method: "post",
-      url: "suborders/list",
-      data: { limit: 10 },
-    });
+  const [orders, setOrders] = useState<Array<any>>([]);
 
-    setOrders(Array.isArray(request?.data) ? request.data : []);
+  const getOrders = async (customerId: number | string) => {
+    const parsedId = Number(customerId);
+    if (!parsedId) {
+      return;
+    }
+    const data = await getOrdersByCustomer(parsedId);
+    setOrders(data);
   };
 
   const [period, setPeriod] = useState("month" as string);
 
   const [user, setUser] = useState({} as UserType);
-
+  const [store, setStore] = useState<any>(null);
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
   const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
 
-  // Verificar status do cadastro PagMe
   const checkPagarmeStatus = async () => {
     try {
       const status = await getRecipientStatus();
@@ -98,7 +106,21 @@ export default function Parceiro({ content }: { content: any }) {
     }
   };
 
-  const handleRecipientCompleted = (data: RecipientEntity) => {
+  const getStoreData = async () => {
+    try {
+      const response: any = await api.bridge({
+        method: "post",
+        url: "stores/form",
+      });
+      if (response?.response && response?.data) {
+        setStore(response.data);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados da loja:", error);
+    }
+  };
+
+  const handleRecipientCompleted = (data: RecipientType) => {
     setRecipientStatus({
       completed: true,
       recipient: data,
@@ -106,13 +128,19 @@ export default function Parceiro({ content }: { content: any }) {
   };
 
   useEffect(() => {
-    if (!!window) {
-      getOrders();
+    if (typeof window !== "undefined") {
       getBalance();
       checkPagarmeStatus();
+      getStoreData();
       setUser(getUser);
     }
   }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      getOrders(user.id);
+    }
+  }, [user?.id]);
 
   const safeOrders = Array.isArray(orders) ? orders : [];
   const hasOrders = safeOrders.length > 0;
@@ -149,23 +177,31 @@ export default function Parceiro({ content }: { content: any }) {
                     {moneyFormat(balance.cash)}
                   </h4>
                   <div className="pt-3">
-                    <Button
+                    {/* <Button
                       href="/painel/saques"
                       className="btn w-full p-2 pl-3 pr-5 text-sm text-nowrap"
                     >
                       <Icon icon="fa-hand-holding-usd" />
                       Solicitar saque
-                    </Button>
+                    </Button> */}
                     {recipientStatus && !recipientStatus.completed && (
                       <Button
                         type="button"
                         onClick={() => setRecipientModalOpen(true)}
                         className="mt-2 w-full p-2 pl-3 pr-5 text-sm text-nowrap bg-yellow-400 hover:bg-yellow-500 text-black border-2 border-red-500"
-                        style=""
                       >
                         <Icon icon="fa-file-signature" className="mr-2" />
                         Finalizar cadastro Pagar.me
                       </Button>
+                    )}
+
+                    {recipientStatus?.completed && (
+                      <p className="mt-2 text-sm font-semibold text-green-600">
+                        Código recebedor: {" "}
+                        {(recipientStatus?.recipient as any) ||
+                          (recipientStatus?.recipient as any)||
+                          "N/A"}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -297,36 +333,36 @@ export default function Parceiro({ content }: { content: any }) {
                   </div>
                 </div>
 
-          {hasOrders ? (
-            safeOrders.map((suborder: any, key: any) => (
-              <div
-                key={key}
-                className="grid lg:flex border-t py-4 lg:py-8 gap-2 lg:gap-8 text-zinc-900 bg-opacity-5 ease items-center"
+                {hasOrders ? (
+                  safeOrders.map((order: any, key: any) => (
+                    <div
+                      key={key}
+                      className="grid lg:flex border-t py-4 lg:py-8 gap-2 lg:gap-8 text-zinc-900 bg-opacity-5 ease items-center"
                     >
                       <div className="w-full lg:w-1/12">
                         <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
                           pedido:
                         </span>
-                        #{suborder.order.id}
+                        #{order.id}
                       </div>
                       <div className="w-full">
                         <div className="whitespace-nowrap text-sm pb-2 md:pb-0">
                           <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
                             data:
                           </span>
-                          {getExtenseData(suborder.created_at)}
+                          {getExtenseData(order.created_at)}
                         </div>
                         <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
                           cliente:
                         </span>
-                        <span className="font-bold">{suborder.user.name}</span>
+                        <span className="font-bold">{order.user?.name}</span>
                       </div>
                       <div className="w-full lg:w-3/12 whitespace-nowrap">
                         <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
                           valor:
                         </span>
                         <span className="font-bold">
-                          R$ {moneyFormat(suborder.total)}
+                          R$ {moneyFormat(order.total)}
                         </span>
                       </div>
                       <div className="w-full lg:w-4/12">
@@ -334,7 +370,7 @@ export default function Parceiro({ content }: { content: any }) {
                           status:
                         </span>
 
-                        {suborder.order?.metadata?.payment_status == "paid" ? (
+                        {order?.metadata?.payment_status == "paid" ? (
                           <div className="px-2 inline-block text-sm py-2 rounded-md bg-green-200 text-green-900">
                             Pago
                           </div>
@@ -346,7 +382,7 @@ export default function Parceiro({ content }: { content: any }) {
                       </div>
                       <div className="w-full lg:w-fit grid">
                         <Button
-                          href={`/painel/pedidos/${suborder.id}`}
+                          href={`/painel/pedidos/${order.id}`}
                           style="btn-light"
                           className="text-zinc-900 py-2 px-3 mt-4 lg:mt-0 text-sm whitespace-nowrap"
                         >
@@ -370,6 +406,8 @@ export default function Parceiro({ content }: { content: any }) {
         onClose={() => setRecipientModalOpen(false)}
         status={recipientStatus}
         onCompleted={handleRecipientCompleted}
+        user={user}
+        store={store}
       />
     </Template>
   );
