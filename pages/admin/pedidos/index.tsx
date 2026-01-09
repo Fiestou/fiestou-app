@@ -9,20 +9,39 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import PaginatedTable from "@/src/components/pages/paginated-table/PaginatedTable";
 import { GetServerSideProps } from "next";
 
-interface Order {
+interface OrderStore {
   id: number;
-  created_at: string;
-  user: string;
-  metadata?: {
-    amount_total: number;
-  };
-  total: number;
-  status: string;
+  slug?: string;
+  title?: string;
+  companyName?: string;
   partnerName: string;
   partnerEmail: string;
-  userName: string;
-  userEmail: string;
-  storeId: number;
+  orderTotal: number;
+  orderId: number;
+}
+
+interface OrderCustomer {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+interface Order {
+  groupHash: string;
+  mainOrderId: number;
+  orderIds: number[];
+  ordersCount: number;
+  total: number;
+  status: string | number;
+  statusText: string;
+  deliveryStatus: string;
+  createdAt: string;
+  customer: OrderCustomer;
+  stores: OrderStore[];
+  deliveryAddress?: any;
+  metadata?: any;
+  listItems?: any[];
 }
 
 interface OrderPageProps {
@@ -52,13 +71,12 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
   const fetchOrders = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const api = new Api();
       const response = await api.bridge({
-        method: "post",
-        url: "orders/list",
-        data: { _nonce: Date.now() }
+        method: "get",
+        url: "orders/list"
       }) as ApiResponse;
 
       if (response?.data && Array.isArray(response.data)) {
@@ -107,18 +125,38 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       name: "Pedido",
       width: "10rem",
       sortable: true,
-      sortKey: "id",
-      selector: (row: Order) => '#' + row.id,
+      sortKey: "mainOrderId",
+      selector: (row: Order) => (
+        <div>
+          #{row.mainOrderId}
+          {row.ordersCount > 1 && (
+            <span className="text-xs text-zinc-500 ml-1">
+              (+{row.ordersCount - 1})
+            </span>
+          )}
+        </div>
+      ),
     },
     {
       name: "Parceiro",
       width: "40rem",
       sortable: true,
-      sortKey: "partnerName",
+      sortKey: "stores",
       selector: (row: Order) => (
         <div className="user-info">
-          <strong>{row.partnerName}</strong><br />
-          {row.partnerEmail}
+          {row.stores && row.stores.length > 0 ? (
+            <>
+              <strong>{row.stores[0].partnerName}</strong><br />
+              {row.stores[0].partnerEmail}
+              {row.stores.length > 1 && (
+                <span className="text-xs text-zinc-500 block">
+                  +{row.stores.length - 1} loja(s)
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-zinc-400">N/A</span>
+          )}
         </div>
       ),
     },
@@ -126,9 +164,9 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       name: "Data",
       width: "30rem",
       sortable: true,
-      sortKey: "created_at",
+      sortKey: "createdAt",
       selector: (row: Order) =>
-        new Date(row.created_at).toLocaleDateString("pt-BR", {
+        new Date(row.createdAt).toLocaleDateString("pt-BR", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
@@ -138,11 +176,11 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       name: "Cliente",
       width: "50rem",
       sortable: true,
-      sortKey: "user",
+      sortKey: "customer",
       selector: (row: Order) => (
         <div className="user-info">
-          <strong>{row.userName}</strong><br />
-          {row.userEmail}
+          <strong>{row.customer?.name || "N/A"}</strong><br />
+          {row.customer?.email || "N/A"}
         </div>
       ),
     },
@@ -160,9 +198,9 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       sortKey: "status",
       selector: (row: Order) => (
         <div
-          className={`rounded-md text-center py-2 ${row.status === "paid" ? "bg-green-200" : "bg-yellow-200"}`}
+          className={`rounded-md text-center py-2 ${row.status === 1 || row.status === "paid" ? "bg-green-200" : "bg-yellow-200"}`}
         >
-          {row.status === "paid" ? "Pago" : "Em Aberto"}
+          {row.statusText || (row.status === 1 || row.status === "paid" ? "Pago" : "Em Aberto")}
         </div>
       ),
     },
@@ -172,7 +210,7 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       selector: (row: Order) => (
         <Link
           title="Detalhes"
-          href={`/admin/pedidos/${row.id}`}
+          href={`/admin/pedidos/${row.mainOrderId}`}
           className="rounded-md bg-zinc-100 hover:bg-blue-300 ease py-2 px-3"
         >
           <Icon icon="fa-eye" type="far" />
@@ -273,7 +311,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
   const api = new Api();
   try {
     const request = (await api.bridge({
-      method: "post",
+      method: "get",
       url: "orders/list",
     })) as ApiResponse;
     

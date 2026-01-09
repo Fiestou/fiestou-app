@@ -4,7 +4,7 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { useState } from "react";
 import Api from "@/src/services/api";
-import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -35,13 +35,12 @@ const formInitial = {
   email: "",
 };
 
-export default function Recuperar({
-  DataSeo,
-  Scripts,
-}: {
+interface RecuperarProps {
   DataSeo: any;
   Scripts: any;
-}) {
+}
+
+function RecuperarContent({ DataSeo, Scripts }: RecuperarProps) {
   const api = new Api();
   const { executeRecaptcha } = useGoogleReCaptcha();
 
@@ -157,5 +156,16 @@ export default function Recuperar({
         </div>
       </div>
     </Template>
+  );
+}
+
+export default function Recuperar(props: RecuperarProps) {
+  return (
+    <GoogleReCaptchaProvider
+      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+      language="pt-BR"
+    >
+      <RecuperarContent {...props} />
+    </GoogleReCaptchaProvider>
   );
 }

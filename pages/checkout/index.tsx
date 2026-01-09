@@ -3,13 +3,11 @@ import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  dateBRFormat,
   findDates,
   getImage,
   getAllowedRegionsDescription,
   isCEPInRegion,
   justNumber,
-  moneyFormat,
   getZipCode,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
@@ -18,76 +16,42 @@ import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
 import { ProductOrderType, ProductType } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
-import { OrderType } from "@/src/models/order";
 import Partner from "@/src/components/common/Partner";
 import Icon from "@/src/icons/fontAwesome/FIcon";
+import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
-
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
-import { deliveryToName } from "@/src/models/delivery";
 import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
 import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DeliveryItem } from "@/src/types/filtros";
-import Img from "@/src/components/utils/ImgBase";
+import { registerOrder as registerOrderService } from "@/src/services/order";
+import { dateBRFormat, moneyFormat } from "@/src/helper";
+
+// Componentes refatorados
+import {
+  DeliveryOptions,
+  TimeSlotPicker,
+  DeliverySummaryEntry,
+} from "@/src/components/checkout";
+
+// Services
+import {
+  extractDeliveryFees,
+  normalizeDeliveryItems,
+  extractCartDeliveryZip,
+  saveCartToCookies,
+} from "@/src/services/cart";
+import {
+  calculateDeliveryFees,
+  applyDeliveryToCart,
+} from "@/src/services/delivery";
 
 const FormInitialType = {
   sended: false,
   loading: false,
-};
-
-type DeliverySummaryEntry = {
-  storeId: number | null;
-  storeName: string;
-  storeSlug?: string;
-  price: number;
-  storeLogoUrl?: string | null;
-};
-
-const normalizeDeliveryItems = (items: DeliveryItem[]): DeliveryItem[] => {
-  const map = new Map<number, DeliveryItem>();
-
-  items.forEach((item) => {
-    const storeId = Number(item?.store_id);
-    const price = Number(item?.price);
-
-    if (!Number.isFinite(storeId) || !Number.isFinite(price)) {
-      return;
-    }
-
-    map.set(storeId, { price, store_id: storeId });
-  });
-
-  return Array.from(map.values());
-};
-
-const extractDeliveryFees = (items: Array<CartType>): DeliveryItem[] => {
-  return items
-    .map((item) => {
-      const fee = Number(item?.details?.deliveryFee);
-      const storeSource =
-        item?.details?.deliveryStoreId ??
-        (typeof item?.product?.store === "object"
-          ? (item?.product?.store as any)?.id
-          : item?.product?.store);
-      const storeId = Number(storeSource);
-
-      if (!Number.isFinite(fee) || !Number.isFinite(storeId)) {
-        return null;
-      }
-
-      return {
-        price: fee,
-        store_id: storeId,
-      } as DeliveryItem;
-    })
-    .filter((item): item is DeliveryItem => !!item);
 };
 
 export async function getServerSideProps(ctx: any) {
@@ -116,6 +80,7 @@ export async function getServerSideProps(ctx: any) {
     },
     ctx
   );
+
 
   const DataSeo: any = request?.data?.DataSeo ?? {};
   const Scripts: any = request?.data?.Scripts ?? {};
@@ -280,6 +245,7 @@ export default function Checkout({
       return;
     }
 
+
     const initialFees = extractDeliveryFees(cart);
 
     if (initialFees.length) {
@@ -292,6 +258,7 @@ export default function Checkout({
           item?.details?.deliveryZipCodeFormatted
       );
 
+
       const cartZip = zipHolder
         ? justNumber(
             zipHolder.details?.deliveryZipCode ??
@@ -302,6 +269,7 @@ export default function Checkout({
 
       if (cartZip.length === 8) {
         lastFetchedZipRef.current = cartZip;
+        // Não seta o address aqui - deixa o useEffect de cartDeliveryZip fazer isso (linha 521-536)
       }
     }
     setInitialLoadDone(true);
@@ -368,77 +336,23 @@ export default function Checkout({
     }
   }, [products]);
 
-  const applyDeliveryFees = (
+  // Wrapper para aplicar frete usando o service de delivery
+  const applyDeliveryFeesLocal = (
     fees: DeliveryItem[],
     sanitizedZip: string,
     baseCart: CartType[]
   ): boolean => {
-    if (!fees.length) {
-      toast.error("Não conseguimos calcular o frete para este CEP.");
+    // Usa o service para aplicar o frete
+    const result = applyDeliveryToCart(baseCart, fees, sanitizedZip);
+
+    if (!result.success) {
+      toast.error(result.message ?? "Não conseguimos calcular o frete para este CEP.");
       return false;
     }
 
-    const formattedZip = formatCep(sanitizedZip);
-    const feeMap = new Map<number, number>();
-
-    fees.forEach((fee) => {
-      const storeId = Number(fee?.store_id);
-      if (!Number.isFinite(storeId)) {
-        return;
-      }
-      feeMap.set(storeId, Number(fee?.price) || 0);
-    });
-
-    const missingStores = new Set<string>();
-
-    const updatedCart = baseCart.map((item) => {
-      const productStore = item?.product?.store ?? {};
-      const storeSource =
-        item?.details?.deliveryStoreId ??
-        (typeof productStore === "object"
-          ? (productStore as any)?.id
-          : productStore);
-      const storeId = Number(storeSource);
-
-      const details = { ...(item.details ?? {}) };
-      details.deliveryZipCode = sanitizedZip;
-      details.deliveryZipCodeFormatted = formattedZip;
-
-      if (Number.isFinite(storeId) && feeMap.has(storeId)) {
-        details.deliveryStoreId = storeId;
-        details.deliveryFee = feeMap.get(storeId) ?? 0;
-      } else {
-        delete details.deliveryFee;
-        missingStores.add(
-          (productStore as any)?.companyName ??
-            (productStore as any)?.title ??
-            item?.product?.title ??
-            `Produto #${item?.product?.id ?? ""}`
-        );
-      }
-
-      return {
-        ...item,
-        details,
-      };
-    });
-
-    if (missingStores.size) {
-      const list = Array.from(missingStores).filter(Boolean);
-      toast.error(
-        list.length
-          ? `Não conseguimos calcular o frete para: ${list.join(", ")}.`
-          : "Não conseguimos calcular o frete para este CEP."
-      );
-      return false;
-    }
-
-    setCartItems(updatedCart);
-
-    if (typeof window !== "undefined") {
-      Cookies.set("fiestou.cart", JSON.stringify(updatedCart), {
-        expires: 7,
-      });
+    if (result.updatedCart) {
+      setCartItems(result.updatedCart);
+      saveCartToCookies(result.updatedCart);
     }
 
     setDeliveryPrice(normalizeDeliveryItems(fees));
@@ -448,6 +362,10 @@ export default function Checkout({
   const deliverySummary = useMemo(() => {
     const entries: DeliverySummaryEntry[] = [];
     const seenStores = new Set<number>();
+
+    console.log('📊 deliveryPrice recebido:', deliveryPrice);
+    console.log('📊 storesById:', Array.from(storesById.entries()));
+    console.log('📊 cartItems atual:', cartItems);
 
     deliveryPrice.forEach((item) => {
       const storeId = Number(item?.store_id);
@@ -464,6 +382,7 @@ export default function Checkout({
       seenStores.add(storeId);
 
       const store = storesById.get(storeId);
+     
       let storeLogoUrl: string | null = null;
 
       if (
@@ -501,27 +420,16 @@ export default function Checkout({
       missingStoreIds,
     };
 
+  
+
     return result;
   }, [deliveryPrice, storesById]);
 
-  const cartDeliveryZip = useMemo(() => {
-    const itemWithZip = cartItems.find(
-      (cartItem: any) =>
-        cartItem?.details?.deliveryZipCode ||
-        cartItem?.details?.deliveryZipCodeFormatted
-    );
-
-    if (!itemWithZip) {
-      return "";
-    }
-
-    const rawZip =
-      itemWithZip.details?.deliveryZipCode ??
-      itemWithZip.details?.deliveryZipCodeFormatted ??
-      "";
-    const sanitized = justNumber(rawZip);
-    return sanitized.length === 8 ? sanitized : "";
-  }, [cartItems]);
+  // Usa o service para extrair o CEP do carrinho
+  const cartDeliveryZip = useMemo(
+    () => extractCartDeliveryZip(cartItems),
+    [cartItems]
+  );
 
   useEffect(() => {
     if (!cartDeliveryZip) {
@@ -535,6 +443,8 @@ export default function Checkout({
       if (currentZip === cartDeliveryZip) {
         return;
       }
+
+      
 
       try {
         // Busca os dados do endereço pela API do ViaCEP
@@ -553,6 +463,8 @@ export default function Checkout({
             main: true,
           }));
         } else {
+         
+
           // Mesmo que não encontre o endereço, preenche o CEP
           setAddress((prevAddress) => ({
             ...prevAddress,
@@ -586,6 +498,8 @@ export default function Checkout({
   useEffect(() => {
     const sanitizedZip = justNumber(address?.zipCode ?? "");
 
+  
+
     // Se o CEP está incompleto MAS já temos um lastFetched válido, não limpa
     if (sanitizedZip.length < 8) {
       if (lastFetchedZipRef.current && lastFetchedZipRef.current.length === 8) {
@@ -606,13 +520,31 @@ export default function Checkout({
       setLoadingDeliveryPrice(true);
 
       try {
+        // Extrai os IDs dos produtos que estão no carrinho
+        const cartProductIds = cartItems
+          .map((item: any) => {
+            const productId = typeof item?.product === 'object' 
+              ? item?.product?.id 
+              : item?.product;
+            return Number(productId);
+          })
+          .filter((id) => Number.isFinite(id) && id > 0);
+
+        if (!cartProductIds.length) {
+          setDeliveryPrice([]);
+          setLoadingDeliveryPrice(false);
+          return;
+        }
+
         const data: any = await api.request({
           method: "get",
           url: `delivery-zipcodes/${sanitizedZip}`,
           data: {
-            ids: products.map((product: ProductType) => product.id),
+            ids: cartProductIds,
           },
         });
+
+        console.log('🚚 Resposta da API de frete:', { data, cartProductIds, sanitizedZip });
 
         const rawList: DeliveryItem[] = Array.isArray(data?.data)
           ? data.data
@@ -620,20 +552,26 @@ export default function Checkout({
           ? data
           : [];
 
-        const normalizedFees = normalizeDeliveryItems(
-          rawList
-            .map(
-              (x: any): DeliveryItem => ({
-                price: Number(x?.price) || 0,
-                store_id:
-                  Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
-              })
-            )
-            .filter(
-              (item: DeliveryItem) =>
-                Number.isFinite(item.price) && Number.isFinite(item.store_id)
-            )
-        );
+        console.log('🚚 rawList extraído:', rawList);
+
+        const mappedFees = rawList
+          .map(
+            (x: any): DeliveryItem => ({
+              price: Number(x?.price) || 0,
+              store_id:
+                Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
+            })
+          )
+          .filter(
+            (item: DeliveryItem) =>
+              Number.isFinite(item.price) && Number.isFinite(item.store_id)
+          );
+
+        console.log('🚚 Fretes mapeados:', mappedFees);
+
+        const normalizedFees = normalizeDeliveryItems(mappedFees);
+
+        console.log('🚚 Fretes normalizados:', normalizedFees);
 
         if (!normalizedFees.length) {
           setDeliveryPrice([]);
@@ -642,11 +580,15 @@ export default function Checkout({
           return;
         }
 
-        const success = applyDeliveryFees(
+        console.log('🚚 Aplicando fretes ao carrinho:', { normalizedFees, sanitizedZip, cartItems });
+
+        const success = applyDeliveryFeesLocal(
           normalizedFees,
           sanitizedZip,
           cartItems
         );
+
+        console.log('🚚 Resultado da aplicação:', success);
 
         if (!success) {
           setDeliveryPrice([]);
@@ -699,9 +641,13 @@ export default function Checkout({
 
   const deliveryTotal = deliverySummary.total;
 
+
+
   const submitOrder = async (e: any) => {
     e.preventDefault();
 
+
+      
     if (!formattedAddressZip) {
       toast.error("Informe um CEP válido para calcular o frete.");
       return;
@@ -716,6 +662,8 @@ export default function Checkout({
       toast.error("Ainda falta calcular o frete para todos os fornecedores.");
       return;
     }
+
+ 
 
     setForm({ ...form, loading: true });
 
@@ -746,6 +694,9 @@ export default function Checkout({
           details: handle,
         };
 
+        const qty = Number(cartItem.quantity) || 1;
+        const unitPrice = Number(cartItem.total) / qty;
+
         listItems.push({
           attributes: cartItem.attributes,
           details: cartItem.details,
@@ -761,7 +712,8 @@ export default function Checkout({
             schedulingTax: product?.schedulingTax ?? "",
             schedulingPeriod: product?.schedulingPeriod ?? "",
           },
-          quantity: cartItem.quantity,
+          quantity: qty,
+          unit_price: unitPrice,
           total: cartItem.total,
         });
 
@@ -769,35 +721,37 @@ export default function Checkout({
       }
     });
 
-    const order: OrderType = {
-      user: user,
-      listItems: listItems,
-      platformCommission: platformCommission,
-      total: resume.total,
-      deliverySchedule: schedule,
+    const payload = {
       deliveryAddress: address,
-      deliveryTo: deliveryTo,
-      deliveryPrice: deliverySummary.total,
-      deliveryStatus: "pending",
-      status: -1,
+      listItems,
       freights: {
-        zipcode: address?.zipCode,
+        zipcode: justNumber(address?.zipCode ?? ""),
         productsIds: listItems.map((item: any) => item.product.id),
       },
+      platformCommission,
+      deliverySchedule: schedule,
+      deliveryStatus: "pending",
+      deliveryTo,
     };
 
-    const registerOrder: any = await api.bridge({
-      method: "post",
-      url: "orders/register",
-      data: order,
-    });
+    try {
+      const created: any = await registerOrderService(payload);
+      console.log("Pedido registrado com sucesso:", created);
+      const firstId = created?.orders?.[0]?.id;
 
-    if (!!registerOrder.response && !!registerOrder?.data?.id) {
-      Cookies.remove("fiestou.cart");
-      window.location.href = `/dashboard/pedidos/pagamento/${registerOrder?.data?.id}`;
+      if (firstId) {
+        Cookies.remove("fiestou.cart");
+        window.location.href = `/dashboard/pedidos/pagamento/${firstId}`;
+        return;
+      }
+
+      toast.error("Não foi possível criar seu pedido. Tente novamente.");
+    } catch (err) {
+      console.error("Erro ao registrar pedido:", err);
+      toast.error("Erro ao registrar o pedido.");
+    } finally {
+      setForm({ ...form, loading: false });
     }
-
-    setForm({ ...form, loading: false });
   };
 
   useEffect(() => {
@@ -860,7 +814,8 @@ export default function Checkout({
         return store?.companyName ?? store?.title ?? null;
       })
       .filter(Boolean);
-
+    console.log(deliverySummary)
+    console.log(missingStoresNames)
     return (
       <div className="grid gap-2">
         {deliverySummary.entries.map((entry) => {
@@ -1117,106 +1072,17 @@ export default function Checkout({
                   </h2>
 
                   {/* Opções de Entrega */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[
-                      { type: "reception", icon: "🏢" },
-                      { type: "door", icon: "🚪" },
-                      { type: "for_me", icon: "📦" },
-                    ].map((option: any, key: any) => (
-                      <div
-                        key={key}
-                        onClick={() => setDeliveryTo(option.type)}
-                        className={`border ${
-                          deliveryTo == option.type
-                            ? "border-yellow-400 bg-yellow-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        } p-3 lg:p-4 cursor-pointer rounded-lg transition-all duration-200 flex gap-3 items-center`}
-                      >
-                        <div
-                          className={`${
-                            deliveryTo == option.type
-                              ? "border-yellow-500"
-                              : "border-gray-300"
-                          } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
-                        >
-                          {deliveryTo == option.type && (
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          )}
-                        </div>
-                        <div className="text-sm font-medium leading-tight flex-1">
-                          {deliveryToName[option.type]}
-                        </div>
-                        <span className="text-lg">{option.icon}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <DeliveryOptions
+                    value={deliveryTo}
+                    onChange={setDeliveryTo}
+                  />
 
                   {/* Seleção de Horário */}
-                  <div className="border border-gray-200 rounded-lg p-4 relative">
-                    <div className="h-0 relative overflow-hidden">
-                      {!schedule && (
-                        <input readOnly name="agendamento" required />
-                      )}
-                    </div>
-                    <div className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
-                      Horário
-                    </div>
-
-                    <div className="mt-2">
-                      <Swiper
-                        spaceBetween={12}
-                        breakpoints={{
-                          0: {
-                            slidesPerView: 3.5,
-                          },
-                          640: {
-                            slidesPerView: 5.5,
-                          },
-                          1024: {
-                            slidesPerView: 7.5,
-                          },
-                        }}
-                        className="!pb-2"
-                      >
-                        {[
-                          { period: "Manhã", time: "08:00" },
-                          { period: "Manhã", time: "09:00" },
-                          { period: "Manhã", time: "10:00" },
-                          { period: "Manhã", time: "11:00" },
-                          { period: "Manhã", time: "12:00" },
-                          { period: "Tarde", time: "13:00" },
-                          { period: "Tarde", time: "14:00" },
-                          { period: "Tarde", time: "15:00" },
-                          { period: "Tarde", time: "16:00" },
-                          { period: "Tarde", time: "17:00" },
-                          { period: "Noite", time: "18:00" },
-                          { period: "Noite", time: "19:00" },
-                          { period: "Noite", time: "20:00" },
-                          { period: "Noite", time: "21:00" },
-                        ].map((item: any, key) => (
-                          <SwiperSlide key={key}>
-                            <div
-                              onClick={() =>
-                                setSchedule(`${item.period} - ${item.time}`)
-                              }
-                              className={`${
-                                schedule == item.period + " - " + item.time
-                                  ? "text-yellow-600 bg-yellow-50 border-yellow-300"
-                                  : "text-gray-600 hover:text-gray-900 border-gray-200 hover:bg-gray-50"
-                              } border rounded-lg p-3 text-center cursor-pointer transition-all duration-200`}
-                            >
-                              <div className="text-xs font-medium">
-                                {item.period}
-                              </div>
-                              <div className="font-bold text-sm mt-1">
-                                {item.time}
-                              </div>
-                            </div>
-                          </SwiperSlide>
-                        ))}
-                      </Swiper>
-                    </div>
-                  </div>
+                  <TimeSlotPicker
+                    value={schedule}
+                    onChange={setSchedule}
+                    required
+                  />
                 </div>
 
                 {/* Fornecedores */}
@@ -1348,28 +1214,44 @@ export default function Checkout({
 
                       {/* Botão de Confirmar */}
                       <div className="pt-4">
-                        {!!address?.street &&
-                        !!address?.complement &&
-                        !!address?.number &&
-                        !!schedule &&
-                        !!address?.zipCode &&
-                        !!isCEPInRegion(address?.zipCode) &&
-                        isPhoneValid(phone) ? (
-                          <Button
-                            loading={form.loading}
-                            style="btn-success"
-                            className="w-full py-4 text-base font-semibold"
-                          >
-                            Confirmar e efetuar pagamento
-                          </Button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="w-full bg-green-500/40 text-white border border-transparent py-4 text-base font-semibold rounded-lg cursor-not-allowed"
-                          >
-                            Confirmar e efetuar pagamento
-                          </button>
-                        )}
+                        {(() => {
+                          const missingItems = [];
+                          if (!address?.zipCode || !isCEPInRegion(address?.zipCode)) missingItems.push("CEP válido");
+                          if (!address?.street) missingItems.push("rua");
+                          if (!address?.number) missingItems.push("número");
+                          if (!address?.complement) missingItems.push("complemento");
+                          if (!schedule) missingItems.push("horário");
+                          if (!isPhoneValid(phone)) missingItems.push("telefone");
+
+                          const isFormValid = missingItems.length === 0;
+
+                          return (
+                            <>
+                              {isFormValid ? (
+                                <Button
+                                  loading={form.loading}
+                                  style="btn-success"
+                                  className="w-full py-4 text-base font-semibold"
+                                >
+                                  Confirmar e efetuar pagamento
+                                </Button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="w-full bg-gray-300 text-gray-500 border border-transparent py-4 text-base font-semibold rounded-lg cursor-not-allowed"
+                                  >
+                                    Confirmar e efetuar pagamento
+                                  </button>
+                                  <p className="text-xs text-gray-500 mt-2 text-center">
+                                    Preencha: {missingItems.join(", ")}
+                                  </p>
+                                </>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
