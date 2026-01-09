@@ -6,13 +6,15 @@ import { fetchOrderById } from "@/src/services/order";
 import { OrderType, OrderTypeResponse } from "@/src/models/order";
 import {
   getExtenseData,
-  moneyFormat
+  moneyFormat,
+  getOrderDeliveryInfo
 } from "@/src/helper";
 import { Button, Label, Select } from "@/src/components/ui/form";
 import { useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { deliveryToName, deliveryTypes } from "@/src/models/delivery";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { OrderStatusBadge } from "@/src/components/order";
 
 interface OrderItem {
   quantity: number;
@@ -99,8 +101,6 @@ export default function Pedido() {
     "pending"
   );
 
-  console.log("ORDER STATE:", order);
-
   const notifyDelivery = async (e: any) => {
     e.preventDefault();
 
@@ -170,23 +170,10 @@ export default function Pedido() {
                 Pedido #{order.id}
               </div>
               <div className="inline-block md:pt-2">
-                {order?.status == 1 ? (
-                  <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
-                    pago
-                  </div>
-                ) : order?.metadata?.status == "expired" ? (
-                  <div className="bg-red-100 text-red-700 rounded text-sm inline-block px-2 py-1">
-                    cancelado
-                  </div>
-                ) : order?.status == 0 ? (
-                  <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
-                    em aberto
-                  </div>
-                ) : (
-                  <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
-                    processando
-                  </div>
-                )}
+                <OrderStatusBadge
+                  status={order.status}
+                  metadataStatus={order.metadata?.status}
+                />
               </div>
             </div>
           </div>
@@ -316,22 +303,58 @@ export default function Pedido() {
                       : "Gratuita"}
                     )
                   </div>
-                  <div>
-                    {order?.delivery?.to}, {order?.delivery?.schedule?.date ? `${order.delivery.schedule.date} - ${order.delivery.schedule.period} (${order.delivery.schedule.time})` : (typeof order?.delivery?.schedule === 'string' ? order.delivery.schedule : 'Não informado')}
-                  </div>
-                  <div>
-                    {order?.delivery?.address?.street},{" "}
-                    {order?.delivery?.address?.number},{" "}
-                    {order?.delivery?.address?.neighborhood}
-                  </div>
-                  <div>
-                    CEP: {order?.delivery?.address?.zipCode}
-                    <br />
-                    {order?.delivery?.address?.complement}
-                  </div>
-                  <div>
-                    {order?.delivery?.address?.city} |{" "}
-                    {order?.delivery?.address?.state}
+                  {(() => {
+                    const deliveryInfo = getOrderDeliveryInfo(order);
+                    return (
+                      <>
+                        {/* Tipo de entrega */}
+                        {deliveryInfo?.to && (
+                          <div className="mb-3 text-zinc-700">
+                            <Icon icon="fa-truck" type="far" className="text-sm mr-2 text-zinc-500" />
+                            {deliveryInfo.to}
+                          </div>
+                        )}
+                        {/* Data e horário de entrega agendada */}
+                        {(deliveryInfo?.date || deliveryInfo?.time) && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                            {deliveryInfo?.date && (
+                              <div className="flex items-center gap-2">
+                                <Icon icon="fa-calendar" type="far" className="text-sm text-amber-600" />
+                                <span className="font-semibold text-amber-800">{deliveryInfo.date}</span>
+                              </div>
+                            )}
+                            {deliveryInfo?.time && (
+                              <div className="flex items-center gap-2 mt-1">
+                                <Icon icon="fa-clock" type="far" className="text-sm text-amber-600" />
+                                <span className="text-amber-700">{deliveryInfo.time}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                  {/* Endereco */}
+                  <div className="mt-3 pt-3 border-t border-dashed">
+                    <div className="text-sm text-zinc-500 mb-1">Endereço de entrega:</div>
+                    <div>
+                      {order?.delivery?.address?.street},{" "}
+                      {order?.delivery?.address?.number},{" "}
+                      {order?.delivery?.address?.neighborhood}
+                    </div>
+                    <div>
+                      CEP: {order?.delivery?.address?.zipCode}
+                      {order?.delivery?.address?.complement && (
+                        <>
+                          <br />
+                          {order?.delivery?.address?.complement}
+                        </>
+                      )}
+                    </div>
+                    <div>
+                      {order?.delivery?.address?.city} |{" "}
+                      {order?.delivery?.address?.state}
+                    </div>
                   </div>
                 </div>
                 <form

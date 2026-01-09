@@ -5,6 +5,7 @@ import { Button } from "@/src/components/ui/form";
 import { getExtenseData, moneyFormat } from "@/src/helper";
 import Api from "@/src/services/api";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { OrderStatusBadge } from "@/src/components/order";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -139,23 +140,11 @@ export default function Pedidos({ orders }: { orders: Array<any> }) {
                       status:
                     </span>
 
-                    {order?.status == 1 || order?.status === "paid" ? (
-                      <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
-                        {order.statusText || "pago"}
-                      </div>
-                    ) : order?.metadata?.status == "expired" ? (
-                      <div className="bg-red-100 text-red-700 rounded text-sm inline-block px-2 py-1">
-                        cancelado
-                      </div>
-                    ) : order?.status == 0 ? (
-                      <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
-                        {order.statusText || "em aberto"}
-                      </div>
-                    ) : (
-                      <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
-                        {order.statusText || "processando"}
-                      </div>
-                    )}
+                    <OrderStatusBadge
+                      status={order.status}
+                      metadataStatus={order.metadata?.status}
+                      statusText={order.statusText}
+                    />
                   </div>
                   <div className="w-full lg:w-[22rem] grid">
                     <Button
@@ -169,7 +158,11 @@ export default function Pedidos({ orders }: { orders: Array<any> }) {
                 </div>
               ))}
           </div>
-          <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div>
+          {orders && orders.length > 0 && (
+            <div className="pt-4 text-sm text-zinc-500">
+              Mostrando {orders.length} {orders.length === 1 ? "pedido" : "pedidos"}
+            </div>
+          )}
         </div>
       </section>
     </Template>
