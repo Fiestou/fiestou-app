@@ -58,3 +58,6 @@ export default function Input(attr: InputType) {
     </>
   );
 }
+
+Input.displayName = "Input";
+

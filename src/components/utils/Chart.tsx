@@ -12,7 +12,7 @@ import {
 import { Bar, Line } from "react-chartjs-2";
 import { faker } from "@faker-js/faker";
 import { getExtenseData, getShortMonth, moneyFormat } from "@/src/helper";
-import Api from "@/src/services/api";
+import { getOrdersForChart, Order } from "@/src/services/order";
 
 ChartJS.register(
   CategoryScale,
@@ -58,15 +58,16 @@ const months: any = [
   { month: "Dez", value: 0 },
 ];
 
+type OrdersChart = Pick<Order, "created_at" | "total">;
+
 export function Chart(params: any) {
-  const api = new Api();
 
   const [handleChart, setHandleChart] = useState({
     labels: [],
     values: [],
   } as any);
 
-  const [chartResume, setChartResume] = useState([] as Array<any>);
+  const [chartResume, setChartResume] = useState<OrdersChart[]>([]);
   const getChartResume = async () => {
     const period = params?.period ?? "month";
 
@@ -118,24 +119,19 @@ export function Chart(params: any) {
       }
     }
 
-    let request: any = await api.bridge({
-      method: "post",
-      url: "suborders/list",
-      data: datesRange,
-    });
-
-    setChartResume(request.data);
+    const data = await getOrdersForChart(datesRange);
+    setChartResume(data);
   };
 
   const periodYear = () => {
     let handleLabel: any = months;
 
-    chartResume?.map((item: any, key: any) => {
+    chartResume?.map((item: OrdersChart) => {
       let month = parseInt(getExtenseData(item.created_at, "m").toString());
-      let m = getShortMonth(month);
+      let m = getShortMonth(String(month));
 
       handleLabel.map((mo: any) => {
-        mo.value += mo.month == m ? parseInt(item.total) : 0;
+        mo.value += mo.month == m ? Number(item.total ?? 0) : 0;
       });
     });
 
@@ -154,13 +150,13 @@ export function Chart(params: any) {
     );
 
     chartResume
-      .filter((item: any, index: any) => current.includes(index))
-      .map((item: any, key: any) => {
+      .filter((item: OrdersChart, index: number) => current.includes(index))
+      .map((item: OrdersChart) => {
         let month = parseInt(getExtenseData(item.created_at, "m").toString());
-        let m = getShortMonth(month);
+        let m = getShortMonth(String(month));
 
         handleLabel.map((mo: any) => {
-          mo.value += mo.month == m ? parseInt(item.total) : 0;
+          mo.value += mo.month == m ? Number(item.total ?? 0) : 0;
         });
       });
 
@@ -189,14 +185,14 @@ export function Chart(params: any) {
       });
     }
 
-    chartResume?.map((item: any, key: any) => {
+    chartResume?.map((item: OrdersChart) => {
       let month = parseInt(getExtenseData(item.created_at, "m").toString());
 
       if (month == new Date().getMonth() + 1) {
         const d = new Date(item.created_at).getDate();
 
         handleLabel.map((label: any) => {
-          label.value += label.day == d ? parseInt(item.total) : 0;
+          label.value += label.day == d ? Number(item.total ?? 0) : 0;
         });
       }
     });

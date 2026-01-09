@@ -8,10 +8,10 @@ import { encode as base64_encode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import Modal from "@/src/components/utils/Modal";
 import { UserType } from "@/src/models/user";
-import NextAuth from "@/src/components/pages/acesso/NextAuth";
+import { SocialAuth } from "@/src/components/pages/acesso/NextAuth";
 import { getSession } from "next-auth/react";
 import { AuthContext } from "@/src/contexts/AuthContext";
-import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -49,15 +49,14 @@ const formInitial = {
   alert: "",
 };
 
-export default function Acesso({
-  modal,
-  DataSeo,
-  Scripts,
-}: {
+interface AcessoProps {
   modal?: string;
   DataSeo: any;
   Scripts: any;
-}) {
+}
+
+// Componente interno que usa o hook useGoogleReCaptcha
+function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
   const api = new Api();
 
   const router = useRouter();
@@ -117,6 +116,9 @@ export default function Acesso({
     }
   }, [form.alert]);
 
+  // Verifica se foi redirecionado por sessão expirada
+  const isSessionExpired = router.query?.expired === "1";
+
   return (
     <Template
       scripts={Scripts}
@@ -145,6 +147,19 @@ export default function Acesso({
           </div>
           <div className="">
             <div className="max-w-md mx-auto">
+              {/* Aviso de sessão expirada */}
+              {isSessionExpired && (
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+                  <div className="flex items-center justify-center gap-2 text-yellow-700">
+                    <Icon icon="fa-exclamation-triangle" />
+                    <span className="font-semibold">Sua sessão expirou</span>
+                  </div>
+                  <p className="text-sm text-yellow-600 mt-1">
+                    Por favor, faça login novamente para continuar.
+                  </p>
+                </div>
+              )}
+
               <form
                 onSubmit={(e) => {
                   handleSubmit(e);
@@ -209,7 +224,7 @@ export default function Acesso({
                 </div>
 
                 <div className="form-group">
-                  <NextAuth />
+                  <SocialAuth showFacebook={true} />
                 </div>
 
                 <div className="hidden form-group text-center text-sm pt-4">
@@ -288,5 +303,17 @@ export default function Acesso({
         </div>
       </Modal>
     </Template>
+  );
+}
+
+// Componente exportado que envolve com o Provider do reCAPTCHA
+export default function Acesso(props: AcessoProps) {
+  return (
+    <GoogleReCaptchaProvider
+      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+      language="pt-BR"
+    >
+      <AcessoContent {...props} />
+    </GoogleReCaptchaProvider>
   );
 }
