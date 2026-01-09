@@ -5,10 +5,10 @@ import Api from "@/src/services/api";
 import { useSegmentGroups } from "@/src/hooks/useSegmentGroups";
 import { preRegisterPartner, completePartnerRegister, PartnerStoreData } from "@/src/services/partner";
 import { PreUser } from "@/src/types/user";
-import Step1UserData from "./Step1UserData";
-import Step2PersonType from "./Step2PersonType";
-import Step3PJBusiness from "./Step3PJBusiness";
-import StepFinalReview from "./StepFinalReview";
+import Step1UserData from "@/src/components/parceiros/cadastro/Step1UserData";
+import Step2PersonType from "@/src/components/parceiros/cadastro/Step2PersonType";
+import Step3PJBusiness from "@/src/components/parceiros/cadastro/Step3PJBusiness";
+import StepFinalReview from "@/src/components/parceiros/cadastro/StepFinalReview";
 
 type StepId = 1 | 2 | 3 | 4;
 
