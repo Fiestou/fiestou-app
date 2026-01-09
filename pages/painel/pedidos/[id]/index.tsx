@@ -69,7 +69,15 @@ export default function Pedido() {
 
       if (listItem?.attributes) {
         listItem.attributes.forEach((attribute: any) => {
-          const attributeTitle = JSON.parse(productItemWithAttributes?.attributes ?? "[]");
+          // Parse attributes se for string, caso contrario usa direto
+          let attributeTitle = productItemWithAttributes?.attributes ?? [];
+          if (typeof attributeTitle === 'string') {
+            try {
+              attributeTitle = JSON.parse(attributeTitle);
+            } catch (e) {
+              attributeTitle = [];
+            }
+          }
 
           attribute.variations.forEach((variation: any) => {
             additionalExtras.push({
