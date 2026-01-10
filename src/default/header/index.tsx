@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { getUser } from "@/src/contexts/AuthContext";
+import { getUser, getUserType } from "@/src/contexts/AuthContext";
 import { UserType } from "@/src/models/user";
 import Clean from "@/src/default/header/Clean";
 import Default from "@/src/default/header/Default";
@@ -41,6 +41,8 @@ export function Header(props: HeaderType) {
     }
   }, [params]);
 
+  const userType = getUserType(user);
+
   if (params.template == "clean") {
     return <Clean params={params} user={user} />;
   }
@@ -49,11 +51,11 @@ export function Header(props: HeaderType) {
     return <Default params={params} user={user} />;
   }
 
-  if (params.template == "painel" && user.type === "partner") {
+  if (params.template == "painel" && userType === "partner") {
     return <Painel params={params} user={user} />;
   }
 
-  if (params.template == "admin" && user.type === "master") {
+  if (params.template == "admin" && userType === "master") {
     return <Admin params={params} user={user} />;
   }
 

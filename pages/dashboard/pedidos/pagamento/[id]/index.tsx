@@ -23,11 +23,11 @@ import Img from "@/src/components/utils/ImgBase";
 import { deliveryToName } from "@/src/models/delivery";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
-import { LoadingSkeleton } from "../../componentes/LoadingSkeleton";
-import { HeadLine } from "../../componentes/HeadLine";
-import { OrderDetailsCard } from "../../componentes/OrderDetailsCard";
-import { OrderItemsList } from "../../componentes/OrderItemsList";
-import { PaymentPanel } from "../../componentes/PaymentPanel";
+import { LoadingSkeleton } from "@/src/components/dashboard/pedidos/LoadingSkeleton";
+import { HeadLine } from "@/src/components/dashboard/pedidos/HeadLine";
+import { OrderDetailsCard } from "@/src/components/dashboard/pedidos/OrderDetailsCard";
+import { OrderItemsList } from "@/src/components/dashboard/pedidos/OrderItemsList";
+import { PaymentPanel } from "@/src/components/dashboard/pedidos/PaymentPanel";
 
 
 interface FormInitialType {

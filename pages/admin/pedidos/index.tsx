@@ -58,7 +58,7 @@ interface Column {
   width?: string;
   sortable?: boolean;
   sortKey?: string;
-  selector: (row: Order) => React.ReactNode;
+  selector: (row: any) => React.ReactNode;
 }
 
 export default function Order({ initialOrders, timestamp }: OrderPageProps) {
@@ -295,7 +295,7 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
             </div>
           ) : (
             <PaginatedTable 
-              data={getFilteredOrders()}
+              data={getFilteredOrders() as any}
               columns={columns}
               itemsPerPage={6}
               key={`orders-table-${orders.length}-${timestamp}`}

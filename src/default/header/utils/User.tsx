@@ -3,18 +3,19 @@ import { getFirstName } from "@/src/helper";
 import { useContext, useState } from "react";
 import { Button } from "@/src/components/ui/form";
 import { UserType } from "@/src/models/user";
-import { AuthContext } from "@/src/contexts/AuthContext";
+import { AuthContext, getUserType } from "@/src/contexts/AuthContext";
 
 export default function User({ user }: { user: UserType }) {
   const { UserLogout } = useContext(AuthContext);
   const [dropdown, setDropdown] = useState<boolean>(false);
+  const userType = getUserType(user);
 
   return (
     <div className="md:relative">
       <Button
         style="btn-transparent"
-        href={user.type === "client" ? "/dashboard" : "/acesso"}
-        onClick={() => (user.type === "client" ? setDropdown(true) : {})}
+        href={userType === "client" ? "/dashboard" : "/acesso"}
+        onClick={() => (userType === "client" ? setDropdown(true) : {})}
         className="hover:text-yellow-300 ease text-left"
       >
         <div className="flex items-center gap-2 lg:gap-3 leading-tight cursor-pointer">
