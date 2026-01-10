@@ -186,6 +186,8 @@ export function Chart(params: any) {
     }
 
     chartResume?.map((item: OrdersChart) => {
+      if (!item.created_at) return;
+      
       let month = parseInt(getExtenseData(item.created_at, "m").toString());
 
       if (month == new Date().getMonth() + 1) {

@@ -7,6 +7,11 @@ import { signOut } from "next-auth/react";
 import { isCEPInRegion } from "../helper";
 import { CheckMail } from "../models/CheckEmail";
 
+// Helper para determinar tipo do usuário com fallback para campo person (legado)
+export function getUserType(user: UserType | any): string {
+  return user?.type || user?.person || "user";
+}
+
 type SignInData = {
   email: string;
   password: string;
@@ -131,11 +136,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return {} as UserType;
       }
       
-      if (user?.type === "master") {
+      const userType = getUserType(user);
+      if (userType === "master") {
         Router.push("/admin");
-      } else if (user?.type === "partner") {
+      } else if (userType === "partner") {
         Router.push("/painel");
-      } else if (user?.type === "delivery") {
+      } else if (userType === "delivery") {
         Router.push("/entregador");
       } else if (!Cookies.get("fiestou.cart")) {
         Router.push("/dashboard");

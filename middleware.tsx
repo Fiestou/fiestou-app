@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Helper para determinar tipo do usuário com fallback para campo person (legado)
+function getUserType(user: any): string {
+  return user?.type || user?.person || "user";
+}
+
 export async function middleware(req: any) {
   let url = req.url;
   let permanentLink = req.nextUrl.clone();
@@ -20,6 +25,7 @@ export async function middleware(req: any) {
 
   if (!!token) {
     let user = JSON.parse(req.cookies.get("fiestou.user")?.value ?? "[]");
+    const userType = getUserType(user);
 
     if (!user.status && url.includes("/dashboard")) {
       permanentLink.pathname = "/cadastre-se/completar";
@@ -28,11 +34,11 @@ export async function middleware(req: any) {
 
     // Redireciona usuários logados que acessam /acesso para seu painel apropriado
     if (url.includes("/acesso")) {
-      if (user.type === "master") {
+      if (userType === "master") {
         permanentLink.pathname = "/admin";
-      } else if (user.type === "partner") {
+      } else if (userType === "partner") {
         permanentLink.pathname = "/painel";
-      } else if (user.type === "delivery") {
+      } else if (userType === "delivery") {
         permanentLink.pathname = "/entregador";
       } else {
         permanentLink.pathname = "/dashboard";
@@ -42,7 +48,7 @@ export async function middleware(req: any) {
 
     // Partner não pode acessar dashboard (exceto pedidos) nem admin
     if (
-      user.type === "partner" &&
+      userType === "partner" &&
       (url.includes("/dashboard") || url.includes("/admin")) &&
       !url.includes("/dashboard/pedidos")
     ) {
@@ -52,7 +58,7 @@ export async function middleware(req: any) {
 
     // Client não pode acessar painel nem admin
     if (
-      user.type === "client" &&
+      userType === "client" &&
       (url.includes("/painel/") || url.includes("/admin"))
     ) {
       permanentLink.pathname = "/dashboard";
@@ -61,7 +67,7 @@ export async function middleware(req: any) {
 
     // Master não pode acessar dashboard nem painel
     if (
-      user.type === "master" &&
+      userType === "master" &&
       (url.includes("/dashboard") || url.includes("/painel/"))
     ) {
       permanentLink.pathname = "/admin";
