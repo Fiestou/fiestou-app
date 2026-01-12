@@ -829,8 +829,18 @@ export function getOrderDeliveryInfo(order: any): { date: string; time: string; 
     }
   }
 
-  // Tipo de entrega (delivery.to ou delivery_to)
-  const deliveryTo = order.delivery?.to || order.delivery_to || '';
+  // Tipo de entrega - usa toLabel (traduzido pelo backend) ou traduz no frontend
+  let deliveryTo = order.delivery?.toLabel || order.delivery?.to || order.deliveryTo || order.delivery_to || '';
+
+  // Traduzir valores brutos se necessário
+  const deliveryToTranslations: Record<string, string> = {
+    'reception': 'Entregar na portaria',
+    'door': 'Deixar na porta',
+    'wait': 'Estarei para receber',
+  };
+  if (deliveryToTranslations[deliveryTo]) {
+    deliveryTo = deliveryToTranslations[deliveryTo];
+  }
 
   return {
     date: scheduleInfo?.date || '',

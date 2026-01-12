@@ -52,7 +52,7 @@ export default function Pedido() {
     (async () => {
       const fetched = await getOrderById(id);
       if (fetched) {
-        setOrder(fetched as OrderType);
+        setOrder(fetched as unknown as OrderType);
         setDeliveryStatus((fetched as any)?.delivery_status ?? "pending");
       }
     })();
