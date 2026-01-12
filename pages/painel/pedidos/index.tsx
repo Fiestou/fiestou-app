@@ -17,7 +17,7 @@ export default function Pedidos() {
     const fetchOrders = async () => {
       const user = getUser();
       if (user?.id) {
-        const data = await getOrdersByCustomer(user.id);
+        const data = await getOrdersByCustomer(Number(user.id));
         setOrders(Array.isArray(data) ? data : []);
       }
       setLoading(false);
