@@ -56,7 +56,7 @@ export const RegisterOrderMail = async (
       )}" style="width:100%;height:auto;" />`
     : "";
 
-  let address: any = order.deliveryAddress;
+  let address: any = order.delivery_address;
   address = `Local: ${address.street}, ${address.number}, ${
     address.neighborhood
   } - ${address.zipCode} | ${address.city}, ${address.state} - ${
@@ -84,9 +84,17 @@ export const RegisterOrderMail = async (
   )}</b></td></tr>`;
   table += "</table>";
 
+  const deliveryScheduleText = order.delivery?.schedule 
+    ? `${order.delivery.schedule.date} - ${order.delivery.schedule.period} (${order.delivery.schedule.time})`
+    : order.delivery_schedule || 'Não informado';
+  
+  const deliveryToText = order.delivery?.to 
+    ? deliveryToName[order.delivery.to] || order.delivery.to
+    : 'Não informado';
+
   table += `<br/><p style="font-weight: normal;text-align:left;"><b>ENTREGA</b><br/> ${
-    deliveryToName[order.deliveryTo]
-  }, às ${order.deliverySchedule} <br/>${address}</p>`;
+    deliveryToText
+  }, às ${deliveryScheduleText} <br/>${address}</p>`;
 
   const user: any = order.user ?? {};
 
@@ -171,7 +179,7 @@ export const ChangeDeliveryStatusMail = async (
   let status: any = {};
 
   deliveryTypes.map((item: any) => {
-    if (item.value == order.deliveryStatus) {
+    if (item.value == order.delivery_status) {
       status = item;
     }
   });

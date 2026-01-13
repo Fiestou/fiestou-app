@@ -37,7 +37,9 @@ export function getCartFromCookies(): CartType[] {
   if (typeof window === "undefined") return [];
   try {
     const cookie = Cookies.get(CART_COOKIE_KEY);
-    return cookie ? JSON.parse(cookie) : [];
+    const parsed = cookie ? JSON.parse(cookie) : [];
+    console.log('📂 Lendo carrinho do cookie:', parsed);
+    return parsed;
   } catch {
     return [];
   }
@@ -45,7 +47,59 @@ export function getCartFromCookies(): CartType[] {
 
 export function saveCartToCookies(cart: CartType[]): void {
   if (typeof window === "undefined") return;
-  Cookies.set(CART_COOKIE_KEY, JSON.stringify(cart), { expires: CART_COOKIE_EXPIRY });
+  
+  // Otimiza o carrinho para reduzir o tamanho no cookie
+  const optimizedCart = cart.map((item) => {
+    // Remove campos desnecessários do produto para economizar espaço
+    const optimizedProduct = item.product ? {
+      id: item.product.id,
+      title: item.product.title,
+      slug: item.product.slug,
+      price: item.product.price,
+      priceSale: item.product.priceSale,
+      // Mantém apenas a primeira imagem da galeria
+      gallery: item.product.gallery?.length ? [item.product.gallery[0]] : [],
+      // Store otimizado - apenas o essencial
+      store: typeof item.product.store === 'object' ? {
+        id: item.product.store.id,
+        companyName: item.product.store.companyName,
+        slug: item.product.store.slug,
+        title: item.product.store.title,
+      } : item.product.store,
+      comercialType: item.product.comercialType,
+      schedulingTax: item.product.schedulingTax,
+      schedulingDiscount: item.product.schedulingDiscount,
+      schedulingPeriod: item.product.schedulingPeriod,
+    } : item.product;
+
+    return {
+      product: optimizedProduct,
+      attributes: item.attributes,
+      quantity: item.quantity,
+      details: item.details,
+      total: item.total,
+    };
+  });
+
+  console.log('💾 Salvando carrinho otimizado no cookie');
+  console.log('💾 Item[0] details:', JSON.stringify(optimizedCart[0]?.details, null, 2));
+  console.log('💾 Item[1] details:', JSON.stringify(optimizedCart[1]?.details, null, 2));
+  
+  const serialized = JSON.stringify(optimizedCart);
+  console.log(`💾 Tamanho do cookie: ${serialized.length} bytes`);
+  
+  Cookies.set(CART_COOKIE_KEY, serialized, { expires: CART_COOKIE_EXPIRY });
+  
+  // Verifica imediatamente o que foi salvo
+  const verification = Cookies.get(CART_COOKIE_KEY);
+  if (verification) {
+    const parsed = JSON.parse(verification);
+    console.log('✅ VERIFICAÇÃO - Cookie salvo com sucesso');
+    console.log('✅ Item[0] details:', JSON.stringify(parsed[0]?.details, null, 2));
+    console.log('✅ Item[1] details:', JSON.stringify(parsed[1]?.details, null, 2));
+  } else {
+    console.error('❌ ERRO: Cookie não foi salvo!');
+  }
 }
 
 export function clearCartCookies(): void {
@@ -134,16 +188,32 @@ export function removeCartItem(cart: CartType[], index: number): CartType[] {
 }
 
 export function extractDeliveryFees(items: CartType[]): { price: number; store_id: number }[] {
-  return items
-    .map((item) => {
+  console.log('🚚 extractDeliveryFees - items recebidos:', items);
+  const result = items
+    .map((item, index) => {
       const fee = Number(item?.details?.deliveryFee);
       const storeSource = item?.details?.deliveryStoreId ??
         (typeof item?.product?.store === "object" ? (item?.product?.store as any)?.id : item?.product?.store);
       const storeId = Number(storeSource);
+      
+      console.log(`🚚 extractDeliveryFees - item[${index}]:`, {
+        productId: item?.product?.id,
+        storeName: typeof item?.product?.store === 'object' ? item?.product?.store?.companyName : null,
+        fee,
+        storeId,
+        hasValidFee: Number.isFinite(fee),
+        hasValidStoreId: Number.isFinite(storeId),
+        details: item?.details
+      });
+      
       if (!Number.isFinite(fee) || !Number.isFinite(storeId)) return null;
       return { price: fee, store_id: storeId };
     })
     .filter((item): item is { price: number; store_id: number } => !!item);
+    
+  console.log('🚚 extractDeliveryFees - fees extraídos:', result);
+
+  return result;
 }
 
 export function normalizeDeliveryItems(items: { price: number; store_id: number }[]): { price: number; store_id: number }[] {

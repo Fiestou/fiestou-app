@@ -45,7 +45,7 @@ export const RegisterOrderSMS = async (
   const user: any = order?.user ?? {};
 
   if (!!user?.phone) {
-    let address: any = order.deliveryAddress;
+    let address: any = order.delivery_address;
     address = `${address.street}, ${address.number}, ${address.neighborhood
       } - ${address.zipCode}\n${address.city}, ${address.state} - ${address.country
       } ${!!address.complement ? "\n" + address.complement : ""}`;
@@ -131,7 +131,7 @@ export const ChangeDeliveryStatusSMS = async (
     let status: any = {};
 
     deliveryTypes.map((item: any) => {
-      if (item.value == order.deliveryStatus) {
+      if (item.value == order.delivery_status) {
         status = item;
       }
     });

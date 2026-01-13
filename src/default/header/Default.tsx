@@ -29,7 +29,7 @@ export default function Default({
   const [menuModal, setMenuModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname(); // 👈 pega a rota atual
-  const isActive = (route: string) => pathname.startsWith(route);
+  const isActive = (route: string) => pathname?.startsWith(route) ?? false;
 
   useEffect(() => {
     const loadCart = () => {

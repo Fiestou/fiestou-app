@@ -97,7 +97,7 @@ export default function FileManager(attr: FileManagerType) {
     if (!!uploadFiles.length) {
       try {
         const upload = await api.media({
-          app: user.person == "master" ? -1 : !!user?.store ? user?.store : -1,
+          app: user.type === "master" ? -1 : !!user?.store ? user?.store : -1,
           dir: attr.options.dir,
           index: "media",
           method: "upload",
@@ -146,7 +146,7 @@ export default function FileManager(attr: FileManagerType) {
 
     try {
       const remove = await api.media({
-        app: user.person == "master" ? -1 : !!user?.store ? user?.store : -1,
+        app: user.type === "master" ? -1 : !!user?.store ? user?.store : -1,
         dir: attr.options.dir,
         index: "media",
         method: "remove",

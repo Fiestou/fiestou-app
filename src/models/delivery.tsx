@@ -9,6 +9,14 @@ export const deliveryTypes = [
   {
     name: "Em separação",
     icon: "👍",
+    value: "paid",
+    background: "bg-blue-400",
+    description:
+      "Seu pedido já esta em nosso sistema e estamos preparando para envio.",
+  },
+  {
+    name: "Em separação",
+    icon: "👍",
     value: "processing",
     background: "bg-blue-400",
     description:
