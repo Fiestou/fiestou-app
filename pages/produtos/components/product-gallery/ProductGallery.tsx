@@ -38,7 +38,7 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
           zoom={true}
           spaceBetween={0}
           modules={[Zoom, Pagination, Navigation, Autoplay]}
-          autoplay={{ delay: 3000, disableOnInteraction: false }}
+          autoplay={{ delay: 3000, disableOnInteraction: true }}
           navigation={{
             prevEl: ".swiper-gallery-prev",
             nextEl: ".swiper-gallery-next",
