@@ -13,6 +13,7 @@ import {
 import { CardType, OrderType, PaymentType, PixType } from "@/src/models/order";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
+import { useEffect } from "react";
 
 interface FormInitialType {
   sended: boolean;
@@ -70,6 +71,10 @@ export const PaymentPanel = ({
   setUseOrderAddress,
 }: PaymentPanelProps) => {
   const hasPixOrBoleto = pix.status || boleto?.status;
+
+  useEffect(() => {
+   console.log('PaymentPanel - Recalculo do total do pedido', { productsCount, order, deliveryPrice });
+  }, [productsCount,order,deliveryPrice]);
 
   return (
     <div className="rounded-2xl bg-zinc-100 p-4 md:p-8 relative">
@@ -146,8 +151,9 @@ const PaymentSummaryCard = ({
   order: OrderType;
   deliveryPrice?: number;
 }) => {
-  // Calcula o subtotal somando os totais dos itens
-  const subtotal = order.items?.reduce((acc, item) => acc + (item.total || 0), 0) || 0;
+  // Calcula o subtotal: total do pedido - valor do frete
+  const freightValue = order.delivery?.price ?? deliveryPrice ?? 0;
+  const subtotal = (order.total || 0) - freightValue;
 
   return (
     <div className="grid text-sm gap-2 mb-2 py-2">
@@ -162,8 +168,8 @@ const PaymentSummaryCard = ({
       <div className="flex gap-2">
         <div className="w-full">Entrega</div>
         <div className="whitespace-nowrap">
-          {!!(order.delivery?.price ?? deliveryPrice)
-            ? `R$ ${moneyFormat(order.delivery?.price ?? deliveryPrice ?? 0)}`
+          {!!freightValue
+            ? `R$ ${moneyFormat(freightValue)}`
             : "Gratuita"}
         </div>
       </div>
@@ -231,6 +237,34 @@ const PixBoletoCard = ({
             </a>
           </div>
         </div>
+
+        {boleto?.line && (
+          <div className="mt-4 px-4 py-3 bg-zinc-100 rounded">
+            <div className="text-xs text-zinc-500 mb-1">Linha digitável:</div>
+            <div className="text-sm break-all font-mono">{boleto.line}</div>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  navigator.clipboard.writeText(String(boleto.line));
+                } catch (e) {
+                  CopyClipboard("boleto-line-hidden");
+                }
+              }}
+              className="font-semibold pt-2 text-cyan-600 text-sm"
+            >
+              <Icon icon="fa-copy" className="mr-1" />
+              Copiar linha
+            </button>
+            <input
+              type="text"
+              id="boleto-line-hidden"
+              value={boleto.line ?? ""}
+              readOnly
+              className="absolute h-0 w-0 opacity-0 overflow-hidden"
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -244,11 +278,16 @@ const PixBoletoCard = ({
         </div>
         <div className="w-full max-w-[16rem] mx-auto">
           {!!pix.qrcode ? (
-            <img src={pix.qrcode} className="w-full" />
+            <img src={pix.qrcode} className="w-full" alt="QR Code PIX" />
           ) : (
-            <div className="aspect-square border rounded" />
+            <div className="aspect-square border rounded flex items-center justify-center text-gray-400">
+              <span className="text-sm">Gerando QR Code...</span>
+            </div>
           )}
         </div>
+        <p className="text-xs text-gray-500 text-center mt-2">
+          Escaneie o QR Code ou copie o código abaixo
+        </p>
         <div className="px-3 pt-6">
           <div className="px-4 py-3 bg-zinc-100 rounded">
             <div className="text-sm line-clamp-3 break-all">{pix.code}</div>

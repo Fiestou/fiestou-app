@@ -76,6 +76,12 @@ const GroupConfigBasicUser: React.FC<Props> = ({ title, content }) => {
 
     const handleSubmit = async () => {
         try {
+            if (!contentForm?.id) {
+                console.warn("Recipient ainda não cadastrado no Pagar.me");
+                toast.warning("Para editar esses dados, primeiro conclua o cadastro no Pagar.me clicando em 'Concluir cadastro agora'.");
+                return;
+            }
+
             const phone = contentForm?.phones?.[0] ?? { area_code: "", number: "", id: undefined };
 
             const payload = {

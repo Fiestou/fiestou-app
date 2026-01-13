@@ -96,7 +96,6 @@ export default function Parceiro({ content }: { content: any }) {
   const [store, setStore] = useState<any>(null);
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
   const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
-  console.log("recipientStatus:", recipientStatus);
 
   const checkPagarmeStatus = async () => {
     try {
@@ -142,11 +141,6 @@ export default function Parceiro({ content }: { content: any }) {
       getOrders(user.id);
     }
   }, [user?.id]);
-
-  useEffect(() => {
-   console.log("user changed:", recipientStatus?.recipient);
-  }, [recipientStatus]);
-
 
   const safeOrders = Array.isArray(orders) ? orders : [];
   const hasOrders = safeOrders.length > 0;
@@ -204,10 +198,9 @@ export default function Parceiro({ content }: { content: any }) {
                     {recipientStatus?.completed && (
                       <p className="mt-2 text-sm font-semibold text-green-600">
                         Código recebedor: {" "}
-                        {((recipientStatus?.recipient as any)) ||
-                          ((recipientStatus?.recipient as any)
-                            ? String((recipientStatus?.recipient as any).id)
-                            : "N/A")}
+                        {(recipientStatus?.recipient as any) ||
+                          (recipientStatus?.recipient as any)||
+                          "N/A"}
                       </p>
                     )}
                   </div>

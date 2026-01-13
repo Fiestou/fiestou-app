@@ -116,6 +116,9 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
     }
   }, [form.alert]);
 
+  // Verifica se foi redirecionado por sessão expirada
+  const isSessionExpired = router.query?.expired === "1";
+
   return (
     <Template
       scripts={Scripts}
@@ -144,6 +147,19 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
           </div>
           <div className="">
             <div className="max-w-md mx-auto">
+              {/* Aviso de sessão expirada */}
+              {isSessionExpired && (
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+                  <div className="flex items-center justify-center gap-2 text-yellow-700">
+                    <Icon icon="fa-exclamation-triangle" />
+                    <span className="font-semibold">Sua sessão expirou</span>
+                  </div>
+                  <p className="text-sm text-yellow-600 mt-1">
+                    Por favor, faça login novamente para continuar.
+                  </p>
+                </div>
+              )}
+
               <form
                 onSubmit={(e) => {
                   handleSubmit(e);

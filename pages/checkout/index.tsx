@@ -3,13 +3,11 @@ import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  dateBRFormat,
   findDates,
   getImage,
   getAllowedRegionsDescription,
   isCEPInRegion,
   justNumber,
-  moneyFormat,
   getZipCode,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
@@ -20,21 +18,24 @@ import { ProductOrderType, ProductType } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
 import Partner from "@/src/components/common/Partner";
 import Icon from "@/src/icons/fontAwesome/FIcon";
+import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 import { CartType } from "@/src/models/cart";
-import { deliveryToName } from "@/src/models/delivery";
 import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
 import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DeliveryItem } from "@/src/types/filtros";
-import Img from "@/src/components/utils/ImgBase";
 import { registerOrder as registerOrderService } from "@/src/services/order";
+import { dateBRFormat, moneyFormat } from "@/src/helper";
+
+// Componentes refatorados
+import {
+  DeliveryOptions,
+  TimeSlotPicker,
+  DeliverySummaryEntry,
+} from "@/src/components/checkout";
 
 // Services
 import {
@@ -51,15 +52,6 @@ import {
 const FormInitialType = {
   sended: false,
   loading: false,
-};
-
-// Type movido para cart.service.ts - usando local apenas para compatibilidade
-type DeliverySummaryEntry = {
-  storeId: number | null;
-  storeName: string;
-  storeSlug?: string;
-  price: number;
-  storeLogoUrl?: string | null;
 };
 
 export async function getServerSideProps(ctx: any) {
@@ -371,6 +363,10 @@ export default function Checkout({
     const entries: DeliverySummaryEntry[] = [];
     const seenStores = new Set<number>();
 
+    console.log('📊 deliveryPrice recebido:', deliveryPrice);
+    console.log('📊 storesById:', Array.from(storesById.entries()));
+    console.log('📊 cartItems atual:', cartItems);
+
     deliveryPrice.forEach((item) => {
       const storeId = Number(item?.store_id);
       const price = Number(item?.price);
@@ -524,13 +520,31 @@ export default function Checkout({
       setLoadingDeliveryPrice(true);
 
       try {
+        // Extrai os IDs dos produtos que estão no carrinho
+        const cartProductIds = cartItems
+          .map((item: any) => {
+            const productId = typeof item?.product === 'object' 
+              ? item?.product?.id 
+              : item?.product;
+            return Number(productId);
+          })
+          .filter((id) => Number.isFinite(id) && id > 0);
+
+        if (!cartProductIds.length) {
+          setDeliveryPrice([]);
+          setLoadingDeliveryPrice(false);
+          return;
+        }
+
         const data: any = await api.request({
           method: "get",
           url: `delivery-zipcodes/${sanitizedZip}`,
           data: {
-            ids: products.map((product: ProductType) => product.id),
+            ids: cartProductIds,
           },
         });
+
+        console.log('🚚 Resposta da API de frete:', { data, cartProductIds, sanitizedZip });
 
         const rawList: DeliveryItem[] = Array.isArray(data?.data)
           ? data.data
@@ -538,20 +552,26 @@ export default function Checkout({
           ? data
           : [];
 
-        const normalizedFees = normalizeDeliveryItems(
-          rawList
-            .map(
-              (x: any): DeliveryItem => ({
-                price: Number(x?.price) || 0,
-                store_id:
-                  Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
-              })
-            )
-            .filter(
-              (item: DeliveryItem) =>
-                Number.isFinite(item.price) && Number.isFinite(item.store_id)
-            )
-        );
+        console.log('🚚 rawList extraído:', rawList);
+
+        const mappedFees = rawList
+          .map(
+            (x: any): DeliveryItem => ({
+              price: Number(x?.price) || 0,
+              store_id:
+                Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
+            })
+          )
+          .filter(
+            (item: DeliveryItem) =>
+              Number.isFinite(item.price) && Number.isFinite(item.store_id)
+          );
+
+        console.log('🚚 Fretes mapeados:', mappedFees);
+
+        const normalizedFees = normalizeDeliveryItems(mappedFees);
+
+        console.log('🚚 Fretes normalizados:', normalizedFees);
 
         if (!normalizedFees.length) {
           setDeliveryPrice([]);
@@ -560,11 +580,15 @@ export default function Checkout({
           return;
         }
 
+        console.log('🚚 Aplicando fretes ao carrinho:', { normalizedFees, sanitizedZip, cartItems });
+
         const success = applyDeliveryFeesLocal(
           normalizedFees,
           sanitizedZip,
           cartItems
         );
+
+        console.log('🚚 Resultado da aplicação:', success);
 
         if (!success) {
           setDeliveryPrice([]);
@@ -790,7 +814,8 @@ export default function Checkout({
         return store?.companyName ?? store?.title ?? null;
       })
       .filter(Boolean);
-
+    console.log(deliverySummary)
+    console.log(missingStoresNames)
     return (
       <div className="grid gap-2">
         {deliverySummary.entries.map((entry) => {
@@ -1047,106 +1072,17 @@ export default function Checkout({
                   </h2>
 
                   {/* Opções de Entrega */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[
-                      { type: "reception", icon: "🏢" },
-                      { type: "door", icon: "🚪" },
-                      { type: "for_me", icon: "📦" },
-                    ].map((option: any, key: any) => (
-                      <div
-                        key={key}
-                        onClick={() => setDeliveryTo(option.type)}
-                        className={`border ${
-                          deliveryTo == option.type
-                            ? "border-yellow-400 bg-yellow-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        } p-3 lg:p-4 cursor-pointer rounded-lg transition-all duration-200 flex gap-3 items-center`}
-                      >
-                        <div
-                          className={`${
-                            deliveryTo == option.type
-                              ? "border-yellow-500"
-                              : "border-gray-300"
-                          } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
-                        >
-                          {deliveryTo == option.type && (
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          )}
-                        </div>
-                        <div className="text-sm font-medium leading-tight flex-1">
-                          {deliveryToName[option.type]}
-                        </div>
-                        <span className="text-lg">{option.icon}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <DeliveryOptions
+                    value={deliveryTo}
+                    onChange={setDeliveryTo}
+                  />
 
                   {/* Seleção de Horário */}
-                  <div className="border border-gray-200 rounded-lg p-4 relative">
-                    <div className="h-0 relative overflow-hidden">
-                      {!schedule && (
-                        <input readOnly name="agendamento" required />
-                      )}
-                    </div>
-                    <div className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
-                      Horário
-                    </div>
-
-                    <div className="mt-2">
-                      <Swiper
-                        spaceBetween={12}
-                        breakpoints={{
-                          0: {
-                            slidesPerView: 3.5,
-                          },
-                          640: {
-                            slidesPerView: 5.5,
-                          },
-                          1024: {
-                            slidesPerView: 7.5,
-                          },
-                        }}
-                        className="!pb-2"
-                      >
-                        {[
-                          { period: "Manhã", time: "08:00" },
-                          { period: "Manhã", time: "09:00" },
-                          { period: "Manhã", time: "10:00" },
-                          { period: "Manhã", time: "11:00" },
-                          { period: "Manhã", time: "12:00" },
-                          { period: "Tarde", time: "13:00" },
-                          { period: "Tarde", time: "14:00" },
-                          { period: "Tarde", time: "15:00" },
-                          { period: "Tarde", time: "16:00" },
-                          { period: "Tarde", time: "17:00" },
-                          { period: "Noite", time: "18:00" },
-                          { period: "Noite", time: "19:00" },
-                          { period: "Noite", time: "20:00" },
-                          { period: "Noite", time: "21:00" },
-                        ].map((item: any, key) => (
-                          <SwiperSlide key={key}>
-                            <div
-                              onClick={() =>
-                                setSchedule(`${item.period} - ${item.time}`)
-                              }
-                              className={`${
-                                schedule == item.period + " - " + item.time
-                                  ? "text-yellow-600 bg-yellow-50 border-yellow-300"
-                                  : "text-gray-600 hover:text-gray-900 border-gray-200 hover:bg-gray-50"
-                              } border rounded-lg p-3 text-center cursor-pointer transition-all duration-200`}
-                            >
-                              <div className="text-xs font-medium">
-                                {item.period}
-                              </div>
-                              <div className="font-bold text-sm mt-1">
-                                {item.time}
-                              </div>
-                            </div>
-                          </SwiperSlide>
-                        ))}
-                      </Swiper>
-                    </div>
-                  </div>
+                  <TimeSlotPicker
+                    value={schedule}
+                    onChange={setSchedule}
+                    required
+                  />
                 </div>
 
                 {/* Fornecedores */}
@@ -1278,28 +1214,44 @@ export default function Checkout({
 
                       {/* Botão de Confirmar */}
                       <div className="pt-4">
-                        {!!address?.street &&
-                        !!address?.complement &&
-                        !!address?.number &&
-                        !!schedule &&
-                        !!address?.zipCode &&
-                        !!isCEPInRegion(address?.zipCode) &&
-                        isPhoneValid(phone) ? (
-                          <Button
-                            loading={form.loading}
-                            style="btn-success"
-                            className="w-full py-4 text-base font-semibold"
-                          >
-                            Confirmar e efetuar pagamento
-                          </Button>
-                        ) : (
-                          <button
-                            type="submit"
-                            className="w-full bg-green-500/40 text-white border border-transparent py-4 text-base font-semibold rounded-lg cursor-not-allowed"
-                          >
-                            Confirmar e efetuar pagamento
-                          </button>
-                        )}
+                        {(() => {
+                          const missingItems = [];
+                          if (!address?.zipCode || !isCEPInRegion(address?.zipCode)) missingItems.push("CEP válido");
+                          if (!address?.street) missingItems.push("rua");
+                          if (!address?.number) missingItems.push("número");
+                          if (!address?.complement) missingItems.push("complemento");
+                          if (!schedule) missingItems.push("horário");
+                          if (!isPhoneValid(phone)) missingItems.push("telefone");
+
+                          const isFormValid = missingItems.length === 0;
+
+                          return (
+                            <>
+                              {isFormValid ? (
+                                <Button
+                                  loading={form.loading}
+                                  style="btn-success"
+                                  className="w-full py-4 text-base font-semibold"
+                                >
+                                  Confirmar e efetuar pagamento
+                                </Button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="w-full bg-gray-300 text-gray-500 border border-transparent py-4 text-base font-semibold rounded-lg cursor-not-allowed"
+                                  >
+                                    Confirmar e efetuar pagamento
+                                  </button>
+                                  <p className="text-xs text-gray-500 mt-2 text-center">
+                                    Preencha: {missingItems.join(", ")}
+                                  </p>
+                                </>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

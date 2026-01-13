@@ -1,7 +1,7 @@
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { fetchOrderById } from "@/src/services/order";
-import { useEffect, useState } from "react";
+import { useDebugValue, useEffect, useState } from "react";
 import {
   CopyClipboard,
   dateBRFormat,
@@ -97,11 +97,27 @@ export default function Pagamento({
   const deliverySchedule =
     order?.delivery?.schedule ?? legacyOrder?.deliverySchedule;
 
-  const deliveryPrice =
-    Number(order?.delivery?.priceLabel) ||
-    Number(order?.delivery?.price) ||
-    Number(legacyOrder?.deliveryPrice) ||
-    0;
+  // Calcular frete total somando os deliveryFee de cada item (para múltiplas lojas)
+  const calculateTotalDeliveryFee = () => {
+    if (!order?.items?.length) return 0;
+    
+    const totalFee = order.items.reduce((sum, item: any) => {
+      const metadata = typeof item.metadata === 'string' 
+        ? JSON.parse(item.metadata) 
+        : item.metadata;
+      
+      const fee = Number(metadata?.details?.deliveryFee || 0);
+      return sum + fee;
+    }, 0);
+    
+    // Se a soma dos deliveryFee for maior que 0, usar ela
+    // Senão, usar o delivery.price padrão
+    return totalFee > 0 
+      ? totalFee 
+      : (Number(order?.delivery?.priceLabel) || Number(order?.delivery?.price) || Number(legacyOrder?.deliveryPrice) || 0);
+  };
+
+  const deliveryPrice = calculateTotalDeliveryFee();
 
   // AQUI: agora é SEMPRE string (ou undefined)
   const deliveryTo: string | undefined =
@@ -159,7 +175,7 @@ export default function Pagamento({
       const handle = await fetchOrderById(api, orderId);
 
       if (handle && handle.status === 1) {
-        window.location.href = `/dashboard/pedidos/${orderId}`;
+        window.location.href = `/dashboard/pedidos`;
       }
     } catch (err) {
       console.error("ConfirmManager error:", err);
@@ -178,7 +194,7 @@ export default function Pagamento({
       if (attempts === 0) {
         attempts--;
         alert("Algo deu errado ao processar seu pagamento. Tente novamente.");
-        window.location.href = `/dashboard/pedidos/${orderId}`;
+        window.location.href = `/dashboard/pedidos`;
       }
     }, 1000);
 
@@ -226,7 +242,7 @@ export default function Pagamento({
         alert(
           "Seu código de pagamento via pix não é mais válido. Tente novamente."
         );
-        window.location.href = `/dashboard/pedidos/${orderId}`;
+        window.location.href = `/dashboard/pedidos`;
       }
     }, 1000);
 
@@ -342,6 +358,10 @@ export default function Pagamento({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    console.log("ORDER ATUALIZADO:", order);
+  }, [order]);
+
   const submitPayment = async (e: any) => {
     e.preventDefault();
 
@@ -359,28 +379,33 @@ export default function Pagamento({
 
     // 3. Preparar items do pedido com valor correto
     const orderItems = order.items?.map((item: any, index: number) => {
-      // Se tem apenas 1 item, ele recebe todo o subtotal
-      // Se tem múltiplos items, divide proporcionalmente
-      const itemAmount = order.items.length === 1 
-        ? subtotalCents 
-        : Math.round((item.total || 0) * 100);
-
+      const itemTotalCents = Math.round((item.total || 0) * 100);
+      
       return {
-        amount: itemAmount, // valor correto em centavos
+        amount: itemTotalCents,
         description: item.name || "Produto",
         quantity: item.quantity || 1,
         code: String(item.productId || item.id || ""),
       };
     }) || [];
 
-    // 4. Verificar se a soma está correta
+    // 4. Ajustar arredondamentos para garantir que a soma bata
     const itemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
+    
+    // Se a soma não bater, ajusta o primeiro item
+    if (itemsSum !== subtotalCents && orderItems.length > 0) {
+      const diff = subtotalCents - itemsSum;
+      orderItems[0].amount += diff;
+    }
+
+    // 5. Verificar se agora está correto
+    const finalItemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
     console.log("VERIFICAÇÃO:", {
-      itemsSum,
+      itemsSum: finalItemsSum,
       deliveryAmountCents,
       totalAmountCents,
-      soma: itemsSum + deliveryAmountCents,
-      bate: itemsSum + deliveryAmountCents === totalAmountCents
+      soma: finalItemsSum + deliveryAmountCents,
+      bate: finalItemsSum + deliveryAmountCents === totalAmountCents
     });
 
     // Payload base
@@ -433,14 +458,59 @@ export default function Pagamento({
       };
     }
 
-    // Split único com o valor total (sempre igual para todos os métodos)
+    // SPLIT POR LOJA - Criar um split para cada loja com seu recipient_id
+    // Agrupar items por loja e calcular valores
+    const storeGroups: Record<string, { 
+      recipientId: string; 
+      itemsTotal: number; 
+      deliveryFee: number;
+    }> = {};
+
+    order.items?.forEach((item: any) => {
+      // Parse metadata se necessário
+      let metadata = item.metadata;
+      if (typeof metadata === 'string') {
+        try {
+          metadata = JSON.parse(metadata);
+        } catch {
+          metadata = {};
+        }
+      }
+
+      // Pegar store do metadata ou do produto
+      const store = metadata?.product?.store || item?.product?.store;
+      const recipientId = store?.recipient_id || "acc_default";
+      const itemTotal = Math.round((item.total || 0) * 100);
+      const deliveryFee = Number(metadata?.details?.deliveryFee || 0);
+
+      if (!storeGroups[recipientId]) {
+        storeGroups[recipientId] = {
+          recipientId,
+          itemsTotal: 0,
+          deliveryFee: 0,
+        };
+      }
+
+      storeGroups[recipientId].itemsTotal += itemTotal;
+      storeGroups[recipientId].deliveryFee += Math.round(deliveryFee * 100);
+    });
+
+    // Se não conseguiu agrupar por lojas, usar o valor total para um único recipient
+    const splits = Object.values(storeGroups).length > 0
+      ? Object.values(storeGroups).map(group => ({
+          type: "flat",
+          amount: group.itemsTotal + group.deliveryFee, // Produtos + frete da loja
+          recipient_id: group.recipientId,
+        }))
+      : [{
+          type: "flat",
+          amount: totalAmountCents,
+          recipient_id: order.store?.recipient_id || "acc_default",
+        }];
+
     basePayload.payments = [{
       payment_method: payment.payment_method,
-      split: [{
-        type: "flat", // valor fixo em centavos
-        amount: totalAmountCents, // deve ser igual ao order.amount
-        recipient_id: order.store?.recipient_id || "acc_default",
-      }]
+      split: splits,
     }];
 
     // PIX
@@ -470,8 +540,15 @@ export default function Pagamento({
       validationErrors.push("Pedido sem itens válidos");
     }
     
-    if (itemsSum + deliveryAmountCents !== totalAmountCents) {
+    if (finalItemsSum + deliveryAmountCents !== totalAmountCents) {
       validationErrors.push("Soma dos itens + frete não confere com total");
+      console.error("ERRO DE VALIDAÇÃO:", {
+        finalItemsSum,
+        deliveryAmountCents,
+        totalAmountCents,
+        soma: finalItemsSum + deliveryAmountCents,
+        diferença: totalAmountCents - (finalItemsSum + deliveryAmountCents)
+      });
     }
     
     if (!orderAddress?.zipCode || !orderAddress?.city || !orderAddress?.state) {
@@ -498,14 +575,24 @@ export default function Pagamento({
 
       formFeedback["loading"] = false;
 
-      if (response?.response) {
+      console.log("RESPONSE COMPLETA:", response);
+
+      // Verifica se não houve erro (sucesso)
+      if (!response?.error && response?.response) {
         const data = response?.data || {};
+
+        console.log("DATA EXTRAÍDA:", data);
+        console.log("STATUS:", data?.status);
 
         if (payment.payment_method === "credit_card") {
           if (data?.status === "paid") {
-            CardManager();
             formFeedback["sended"] = true;
+            console.log("PAGAMENTO APROVADO! Redirecionando...");
+            // Redirecionar imediatamente para a página do pedido
+            window.location.href = `/dashboard/pedidos/${orderId}`;
+            return;
           } else {
+            console.error("Status não é 'paid':", data?.status);
             formFeedback = {
               ...formFeedback,
               sended: false,
@@ -558,6 +645,7 @@ export default function Pagamento({
           ...formFeedback,
           sended: false,
           feedback:
+            response?.data?.message || response?.message || 
             "Algo deu errado ao processar seu pagamento. Tente novamente.",
         };
       }

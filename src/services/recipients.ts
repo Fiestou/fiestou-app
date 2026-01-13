@@ -10,9 +10,6 @@ export async function getRecipientStatus(): Promise<RecipientStatusResponse> {
       url: "info/recipients/status",
     });
 
-    console.log("Response do status do recipient:", response);  
-    console.log(response.data.recipient);  
-
     if (response?.data) {
       return {
         completed: response.data.completed || false,
@@ -27,18 +24,18 @@ export async function getRecipientStatus(): Promise<RecipientStatusResponse> {
   }
 }
 
-export async function createRecipient(
-  payload: RecipientEntity
-): Promise<RecipientType> {
-  
+/**
+ * Salva o recipient no banco local
+ */
+export async function saveRecipient(payload: RecipientEntity): Promise<RecipientType> {
   const res = await api.bridge<CreateRecipientResponse>({
     method: "post",
-    url: "/recipient/register",
+    url: "recipients",
     data: payload,
   });
 
   if (!res?.response) {
-    throw new Error(res?.message || "Erro ao cadastrar recebedor");
+    throw new Error(res?.message || "Erro ao salvar dados do recebedor");
   }
 
   if (!res.data) {
@@ -49,23 +46,33 @@ export async function createRecipient(
 }
 
 /**
- * Salva ou atualiza dados do recipient
+ * Envia o recipient para a Pagar.me
  */
-export async function saveRecipientDraft(data: RecipientEntity): Promise<RecipientEntity> {
-  try {
-    const response: any = await api.bridge({
-      method: "post",
-      url: "recipients/save",
-      data: data,
-    });
+export async function registerRecipientInPagarme(payload?: Partial<RecipientEntity>): Promise<RecipientType> {
+  const res = await api.bridge<CreateRecipientResponse>({
+    method: "post",
+    url: "recipient/register",
+    data: payload || {},
+  });
 
-    if (response?.data?.data) {
-      return response.data.data;
-    }
-
-    throw new Error("Erro ao salvar recipient");
-  } catch (error) {
-    console.error("Erro ao salvar recipient:", error);
-    throw error;
+  if (!res?.response) {
+    throw new Error(res?.message || "Erro ao cadastrar recebedor na Pagar.me");
   }
+
+  if (!res.data) {
+    throw new Error("Resposta sem dados do recebedor");
+  }
+
+  return res.data as RecipientType;
+}
+
+/**
+ * Fluxo completo: salva no banco local E envia para a Pagar.me
+ */
+export async function createRecipient(payload: RecipientEntity): Promise<RecipientType> {
+  // Primeiro salva no banco local
+  await saveRecipient(payload);
+
+  // Depois envia para a Pagar.me
+  return registerRecipientInPagarme();
 }

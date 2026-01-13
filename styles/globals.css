@@ -109,6 +109,11 @@
 /* COMPONENTS */
 /* ------------------------ */
 @layer components {
+  /* Esconde badge do reCAPTCHA - texto de atribuição está nas páginas de auth */
+  .grecaptcha-badge {
+    visibility: hidden !important;
+  }
+
   .quill-textarea .ql-container {
     @apply w-full max-w-full overflow-x-hidden rounded-md border border-zinc-300 bg-white;
   }

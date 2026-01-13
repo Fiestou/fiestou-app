@@ -107,6 +107,9 @@ export function validateStep(stepId: StepId, formData: RecipientEntity): string 
       if (!formData.company_name || !formData.trading_name || !formData.name) {
         return "Razão social, nome fantasia e representante legal obrigatórios.";
       }
+      if (!formData.annual_revenue) {
+        return "Faturamento anual é obrigatório para empresas.";
+      }
     }
   }
 
@@ -129,7 +132,7 @@ export function validateStep(stepId: StepId, formData: RecipientEntity): string 
   }
 
   if (stepId === "partners" && formData.type_enum === "PJ") {
-    if (!formData.partners.length) return "Cadastro PJ precisa de pelo menos um sócio.";
+    if (!formData.partners || !formData.partners.length) return "Cadastro PJ precisa de pelo menos um sócio.";
     if (formData.partners.some((p) => !p.name.trim() || !p.document.trim())) {
       return "Complete nome e CPF de todos os sócios.";
     }

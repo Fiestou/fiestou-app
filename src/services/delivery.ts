@@ -86,6 +86,8 @@ export function applyDeliveryToCart(cart: CartType[], fees: DeliveryItem[], sani
   const formattedZip = formatCep(sanitizedZip);
   const feeMap = new Map<number, number>();
 
+  console.log('🚚 applyDeliveryToCart - fees recebidos:', fees);
+
   fees.forEach((fee) => {
     const storeId = Number(fee?.store_id);
     const price = Number(fee?.price);
@@ -94,12 +96,23 @@ export function applyDeliveryToCart(cart: CartType[], fees: DeliveryItem[], sani
     }
   });
 
+  console.log('🚚 applyDeliveryToCart - feeMap criado:', Array.from(feeMap.entries()));
+
   const missingStores: string[] = [];
 
   const updatedCart = cart.map((item) => {
     const productStore = item?.product?.store ?? {};
     const storeSource = item?.details?.deliveryStoreId ?? (typeof productStore === "object" ? productStore?.id : productStore);
     const storeId = Number(storeSource);
+
+    console.log('🚚 Processando item:', { 
+      productId: item?.product?.id, 
+      storeId, 
+      storeSource,
+      productStore,
+      hasFeeForStore: feeMap.has(storeId),
+      fee: feeMap.get(storeId)
+    });
 
     const details = { ...(item.details ?? {}) };
     details.deliveryZipCode = sanitizedZip;
@@ -108,7 +121,9 @@ export function applyDeliveryToCart(cart: CartType[], fees: DeliveryItem[], sani
     if (Number.isFinite(storeId)) {
       details.deliveryStoreId = storeId;
       if (feeMap.has(storeId)) {
-        details.deliveryFee = feeMap.get(storeId) ?? 0;
+        const feeValue = feeMap.get(storeId) ?? 0;
+        details.deliveryFee = feeValue;
+        console.log('🚚 ✅ Aplicando frete:', { productId: item?.product?.id, storeId, feeValue, detailsAfter: details });
       } else {
         delete details.deliveryFee;
         missingStores.push(productStore?.companyName ?? productStore?.title ?? item?.product?.title ?? `Produto #${item?.product?.id ?? ""}`);
@@ -119,8 +134,13 @@ export function applyDeliveryToCart(cart: CartType[], fees: DeliveryItem[], sani
       missingStores.push(productStore?.companyName ?? productStore?.title ?? item?.product?.title ?? `Produto #${item?.product?.id ?? ""}`);
     }
 
-    return { ...item, details };
+    const updatedItem = { ...item, details };
+    console.log('🚚 ✅ Item atualizado:', { productId: item?.product?.id, updatedItem });
+    return updatedItem;
   });
+
+  console.log('🚚 applyDeliveryToCart - updatedCart:', updatedCart);
+  console.log('🚚 applyDeliveryToCart - missingStores:', missingStores);
 
   if (missingStores.length) {
     const unique = Array.from(new Set(missingStores.filter(Boolean)));
