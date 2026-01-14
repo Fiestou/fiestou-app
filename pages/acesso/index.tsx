@@ -84,7 +84,7 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
     setFormValue({ loading: true, alert: "" });
 
     // Gera o token reCAPTCHA v3
-     const token = await executeRecaptcha('register');
+     const token = await executeRecaptcha('login');
 
     const request: any = await SignIn({
       email: form.email,
