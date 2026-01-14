@@ -56,18 +56,21 @@ export default function Product({ product }: { product: ProductType | any }) {
             </div>
             <div className="w-full pt-3 flex gap-2 md:gap-2 items-center">
               <div className="w-fit">
-                {isSelling ? (
+                {capitalizedComercialType === "Venda" && (
                   <div className="flex items-center gap-1 bg-red-100 text-red-900 whitespace-nowrap rounded text-xs px-2 py-1">
                     <Icon icon="fa-tag" className="text-xs" type="far" />
-                    <span>{capitalizedComercialType}</span>
+                    <span>Venda</span>
                   </div>
-                ) : (
+                )}
+
+                {capitalizedComercialType === "Aluguel" && (
                   <div className="flex items-center gap-1 bg-blue-100 text-blue-900 whitespace-nowrap rounded text-xs px-2 py-1">
                     <Icon icon="fa-clock" className="text-xs" type="far" />
-                    <span>{capitalizedComercialType}</span>
+                    <span>Aluguel</span>
                   </div>
                 )}
               </div>
+
               {!!product.rate && (
                 <div className="relative h-[.5rem]">
                   <div className="flex text-[.8rem] gap-1 text-zinc-200">
