@@ -7,6 +7,7 @@ export interface RegisterData {
   phone: string;
   password: string;
   re_password: string;
+  type?: "client" | "partner";
   person?: "client" | "partner";
   recaptcha_token?: string;
 }
@@ -22,6 +23,7 @@ export interface PreRegisterData {
   email: string;
   phone: string;
   password: string;
+  type?: "client" | "partner";
   person?: "client" | "partner";
 }
 
