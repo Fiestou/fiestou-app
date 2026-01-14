@@ -27,7 +27,6 @@ export default function Product({ product }: { product: ProductType | any }) {
   const capitalizedComercialType = comercialType
     ? comercialType.charAt(0).toUpperCase() + comercialType.slice(1)
     : "";
-  const isSelling = comercialType === "selling";
 
   return (
     <div className="group w-full h-full flex flex-col relative rounded-xl overflow-hidden">
@@ -112,7 +111,7 @@ export default function Product({ product }: { product: ProductType | any }) {
                   por
                 </>
               ) : (
-                "a partir de"
+                "a partir de:"
               )}
             </div>
             <h3 className="font-bold text-2xl text-zinc-800">
