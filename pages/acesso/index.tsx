@@ -84,12 +84,12 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
     setFormValue({ loading: true, alert: "" });
 
     // Gera o token reCAPTCHA v3
-    const recaptchaToken = await executeRecaptcha("login");
+     const token = await executeRecaptcha('login');
 
     const request: any = await SignIn({
       email: form.email,
       password: form.password,
-      recaptcha_token: recaptchaToken,
+      recaptcha_token: token,
     });
 
     if (request.status == 422) {
