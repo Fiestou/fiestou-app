@@ -30,7 +30,6 @@ import TransportSection from "../components/transport-section/TransportSection";
 import VisibilitySection from "../components/visibility-section/VisibilitySection";
 import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
 import ProductBundle from "@/src/components/pages/painel/produtos/product-bundle/ProductBundle";
-import { NextApiRequest } from "next";
 
 const formInitial = {
   sended: false,
@@ -280,7 +279,7 @@ export default function CreateProduct() {
 
       const payload = buildPayload();
 
-      const request: NextApiRequest = await api.bridge({
+      const request: any = await api.bridge({
         method: "post",
         url: "products/register",
         data: payload,
