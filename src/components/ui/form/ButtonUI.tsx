@@ -21,7 +21,6 @@ interface ButtonType {
   onClick?: React.MouseEventHandler<HTMLButtonElement | HTMLAnchorElement>;
   type?: "button" | "submit" | "reset";
   className?: string;
-  /** ⚠️ compat legado: seu seletor antigo, ex: 'btn-yellow', 'btn-light' */
   style?: string;
   id?: string;
   href?: string;
@@ -35,7 +34,6 @@ interface ButtonType {
   disable?: boolean;
   othersAttrs?: React.HTMLAttributes<HTMLElement>;
   children: React.ReactNode;
-  /** ✅ nova API recomendada */
   variant?: Variant;
 }
 
@@ -47,8 +45,8 @@ export default function Button(attr: ButtonType) {
 
   // mapeia Variant → sua classe antiga
   const variantToLegacyStyle: Record<Variant, string> = {
-    primary: "btn-dark",        // preto
-    secondary: "btn-light",     // cinza claro
+    primary: "btn-dark", // preto
+    secondary: "btn-light", // cinza claro
     success: "btn-success",
     danger: "btn-danger",
     dark: "btn-dark",
@@ -81,10 +79,11 @@ export default function Button(attr: ButtonType) {
     }`,
     "btn-link": `text-zinc-900 underline font-bold p-0 border border-transparent`,
     "btn-transparent": `font-bold p-0 border border-transparent`,
-    "btn-outline-light": `border text-zinc-900 ${!attr?.disable
+    "btn-outline-light": `border text-zinc-900 ${
+      !attr?.disable
         ? "hover:border-zinc-300 hover:bg-zinc-50"
         : "opacity-75 cursor-not-allowed"
-      }`,
+    }`,
   };
 
   // escolhe a classe final: variant > style > default
@@ -126,7 +125,7 @@ export default function Button(attr: ButtonType) {
     className,
     alt: alt ?? "",
     title: title ?? "",
-    "aria-label": alt || title ? (alt ?? title) : undefined,
+    "aria-label": alt || title ? alt ?? title : undefined,
     rel: attr?.rel,
     ...(attr?.othersAttrs || {}),
   };
@@ -140,7 +139,9 @@ export default function Button(attr: ButtonType) {
             ? "button"
             : attr?.type ?? "submit"
         }
-        onClick={(e) => (!attr?.disable && attr?.onClick ? attr.onClick(e) : undefined)}
+        onClick={(e) =>
+          !attr?.disable && attr?.onClick ? attr.onClick(e) : undefined
+        }
       >
         {renderChildren()}
       </button>
@@ -153,7 +154,9 @@ export default function Button(attr: ButtonType) {
       {...(commonAttrs as any)}
       href={!attr?.disable ? attr.href : "#"}
       target={!attr?.disable ? attr?.target ?? "_self" : "_self"}
-      onClick={(e) => (!attr?.disable && attr?.onClick ? attr.onClick(e) : undefined)}
+      onClick={(e) =>
+        !attr?.disable && attr?.onClick ? attr.onClick(e) : undefined
+      }
     >
       {renderChildren()}
     </Link>

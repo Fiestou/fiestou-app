@@ -2,7 +2,7 @@
 //@ts-nocheck
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Input, Select, TextArea } from "@/src/components/ui/form";
 import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
@@ -20,9 +20,10 @@ import MultiSelect from "../../../src/components/ui/form/MultiSelectUi";
 
 export async function getServerSideProps(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const api = new Api();
+
   let request: any = {};
 
   request = await api.call(
@@ -42,11 +43,12 @@ export async function getServerSideProps(
         },
       ],
     },
-    req
+    req,
   );
 
   const page = request?.data?.query?.page ?? [];
   const storeTypes = request?.data?.query.storeType ?? [];
+  const handle = request.data ?? {};
 
   return {
     props: {
@@ -76,7 +78,7 @@ export default function Loja({
   page,
   storeTypes,
 }: {
-  page: any;
+  page: interface;
   storeTypes: Array<RelationType>;
 }) {
   const api = new Api();
@@ -94,25 +96,45 @@ export default function Loja({
     days.map(
       (item: any, key: any) =>
         item.value == day &&
-        (handle[key] = { ...handle[key], ...value, day: day })
+        (handle[key] = { ...handle[key], ...value, day: day }),
     );
-
     setWeek(handle);
     setStore({ ...store, openClose: handle });
   };
 
   const [handleCover, setHandleCover] = useState(
-    {} as { preview: string; remove: number }
+    {} as { preview: string; remove: number },
   );
   const [handleProfile, setHandleProfile] = useState(
-    {} as {} as { preview: string; remove: number }
+    {} as {} as { preview: string; remove: number },
   );
 
-  const [oldStore, setOldStore] = useState({} as StoreType);
-  const [store, setStore] = useState({} as StoreType);
   const [groupOptions, setGroupOptions] = useState([]);
   const handleStore = async (value: Object) => {
     setStore({ ...store, ...value });
+  };
+
+  const [oldStore, setOldStore] = useState({} as StoreType);
+  const [store, setStore] = useState({} as StoreType);
+
+  const handleMinimumOrderEnabled = (enabled: boolean) => {
+    setStore({
+      ...store,
+      minimum_order: {
+        enabled: enabled ? 1 : 0,
+        value: enabled ? (store.minimum_order?.value ?? 0) : 0,
+      },
+    });
+  };
+
+  const handleMinimumOrderValue = (value: number) => {
+    setStore({
+      ...store,
+      minimum_order: {
+        ...store.minimum_order,
+        value,
+      },
+    });
   };
 
   const getStore = async () => {
@@ -122,9 +144,15 @@ export default function Loja({
     });
 
     const handle = request.data ?? {};
+
+    handle.minimum_order = handle.minimum_order ?? {
+      enabled: 0,
+      value: 0,
+    };
+
     handle.deliveryRegions = handle.zipcode_cities_ranges?.map(
       (item: { zipcode_cities_range_id: number }) =>
-        item.zipcode_cities_range_id
+        item.zipcode_cities_range_id,
     );
 
     setOldStore(handle);
@@ -142,7 +170,7 @@ export default function Loja({
     });
   };
 
-  const handleCoverRemove = async (e: any) => {
+  const handleCoverRemove = async (e: React.FormEvent) => {
     setHandleCover({
       preview: "",
       remove: store?.cover?.id ?? handleCover.remove,
@@ -151,7 +179,7 @@ export default function Loja({
     handleStore({ cover: {} });
   };
 
-  const handleCoverPreview = async (e: any) => {
+  const handleCoverPreview = async (e: React.FormEvent) => {
     const file = e.target.files[0];
 
     const base64: any = await new Promise((resolve, reject) => {
@@ -168,7 +196,7 @@ export default function Loja({
     return fileData;
   };
 
-  const handleSubmitCover = async (e: any) => {
+  const handleSubmitCover = async (e: React.FormEvent) => {
     e.preventDefault();
 
     handleForm({ loading: true });
@@ -389,7 +417,7 @@ export default function Loja({
 
   const renderAction = (
     name: string,
-    label?: { edit?: string; save?: string; cancel?: string }
+    label?: { edit?: string; save?: string; cancel?: string },
   ) => {
     return form.edit == name ? (
       <div className="flex gap-4">
@@ -403,9 +431,10 @@ export default function Loja({
             });
           }}
           type="button"
-          style="btn-transparent"
+          variant="danger"
+          className="py-2 px-4"
         >
-          {label?.cancel ? label.cancel : <Icon icon="fa-undo" />}
+          {label?.cancel ? label.cancel : "Cancelar"}
         </Button>
         <Button
           loading={form.edit == name && form.loading}
@@ -421,18 +450,55 @@ export default function Loja({
           setStore(oldStore);
         }}
         type="button"
-        style="btn-link"
+        className="!py-2 !px-4"
       >
-        {label?.edit ? label.edit : "Editar"}
+        Editar
+        <Icon icon="fa-pen" type="far" />
       </Button>
     ) : (
       <button type="button" className="p-0 font-bold opacity-50">
-        {label?.edit ? label.edit : "Editar"}
+        Editar
+        <Icon icon="fa-pen" type="far" />
       </button>
     );
   };
 
   const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
+
+  const payload = {
+    ...store,
+    minimum_order: {
+      enabled: store.minimum_order?.enabled ? 1 : 0,
+      value: store.minimum_order?.value
+        ? Number(
+            String(store.minimum_order.value)
+              .replace("R$", "")
+              .replace(",", "."),
+          )
+        : 0,
+    },
+  };
+
+  const maskMoneyBR = (value: string) => {
+    const onlyNumbers = value.replace(/\D/g, "");
+
+    if (!onlyNumbers) return "";
+
+    const number = parseInt(onlyNumbers, 10);
+
+    const formatted = (number / 100).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+
+    return formatted;
+  };
+
+  const moneyBRToNumber = (value?: string) => {
+    if (!value) return 0;
+
+    return Number(value.replace(/\D/g, "")) / 100;
+  };
 
   useEffect(() => {
     const fetchRegions = async () => {
@@ -445,7 +511,7 @@ export default function Loja({
           (response?.data?.data || []).map((region) => ({
             value: region.id,
             name: `${region.name} (${region.start} - ${region.finish})`,
-          }))
+          })),
         );
       } catch (e) {
         setDeliveryRegionsOptions([]);
@@ -564,7 +630,7 @@ export default function Loja({
                   encType="multipart/form-data"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center justify-between gap-6">
                     <div className="w-[5rem]">
                       {form.edit == "profile" ? (
                         <FileInput
@@ -638,7 +704,7 @@ export default function Loja({
                         placeholder="Digite o nome aqui"
                       />
                     ) : (
-                      oldStore?.title ?? "Informe o nome da sua loja"
+                      (oldStore?.title ?? "Informe o nome da sua loja")
                     )}
                   </div>
                 </form>
@@ -666,8 +732,8 @@ export default function Loja({
                         placeholder="Digite sua descrição aqui"
                       />
                     ) : (
-                      oldStore?.description ??
-                      "Insira uma descrição para sua loja"
+                      (oldStore?.description ??
+                      "Insira uma descrição para sua loja")
                     )}
                   </div>
                 </form>
@@ -750,7 +816,7 @@ export default function Loja({
                                   onChange={(e: any) =>
                                     handleWeek(
                                       { open: e.target.value },
-                                      day.value
+                                      day.value,
                                     )
                                   }
                                   className="p-0 border-0"
@@ -764,7 +830,7 @@ export default function Loja({
                                   onChange={(e: any) =>
                                     handleWeek(
                                       { close: e.target.value },
-                                      day.value
+                                      day.value,
                                     )
                                   }
                                   className="p-0 border-0"
@@ -776,7 +842,7 @@ export default function Loja({
                                   onChange={(e: any) =>
                                     handleWeek(
                                       { working: e.target.value },
-                                      day.value
+                                      day.value,
                                     )
                                   }
                                   {...(week[key]?.working == "on"
@@ -954,8 +1020,8 @@ export default function Loja({
                         })}
                       />
                     ) : (
-                      storeTypes.filter((item) => item.id == store?.segment)[0]
-                        ?.title ?? "Informe o segmento da sua loja"
+                      (storeTypes.filter((item) => item.id == store?.segment)[0]
+                        ?.title ?? "Informe o segmento da sua loja")
                     )}
                   </div>
                 </form>
@@ -991,7 +1057,7 @@ export default function Loja({
                                 onChange={(e) =>
                                   handleStore({
                                     is_delivery_fee_active: Number(
-                                      e.target.value
+                                      e.target.value,
                                     ),
                                   })
                                 }
@@ -1007,7 +1073,7 @@ export default function Loja({
                                 onChange={(e) =>
                                   handleStore({
                                     is_delivery_fee_active: Number(
-                                      e.target.value
+                                      e.target.value,
                                     ),
                                   })
                                 }
@@ -1028,7 +1094,9 @@ export default function Loja({
                               value={store?.default_delivery_fee}
                               onChange={(e) =>
                                 handleStore({
-                                  default_delivery_fee: e.target.value,
+                                  default_delivery_fee: maskMoneyBR(
+                                    e.target.value,
+                                  ),
                                 })
                               }
                             />
@@ -1063,6 +1131,133 @@ export default function Loja({
                       </div>
                     ) : (
                       <>Informe as regras do frete</>
+                    )}
+                  </div>
+                </form>
+
+                <form
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
+                  method="POST"
+                  className="grid gap-4 border-b pb-8 mb-0"
+                >
+                  {/* Header */}
+                  <div className="flex items-center">
+                    <div className="w-full">
+                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                        Pedido mínimo
+                      </h4>
+                    </div>
+                    <div className="w-fit">{renderAction("minimum_order")}</div>
+                  </div>
+
+                  {/* Conteúdo */}
+                  <div className="w-full">
+                    {form.edit === "minimum_order" ? (
+                      <div className="grid gap-4">
+                        {/* Ativar pedido mínimo */}
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Deseja ativar pedido mínimo?
+                          </label>
+
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="minimum_order_enabled"
+                                value="1"
+                                checked={!!store?.minimum_order?.enabled}
+                                onChange={() =>
+                                  handleStore({
+                                    minimum_order: {
+                                      ...store.minimum_order,
+                                      enabled: 1,
+                                    },
+                                  })
+                                }
+                              />
+                              <span>Sim</span>
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="minimum_order_enabled"
+                                value="0"
+                                checked={!store?.minimum_order?.enabled}
+                                onChange={() =>
+                                  handleStore({
+                                    minimum_order: {
+                                      ...store.minimum_order,
+                                      enabled: 0,
+                                      value: 0,
+                                    },
+                                  })
+                                }
+                              />
+                              <span>Não</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Valor mínimo */}
+                        {!!store?.minimum_order?.enabled && (
+                          <div className="grid gap-2">
+                            <label className="font-medium">
+                              Valor mínimo do pedido
+                            </label>
+
+                            <div className="relative">
+                              <Input
+                                type="text"
+                                className="input w-full"
+                                value={
+                                  store?.minimum_order?.value === 0
+                                    ? ""
+                                    : (store?.minimum_order?.value ?? "")
+                                }
+                                onChange={(e) =>
+                                  handleStore({
+                                    minimum_order: {
+                                      ...store.minimum_order,
+                                      value: maskMoneyBR(e.target.value),
+                                    },
+                                  })
+                                }
+                                placeholder="Ex: R$ 50,00"
+                              />
+
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-help group">
+                                <Icon
+                                  icon="fa-info-circle"
+                                  className="text-zinc-400"
+                                />
+                                <div className="absolute hidden group-hover:block right-0 bg-zinc-800 text-white p-2 rounded text-sm w-48">
+                                  Valor mínimo para liberar o pedido
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        {store?.minimum_order?.enabled ? (
+                          <span>
+                            Pedido mínimo:{" "}
+                            <strong>
+                              {moneyBRToNumber(
+                                store.minimum_order?.value,
+                              ).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })}
+                            </strong>
+                          </span>
+                        ) : (
+                          <span>Pedido mínimo desativado</span>
+                        )}
+                      </>
                     )}
                   </div>
                 </form>
