@@ -24,7 +24,7 @@ export async function getServerSideProps(
 ) {
   const api = new Api();
 
-  let request: any = {};
+  let request: NextApiResponse = {};
 
   request = await api.call(
     {
@@ -63,7 +63,7 @@ const formInitial = {
   loading: false,
 };
 
-const days = [
+const days: Record<string, string[]> = [
   { value: "Sunday", name: "Domingo" },
   { value: "Monday", name: "Segunda" },
   { value: "Tuesday", name: "Terça" },
@@ -94,7 +94,7 @@ export default function Loja({
     let handle = store?.openClose ?? ([] as Array<DayType>);
 
     days.map(
-      (item: any, key: any) =>
+      (item: string, key: string) =>
         item.value == day &&
         (handle[key] = { ...handle[key], ...value, day: day }),
     );
@@ -138,7 +138,7 @@ export default function Loja({
   };
 
   const getStore = async () => {
-    let request: any = await api.bridge({
+    let request: NextApiRequest = await api.bridge({
       method: "post",
       url: "stores/form",
     });
@@ -182,7 +182,7 @@ export default function Loja({
   const handleCoverPreview = async (e: React.FormEvent) => {
     const file = e.target.files[0];
 
-    const base64: any = await new Promise((resolve, reject) => {
+    const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result);
@@ -212,7 +212,7 @@ export default function Loja({
           method: "remove",
           medias: [handleCover.remove],
         })
-        .then((res: any) => res);
+        .then((res: NextApiResponse) => res);
 
       if (request.response && !!request.removed) {
         coverValue = {};
@@ -228,7 +228,7 @@ export default function Loja({
           method: "upload",
           medias: [store?.cover?.files],
         })
-        .then((data: any) => data);
+        .then((data: NextApiResponse) => data);
 
       if (upload.response && !!upload.medias[0].status) {
         const media = upload.medias[0].media;
@@ -251,7 +251,7 @@ export default function Loja({
       cover: coverValue,
     };
 
-    const request: any = await api.bridge({
+    const request: NextApiResponse = await api.bridge({
       method: "post",
       url: "stores/register",
       data: handle,
@@ -270,7 +270,7 @@ export default function Loja({
     handleForm({ edit: "", loading: false });
   };
 
-  const handleProfileRemove = async (e: any) => {
+  const handleProfileRemove = async (e: React.FormEvent) => {
     setHandleProfile({
       preview: "",
       remove: store?.profile?.id ?? handleProfile.remove,
@@ -279,10 +279,10 @@ export default function Loja({
     handleStore({ profile: {} });
   };
 
-  const handleProfilePreview = async (e: any) => {
+  const handleProfilePreview = async (e: React.FormEvent) => {
     const file = e.target.files[0];
 
-    const base64: any = await new Promise((resolve, reject) => {
+    const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result);
@@ -296,12 +296,12 @@ export default function Loja({
     return fileData;
   };
 
-  const handleSubmitProfile = async (e: any) => {
+  const handleSubmitProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
     handleForm({ loading: true });
 
-    let profileValue: any = store?.profile;
+    let profileValue: Array<string> = store?.profile;
 
     if (!!handleProfile.remove) {
       const request = await api
@@ -312,7 +312,7 @@ export default function Loja({
           method: "remove",
           medias: [handleProfile.remove],
         })
-        .then((res: any) => res);
+        .then((res: NextApiResponse) => res);
 
       if (request.response && !!request.removed) {
         profileValue = {};
@@ -328,7 +328,7 @@ export default function Loja({
           method: "upload",
           medias: [store?.profile?.files],
         })
-        .then((data: any) => data);
+        .then((data: NextApiResponse) => data);
 
       if (upload.response && !!upload.medias[0].status) {
         const media = upload.medias[0].media;
@@ -351,7 +351,7 @@ export default function Loja({
       profile: profileValue,
     };
 
-    const request: any = await api.bridge({
+    const request: NextApiResponse = await api.bridge({
       method: "post",
       url: "stores/register",
       data: handle,
@@ -387,13 +387,12 @@ export default function Loja({
     }
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
 
     handleForm({ loading: true });
 
-    /* TO DO - TIPAR E ARRANCAR any */
-    const request: any = await api.bridge({
+    const request: NextApiResponse = await api.bridge({
       method: "post",
       url: "stores/register",
       data: store,
@@ -422,7 +421,7 @@ export default function Loja({
     return form.edit == name ? (
       <div className="flex gap-4">
         <Button
-          onClick={(e: any) => {
+          onClick={(e: React.FormEvent) => {
             handleForm({ edit: "" });
             setStore(oldStore);
             setHandleCover({
@@ -445,7 +444,7 @@ export default function Loja({
       </div>
     ) : !form.loading ? (
       <Button
-        onClick={(e: any) => {
+        onClick={(e: React.FormEvent) => {
           handleForm({ edit: name });
           setStore(oldStore);
         }}
@@ -570,7 +569,7 @@ export default function Loja({
               <div className="w-full grid gap-8 border-t pt-6">
                 {/* CAPA */}
                 <form
-                  onSubmit={(e: any) => handleSubmitCover(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmitCover(e)}
                   method="POST"
                   acceptCharset="UTF-8"
                   encType="multipart/form-data"
@@ -588,7 +587,7 @@ export default function Loja({
                     <FileInput
                       name="cover"
                       id="cover"
-                      onChange={async (e: any) => {
+                      onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
                         handleStore({
                           cover: {
                             files: await handleCoverPreview(e),
@@ -597,7 +596,7 @@ export default function Loja({
                       }}
                       aspect="aspect-[6/2.5]"
                       loading={form.loading}
-                      remove={(e: any) => handleCoverRemove(e)}
+                      remove={(e: React.ChangeEvent<HTMLInputElement>) => handleCoverRemove(e)}
                       preview={handleCover.preview}
                     />
                   ) : (
@@ -624,7 +623,7 @@ export default function Loja({
                 </form>
                 {/* PERFIL */}
                 <form
-                  onSubmit={(e: any) => handleSubmitProfile(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmitProfile(e)}
                   method="POST"
                   acceptCharset="UTF-8"
                   encType="multipart/form-data"
@@ -636,7 +635,7 @@ export default function Loja({
                         <FileInput
                           name="profile"
                           id="profile"
-                          onChange={async (e: any) => {
+                          onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
                             handleStore({
                               profile: {
                                 files: await handleProfilePreview(e),
@@ -647,7 +646,7 @@ export default function Loja({
                           placeholder="Abrir"
                           aspect="aspect-square"
                           loading={form.loading}
-                          remove={(e: any) => handleProfileRemove(e)}
+                          remove={(e: React.ChangeEvent<HTMLInputElement>) => handleProfileRemove(e)}
                           preview={handleProfile.preview}
                         />
                       ) : (
@@ -682,7 +681,7 @@ export default function Loja({
                 </form>
                 {/* TITULO */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -697,7 +696,7 @@ export default function Loja({
                   <div className="w-full">
                     {form.edit == "title" ? (
                       <Input
-                        onChange={(e: any) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           handleStore({ title: e.target.value })
                         }
                         value={store?.title}
@@ -710,7 +709,7 @@ export default function Loja({
                 </form>
                 {/* DESCRICAO */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -725,7 +724,7 @@ export default function Loja({
                   <div className="w-full">
                     {form.edit == "description" ? (
                       <TextArea
-                        onChange={(e: any) =>
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                           handleStore({ description: e.target.value })
                         }
                         value={store?.description}
@@ -739,7 +738,7 @@ export default function Loja({
                 </form>
                 {/* EMPRESA */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -756,7 +755,7 @@ export default function Loja({
                       <div className="grid gap-2">
                         <Input
                           name="cnpj"
-                          onChange={(e: any) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             handleStore({
                               document: justNumber(e.target.value),
                             })
@@ -767,7 +766,7 @@ export default function Loja({
                         />
                         <Input
                           name="nome"
-                          onChange={(e: any) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             handleStore({ companyName: e.target.value })
                           }
                           required
@@ -787,7 +786,7 @@ export default function Loja({
                 </form>
                 {/* HORARIO */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -803,7 +802,7 @@ export default function Loja({
                     {form.edit == "openClose" ? (
                       <div className="grid gap-2">
                         {!!days.length &&
-                          days.map((day: any, key: any) => (
+                          days.map((day: string, key: string) => (
                             <div
                               key={key}
                               className="flex items-center gap-4 text-sm"
@@ -813,7 +812,7 @@ export default function Loja({
                                 <Input
                                   type="time"
                                   value={week[key]?.open}
-                                  onChange={(e: any) =>
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                     handleWeek(
                                       { open: e.target.value },
                                       day.value,
@@ -827,7 +826,7 @@ export default function Loja({
                                 <Input
                                   type="time"
                                   value={week[key]?.close}
-                                  onChange={(e: any) =>
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                     handleWeek(
                                       { close: e.target.value },
                                       day.value,
@@ -839,7 +838,7 @@ export default function Loja({
                               <label className="text-xs flex gap-2 pl-2">
                                 <input
                                   type="checkbox"
-                                  onChange={(e: any) =>
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                     handleWeek(
                                       { working: e.target.value },
                                       day.value,
@@ -856,7 +855,7 @@ export default function Loja({
                       </div>
                     ) : !!week.length ? (
                       <div className="text-sm">
-                        {week.map((day: any, key: any) => (
+                        {week.map((day: string, key: string) => (
                           <div key={key} className="grid grid-cols-6">
                             <div>{week[key]?.day}</div>
                             {week[key]?.working != "on" ? (
@@ -886,7 +885,7 @@ export default function Loja({
                 </form>
                 {/* ENDERECO */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -903,7 +902,7 @@ export default function Loja({
                       <div className="grid gap-2">
                         <Input
                           name="cep"
-                          onChange={(e: any) => handleZipCode(e.target.value)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleZipCode(e.target.value)}
                           required
                           value={store?.zipCode}
                           placeholder="CEP"
@@ -921,7 +920,7 @@ export default function Loja({
                           <div className="w-[10rem]">
                             <Input
                               name="numero"
-                              onChange={(e: any) =>
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 handleStore({ number: e.target.value })
                               }
                               required
@@ -943,7 +942,7 @@ export default function Loja({
                           <div className="w-full">
                             <Input
                               name="complemento"
-                              onChange={(e: any) =>
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 handleStore({ complement: e.target.value })
                               }
                               value={store?.complement}
@@ -991,7 +990,7 @@ export default function Loja({
                 </form>
                 {/*  */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -1006,13 +1005,13 @@ export default function Loja({
                   <div className="w-full">
                     {form.edit == "segment" ? (
                       <Select
-                        onChange={(e: any) =>
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           handleStore({ segment: e.target.value })
                         }
                         value={store?.segment}
                         placeholder="Selecione seu segmento"
                         name="lojaTipo"
-                        options={groupOptions.map((item: any) => {
+                        options={groupOptions.map((item: Array<string>) => {
                           return {
                             name: item.title,
                             value: item.id,
@@ -1028,7 +1027,7 @@ export default function Loja({
                 {/*  */}
 
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >

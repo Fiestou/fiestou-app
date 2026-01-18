@@ -17,7 +17,6 @@ interface PedidosProps {
 
 export default function Pedidos({ orders = [], page = { help_list: [] } }: PedidosProps) {
 
-  console.log('Orders Page', orders);
   return (
     <Template
       header={{
@@ -54,7 +53,6 @@ export default function Pedidos({ orders = [], page = { help_list: [] } }: Pedid
             <div className="w-full grid gap-4 md:gap-8">
               {!!orders.length ? (
                 orders.map((item: OrderType, key: number) => {
-                  console.log('Order Item', item);
                   return (
                   <div
                     key={key}
@@ -149,8 +147,6 @@ export const getServerSideProps: GetServerSideProps<PedidosProps> = async (ctx) 
       },
       ctx
     ) as { data?: OrderType[]; page?: any };
-
-    console.log('Orders Request', request);
 
     return {
       props: {

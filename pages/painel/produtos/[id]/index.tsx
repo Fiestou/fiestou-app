@@ -30,6 +30,7 @@ import TransportSection from "../components/transport-section/TransportSection";
 import VisibilitySection from "../components/visibility-section/VisibilitySection";
 import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
 import ProductBundle from "@/src/components/pages/painel/produtos/product-bundle/ProductBundle";
+import { NextApiRequest } from "next";
 
 const formInitial = {
   sended: false,
@@ -177,7 +178,6 @@ export default function CreateProduct() {
   };
 
   const SearchProducts = async (search: string): Promise<any[]> => {
-    console.log("Searching products for:");
     if (search.length >= 3) {
       const request: any = await api.request({
         method: "get",
@@ -280,9 +280,7 @@ export default function CreateProduct() {
 
       const payload = buildPayload();
 
-      console.log("Payload to submit:", payload);
-
-      const request: any = await api.bridge({
+      const request: NextApiRequest = await api.bridge({
         method: "post",
         url: "products/register",
         data: payload,

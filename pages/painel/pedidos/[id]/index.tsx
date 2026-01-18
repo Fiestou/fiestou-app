@@ -99,8 +99,6 @@ export default function Pedido() {
     "pending"
   );
 
-  console.log("ORDER STATE:", order);
-
   const notifyDelivery = async (e: any) => {
     e.preventDefault();
 

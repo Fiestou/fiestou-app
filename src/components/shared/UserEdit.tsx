@@ -99,7 +99,6 @@ export default function UserEdit({ user }: { user: UserType }) {
 
       if (!res?.response || !res?.data) {
         // Usa dados do usuário como fallback quando não existe recipient
-        console.log("Recipient não encontrado, usando dados do usuário como fallback");
         setContent(buildFromUser());
         return;
       }
@@ -170,7 +169,6 @@ export default function UserEdit({ user }: { user: UserType }) {
   }, []);
 
   useEffect(() => {
-    console.log("storeId changed:", storeId);
     if (storeId) {
       getRecipientCode(storeId);
     }
