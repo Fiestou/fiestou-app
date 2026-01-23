@@ -776,6 +776,79 @@ export const documentIsValid = (document?: string) => {
   return maskHandle.cpf(document) || maskHandle.cnpj(document);
 };
 
+/**
+ * Formata dados de entrega para exibicao
+ * Suporta formato estruturado { date, period, time } ou string legada
+ */
+export function formatDeliveryDate(deliverySchedule: any): { date: string; time: string } | null {
+  if (!deliverySchedule) return null;
+
+  // Formato estruturado: { date: "2025-01-10", period: "Manha", time: "09:00 - 12:00" }
+  if (typeof deliverySchedule === 'object' && deliverySchedule.date) {
+    const dateFormatted = dateBRFormat(deliverySchedule.date) || deliverySchedule.date;
+    const timeParts = [deliverySchedule.period, deliverySchedule.time].filter(Boolean);
+    return {
+      date: dateFormatted,
+      time: timeParts.join(' - ') || '',
+    };
+  }
+
+  // Formato string legado: "Manha - 09:00 as 12:00"
+  if (typeof deliverySchedule === 'string') {
+    return {
+      date: '',
+      time: deliverySchedule,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Extrai e formata dados de entrega de um pedido
+ * Busca em delivery_schedule, deliverySchedule ou delivery.schedule
+ */
+export function getOrderDeliveryInfo(order: any): { date: string; time: string; to: string } | null {
+  if (!order) return null;
+
+  // Tenta obter deliverySchedule de varias fontes possiveis
+  const rawSchedule = order.deliverySchedule
+    || order.delivery_schedule
+    || order.delivery?.schedule
+    || order.metadata?.deliverySchedule;
+
+  let scheduleInfo = formatDeliveryDate(rawSchedule);
+
+  // Tenta obter a data de outras fontes se nao veio no schedule
+  if (scheduleInfo && !scheduleInfo.date) {
+    const fallbackDate = order.delivery?.scheduleDate
+      || order.metadata?.scheduleStart
+      || order.scheduleStart;
+    if (fallbackDate) {
+      scheduleInfo.date = dateBRFormat(fallbackDate) || fallbackDate;
+    }
+  }
+
+  // Tipo de entrega - usa toLabel (traduzido pelo backend) ou traduz no frontend
+  let deliveryTo = order.delivery?.toLabel || order.delivery?.to || order.deliveryTo || order.delivery_to || '';
+
+  // Traduzir valores brutos se necessário
+  const deliveryToTranslations: Record<string, string> = {
+    'reception': 'Entregar na portaria',
+    'door': 'Deixar na porta',
+    'wait': 'Estarei para receber',
+  };
+  if (deliveryToTranslations[deliveryTo]) {
+    deliveryTo = deliveryToTranslations[deliveryTo];
+  }
+
+  return {
+    date: scheduleInfo?.date || '',
+    time: scheduleInfo?.time || '',
+    to: deliveryTo,
+  };
+}
+
 export const getBrazilianStates = [
   "AC",
   "AL",
