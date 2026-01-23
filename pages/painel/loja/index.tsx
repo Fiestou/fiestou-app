@@ -1,4 +1,3 @@
-// TODO: Check the code and fix the types
 //@ts-nocheck
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
@@ -47,7 +46,7 @@ export async function getServerSideProps(
   );
 
   const page = request?.data?.query?.page ?? [];
-  const storeTypes = request?.data?.query.storeType ?? [];
+  const storeTypes = request?.data?.query?.storeType ?? [];
   const handle = request.data ?? {};
 
   return {
@@ -145,11 +144,32 @@ export default function Loja({
 
     const handle = request.data ?? {};
 
+    // ✅ Normaliza minimum_order (pode vir string, objeto ou null)
+    if (typeof handle.minimum_order === "string") {
+      try {
+        handle.minimum_order = JSON.parse(handle.minimum_order);
+      } catch {
+        handle.minimum_order = null;
+      }
+    }
+
     handle.minimum_order = handle.minimum_order ?? {
       enabled: 0,
       value: 0,
     };
 
+    // ✅ Normaliza enabled (garante 0 ou 1)
+    handle.minimum_order.enabled = handle.minimum_order.enabled ? 1 : 0;
+
+    // ✅ Normaliza value para máscara BRL
+    handle.minimum_order.value = handle.minimum_order.value
+      ? Number(handle.minimum_order.value).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        })
+      : "";
+
+    // ✅ Delivery regions
     handle.deliveryRegions = handle.zipcode_cities_ranges?.map(
       (item: { zipcode_cities_range_id: number }) =>
         item.zipcode_cities_range_id,
@@ -395,7 +415,7 @@ export default function Loja({
     const request: NextApiResponse = await api.bridge({
       method: "post",
       url: "stores/register",
-      data: store,
+      data: payload,
     });
 
     if (request.response) {
@@ -464,17 +484,30 @@ export default function Loja({
 
   const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
 
+  function moneyBRToNumber(value?: string | number) {
+    if (value === null || value === undefined) return 0;
+
+    if (typeof value === "number") return value;
+
+    if (typeof value !== "string") return 0;
+
+    const onlyNumbers = value.replace(/\D/g, "");
+
+    if (!onlyNumbers) return 0;
+
+    return Number(onlyNumbers) / 100;
+  }
+
   const payload = {
     ...store,
+
+    // Frete
+    default_delivery_fee: moneyBRToNumber(store?.default_delivery_fee),
+
+    // Pedido mínimo
     minimum_order: {
-      enabled: store.minimum_order?.enabled ? 1 : 0,
-      value: store.minimum_order?.value
-        ? Number(
-            String(store.minimum_order.value)
-              .replace("R$", "")
-              .replace(",", "."),
-          )
-        : 0,
+      enabled: store?.minimum_order?.enabled ? 1 : 0,
+      value: moneyBRToNumber(store?.minimum_order?.value),
     },
   };
 
@@ -491,12 +524,6 @@ export default function Loja({
     });
 
     return formatted;
-  };
-
-  const moneyBRToNumber = (value?: string) => {
-    if (!value) return 0;
-
-    return Number(value.replace(/\D/g, "")) / 100;
   };
 
   useEffect(() => {
@@ -587,7 +614,9 @@ export default function Loja({
                     <FileInput
                       name="cover"
                       id="cover"
-                      onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+                      onChange={async (
+                        e: React.ChangeEvent<HTMLInputElement>,
+                      ) => {
                         handleStore({
                           cover: {
                             files: await handleCoverPreview(e),
@@ -596,7 +625,9 @@ export default function Loja({
                       }}
                       aspect="aspect-[6/2.5]"
                       loading={form.loading}
-                      remove={(e: React.ChangeEvent<HTMLInputElement>) => handleCoverRemove(e)}
+                      remove={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleCoverRemove(e)
+                      }
                       preview={handleCover.preview}
                     />
                   ) : (
@@ -635,7 +666,9 @@ export default function Loja({
                         <FileInput
                           name="profile"
                           id="profile"
-                          onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+                          onChange={async (
+                            e: React.ChangeEvent<HTMLInputElement>,
+                          ) => {
                             handleStore({
                               profile: {
                                 files: await handleProfilePreview(e),
@@ -646,7 +679,9 @@ export default function Loja({
                           placeholder="Abrir"
                           aspect="aspect-square"
                           loading={form.loading}
-                          remove={(e: React.ChangeEvent<HTMLInputElement>) => handleProfileRemove(e)}
+                          remove={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleProfileRemove(e)
+                          }
                           preview={handleProfile.preview}
                         />
                       ) : (
@@ -679,7 +714,7 @@ export default function Loja({
                     </div>
                   </div>
                 </form>
-                {/* TITULO */}
+                {/* Titulo da empresa */}
                 <form
                   onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
@@ -707,7 +742,7 @@ export default function Loja({
                     )}
                   </div>
                 </form>
-                {/* DESCRICAO */}
+                {/* Descrição da empresa */}
                 <form
                   onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
@@ -736,7 +771,7 @@ export default function Loja({
                     )}
                   </div>
                 </form>
-                {/* EMPRESA */}
+                {/* Dados da empresa*/}
                 <form
                   onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
@@ -784,7 +819,7 @@ export default function Loja({
                     )}
                   </div>
                 </form>
-                {/* HORARIO */}
+                {/* HORARIO de atendimento */}
                 <form
                   onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
@@ -812,7 +847,9 @@ export default function Loja({
                                 <Input
                                   type="time"
                                   value={week[key]?.open}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLInputElement>,
+                                  ) =>
                                     handleWeek(
                                       { open: e.target.value },
                                       day.value,
@@ -826,7 +863,9 @@ export default function Loja({
                                 <Input
                                   type="time"
                                   value={week[key]?.close}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLInputElement>,
+                                  ) =>
                                     handleWeek(
                                       { close: e.target.value },
                                       day.value,
@@ -838,7 +877,9 @@ export default function Loja({
                               <label className="text-xs flex gap-2 pl-2">
                                 <input
                                   type="checkbox"
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLInputElement>,
+                                  ) =>
                                     handleWeek(
                                       { working: e.target.value },
                                       day.value,
@@ -902,7 +943,9 @@ export default function Loja({
                       <div className="grid gap-2">
                         <Input
                           name="cep"
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleZipCode(e.target.value)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleZipCode(e.target.value)
+                          }
                           required
                           value={store?.zipCode}
                           placeholder="CEP"
@@ -920,9 +963,9 @@ export default function Loja({
                           <div className="w-[10rem]">
                             <Input
                               name="numero"
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                handleStore({ number: e.target.value })
-                              }
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                              ) => handleStore({ number: e.target.value })}
                               required
                               value={store?.number}
                               placeholder="Número"
@@ -942,9 +985,9 @@ export default function Loja({
                           <div className="w-full">
                             <Input
                               name="complemento"
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                handleStore({ complement: e.target.value })
-                              }
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                              ) => handleStore({ complement: e.target.value })}
                               value={store?.complement}
                               placeholder="Complemento"
                             />
@@ -988,7 +1031,7 @@ export default function Loja({
                     )}
                   </div>
                 </form>
-                {/*  */}
+                {/* SEGMENTO */}
                 <form
                   onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
@@ -1024,8 +1067,7 @@ export default function Loja({
                     )}
                   </div>
                 </form>
-                {/*  */}
-
+                {/* Valores de entrega */}
                 <form
                   onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
@@ -1128,12 +1170,44 @@ export default function Loja({
                           />
                         </div>
                       </div>
+                    ) : oldStore?.is_delivery_fee_active ? (
+                      <div className="text-sm grid gap-1">
+                        <div>
+                          Entrega ativa:{" "}
+                          <strong>
+                            {oldStore.is_delivery_fee_active ? "Sim" : "Não"}
+                          </strong>
+                        </div>
+
+                        {oldStore.default_delivery_fee && (
+                          <div>
+                            Valor por KM:{" "}
+                            <strong>
+                              {moneyBRToNumber(
+                                oldStore.default_delivery_fee,
+                              ).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })}
+                            </strong>
+                          </div>
+                        )}
+
+                        {!!oldStore.deliveryRegions?.length && (
+                          <div>
+                            Regiões:{" "}
+                            <strong>
+                              {oldStore.deliveryRegions.length} selecionadas
+                            </strong>
+                          </div>
+                        )}
+                      </div>
                     ) : (
-                      <>Informe as regras do frete</>
+                      "Informe as regras do frete"
                     )}
                   </div>
                 </form>
-
+                {/* PEDIDO MINIMO */}
                 <form
                   onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
@@ -1210,11 +1284,7 @@ export default function Loja({
                               <Input
                                 type="text"
                                 className="input w-full"
-                                value={
-                                  store?.minimum_order?.value === 0
-                                    ? ""
-                                    : (store?.minimum_order?.value ?? "")
-                                }
+                                value={store?.minimum_order?.value ?? ""}
                                 onChange={(e) =>
                                   handleStore({
                                     minimum_order: {
@@ -1241,12 +1311,12 @@ export default function Loja({
                       </div>
                     ) : (
                       <>
-                        {store?.minimum_order?.enabled ? (
+                        {oldStore?.minimum_order?.enabled ? (
                           <span>
-                            Pedido mínimo:{" "}
+                            Pedido mínimo cadastrado:{" "}
                             <strong>
                               {moneyBRToNumber(
-                                store.minimum_order?.value,
+                                oldStore?.minimum_order?.value,
                               ).toLocaleString("pt-BR", {
                                 style: "currency",
                                 currency: "BRL",
