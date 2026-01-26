@@ -6,7 +6,6 @@ import { PartnerType } from "@/src/models/partner";
 import { HeaderFooterType } from "@/src/models/headerFooter";
 import { DataSeoType } from "@/src/models/dataSeo";
 import { ScriptsType } from "@/src/models/scripts";
-import AdminPartner from "../admin/parceiros/[id]";
 import Partner from "@/src/components/common/Partner";
 
 
@@ -35,9 +34,6 @@ export async function getStaticProps(ctx: any) {
 
 export default function Parceiros({
   Stores,
-  Partners,
-  HeaderFooter,
-  DataSeo,
   Scripts,
 }: {
   Stores: StoreType[];

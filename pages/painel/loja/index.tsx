@@ -16,6 +16,7 @@ import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import SelectDropdown from "../../../src/components/ui/form/SelectDropdown";
 import MultiSelect from "../../../src/components/ui/form/MultiSelectUi";
+import { useSegmentGroups } from "@/src/hooks/useSegmentGroups";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -108,7 +109,11 @@ export default function Loja({
     {} as {} as { preview: string; remove: number },
   );
 
-  const [groupOptions, setGroupOptions] = useState([]);
+  const {
+    segments,
+    loading: segmentsLoading,
+    error: segmentsError,
+  } = useSegmentGroups();
   const handleStore = async (value: Object) => {
     setStore({ ...store, ...value });
   };
@@ -1032,8 +1037,9 @@ export default function Loja({
                   </div>
                 </form>
                 {/* SEGMENTO */}
+                {/* SEGMENTO */}
                 <form
-                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
+                  onSubmit={(e) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -1045,28 +1051,38 @@ export default function Loja({
                     </div>
                     <div className="w-fit">{renderAction("segment")}</div>
                   </div>
+
                   <div className="w-full">
                     {form.edit == "segment" ? (
-                      <Select
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                          handleStore({ segment: e.target.value })
-                        }
-                        value={store?.segment}
-                        placeholder="Selecione seu segmento"
-                        name="lojaTipo"
-                        options={groupOptions.map((item: Array<string>) => {
-                          return {
-                            name: item.title,
+                      segmentsLoading ? (
+                        <div className="text-sm text-zinc-500">
+                          Carregando segmentos...
+                        </div>
+                      ) : segmentsError ? (
+                        <div className="text-sm text-red-500">
+                          {segmentsError}
+                        </div>
+                      ) : (
+                        <Select
+                          onChange={(e) =>
+                            handleStore({ segment: e.target.value })
+                          }
+                          value={store?.segment}
+                          placeholder="Selecione seu segmento"
+                          name="lojaTipo"
+                          options={segments.map((item) => ({
+                            name: item.name,
                             value: item.id,
-                          };
-                        })}
-                      />
+                          }))}
+                        />
+                      )
                     ) : (
-                      (storeTypes.filter((item) => item.id == store?.segment)[0]
-                        ?.title ?? "Informe o segmento da sua loja")
+                      (segments.find((item) => item.id == store?.segment)
+                        ?.name ?? "Informe o segmento da sua loja")
                     )}
                   </div>
                 </form>
+
                 {/* Valores de entrega */}
                 <form
                   onSubmit={(e: React.FormEvent) => handleSubmit(e)}
