@@ -64,14 +64,14 @@ const formInitial = {
 };
 
 const days: Record<string, string[]> = [
-  { value: "Sunday", name: "Domingo" },
-  { value: "Monday", name: "Segunda" },
-  { value: "Tuesday", name: "Terça" },
-  { value: "Wednesday", name: "Quarta" },
-  { value: "Thursday", name: "Quinta" },
-  { value: "Friday", name: "Sexta" },
-  { value: "Saturday", name: "Sábado" },
-  { value: "Holiday", name: "Feriados" },
+  { value: "Domingo", name: "Domingo" },
+  { value: "Segunda", name: "Segunda" },
+  { value: "Terça", name: "Terça" },
+  { value: "Quarta", name: "Quarta" },
+  { value: "Quinta", name: "Quinta" },
+  { value: "Sexta", name: "Sexta" },
+  { value: "Sábado", name: "Sábado" },
+  { value: "Feriados", name: "Feriados" },
 ];
 
 export default function Loja({
