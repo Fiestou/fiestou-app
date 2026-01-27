@@ -176,6 +176,7 @@ export interface RecipientEntity {
 export interface RecipientStatusResponse {
   completed: boolean;
   recipient: RecipientType | null;
+  recipient_id?: number | null;  // ADD THIS LINE
 }
 
 /** update (telas de edição) */

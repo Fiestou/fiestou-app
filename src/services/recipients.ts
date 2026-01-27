@@ -9,18 +9,19 @@ export async function getRecipientStatus(): Promise<RecipientStatusResponse> {
       method: "get",
       url: "info/recipients/status",
     });
-
+    console.log("Resposta da API de status do recebedor:", response);
     if (response?.data) {
       return {
         completed: response.data.completed || false,
         recipient: response.data.recipient || null,
+        recipient_id: response.data.recipient_id ?? null,
       };
     }
 
-    return { completed: false, recipient: null };
+    return { completed: false, recipient: null, recipient_id: null };
   } catch (error) {
     console.error("Erro ao buscar status do recipient:", error);
-    return { completed: false, recipient: null };
+    return { completed: false, recipient: null, recipient_id: null };
   }
 }
 
@@ -28,11 +29,15 @@ export async function getRecipientStatus(): Promise<RecipientStatusResponse> {
  * Salva o recipient no banco local
  */
 export async function saveRecipient(payload: RecipientEntity): Promise<RecipientType> {
+  const status = await getRecipientStatus();
+  const recipientId = status.recipient_id;
+  console.log("Salvando recipient com ID:", recipientId);
   const res = await api.bridge<CreateRecipientResponse>({
-    method: "post",
-    url: "recipients",
+    method: "put",
+    url: recipientId ? `info/recipients/${recipientId}` : "recipients",
     data: payload,
   });
+
 
   if (!res?.response) {
     throw new Error(res?.message || "Erro ao salvar dados do recebedor");

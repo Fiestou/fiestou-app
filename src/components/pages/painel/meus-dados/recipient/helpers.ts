@@ -131,12 +131,12 @@ export function validateStep(stepId: StepId, formData: RecipientEntity): string 
     }
   }
 
-  if (stepId === "partners" && formData.type_enum === "PJ") {
-    if (!formData.partners || !formData.partners.length) return "Cadastro PJ precisa de pelo menos um sócio.";
-    if (formData.partners.some((p) => !p.name.trim() || !p.document.trim())) {
-      return "Complete nome e CPF de todos os sócios.";
-    }
-  }
+  // if (stepId === "partners" && formData.type_enum === "PJ") {
+  //   if (!formData.partners || !formData.partners.length) return "Cadastro PJ precisa de pelo menos um sócio.";
+  //   if (formData.partners.some((p) => !p.name.trim() || !p.document.trim())) {
+  //     return "Complete nome e CPF de todos os sócios.";
+  //   }
+  // }
 
   return null;
 }

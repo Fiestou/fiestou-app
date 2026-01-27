@@ -151,6 +151,7 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
         birth_date: user?.date || "",
         company_name: userType === "PJ" ? (store?.companyName || store?.title || "") : null,
         trading_name: userType === "PJ" ? (store?.title || "") : null,
+        type: userType === "PJ" ? "company" : "individual" ,
         addresses: initialAddresses,
         phones: initialPhones,
         bank_account: initialBank,
