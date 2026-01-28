@@ -88,8 +88,6 @@ export default function Pagamento({
   // novo bloco de delivery (modelo novo)
   const legacyOrder = order as any;
 
-  console.log("LEGACY ORDER:", order);
-
   // NOVO MODELO: tudo vem dentro de order.delivery
   const deliveryAddress =
     order?.delivery?.address ?? legacyOrder?.deliveryAddress;
@@ -124,7 +122,6 @@ export default function Pagamento({
     order?.delivery?.to ?? legacyOrder?.deliveryTo;
 
 
-  console.log("DELIVERY TO:", deliveryTo);
   const handleCustomer = (value: Partial<UserType>) => {
     setUser((prev) => ({ ...(prev ?? {}), ...value } as UserType));
   };
@@ -275,8 +272,6 @@ export default function Pagamento({
         url: `order/${orderId}`,
       });
 
-      console.log("ORDER FETCHED:", request);
-
       const fetchedOrder: OrderType | undefined = request?.order;
 
       if (!fetchedOrder) {
@@ -333,7 +328,7 @@ export default function Pagamento({
       // (agora vêm em order.products)
       // ---------------------------------------
       const productsList = fetchedOrder.products ?? [];
-      console.log("SET PRODUCTS:", productsList);
+
       setProducts(productsList);
 
       // ---------------------------------------
@@ -357,10 +352,6 @@ export default function Pagamento({
     getOrder();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    console.log("ORDER ATUALIZADO:", order);
-  }, [order]);
 
   const submitPayment = async (e: any) => {
     e.preventDefault();
@@ -400,13 +391,6 @@ export default function Pagamento({
 
     // 5. Verificar se agora está correto
     const finalItemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
-    console.log("VERIFICAÇÃO:", {
-      itemsSum: finalItemsSum,
-      deliveryAmountCents,
-      totalAmountCents,
-      soma: finalItemsSum + deliveryAmountCents,
-      bate: finalItemsSum + deliveryAmountCents === totalAmountCents
-    });
 
     // Payload base
     const basePayload: any = {
@@ -531,7 +515,6 @@ export default function Pagamento({
       };
     }
 
-    console.log("PAYLOAD FINAL:", basePayload);
 
     // Validação antes de enviar
     const validationErrors = [];
@@ -575,24 +558,17 @@ export default function Pagamento({
 
       formFeedback["loading"] = false;
 
-      console.log("RESPONSE COMPLETA:", response);
-
       // Verifica se não houve erro (sucesso)
       if (!response?.error && response?.response) {
         const data = response?.data || {};
 
-        console.log("DATA EXTRAÍDA:", data);
-        console.log("STATUS:", data?.status);
-
         if (payment.payment_method === "credit_card") {
           if (data?.status === "paid") {
             formFeedback["sended"] = true;
-            console.log("PAGAMENTO APROVADO! Redirecionando...");
             // Redirecionar imediatamente para a página do pedido
             window.location.href = `/dashboard/pedidos/${orderId}`;
             return;
           } else {
-            console.error("Status não é 'paid':", data?.status);
             formFeedback = {
               ...formFeedback,
               sended: false,

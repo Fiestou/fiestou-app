@@ -363,10 +363,6 @@ export default function Checkout({
     const entries: DeliverySummaryEntry[] = [];
     const seenStores = new Set<number>();
 
-    console.log('📊 deliveryPrice recebido:', deliveryPrice);
-    console.log('📊 storesById:', Array.from(storesById.entries()));
-    console.log('📊 cartItems atual:', cartItems);
-
     deliveryPrice.forEach((item) => {
       const storeId = Number(item?.store_id);
       const price = Number(item?.price);
@@ -544,15 +540,11 @@ export default function Checkout({
           },
         });
 
-        console.log('🚚 Resposta da API de frete:', { data, cartProductIds, sanitizedZip });
-
         const rawList: DeliveryItem[] = Array.isArray(data?.data)
           ? data.data
           : Array.isArray(data)
           ? data
           : [];
-
-        console.log('🚚 rawList extraído:', rawList);
 
         const mappedFees = rawList
           .map(
@@ -567,11 +559,7 @@ export default function Checkout({
               Number.isFinite(item.price) && Number.isFinite(item.store_id)
           );
 
-        console.log('🚚 Fretes mapeados:', mappedFees);
-
         const normalizedFees = normalizeDeliveryItems(mappedFees);
-
-        console.log('🚚 Fretes normalizados:', normalizedFees);
 
         if (!normalizedFees.length) {
           setDeliveryPrice([]);
@@ -580,15 +568,11 @@ export default function Checkout({
           return;
         }
 
-        console.log('🚚 Aplicando fretes ao carrinho:', { normalizedFees, sanitizedZip, cartItems });
-
         const success = applyDeliveryFeesLocal(
           normalizedFees,
           sanitizedZip,
           cartItems
         );
-
-        console.log('🚚 Resultado da aplicação:', success);
 
         if (!success) {
           setDeliveryPrice([]);
@@ -736,7 +720,6 @@ export default function Checkout({
 
     try {
       const created: any = await registerOrderService(payload);
-      console.log("Pedido registrado com sucesso:", created);
       const firstId = created?.orders?.[0]?.id;
 
       if (firstId) {
@@ -814,8 +797,7 @@ export default function Checkout({
         return store?.companyName ?? store?.title ?? null;
       })
       .filter(Boolean);
-    console.log(deliverySummary)
-    console.log(missingStoresNames)
+      
     return (
       <div className="grid gap-2">
         {deliverySummary.entries.map((entry) => {

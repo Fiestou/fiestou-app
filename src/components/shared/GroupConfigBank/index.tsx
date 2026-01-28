@@ -25,7 +25,6 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId, initialData }) =
 
     const handleSubmit = async () => {
         try {
-            console.log("Submitting form with contentForm:", recipientId);
             if (!recipientId) {
                 console.warn("Recipient ainda não cadastrado no Pagar.me");
                 toast.warning("Para editar esses dados, primeiro conclua o cadastro no Pagar.me clicando em 'Concluir cadastro agora'.");
@@ -114,25 +113,16 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId, initialData }) =
         const fetchWithdrawData = async () => {
             try {
                 const storeId = getStore();
-
                 const checkWithdraw = await api.bridge<any>({
                     method: "get",
                     url: `/withdraw/${storeId}`,
                 });
-                console.log("checkWithdraw:", checkWithdraw);
 
                 const withdrawData = checkWithdraw[0]?.data ?? checkWithdraw?.data?.data ?? checkWithdraw?.data?.[0] ?? null;
-
-                console.log("withdrawData:", withdrawData?.account_number);
-
                 const bankAccountRaw = withdrawData?.account_number || withdrawData?.account_number || null;
-
-                console.log("bankAccountRaw:", bankAccountRaw);
 
                 if (bankAccountRaw) {
                     const bankAccount = typeof bankAccountRaw === "string" ? JSON.parse(bankAccountRaw) : bankAccountRaw;
-
-                    console.log("bankAccount parsed:", bankAccount);
 
                     setContentForm({
                         title: bankAccount.title ?? "",
@@ -144,7 +134,6 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId, initialData }) =
                     });
                 } else if (initialData) {
                     // Usa dados iniciais como fallback
-                    console.log("Usando initialData como fallback:", initialData);
                     setContentForm({
                         title: initialData.title ?? initialData.holder_name ?? "",
                         bank: initialData.bank ?? "",
@@ -158,7 +147,6 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId, initialData }) =
                 console.error("Erro ao buscar saque:", err);
                 // Em caso de erro, usa dados iniciais como fallback
                 if (initialData) {
-                    console.log("Erro na API, usando initialData:", initialData);
                     setContentForm({
                         title: initialData.title ?? initialData.holder_name ?? "",
                         bank: initialData.bank ?? "",
@@ -173,10 +161,6 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId, initialData }) =
 
         fetchWithdrawData();
     }, [initialData]);
-
-    useEffect(() => {
-        console.log("contentForm updated:", contentForm);
-    }, [contentForm]);
 
     return (
         <div className="border-b pb-8 mb-0">

@@ -92,7 +92,6 @@ export default function Form() {
             route: `/blog/${response.data.slug}`,
           },
         });
-        console.log("Cache limpo automaticamente!");
       } catch (error: any) {
         console.error("Erro ao limpar cache:", error.message);
       }

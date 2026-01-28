@@ -11,7 +11,7 @@ export const OrderItemsList = ({ products }: { products: Array<any> }) => {
         const gallery = Array.isArray(product.gallery)
           ? product.gallery
           : JSON.parse(product.gallery ?? "[]");
-        console.log("gallery", gallery[0]?.url);
+
         return (
           <div key={key} className="py-6">
             <div className="flex items-center gap-6">
@@ -28,9 +28,7 @@ export const OrderItemsList = ({ products }: { products: Array<any> }) => {
 
               <div className="grid gap-1 w-full">
                 <div className="font-title text-lg font-bold text-zinc-900">
-                  <Link href={`/produtos/${product.id}`}>
-                    {product.title}
-                  </Link>
+                  <Link href={`/produtos/${product.id}`}>{product.title}</Link>
                 </div>
 
                 <div className="text-sm">
@@ -39,7 +37,6 @@ export const OrderItemsList = ({ products }: { products: Array<any> }) => {
                       sku #{product.sku} <br />
                     </>
                   )}
-
                   Fornecido por:
                   <div className="text-zinc-900 pl-2 inline-block font-semibold underline">
                     {product?.store?.title}

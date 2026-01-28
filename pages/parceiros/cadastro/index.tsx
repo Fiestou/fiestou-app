@@ -92,10 +92,6 @@ export default function PartnerSignupWizard() {
     [preUser]
   );
 
-  useEffect(() => {
-    console.log("PreUser data in wizard:", preUser);
-  }, [preUser]);
-
   const nextFromStep2 = () => setStep(store.personType === "pj" ? 3 : 4);
 
   const submitStore = async (e: React.FormEvent) => {
