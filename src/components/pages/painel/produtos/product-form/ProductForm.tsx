@@ -12,6 +12,7 @@ import ProductShippingCalculator from "../../../../../../pages/produtos/componen
 interface ProductFormProps {
   product: ProductType;
   store: any;
+  
 }
 
 export default function ProductForm({ product, store }: ProductFormProps) {
@@ -79,7 +80,7 @@ export default function ProductForm({ product, store }: ProductFormProps) {
               por
             </div>
           )}
-          <h3 className="font-bold text-4xl lg:text-3xl text-zinc-800">
+          <h3 className="font-bold text-2xl lg:text-3xl text-zinc-800">
             R$ {formatMoney(product.priceLow || product.priceHigh || 0)}
           </h3>
         </div>

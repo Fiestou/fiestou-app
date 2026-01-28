@@ -84,7 +84,7 @@ export default function Home() {
       <ProductSection products={Products} />
       <StepsSection />
       <CategoriesSection categories={categoriesData} />
-      <TestimonialsSection testimonials={testimonialsData} />;
+      <TestimonialsSection testimonials={testimonialsData} />
       <PartnersSection partners={partnersData} />
       <BlogSection Blog={Blog} />
       <Newsletter />

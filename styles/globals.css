@@ -134,3 +134,22 @@
     @apply text-zinc-400;
   }
 }
+
+/* Dia selecionado */
+.react-calendar__tile.calendar-day-selected,
+.react-calendar__tile--active {
+  background-color: #facc15 !important; /* amarelo */
+  color: #040405 !important;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+/* ===========================
+   DIA ATUAL (HOJE)
+=========================== */
+.react-calendar__tile.calendar-day-today,
+.react-calendar__tile--now:not(.calendar-day-selected) {
+  background-color: #d4d4d8 !important; /* cinza mais escuro */
+  color: #26262a !important;
+  border-radius: 6px;
+}

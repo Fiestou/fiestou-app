@@ -23,8 +23,7 @@ export default function TrustedPartnerBadge({
         <Icon icon={icon} type={iconType} className={`${color} text-base`} />
       </div>
       <div>
-        <strong className="text-zinc-950">{title}</strong>{" "}
-        {description}
+        <strong className="text-zinc-950">{title}</strong> {description}
       </div>
     </div>
   );
