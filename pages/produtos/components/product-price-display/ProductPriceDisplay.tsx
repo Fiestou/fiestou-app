@@ -29,7 +29,7 @@ export default function ProductPriceDisplay({
   };
 
   return (
-    <div className="w-fit md:text-right leading-tight pt-4 md:pt-0">
+    <div className="w-fit md:text-right leading-tight md:pt-0">
       <div className="whitespace-nowrap">
         {price.priceFromFor && !!price.priceLow ? (
           <div className="text-sm">
@@ -40,11 +40,11 @@ export default function ProductPriceDisplay({
             por
           </div>
         ) : (
-          <div className="text-sm">a partir de</div>
+          <div className="text-sm">a partir de:</div>
         )}
 
-        <h3 className="font-bold text-4xl lg:text-3xl text-zinc-800">
-          R$ {formatMoney(finalPrice)}
+        <h3 className="font-bold text-2xl lg:text-3xl text-zinc-800">
+          R${formatMoney(finalPrice)}
         </h3>
       </div>
     </div>

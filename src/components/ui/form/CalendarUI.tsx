@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import CalendarRCT from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Button from "./ButtonUI";
-import { View } from "react-calendar/dist/cjs/shared/types";
 import { dateFormat } from "@/src/helper";
 
 interface CalendarType {
@@ -11,84 +10,128 @@ interface CalendarType {
   dateEnd?: string;
   onChange?: Function;
   required?: boolean;
-  unavailable?: Array<any>;
+  unavailable?: Array<string>;
   blockdate?: Array<string>;
 }
 
 export default function Calendar(attr: CalendarType) {
-  const currentData = new Date();
-  const minData = new Date(
-    currentData.setDate(currentData.getDate() + (attr?.availability ?? 1))
+  const today = new Date();
+
+  const minDate = new Date();
+  minDate.setDate(today.getDate() + (attr?.availability ?? 1));
+
+  const [dateStart, setDateStart] = useState<Date | null>(
+    attr?.dateStart ? new Date(attr.dateStart) : null
   );
 
-  const [dateStart, setDateStart] = useState(
-    (attr?.dateStart ?? currentData) as any
+  const [activeMonth, setActiveMonth] = useState<Date>(
+    dateStart ?? minDate
   );
-  const handleDateStart = (date: any) => {
-    const start = new Date(date);
-    setDateStart(start);
-    emitData({
-      dateStart: start,
-      dateEnd: start,
-    });
-  };
 
-  const [dateEnd, setDateEnd] = useState((attr.dateEnd ?? new Date()) as any);
-  const handleDateEnd = (date?: any) => {
-    const end = !!date ? new Date(date) : "";
-    setDateEnd(end);
-    emitData({
-      dateStart: dateStart,
-      dateEnd: new Date(end ?? dateStart),
-    });
-  };
-
+  /* ===============================
+   * EMITIR DATA
+   * =============================== */
   const emitData = (date: any) => {
-    !!attr.onChange ? attr.onChange(date) : {};
+    if (attr.onChange) attr.onChange(date);
   };
 
-  const tileDisabled = ({ date }: { date: Date }) => {
-    const dataFormatada = dateFormat(date);
-    const datasBloqueadas = attr?.blockdate ?? [];
-    const datasIndisponiveis = attr?.unavailable ?? [];
+  const handleDateStart = (date: Date) => {
+    setDateStart(date);
+    setActiveMonth(date);
 
-    return datasBloqueadas.includes(dataFormatada) || datasIndisponiveis.includes(dataFormatada);
+    emitData({
+      dateStart: date,
+      dateEnd: date,
+    });
+  };
+
+  const clearDate = () => {
+    setDateStart(null);
+    setActiveMonth(minDate);
+
+    emitData({
+      dateStart: undefined,
+      dateEnd: undefined,
+    });
+  };
+
+  /* ===============================
+   * DESABILITAR DATAS
+   * =============================== */
+  const tileDisabled = ({ date }: { date: Date }) => {
+    const formatted = dateFormat(date);
+    return (
+      (attr?.blockdate ?? []).includes(formatted) ||
+      (attr?.unavailable ?? []).includes(formatted)
+    );
+  };
+
+  /* ===============================
+   * CLASSES DOS DIAS
+   * =============================== */
+  const tileClassName = ({
+    date,
+    view,
+  }: {
+    date: Date;
+    view: string;
+  }) => {
+    if (view !== "month") return "";
+
+    const isToday =
+      date.toDateString() === new Date().toDateString();
+
+    const isSelected =
+      !!dateStart &&
+      date.toDateString() === dateStart.toDateString();
+
+    if (isSelected) return "calendar-day-selected";
+    if (isToday) return "calendar-day-today";
+
+    return "";
   };
 
   return (
     <div className="border rounded-md relative z-[1]">
       <div className="flex justify-between items-center p-2 border-b">
-        <div className="w-full cursor-pointer">
+        <div className="w-full">
           <input
-            name="date_comeco"
-            id="date_comeco"
-            className="text-sm md:text-base bg-transparent border-0 w-full px-2 cursor-pointer"
-            defaultValue={
-              dateStart.toLocaleDateString("pt-BR") ??
-              new Date(minData).toLocaleDateString("pt-BR")
+            readOnly
+            className="text-sm md:text-base bg-transparent border-0 w-full px-2"
+            value={
+              dateStart
+                ? `Data selecionada: ${dateStart.toLocaleDateString("pt-BR")}`
+                : "Selecione a data"
             }
-            placeholder="Definir data"
-            {...(!!attr?.required ? { required: true } : {})}
+            {...(attr?.required ? { required: true } : {})}
           />
         </div>
-        <Button
-          type="button"
-          style="btn-link"
-          onClick={() => handleDateStart(new Date(minData))}
-          className="text-sm px-2 whitespace-nowrap"
-        >
-          Limpar data
-        </Button>
+
+        {dateStart && (
+          <Button
+            type="button"
+            style="btn-link"
+            onClick={clearDate}
+            className="text-sm px-2 whitespace-nowrap"
+          >
+            Limpar data
+          </Button>
+        )}
       </div>
+
       <div className="w-full bg-white rounded-md">
         <div className="flex justify-center p-2">
           <CalendarRCT
             locale="pt-BR"
             value={dateStart}
+            activeStartDate={activeMonth}
+            minDate={minDate}
             tileDisabled={tileDisabled}
-            // selectRange={true}
-            minDate={new Date(minData)}
-            onChange={(date: any) => handleDateStart(date)}
+            tileClassName={tileClassName}
+            onActiveStartDateChange={({ activeStartDate }) =>
+              setActiveMonth(activeStartDate!)
+            }
+            onChange={(date: any) => handleDateStart(date as Date)}
           />
         </div>
       </div>
