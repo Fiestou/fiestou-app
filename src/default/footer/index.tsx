@@ -36,7 +36,7 @@ export function Footer(props: FooterType) {
     return (
       <div
         id="whatsapp-button"
-        className="fixed z-20 m-2 md:m-4 bottom-0 right-0"
+        className="items-center fixed z-20 m-2 md:m-4 bottom-0 right-0 "
       >
         <Button
           target="_blank"
@@ -45,7 +45,7 @@ export function Footer(props: FooterType) {
           className="py-2 px-4 md:px-5"
         >
           <FIcon icon="fa-whatsapp" type="fab" className="font-light text-xl" />
-          <span className="hidden md:inline-block">Chame no whats</span>
+          <span className="hidden md:inline-block h-3">Chame no whats</span>
         </Button>
       </div>
     );
