@@ -8,7 +8,7 @@ interface BadgeType {
 export default function Badge(attr: BadgeType) {
   const style: any = {
     success: "bg-zinc-300 text-black ",
-    light: "bg-zinc-100 text-zinc-900",
+    light: "text-zinc-900",
   };
 
   const size: any = {
@@ -23,7 +23,7 @@ export default function Badge(attr: BadgeType) {
     <div
       className={`${style[attr?.style ?? "success"]} ${
         size[attr?.size ?? "sm"]
-      } ${attr?.className ?? ""} inline-block rounded-md px-2 py-1`}
+      } ${attr?.className ?? ""} inline-block rounded-md py-1`}
     >
       {attr?.children}
     </div>

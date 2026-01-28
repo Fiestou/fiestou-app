@@ -13,21 +13,24 @@ export function GetCart() {
   return [];
 }
 
-export function AddToCart(order: Object) {
-  if (!Cookies.get("fiestou.cart")) {
-    Cookies.set("fiestou.cart", JSON.stringify([]), expires);
+export function AddToCart(order: Object): boolean {
+  try {
+    if (!Cookies.get("fiestou.cart")) {
+      Cookies.set("fiestou.cart", JSON.stringify([]), expires);
+    }
+
+    const cookie = Cookies.get("fiestou.cart");
+    const cart = cookie ? JSON.parse(cookie) : [];
+
+    cart.push(order);
+
+    Cookies.set("fiestou.cart", JSON.stringify(cart), expires);
+
+    return true;
+  } catch (error) {
+    console.error("Erro ao adicionar ao carrinho:", error);
+    return false;
   }
-
-  let cookie: any = Cookies.get("fiestou.cart");
-  let cart: any = JSON.parse(cookie);
-
-  cart.push(order);
-
-  if (Cookies.set("fiestou.cart", JSON.stringify(cart), expires)) {
-    return cart;
-  }
-
-  return false;
 }
 
 export function RemoveToCart(key: any) {

@@ -10,7 +10,7 @@ interface ProductDeliveryCalendarProps {
   unavailable?: Array<string>;
   blockdate?: Array<string>;
   handleDetails: (date: any) => void;
-  productUpdated?: { title?: string };
+  required?: boolean;
 }
 
 export default function ProductDeliveryCalendar({
@@ -19,9 +19,10 @@ export default function ProductDeliveryCalendar({
   unavailable = [],
   blockdate = [],
   handleDetails,
-  productUpdated,
 }: ProductDeliveryCalendarProps) {
   if (!productToCart) return null;
+
+  const hasSelectedDate = !!productToCart?.details?.dateStart;
 
   return (
     <div className="md:flex justify-between items-end gap-2">
@@ -29,12 +30,30 @@ export default function ProductDeliveryCalendar({
         <h4 className="font-title text-zinc-900 font-bold py-4 text-sm md:text-lg">
           Para quando você precisa?
         </h4>
-        <div className="calendar relative">
-          <div className="text-xs m-4">
-            {!!productToCart?.details?.dateStart
-              ? dateBRFormat(productToCart?.details?.dateStart)
+
+        <div
+          className={`calendar relative rounded-lg border transition-colors
+            ${
+              hasSelectedDate
+                ? "border-yellow-400 bg-yellow-50"
+                : "border-zinc-300 bg-zinc-100"
+            }
+          `}
+        >
+          {/* <div
+            className={`text-xs m-4 font-medium
+              ${
+                hasSelectedDate
+                  ? "text-yellow-700"
+                  : "text-zinc-500"
+              }
+            `}
+          >
+            {hasSelectedDate
+              ? dateBRFormat(productToCart.details!.dateStart!)
               : "Selecione a data:"}
-          </div>
+          </div> */}
+
           <Calendar
             required
             unavailable={unavailable}
@@ -42,9 +61,6 @@ export default function ProductDeliveryCalendar({
             onChange={handleDetails}
             availability={product?.availability ?? 1}
           />
-          {!productUpdated?.title && (
-            <div className="absolute z-10 bg-white opacity-60 w-full h-full top-0 left-0"></div>
-          )}
         </div>
       </div>
     </div>

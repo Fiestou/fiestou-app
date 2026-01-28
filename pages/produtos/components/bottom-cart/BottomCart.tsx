@@ -2,14 +2,24 @@
 
 import { Button } from "@/src/components/ui/form";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface BottomCartProps {
   productToCart: { total: number } | null;
   inCart: boolean;
   isMobile: boolean;
+  canAddToCart: boolean;
+  disabled?: boolean;
 }
 
-export default function BottomCart({ productToCart, inCart, isMobile }: BottomCartProps) {
+export default function BottomCart({
+  productToCart,
+  inCart,
+  isMobile,
+  canAddToCart,
+}: BottomCartProps) {
+  const router = useRouter();
+
   // Ajusta padding do html quando mobile
   useEffect(() => {
     if (isMobile) {
@@ -35,6 +45,11 @@ export default function BottomCart({ productToCart, inCart, isMobile }: BottomCa
     }).format(num);
   };
 
+  // Função simples para redirecionar
+  const handleAddClick = () => {
+    router.push("/produtos?openCart=1");
+  };
+
   return (
     <div className="bg-white drop-shadow-2xl md:drop-shadow-none fixed z-[20] md:-mx-4 md:relative w-full md:w-auto left-0 bottom-0 flex justify-between">
       <div className="leading-tight self-center w-full px-4">
@@ -46,7 +61,17 @@ export default function BottomCart({ productToCart, inCart, isMobile }: BottomCa
 
       <div className="text-center p-4">
         {!inCart ? (
-          <Button type="submit">Adicionar</Button>
+          <Button
+            type="submit"
+            disabled={!canAddToCart}
+            className={
+              canAddToCart
+                ? "bg-yellow-400 hover:bg-yellow-500 cursor-pointer"
+                : "bg-zinc-300 text-zinc-600 cursor-not-allowed pointer-events-none"
+            }
+          >
+            Adicionar
+          </Button>
         ) : (
           <Button href="/carrinho" className="whitespace-nowrap">
             Acessar carrinho

@@ -3,12 +3,14 @@ import Product from "@/src/components/common/Product";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
-import { getImage } from "@/src/helper";
+import { getImage, isMobileDevice } from "@/src/helper";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/filters/Filter";
+import { useRouter } from "next/router";
+import CartPreview from "@/src/components/common/CartPreview";
 
 let limit = 15;
 
@@ -22,6 +24,8 @@ export default function Produtos() {
   const [Scripts, setScripts] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(true);
   const observerRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
+  const [showCartPreview, setShowCartPreview] = useState(false);
 
   useEffect(() => {
     const api = new Api();
@@ -104,6 +108,17 @@ export default function Produtos() {
     };
   }, [loading, hasMore]);
 
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    if (router.query.openCart === "1") {
+      setShowCartPreview(true);
+
+      // opcional: limpa a URL depois de abrir
+      // router.replace("/produtos", undefined, { shallow: true });
+    }
+  }, [router.isReady, router.query.openCart]);
+
   return (
     <Template
       scripts={Scripts}
@@ -175,6 +190,12 @@ export default function Produtos() {
           </div>
         )}
       </section>
+      {showCartPreview && (
+        <CartPreview
+          isMobile={isMobileDevice()}
+          onClose={() => setShowCartPreview(false)}
+        />
+      )}
     </Template>
   );
 }
