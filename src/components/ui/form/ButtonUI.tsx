@@ -35,6 +35,7 @@ interface ButtonType {
   othersAttrs?: React.HTMLAttributes<HTMLElement>;
   children: React.ReactNode;
   variant?: Variant;
+  disabled?: boolean;
 }
 
 export default function Button(attr: ButtonType) {
