@@ -11,7 +11,8 @@ export default function PaymentMethodDisplay({
   transactionType,
   installments,
 }: PaymentMethodDisplayProps) {
-  if (paymentMethod === "pix") {
+  // Verifica PIX - tanto payment_method quanto transaction_type (fallback para pedidos antigos)
+  if (paymentMethod === "pix" || transactionType === "pix") {
     return (
       <div className="text-sm flex items-center gap-2">
         <Img src="/images/pagarme/pix-icon.png" className="w-[1.75rem]" />
@@ -20,7 +21,8 @@ export default function PaymentMethodDisplay({
     );
   }
 
-  if (transactionType === "boleto") {
+  // Verifica Boleto - tanto payment_method quanto transaction_type (fallback para pedidos antigos)
+  if (paymentMethod === "boleto" || transactionType === "boleto") {
     return (
       <div className="text-sm flex items-center gap-2">
         <Img src="/images/pagarme/document-icon.png" className="w-[1.75rem]" />
@@ -29,11 +31,12 @@ export default function PaymentMethodDisplay({
     );
   }
 
+  // Cartão de crédito (fallback)
   return (
     <div className="text-sm flex items-center gap-2">
       <Img src="/images/pagarme/card-icon.png" className="w-[1.75rem]" />
       <div className="w-full">
-        Cartão de crédito : {installments ?? "1"}x
+        Cartão de crédito{installments ? ` em ${installments}x` : ""}
       </div>
     </div>
   );

@@ -6,8 +6,7 @@ import { getExtenseData, moneyFormat } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { OrderStatusBadge } from "@/src/components/order";
 import { useEffect, useState } from "react";
-import { getOrdersByCustomer } from "@/src/services/order";
-import { getUser } from "@/src/contexts/AuthContext";
+import { getMyOrders } from "@/src/services/order";
 
 export default function Pedidos() {
   const [orders, setOrders] = useState<Array<any>>([]);
@@ -15,10 +14,12 @@ export default function Pedidos() {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const user = getUser();
-      if (user?.id) {
-        const data = await getOrdersByCustomer(Number(user.id));
+      try {
+        const data = await getMyOrders();
         setOrders(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Erro ao buscar pedidos:", error);
+        setOrders([]);
       }
       setLoading(false);
     };

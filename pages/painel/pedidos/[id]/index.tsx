@@ -113,36 +113,30 @@ export default function Pedido() {
     e.preventDefault();
 
     setDropdownDelivery(false);
-
     setForm({ ...form, loading: true });
-
-    const handle: any = {
-      ...order,
-      deliveryStatus: deliveryStatus,
-    };
 
     const request: any = await api.bridge({
       method: "post",
-      url: "orders/register",
-      data: handle,
+      url: "orders/update-delivery-status",
+      data: {
+        id: order.id,
+        delivery_status: deliveryStatus,
+      },
     });
 
-    // Tenta extrair o pedido atualizado da resposta (normaliza formatos possíveis)
-    const returnedOrder: OrderType | null =
-      request?.order ?? request?.data?.data ?? request?.data ?? null;
-
-    if (!!request.response) {
+    if (request?.response) {
+      const returnedOrder = request?.data?.data ?? request?.data ?? null;
       if (returnedOrder && returnedOrder.id) {
         setOrder(returnedOrder as any);
       } else {
-        // fallback: atualiza com os dados locais enviados
-        setOrder(handle as any);
+        setOrder({ ...order, delivery_status: deliveryStatus } as any);
       }
+      alert("Status atualizado e notificação enviada ao cliente!");
+    } else {
+      alert(request?.message || "Erro ao atualizar status do pedido.");
     }
 
     setForm({ ...form, loading: false });
-
-    alert("Notificação enviada ao cliente!");
   };
 
   return (
@@ -282,22 +276,55 @@ export default function Pedido() {
                         Pagamento
                       </div>
                       <div>
-                        <div>
-                          {!!order.metadata?.payment_method &&
-                            order.metadata?.payment_method == "pix"
-                            ? "PIX"
-                            : "Cartão de crédito"}
-                        </div>
-                        <div className="text-sm text-zinc-500 mt-2">
-                          <strong>Código do recebedor:</strong>{" "}
-                          {(order as any)?.store?.recipient_id ||
-                            ((order?.products?.[0] as any)?.store?.recipient_id) ||
-                            ((order as any)?.payments?.[0]?.split?.[0]?.recipient_id) ||
-                            "—"}
-                        </div>
-                        {!!order.metadata?.installments && (
-                          <div>{order.metadata?.installments}x</div>
-                        )}
+                        {(() => {
+                          // Verifica payment_method OU transaction_type (fallback para pedidos antigos)
+                          const paymentMethod = order.metadata?.payment_method || order.metadata?.transaction_type;
+                          const isPix = paymentMethod === "pix";
+                          const isBoleto = paymentMethod === "boleto";
+                          const isCreditCard = paymentMethod === "credit_card" || (!isPix && !isBoleto);
+
+                          // Verifica se foi pago (paid_at existe) independente do payment_status
+                          const isPaid = !!order.metadata?.paid_at || order.metadata?.payment_status === "paid" || order.metadata?.payment_status === "approved";
+
+                          return (
+                            <>
+                              <div>
+                                {isPix ? "PIX" : isBoleto ? "Boleto Bancário" : "Cartão de crédito"}
+                                {isCreditCard && order.metadata?.installments && (
+                                  <span> em {order.metadata.installments}x</span>
+                                )}
+                              </div>
+                              <div className="text-sm mt-1">
+                                <span className={isPaid ? "text-green-600 font-medium" : "text-amber-600"}>
+                                  {isPaid ? "✓ Pago" : "Aguardando pagamento"}
+                                </span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                        {(() => {
+                          // Busca recipients do split no metadata (dados do Pagar.me)
+                          const splits = order.metadata?.split || order.metadata?.splits || [];
+                          // Filtra para mostrar apenas recebedores que não são a Fiestou (type: company)
+                          const storeRecipients = splits.filter((s: any) => s.recipient?.type !== 'company');
+
+                          if (storeRecipients.length > 0) {
+                            return (
+                              <div className="text-sm text-zinc-500 mt-2">
+                                <strong>Recebedor{storeRecipients.length > 1 ? 'es' : ''}:</strong>
+                                {storeRecipients.map((s: any, idx: number) => (
+                                  <div key={idx} className="ml-2 mt-1">
+                                    {s.recipient?.name || 'N/A'}
+                                    <span className="text-xs text-zinc-400 ml-1">
+                                      ({s.recipient?.id || '—'})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                   </>
