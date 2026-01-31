@@ -84,4 +84,5 @@ export const deliveryToName: Record<string, string> = {
   reception: "Entregar na portaria",
   door: "Deixar na porta",
   for_me: "Estarei para receber",
+  inperson: "Estarei para receber",
 };

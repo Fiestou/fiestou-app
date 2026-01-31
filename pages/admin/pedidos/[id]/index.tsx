@@ -64,9 +64,20 @@ interface Order {
   };
   partnerName?: string;
   partnerEmail?: string;
+  payment?: {
+    method?: string;
+    installments?: number;
+    amountTotal?: number;
+    status?: string;
+    transactionType?: string;
+    pdf?: string;
+    url?: string;
+  };
   metadata?: {
     payment_method: string;
-    installments: string;
+    payment_status: string;
+    installments: number;
+    amount_total: number;
     items?: { name: string; quantity: number; price: number }[];
   };
   total: number;
@@ -195,20 +206,43 @@ export default function OrderDetails() {
   };
 
   const deliveryStatusMap: Record<string, string> = {
-    paid: "� Em separação",
-    pending: "⌛ Aguardando pagamento",
-    processing: "👍 Em separação",
-    sent: "📦 Enviado",
-    transiting: "🚚 Em trânsito",
-    received: "☑️ Entregue",
-    returned: "🔄 Retornado",
-    canceled: "❌ Cancelado",
-    waitingWithdrawl: "⏱️ Aguardando retirada",
-    collect: "🚚 Chegando para recolher",
-    complete: "✅ Concluído",
-    failed: "❌ Pagamento não aprovado",
-    refunded: "💰 Reembolsado",
-    preparing: "📦 Preparando pedido",
+    paid: "Em separacao",
+    pending: "Pendente",
+    processing: "Em separacao",
+    sent: "Enviado",
+    transiting: "Em transito",
+    received: "Entregue",
+    returned: "Retornado",
+    canceled: "Cancelado",
+    waitingWithdrawl: "Aguardando retirada",
+    collect: "Chegando para recolher",
+    complete: "Concluido",
+    failed: "Pagamento não aprovado",
+    refunded: "Reembolsado",
+    preparing: "Preparando pedido",
+  };
+
+  const paymentMethodMap: Record<string, string> = {
+    credit_card: "Cartão de Crédito",
+    pix: "PIX",
+    boleto: "Boleto Bancário",
+  };
+
+  const paymentStatusMap: Record<string, string> = {
+    paid: "Pago",
+    approved: "Pago",
+    pending: "Pendente",
+    processing: "Processando",
+    failed: "Falhou",
+    canceled: "Cancelado",
+    refunded: "Reembolsado",
+  };
+
+  const deliveryToMap: Record<string, string> = {
+    reception: "Entregar na portaria",
+    door: "Deixar na porta",
+    inperson: "Estarei para receber",
+    for_me: "Estarei para receber",
   };
 
   function getExtenseData(data_informada = "", pos = "") {
@@ -357,15 +391,58 @@ export default function OrderDetails() {
 
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-3">Pagamento</h2>
-                <p>{order.metadata?.payment_method || 'Não Informado'}</p>
-                <p>
-                  {order.metadata?.installments ? `${order.metadata.installments}x` : 'Não Informado'}
-                </p>
+                {(() => {
+                  // Verifica payment_method OU transaction_type (fallback para pedidos antigos)
+                  const paymentMethod = order.payment?.method || order.metadata?.payment_method || order.metadata?.transaction_type;
+                  const methodLabel = paymentMethodMap[paymentMethod || ''] || paymentMethod || 'Não Informado';
+
+                  // Verifica se foi pago considerando paid_at
+                  const isPaid = !!order.metadata?.paid_at ||
+                                 order.payment?.status === 'paid' ||
+                                 order.metadata?.payment_status === 'paid' ||
+                                 order.metadata?.payment_status === 'approved' ||
+                                 order.status === 1;
+
+                  const statusLabel = isPaid ? 'Pago' : (
+                    paymentStatusMap[order.payment?.status || ''] ||
+                    paymentStatusMap[order.metadata?.payment_status || ''] ||
+                    'Pendente'
+                  );
+
+                  const isCreditCard = paymentMethod === 'credit_card';
+                  const installments = order.payment?.installments || order.metadata?.installments;
+
+                  // Busca recipients do split no metadata (dados do Pagar.me)
+                  const splits = order.metadata?.split || order.metadata?.splits || [];
+
+                  return (
+                    <>
+                      <p><strong>Método:</strong> {methodLabel}{isCreditCard && installments ? ` em ${installments}x` : ''}</p>
+                      <p><strong>Status:</strong> <span className={isPaid ? 'text-green-600' : 'text-amber-600'}>{statusLabel}</span></p>
+                      {splits.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-dashed">
+                          <p className="font-semibold mb-2">Divisão do pagamento:</p>
+                          {splits.map((s: any, idx: number) => (
+                            <p key={idx} className="text-sm">
+                              <span className={s.recipient?.type === 'company' ? 'text-blue-600' : 'text-green-600'}>
+                                {s.recipient?.name || 'N/A'}
+                              </span>
+                              : R$ {((s.amount || 0) / 100).toFixed(2)}
+                              <span className="text-xs text-zinc-400 ml-1">
+                                ({s.recipient?.id || '—'})
+                              </span>
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="mb-6">
               <h2 className="text-lg font-semibold mb-3">Entrega ({getDeliveryPriceLabel((order.deliveryPrice || order.delivery?.price) as number)})</h2>
-                <p>{order.deliveryTo || order.delivery?.to}, {order.delivery?.schedule?.date ? `${order.delivery.schedule.date} - ${order.delivery.schedule.period} (${order.delivery.schedule.time})` : order.deliverySchedule}</p>
+                <p>{deliveryToMap[order.deliveryTo] || deliveryToMap[order.delivery?.to || ''] || order.deliveryTo || order.delivery?.to}, {order.delivery?.schedule?.date ? `${order.delivery.schedule.date} - ${order.delivery.schedule.period} (${order.delivery.schedule.time})` : order.deliverySchedule}</p>
                 <p>{(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.street) || 'N/A'}, {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.number) || 'N/A'}, {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.neighborhood) || 'N/A'}</p>
                 <p>CEP: {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.zipCode) ? formatCEP(order.deliveryAddress.zipCode) : 'N/A'}</p>
                 <p>Complemento: {(typeof order.deliveryAddress !== 'string' && order.deliveryAddress?.complement) || 'N/A'}</p>
