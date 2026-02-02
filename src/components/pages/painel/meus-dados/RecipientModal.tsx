@@ -26,16 +26,13 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
   const [stepError, setStepError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Determina tipo baseado no documento (user ou store)
   const userType: RecipientTypeEnum = useMemo(() => {
     const doc = user?.cpf || user?.document || store?.document || "";
-    const cleanDoc = justNumber(doc);
-    return cleanDoc.length === 14 ? "PJ" : "PF";
+    return justNumber(doc).length === 14 ? "PJ" : "PF";
   }, [user?.cpf, user?.document, store?.document]);
 
   useEffect(() => setMounted(true), []);
 
-  // Verifica se já tem documento definido para pular step de tipo
   const hasDocument = useMemo(() => {
     const doc = user?.cpf || user?.document || store?.document || "";
     return justNumber(doc).length >= 11;
@@ -43,16 +40,14 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
 
   const visibleSteps = useMemo(() => {
     return STEPS.filter((s) => {
-      // Pula step de tipo se já tem documento
       if (s.id === "type" && hasDocument) return false;
-      // Filtra steps exclusivos de PJ/PF
       if ("only" in s && s.only !== formData.type_enum) return false;
       return true;
     });
   }, [formData.type_enum, hasDocument]);
+
   const currentStep = visibleSteps[Math.min(stepIndex, visibleSteps.length - 1)];
 
-  // Carrega dados quando modal abre
   useEffect(() => {
     if (!open) return;
 
@@ -72,22 +67,22 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
         annual_revenue: r.annual_revenue ? Number(r.annual_revenue) : null,
         monthly_income: r.monthly_income ? Number(r.monthly_income) : null,
         professional_occupation: r.professional_occupation || "",
-        addresses: r.addresses?.map((a: AddressType) => ({
+        addresses: r.addresses?.length ? r.addresses.map((a: AddressType) => ({
           id: a.id, type: "Recipient" as const, partner_document: a.partner_document ?? "",
           street: a.street ?? "", complementary: a.complementary ?? "", street_number: a.street_number ?? "",
           neighborhood: a.neighborhood ?? "", city: a.city ?? "", state: a.state ?? "",
-          zip_code: a.zip_code ?? "", reference_point: a.reference_point ?? "",
-        })) ?? [createAddress()],
-        phones: r.phones?.map((p: PhoneType) => ({
+          zip_code: a.zip_code ?? "", reference_point: a.reference_point || a.complementary || "SN",
+        })) : [buildAddressFromAvailable()],
+        phones: r.phones?.length ? r.phones.map((p: PhoneType) => ({
           id: p.id, type: "Recipient" as const, partner_document: p.partner_document ?? "",
           area_code: p.area_code ?? "", number: p.number ?? "",
-        })) ?? [createPhone()],
-        partners: r.partners?.map((p: any) => ({
+        })) : [buildPhoneFromUser()],
+        partners: r.partners?.length ? r.partners.map((p: any) => ({
           id: p.id, name: p.name, email: p.email, document: p.document, birth_date: p.birth_date,
           monthly_income: p.monthly_income ? Number(p.monthly_income) : null,
           professional_occupation: p.professional_occupation,
           self_declared_legal_representative: Boolean(p.self_declared_legal_representative),
-        })) ?? [],
+        })) : (userType === "PJ" ? [buildPartnerFromUser()] : []),
         configs: cfg ? { ...createConfig(), ...cfg, transfer_enabled: Boolean(cfg.transfer_enabled), anticipation_enabled: Boolean(cfg.anticipation_enabled) } : createConfig(),
         bank_account: r.bank_account ? {
           ...createBankAccount(),
@@ -97,51 +92,9 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
           holder_type: userType === "PJ" ? "company" : "individual",
           holder_document: r.bank_account.holder_document ?? "",
           type: (r.bank_account.type as "checking" | "savings") ?? "checking",
-        } : (() => { const acc = createBankAccount(); acc.holder_type = userType === "PJ" ? "company" : "individual"; return acc; })(),
+        } : buildBankFromAvailable(),
       });
     } else {
-      // Inicializa form com dados do usuário/store mesmo sem recipient
-      // Preenche endereço automaticamente se usuário tiver
-      const userAddr = user?.address?.[0];
-      const initialAddresses = userAddr ? [{
-        id: undefined,
-        type: "Recipient" as const,
-        partner_document: "",
-        street: userAddr.street || "",
-        complementary: userAddr.complement || "",
-        street_number: String(userAddr.number || ""),
-        neighborhood: userAddr.neighborhood || "",
-        city: userAddr.city || "",
-        state: userAddr.state || "",
-        zip_code: userAddr.zipCode || "",
-        reference_point: "",
-      }] : [createAddress()];
-
-      // Preenche telefone automaticamente se usuário tiver
-      const userPhone = user?.phone?.replace(/\D/g, "") || "";
-      const initialPhones = userPhone.length >= 10 ? [{
-        id: undefined,
-        type: "Recipient" as const,
-        partner_document: "",
-        area_code: userPhone.slice(0, 2),
-        number: userPhone.slice(2),
-      }] : [createPhone()];
-
-      // Preenche conta bancária automaticamente se usuário tiver
-      const userBank = (user as any)?.bankAccounts?.[0];
-      const initialBank = userBank ? {
-        ...createBankAccount(),
-        bank: userBank.bank || "",
-        branch_number: userBank.agence || "",
-        branch_check_digit: userBank.agenceDigit || "",
-        account_number: userBank.accountNumber || "",
-        account_check_digit: userBank.accountDigit || "",
-        holder_name: userBank.title || user?.name || "",
-        holder_type: (userType === "PJ" ? "company" : "individual") as "individual" | "company",
-        holder_document: user?.cpf || user?.document || store?.document || "",
-        type: (userBank.type === "savings" ? "savings" : "checking") as "checking" | "savings",
-      } : (() => { const acc = createBankAccount(); acc.holder_type = userType === "PJ" ? "company" : "individual"; return acc; })();
-
       setFormData({
         ...buildInitialForm(),
         type_enum: userType,
@@ -151,25 +104,91 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
         birth_date: user?.date || "",
         company_name: userType === "PJ" ? (store?.companyName || store?.title || "") : null,
         trading_name: userType === "PJ" ? (store?.title || "") : null,
-        addresses: initialAddresses,
-        phones: initialPhones,
-        bank_account: initialBank,
-        // Para PJ, garantir que tenha pelo menos um sócio
-        partners: userType === "PJ" ? [createPartner()] : [],
+        addresses: [buildAddressFromAvailable()],
+        phones: [buildPhoneFromUser()],
+        bank_account: buildBankFromAvailable(),
+        partners: userType === "PJ" ? [buildPartnerFromUser()] : [],
       });
     }
     setStepIndex(0);
     setStepError(null);
   }, [open, status, userType, user, store]);
 
-  // Adiciona sócio automaticamente para PJ
-  useEffect(() => {
-    if (formData.type_enum === "PJ" && formData.partners.length === 0) {
-      setFormData((prev) => ({ ...prev, partners: [createPartner()] }));
-    }
-  }, [formData.type_enum, formData.partners.length]);
+  function buildAddressFromAvailable() {
+    const storeAddr = store ? {
+      street: store.street || "", street_number: String(store.number || ""),
+      neighborhood: store.neighborhood || "", city: store.city || "",
+      state: store.state || "", zip_code: store.zipCode || "",
+      complementary: store.complement || "",
+    } : null;
 
-  // Helpers de atualização
+    const userAddr = user?.address?.[0] ? {
+      street: user.address[0].street || "", street_number: String(user.address[0].number || ""),
+      neighborhood: user.address[0].neighborhood || "", city: user.address[0].city || "",
+      state: user.address[0].state || "", zip_code: user.address[0].zipCode || "",
+      complementary: user.address[0].complement || "",
+    } : null;
+
+    const addr = (userType === "PJ" ? (storeAddr || userAddr) : (userAddr || storeAddr)) || null;
+
+    if (addr && addr.street) {
+      return {
+        id: undefined, type: "Recipient" as const, partner_document: "",
+        street: addr.street, complementary: addr.complementary,
+        street_number: addr.street_number, neighborhood: addr.neighborhood,
+        city: addr.city, state: addr.state, zip_code: addr.zip_code,
+        reference_point: addr.complementary || "SN",
+      };
+    }
+    return createAddress();
+  }
+
+  function buildPhoneFromUser() {
+    const raw = user?.phone?.replace(/\D/g, "") || "";
+    if (raw.length >= 10) {
+      return { id: undefined, type: "Recipient" as const, partner_document: "", area_code: raw.slice(0, 2), number: raw.slice(2) };
+    }
+    return createPhone();
+  }
+
+  function buildBankFromAvailable() {
+    const mainDoc = user?.cpf || user?.document || store?.document || "";
+    const userBank = (user as any)?.bankAccounts?.[0];
+
+    if (userBank) {
+      return {
+        ...createBankAccount(),
+        bank: userBank.bank || "", branch_number: userBank.agence || "",
+        branch_check_digit: userBank.agenceDigit || "",
+        account_number: userBank.accountNumber || "",
+        account_check_digit: userBank.accountDigit || "",
+        holder_name: userBank.title || user?.name || "",
+        holder_type: (userType === "PJ" ? "company" : "individual") as "individual" | "company",
+        holder_document: justNumber(mainDoc),
+        type: (userBank.type === "savings" ? "savings" : "checking") as "checking" | "savings",
+      };
+    }
+
+    return {
+      ...createBankAccount(),
+      holder_name: user?.name || "",
+      holder_type: (userType === "PJ" ? "company" : "individual") as "individual" | "company",
+      holder_document: justNumber(mainDoc),
+    };
+  }
+
+  function buildPartnerFromUser() {
+    const userCpf = user?.cpf || "";
+    return {
+      ...createPartner(),
+      name: user?.name || "",
+      email: user?.email || "",
+      document: userCpf,
+      birth_date: user?.date || "",
+      self_declared_legal_representative: true,
+    };
+  }
+
   const updateField = (field: keyof RecipientEntity, value: any) => setFormData((prev) => ({ ...prev, [field]: value }));
   const updateAddress = (i: number, field: any, value: string) => setFormData((prev) => ({ ...prev, addresses: prev.addresses.map((a, idx) => idx === i ? { ...a, [field]: value } : a) }));
   const updatePhone = (i: number, field: any, value: string) => setFormData((prev) => ({ ...prev, phones: prev.phones.map((p, idx) => idx === i ? { ...p, [field]: value } : p) }));
@@ -201,11 +220,26 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
       name: formData.name.trim(),
       company_name: formData.type_enum === "PJ" ? formData.company_name || "" : null,
       trading_name: formData.type_enum === "PJ" ? formData.trading_name || "" : null,
-      addresses: formData.addresses.map((a) => ({ ...a, zip_code: a.zip_code || "", city: a.city || "", state: a.state || "", type: a.type || "Recipient" })),
+      addresses: formData.addresses.map((a) => ({
+        ...a,
+        zip_code: a.zip_code || "", city: a.city || "", state: a.state || "",
+        type: a.type || "Recipient",
+        reference_point: a.reference_point?.trim() || a.complementary?.trim() || "SN",
+      })),
       phones: formData.phones.map((p) => ({ ...p, type: p.type || "Recipient" })),
-      partners: formData.type_enum === "PJ" ? formData.partners.map((p) => ({ ...p, document: justNumber(p.document), monthly_income: p.monthly_income ?? null, self_declared_legal_representative: Boolean(p.self_declared_legal_representative) })) : [],
-      configs: { ...formData.configs, transfer_day: formData.configs.transfer_day ?? null, anticipation_type: formData.configs.anticipation_type ?? null, anticipation_volume_percentage: formData.configs.anticipation_volume_percentage?.trim() || null, anticipation_days: formData.configs.anticipation_days?.trim() || null, anticipation_delay: formData.configs.anticipation_delay?.trim() || null },
-      bank_account: { ...formData.bank_account, holder_type: formData.type_enum === "PJ" ? "company" : "individual", branch_check_digit: formData.bank_account.branch_check_digit?.trim() || "", holder_document: justNumber(formData.bank_account.holder_document || "") },
+      partners: formData.type_enum === "PJ" ? formData.partners.map((p) => ({
+        ...p,
+        document: justNumber(p.document),
+        monthly_income: p.monthly_income ?? null,
+        self_declared_legal_representative: Boolean(p.self_declared_legal_representative),
+      })) : [],
+      configs: createConfig(),
+      bank_account: {
+        ...formData.bank_account,
+        holder_type: formData.type_enum === "PJ" ? "company" : "individual",
+        branch_check_digit: formData.bank_account.branch_check_digit?.trim() || "",
+        holder_document: justNumber(formData.bank_account.holder_document || ""),
+      },
     };
 
     setSubmitting(true);

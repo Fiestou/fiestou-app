@@ -23,7 +23,6 @@ const formInitial = {
   loading: false,
 };
 
-// Helper para agrupar itens por loja
 interface StoreGroup {
   storeId: number | string;
   storeName: string;
@@ -251,6 +250,8 @@ export default function Pedido({
                       <OrderStatusBadge
                         status={order.status}
                         metadataStatus={order.metadata?.status}
+                        paymentStatus={order.metadata?.payment_status}
+                        paidAt={order.metadata?.paid_at}
                       />
                     </div>
                   </div>

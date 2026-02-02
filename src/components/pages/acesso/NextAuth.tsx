@@ -1,6 +1,5 @@
 import { signIn } from "next-auth/react";
 
-// Ícone Google
 export const GoogleIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
     <path fillRule="evenodd" clipRule="evenodd" d="M17.64 9.20419C17.64 8.56601 17.5827 7.95237 17.4764 7.36328H9V10.8446H13.8436C13.635 11.9696 13.0009 12.9228 12.0477 13.561V15.8192H14.9564C16.6582 14.2524 17.64 11.9451 17.64 9.20419Z" fill="#4285F4" />
@@ -10,40 +9,50 @@ export const GoogleIcon = () => (
   </svg>
 );
 
-// Ícone Facebook
 export const FacebookIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white">
     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
   </svg>
 );
 
-// Botão Google
 export function GoogleAuthButton() {
+  const disabled = true;
   return (
     <button
       type="button"
-      onClick={() => signIn("google")}
-      className="w-full rounded flex items-center gap-4 justify-center border py-[.85rem] border-zinc-300 bg-white hover:bg-zinc-50 transition-colors text-zinc-900"
+      onClick={() => !disabled && signIn("google")}
+      disabled={disabled}
+      className={`w-full rounded flex items-center gap-4 justify-center border py-[.85rem] transition-colors ${
+        disabled
+          ? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed"
+          : "border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-900"
+      }`}
+      title={disabled ? "Em breve" : undefined}
     >
       <GoogleIcon /> Continuar com Google
     </button>
   );
 }
 
-// Botão Facebook (só para clientes)
 export function FacebookAuthButton() {
+  const disabled = true;
   return (
     <button
       type="button"
-      onClick={() => signIn("facebook")}
-      className="w-full rounded flex items-center gap-4 justify-center border py-[.85rem] border-[#1877F2] bg-[#1877F2] hover:bg-[#166FE5] transition-colors text-white"
+      onClick={() => !disabled && signIn("facebook")}
+      disabled={disabled}
+      className={`w-full rounded flex items-center gap-4 justify-center border py-[.85rem] transition-colors ${
+        disabled
+          ? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed"
+          : "border-[#1877F2] bg-[#1877F2] hover:bg-[#166FE5] text-white"
+      }`}
+      title={disabled ? "Em breve" : undefined}
     >
       <FacebookIcon /> Continuar com Facebook
     </button>
   );
 }
 
-// Componente principal com ambos (para clientes)
 interface SocialAuthProps {
   showFacebook?: boolean;
 }
@@ -57,7 +66,6 @@ export function SocialAuth({ showFacebook = true }: SocialAuthProps) {
   );
 }
 
-// Export padrão mantém compatibilidade com código existente
 export default function NextAuth() {
   return <GoogleAuthButton />;
 }

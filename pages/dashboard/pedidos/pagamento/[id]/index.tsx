@@ -85,19 +85,14 @@ export default function Pagamento({
   const [user, setUser] = useState({} as UserType);
   const [order, setOrder] = useState({} as OrderType);
 
-  // novo bloco de delivery (modelo novo)
   const legacyOrder = order as any;
 
-  console.log("LEGACY ORDER:", order);
-
-  // NOVO MODELO: tudo vem dentro de order.delivery
   const deliveryAddress =
     order?.delivery?.address ?? legacyOrder?.deliveryAddress;
 
   const deliverySchedule =
     order?.delivery?.schedule ?? legacyOrder?.deliverySchedule;
 
-  // Calcular frete total somando os deliveryFee de cada item (para múltiplas lojas)
   const calculateTotalDeliveryFee = () => {
     if (!order?.items?.length) return 0;
     
@@ -110,21 +105,17 @@ export default function Pagamento({
       return sum + fee;
     }, 0);
     
-    // Se a soma dos deliveryFee for maior que 0, usar ela
-    // Senão, usar o delivery.price padrão
-    return totalFee > 0 
+    return totalFee > 0
       ? totalFee 
       : (Number(order?.delivery?.priceLabel) || Number(order?.delivery?.price) || Number(legacyOrder?.deliveryPrice) || 0);
   };
 
   const deliveryPrice = calculateTotalDeliveryFee();
 
-  // AQUI: agora é SEMPRE string (ou undefined)
   const deliveryTo: string | undefined =
     order?.delivery?.to ?? legacyOrder?.deliveryTo;
 
 
-  console.log("DELIVERY TO:", deliveryTo);
   const handleCustomer = (value: Partial<UserType>) => {
     setUser((prev) => ({ ...(prev ?? {}), ...value } as UserType));
   };
@@ -161,7 +152,7 @@ export default function Pagamento({
   const [expire, setExpire] = useState("start");
   const [pix, setPix] = useState<PixType>({
     status: false,
-    expires_in: 300,
+    expires_in: 1800,
   });
   const handlePix = (value: Partial<PixType>) => {
     setPix((prev) => ({ ...prev, ...value } as PixType));
@@ -171,7 +162,6 @@ export default function Pagamento({
 
   const ConfirmManager = async () => {
     try {
-      // Usa o serviço centralizado para obter o pedido atualizado
       const handle = await fetchOrderById(api, orderId);
 
       if (handle && handle.status === 1) {
@@ -183,20 +173,24 @@ export default function Pagamento({
   };
 
   const CardManager = () => {
-    let attempts = 5;
+    let attempts = 6;
 
     const interval = setInterval(() => {
-      if (new Date().getSeconds() % 5 === 0) {
-        attempts--;
-        ConfirmManager();
-      }
+      attempts--;
+      ConfirmManager();
 
-      if (attempts === 0) {
-        attempts--;
-        alert("Algo deu errado ao processar seu pagamento. Tente novamente.");
-        window.location.href = `/dashboard/pedidos`;
+      if (attempts <= 0) {
+        clearInterval(interval);
+        handleForm({
+          loading: false,
+          sended: false,
+          feedback: "Não foi possível confirmar o pagamento. Verifique seus pedidos.",
+        });
+        setTimeout(() => {
+          window.location.href = `/dashboard/pedidos`;
+        }, 3000);
       }
-    }, 1000);
+    }, 5000);
 
     return () => clearInterval(interval);
   };
@@ -237,12 +231,12 @@ export default function Pagamento({
         }
       }
 
-      if (expire === "expire") {
+      if (expire === "expired") {
         setExpire("");
-        alert(
-          "Seu código de pagamento via pix não é mais válido. Tente novamente."
-        );
-        window.location.href = `/dashboard/pedidos`;
+        handleForm({ loading: false, sended: false, feedback: "Seu código PIX expirou. Tente novamente." });
+        setTimeout(() => {
+          window.location.href = `/dashboard/pedidos`;
+        }, 3000);
       }
     }, 1000);
 
@@ -269,30 +263,20 @@ export default function Pagamento({
     setPlaceholder(true);
 
     try {
-      // agora bate na rota GET /order/{id}
       const request: any = await api.bridge({
         method: "get",
         url: `order/${orderId}`,
       });
 
-      console.log("ORDER FETCHED:", request);
-
       const fetchedOrder: OrderType | undefined = request?.order;
 
       if (!fetchedOrder) {
-        // se quiser, pode redirecionar aqui
-        // window.location.href = `/dashboard/pedidos/${orderId}`;
         setPlaceholder(false);
         return;
       }
 
-      // salva o pedido no estado
       setOrder(fetchedOrder);
 
-      // ---------------------------------------
-      // Monta as datas a partir de items[].metadata.details
-      // (ou do formato antigo metadata.raw_item.details, se existir)
-      // ---------------------------------------
       const dates: string[] = [];
 
       fetchedOrder.items?.forEach((item: any) => {
@@ -306,8 +290,6 @@ export default function Pagamento({
           }
         }
 
-        // novo formato: metadata.details
-        // legado: metadata.raw_item.details
         const rawDetails =
           rawMeta?.details ?? rawMeta?.raw_item?.details ?? null;
 
@@ -328,17 +310,9 @@ export default function Pagamento({
 
       setResume(resumeData as any);
 
-      // ---------------------------------------
-      // Produtos para o OrderItemsList
-      // (agora vêm em order.products)
-      // ---------------------------------------
       const productsList = fetchedOrder.products ?? [];
-      console.log("SET PRODUCTS:", productsList);
       setProducts(productsList);
 
-      // ---------------------------------------
-      // Usuário (agora vem em order.customer)
-      // ---------------------------------------
       const fetchedUser = fetchedOrder.customer ?? null;
       if (fetchedUser) {
         setUser({
@@ -358,10 +332,6 @@ export default function Pagamento({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    console.log("ORDER ATUALIZADO:", order);
-  }, [order]);
-
   const submitPayment = async (e: any) => {
     e.preventDefault();
 
@@ -370,14 +340,10 @@ export default function Pagamento({
 
     const orderAddress: any = useOrderAddress ? deliveryAddress : address;
 
-    // 1. Calcular valores corretamente
-    const deliveryAmountCents = Math.round(deliveryPrice * 100); // frete em centavos
-    const totalAmountCents = Math.round((order.total || 0) * 100); // total em centavos
-    
-    // 2. Calcular subtotal dos produtos (total - frete)
+    const deliveryAmountCents = Math.round(deliveryPrice * 100);
+    const totalAmountCents = Math.round((order.total || 0) * 100);
     const subtotalCents = totalAmountCents - deliveryAmountCents;
 
-    // 3. Preparar items do pedido com valor correto
     const orderItems = order.items?.map((item: any, index: number) => {
       const itemTotalCents = Math.round((item.total || 0) * 100);
       
@@ -389,36 +355,25 @@ export default function Pagamento({
       };
     }) || [];
 
-    // 4. Ajustar arredondamentos para garantir que a soma bata
     const itemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
-    
-    // Se a soma não bater, ajusta o primeiro item
     if (itemsSum !== subtotalCents && orderItems.length > 0) {
       const diff = subtotalCents - itemsSum;
       orderItems[0].amount += diff;
     }
 
-    // 5. Verificar se agora está correto
     const finalItemsSum = orderItems.reduce((sum, item) => sum + item.amount, 0);
-    console.log("VERIFICAÇÃO:", {
-      itemsSum: finalItemsSum,
-      deliveryAmountCents,
-      totalAmountCents,
-      soma: finalItemsSum + deliveryAmountCents,
-      bate: finalItemsSum + deliveryAmountCents === totalAmountCents
-    });
 
-    // Payload base
     const basePayload: any = {
       order_id: Number(orderId),
       payment_method: payment.payment_method,
-      
+      document: justNumber(user?.document ?? user?.cpf ?? ""),
+
       order: {
-        amount: totalAmountCents, // Total em centavos
-        items: orderItems, // Items com valores corretos
+        amount: totalAmountCents,
+        items: orderItems,
         shipping: {
           description: "delivery",
-          amount: deliveryAmountCents, // IMPORTANTE: incluir o valor do frete
+          amount: deliveryAmountCents,
           recipient_name: user.name || "Cliente",
           recipient_phone: user.phone || "",
           address: {
@@ -433,7 +388,6 @@ export default function Pagamento({
       }
     };
 
-    // CARTÃO DE CRÉDITO
     if (payment.payment_method === "credit_card") {
       basePayload.credit_card = {
         installments: Number(installments) || 1,
@@ -458,67 +412,10 @@ export default function Pagamento({
       };
     }
 
-    // SPLIT POR LOJA - Criar um split para cada loja com seu recipient_id
-    // Agrupar items por loja e calcular valores
-    const storeGroups: Record<string, { 
-      recipientId: string; 
-      itemsTotal: number; 
-      deliveryFee: number;
-    }> = {};
-
-    order.items?.forEach((item: any) => {
-      // Parse metadata se necessário
-      let metadata = item.metadata;
-      if (typeof metadata === 'string') {
-        try {
-          metadata = JSON.parse(metadata);
-        } catch {
-          metadata = {};
-        }
-      }
-
-      // Pegar store do metadata ou do produto
-      const store = metadata?.product?.store || item?.product?.store;
-      const recipientId = store?.recipient_id || "acc_default";
-      const itemTotal = Math.round((item.total || 0) * 100);
-      const deliveryFee = Number(metadata?.details?.deliveryFee || 0);
-
-      if (!storeGroups[recipientId]) {
-        storeGroups[recipientId] = {
-          recipientId,
-          itemsTotal: 0,
-          deliveryFee: 0,
-        };
-      }
-
-      storeGroups[recipientId].itemsTotal += itemTotal;
-      storeGroups[recipientId].deliveryFee += Math.round(deliveryFee * 100);
-    });
-
-    // Se não conseguiu agrupar por lojas, usar o valor total para um único recipient
-    const splits = Object.values(storeGroups).length > 0
-      ? Object.values(storeGroups).map(group => ({
-          type: "flat",
-          amount: group.itemsTotal + group.deliveryFee, // Produtos + frete da loja
-          recipient_id: group.recipientId,
-        }))
-      : [{
-          type: "flat",
-          amount: totalAmountCents,
-          recipient_id: order.store?.recipient_id || "acc_default",
-        }];
-
-    basePayload.payments = [{
-      payment_method: payment.payment_method,
-      split: splits,
-    }];
-
-    // PIX
     if (payment.payment_method === "pix") {
-      basePayload.pix_expires_in = 300;
+      basePayload.pix_expires_in = 1800;
     }
 
-    // BOLETO
     if (payment.payment_method === "boleto") {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 3);
@@ -531,9 +428,6 @@ export default function Pagamento({
       };
     }
 
-    console.log("PAYLOAD FINAL:", basePayload);
-
-    // Validação antes de enviar
     const validationErrors = [];
     
     if (!orderItems.length) {
@@ -542,13 +436,6 @@ export default function Pagamento({
     
     if (finalItemsSum + deliveryAmountCents !== totalAmountCents) {
       validationErrors.push("Soma dos itens + frete não confere com total");
-      console.error("ERRO DE VALIDAÇÃO:", {
-        finalItemsSum,
-        deliveryAmountCents,
-        totalAmountCents,
-        soma: finalItemsSum + deliveryAmountCents,
-        diferença: totalAmountCents - (finalItemsSum + deliveryAmountCents)
-      });
     }
     
     if (!orderAddress?.zipCode || !orderAddress?.city || !orderAddress?.state) {
@@ -575,24 +462,15 @@ export default function Pagamento({
 
       formFeedback["loading"] = false;
 
-      console.log("RESPONSE COMPLETA:", response);
-
-      // Verifica se não houve erro (sucesso)
       if (!response?.error && response?.response) {
         const data = response?.data || {};
-
-        console.log("DATA EXTRAÍDA:", data);
-        console.log("STATUS:", data?.status);
 
         if (payment.payment_method === "credit_card") {
           if (data?.status === "paid") {
             formFeedback["sended"] = true;
-            console.log("PAGAMENTO APROVADO! Redirecionando...");
-            // Redirecionar imediatamente para a página do pedido
             window.location.href = `/dashboard/pedidos/${orderId}`;
             return;
           } else {
-            console.error("Status não é 'paid':", data?.status);
             formFeedback = {
               ...formFeedback,
               sended: false,
@@ -650,7 +528,7 @@ export default function Pagamento({
         };
       }
     } catch (err) {
-      console.error("ERRO AO PROCESSAR PAGAMENTO:", err);
+      console.error("Erro no pagamento:", err);
       formFeedback = {
         ...formFeedback,
         loading: false,
@@ -693,7 +571,7 @@ export default function Pagamento({
                       resume={resume}
                       deliveryAddress={deliveryAddress}
                       deliverySchedule={deliverySchedule}
-                      deliveryTo={deliveryTo} // já é string amigável
+                      deliveryTo={deliveryTo}
                     />
                     <OrderItemsList products={products} />
                   </div>

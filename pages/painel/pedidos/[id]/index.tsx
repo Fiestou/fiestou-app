@@ -7,7 +7,8 @@ import { OrderType, OrderTypeResponse } from "@/src/models/order";
 import {
   getExtenseData,
   moneyFormat,
-  getOrderDeliveryInfo
+  getOrderDeliveryInfo,
+  getImage
 } from "@/src/helper";
 import { Button, Label, Select } from "@/src/components/ui/form";
 import { useCallback, useState, useEffect } from "react";
@@ -40,8 +41,8 @@ export default function Pedido() {
   const api = new Api();
   const router = useRouter();
 
-  // order state (loaded on mount using router.query.id)
   const [order, setOrder] = useState({} as OrderType);
+  const [productsData, setProductsData] = useState<any[]>([]);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -50,10 +51,63 @@ export default function Pedido() {
     if (!id) return;
 
     (async () => {
-      const fetched = await getOrderById(id);
-      if (fetched) {
-        setOrder(fetched as unknown as OrderType);
-        setDeliveryStatus((fetched as any)?.delivery_status ?? "pending");
+      const request: any = await api.bridge({
+        method: "post",
+        url: "orders/get",
+        data: { id },
+      });
+
+      const orderData = request?.data?.data ?? request?.data ?? request;
+
+      if (orderData) {
+        let listItems = [];
+        if (Array.isArray(orderData.items)) {
+          listItems = orderData.items;
+        } else if (typeof orderData.listItems === 'string') {
+          listItems = JSON.parse(orderData.listItems || "[]");
+        } else if (Array.isArray(orderData.listItems)) {
+          listItems = orderData.listItems;
+        }
+
+        const products = orderData.products ?? orderData.productsData ?? [];
+        setProductsData(products);
+
+        let parsedMetadata = orderData.metadata;
+        if (typeof parsedMetadata === 'string') {
+          try {
+            parsedMetadata = JSON.parse(parsedMetadata);
+          } catch (e) {
+            parsedMetadata = {};
+          }
+        }
+
+        const mergedMetadata = {
+          ...(parsedMetadata ?? {}),
+          ...(orderData.payment ?? {}),
+        };
+
+        const normalizedOrder: any = {
+          ...orderData,
+          id: orderData.id ?? orderData.mainOrderId,
+          user: orderData.customer ?? orderData.user,
+          products: products,
+          listItems: listItems,
+          delivery: {
+            to: orderData.delivery?.to ?? orderData.deliveryTo ?? orderData.delivery_to,
+            schedule: orderData.delivery?.schedule ?? orderData.deliverySchedule,
+            price: orderData.delivery?.price ?? orderData.deliveryTotal ?? orderData.deliveryPrice ?? orderData.delivery_price,
+            address: orderData.delivery?.address ?? orderData.deliveryAddress ?? orderData.delivery_address,
+            status: orderData.delivery?.status ?? orderData.deliveryStatus ?? orderData.delivery_status,
+          },
+          delivery_status: orderData.deliveryStatus ?? orderData.delivery_status,
+          total: orderData.total,
+          metadata: mergedMetadata,
+          createdAt: orderData.createdAt ?? orderData.created_at,
+          freights_orders_price: orderData.freights_orders_price ?? [],
+        };
+
+        setOrder(normalizedOrder as OrderType);
+        setDeliveryStatus(normalizedOrder.delivery_status ?? "pending");
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,13 +117,13 @@ export default function Pedido() {
     let orderByStore = new Map<number, any>();
 
     order.products?.forEach((productItem: any) => {
-      const listItem = order.listItems?.find((item: any) => item.product.id === productItem.id);
+      const listItem = order.listItems?.find((item: any) => item.product?.id === productItem.id);
       const productItemWithAttributes = order.products?.find((item: any) => item.id === productItem.id);
+      const productWithGallery = productsData.find((p: any) => p.id === productItem.id);
       const additionalExtras: any[] = [];
 
       if (listItem?.attributes) {
         listItem.attributes.forEach((attribute: any) => {
-          // Parse attributes se for string, caso contrario usa direto
           let attributeTitle = productItemWithAttributes?.attributes ?? [];
           if (typeof attributeTitle === 'string') {
             try {
@@ -89,18 +143,21 @@ export default function Pedido() {
         });
       }
 
+      const productWithFullData = {
+        ...productItem,
+        gallery: productWithGallery?.gallery || productItem.gallery || [],
+        additionalExtra: additionalExtras,
+      };
+
       if (orderByStore.has(productItem.store.id)) {
-        return orderByStore.get(productItem.store.id).push({ ...productItem, additionalExtra: additionalExtras });
+        return orderByStore.get(productItem.store.id).push(productWithFullData);
       }
 
-      return orderByStore.set(productItem.store.id, [{
-        ...productItem,
-        additionalExtra: additionalExtras,
-      }]);
+      return orderByStore.set(productItem.store.id, [productWithFullData]);
     });
 
     return orderByStore;
-  }, [order]);
+  }, [order, productsData]);
 
   const [form, setForm] = useState(FormInitialType);
   const [dropdownDelivery, setDropdownDelivery] = useState(false as boolean);
@@ -175,6 +232,8 @@ export default function Pedido() {
                 <OrderStatusBadge
                   status={order.status}
                   metadataStatus={order.metadata?.status}
+                  paymentStatus={order.metadata?.payment_status}
+                  paidAt={order.metadata?.paid_at}
                 />
               </div>
             </div>
@@ -204,9 +263,10 @@ export default function Pedido() {
                           {items[0]?.store?.companyName}
                         </div>
                         {items.map((item) => (
-                          <div key={item.id} className="border-b py-2">
-                            <div className="flex justify-between items-center">
-                              <div className="w-full grid gap-4">
+                          <div key={item.id} className="border-b py-4">
+                            {/* Título e preço */}
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="w-full">
                                 <h5 className="font-title text-zinc-900 font-medium text-lg">
                                   {/* @TODO: Não é possível exibir a quantidade de itens, pois a API não retorna a quantidade */}
                                   1 x {item.title}
@@ -216,11 +276,35 @@ export default function Pedido() {
                                 R$ {moneyFormat(item.price)}
                               </div>
                             </div>
-                            {item.additionalExtra && Array.isArray(item.additionalExtra) && item.additionalExtra.map((extra: any) => (
-                              <div key={extra.id} className="flex justify-between items-center mt-2 px-6">
-                                <div key={extra.id} className="w-full grid gap-4 mt-2">
+
+                            {/* Galeria de fotos do produto */}
+                            {Array.isArray(item.gallery) && item.gallery.length > 0 && (
+                              <div className="grid gap-2 grid-cols-4 md:grid-cols-6 lg:grid-cols-8 mt-2 mb-3">
+                                {item.gallery
+                                  .filter((img: any) => !!img.base_url)
+                                  .slice(0, 4)
+                                  .map((img: any, imgKey: number) => (
+                                    <div key={imgKey} className="w-full">
+                                      <div className="relative rounded-md bg-zinc-100 overflow-hidden aspect-square">
+                                        <img
+                                          src={getImage(img, "thumb")}
+                                          className="absolute object-cover h-full inset-0 w-full"
+                                          alt={`${item.title} - Imagem ${imgKey + 1}`}
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).src = '/placeholder.jpg';
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
+
+                            {/* Extras/adicionais */}
+                            {item.additionalExtra && Array.isArray(item.additionalExtra) && item.additionalExtra.map((extra: any, extraKey: number) => (
+                              <div key={extraKey} className="flex justify-between items-center mt-2 px-6">
+                                <div className="w-full grid gap-4">
                                   <h5 className="font-title text-zinc-500 font-medium text-sm">
-                                    {/* @TODO: Não é possível exibir a quantidade de itens, pois a API não retorna a quantidade */}
                                     {extra.quantity} x {extra.title}
                                   </h5>
                                 </div>
@@ -277,13 +361,10 @@ export default function Pedido() {
                       </div>
                       <div>
                         {(() => {
-                          // Verifica payment_method OU transaction_type (fallback para pedidos antigos)
                           const paymentMethod = order.metadata?.payment_method || order.metadata?.transaction_type;
                           const isPix = paymentMethod === "pix";
                           const isBoleto = paymentMethod === "boleto";
                           const isCreditCard = paymentMethod === "credit_card" || (!isPix && !isBoleto);
-
-                          // Verifica se foi pago (paid_at existe) independente do payment_status
                           const isPaid = !!order.metadata?.paid_at || order.metadata?.payment_status === "paid" || order.metadata?.payment_status === "approved";
 
                           return (
@@ -303,9 +384,7 @@ export default function Pedido() {
                           );
                         })()}
                         {(() => {
-                          // Busca recipients do split no metadata (dados do Pagar.me)
                           const splits = order.metadata?.split || order.metadata?.splits || [];
-                          // Filtra para mostrar apenas recebedores que não são a Fiestou (type: company)
                           const storeRecipients = splits.filter((s: any) => s.recipient?.type !== 'company');
 
                           if (storeRecipients.length > 0) {

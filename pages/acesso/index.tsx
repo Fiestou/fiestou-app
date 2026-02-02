@@ -11,7 +11,6 @@ import { UserType } from "@/src/models/user";
 import { SocialAuth } from "@/src/components/pages/acesso/NextAuth";
 import { getSession } from "next-auth/react";
 import { AuthContext } from "@/src/contexts/AuthContext";
-import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -55,19 +54,18 @@ interface AcessoProps {
   Scripts: any;
 }
 
-// Componente interno que usa o hook useGoogleReCaptcha
 function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
   const api = new Api();
 
   const router = useRouter();
   const { SignIn } = useContext(AuthContext);
-  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const [modalStatus, setModalStatus] = useState(!!modal as boolean);
   const [modalType, setModalType] = useState(modal as string);
   const [user, setUser] = useState({} as UserType);
 
   const [form, setForm] = useState(formInitial);
+  const [showPassword, setShowPassword] = useState(false);
 
   const setFormValue = (value: any) => {
     setForm({ ...form, ...value });
@@ -76,20 +74,11 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!executeRecaptcha) {
-      console.error("reCAPTCHA not loaded");
-      return;
-    }
-
     setFormValue({ loading: true, alert: "" });
-
-    // Gera o token reCAPTCHA v3
-     const token = await executeRecaptcha('login');
 
     const request: any = await SignIn({
       email: form.email,
       password: form.password,
-      recaptcha_token: token,
     });
 
     if (request.status == 422) {
@@ -190,14 +179,23 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
 
                 <div className="form-group">
                   <Label>Senha</Label>
-                  <Input
-                    onChange={(e: any) => {
-                      setFormValue({ password: e.target.value });
-                    }}
-                    type="password"
-                    name="senha"
-                    placeholder="Insira sua senha"
-                  />
+                  <div className="relative">
+                    <Input
+                      onChange={(e: any) => {
+                        setFormValue({ password: e.target.value });
+                      }}
+                      type={showPassword ? "text" : "password"}
+                      name="senha"
+                      placeholder="Insira sua senha"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                    >
+                      <Icon icon={showPassword ? "fa-eye-slash" : "fa-eye"} />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <Link
@@ -306,14 +304,6 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
   );
 }
 
-// Componente exportado que envolve com o Provider do reCAPTCHA
 export default function Acesso(props: AcessoProps) {
-  return (
-    <GoogleReCaptchaProvider
-      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
-      language="pt-BR"
-    >
-      <AcessoContent {...props} />
-    </GoogleReCaptchaProvider>
-  );
+  return <AcessoContent {...props} />;
 }

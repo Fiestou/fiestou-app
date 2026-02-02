@@ -11,6 +11,7 @@ import Modal from "@/src/components/utils/Modal";
 import { useRouter } from "next/router";
 import { WithdrawType } from "@/src/models/withdraw";
 import { UserType } from "@/src/models/user";
+import { getRecipientStatus } from "@/src/services/recipients";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -96,7 +97,7 @@ export default function Saque({
   };
 
   const [withdrawList, setWithdrawList] = useState([] as Array<any>);
-  const needsRecipientCompletion = true; // TODO: trocar por verificação real quando backend estiver pronto
+  const [needsRecipientCompletion, setNeedsRecipientCompletion] = useState(true);
 
   const getWithdraw = async () => {
     let request: any = await api.bridge({
@@ -107,9 +108,15 @@ export default function Saque({
     setWithdrawList(request.data);
   };
 
+  const checkRecipient = async () => {
+    const status = await getRecipientStatus();
+    setNeedsRecipientCompletion(!status.completed);
+  };
+
   useEffect(() => {
     if (!!window) {
       getWithdraw();
+      checkRecipient();
     }
   }, []);
 
@@ -244,17 +251,20 @@ export default function Saque({
                   type="button"
                   onClick={() => setModalWD(true)}
                   className="whitespace-nowrap pl-5"
+                  disable={needsRecipientCompletion}
                 >
                   <Icon icon="fa-hand-holding-usd" />
                   Solicitar saque
                 </Button>
-                <p className="text-sm text-red-600 mt-2 leading-relaxed">
-                    Antes de solicitar um saque, finalize o{" "}
-                    <Link href="/painel/meus-dados" className="underline font-semibold">
-                      cadastro da Pagar.me
-                    </Link>{" "}
-                    para liberar os repasses.
-                </p>
+                {needsRecipientCompletion && (
+                  <p className="text-sm text-red-600 mt-2 leading-relaxed">
+                      Antes de solicitar um saque, finalize o{" "}
+                      <Link href="/painel/meus-dados" className="underline font-semibold">
+                        cadastro da Pagar.me
+                      </Link>{" "}
+                      para liberar os repasses.
+                  </p>
+                )}
               </div>
             </div>
           </div>

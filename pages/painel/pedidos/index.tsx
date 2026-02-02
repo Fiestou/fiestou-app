@@ -141,6 +141,8 @@ export default function Pedidos() {
                     <OrderStatusBadge
                       status={order.status}
                       metadataStatus={order.metadata?.status}
+                      paymentStatus={order.metadata?.payment_status}
+                      paidAt={order.metadata?.paid_at}
                       statusText={order.statusText}
                     />
                   </div>

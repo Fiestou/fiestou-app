@@ -23,7 +23,6 @@ type BalanceType = {
   orders: number;
 };
 
-// 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
@@ -198,8 +197,8 @@ export default function Parceiro({ content }: { content: any }) {
                     {recipientStatus?.completed && (
                       <p className="mt-2 text-sm font-semibold text-green-600">
                         Código recebedor: {" "}
-                        {(recipientStatus?.recipient as any) ||
-                          (recipientStatus?.recipient as any)||
+                        {(recipientStatus?.recipient as any)?.code ||
+                          (typeof recipientStatus?.recipient === 'string' ? recipientStatus.recipient : null) ||
                           "N/A"}
                       </p>
                     )}

@@ -30,19 +30,18 @@ import { DeliveryItem } from "@/src/types/filtros";
 import { registerOrder as registerOrderService } from "@/src/services/order";
 import { dateBRFormat, moneyFormat } from "@/src/helper";
 
-// Componentes refatorados
 import {
   DeliveryOptions,
   TimeSlotPicker,
   DeliverySummaryEntry,
 } from "@/src/components/checkout";
 
-// Services
 import {
   extractDeliveryFees,
   normalizeDeliveryItems,
   extractCartDeliveryZip,
   saveCartToCookies,
+  markCartConverted,
 } from "@/src/services/cart";
 import {
   calculateDeliveryFees,
@@ -233,13 +232,11 @@ export default function Checkout({
   const lastFetchedZipRef = useRef<string | null>(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
-  // Dependemos apenas do CEP formatado para evitar reprocessar desnecessariamente quando o carrinho é atualizado.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setCartItems(cart);
   }, [cart]);
 
-  // Inicializa o CEP e frete do carrinho que veio do servidor
   useEffect(() => {
     if (initialLoadDone || !cart.length) {
       return;
@@ -269,7 +266,6 @@ export default function Checkout({
 
       if (cartZip.length === 8) {
         lastFetchedZipRef.current = cartZip;
-        // Não seta o address aqui - deixa o useEffect de cartDeliveryZip fazer isso (linha 521-536)
       }
     }
     setInitialLoadDone(true);
@@ -336,13 +332,11 @@ export default function Checkout({
     }
   }, [products]);
 
-  // Wrapper para aplicar frete usando o service de delivery
   const applyDeliveryFeesLocal = (
     fees: DeliveryItem[],
     sanitizedZip: string,
     baseCart: CartType[]
   ): boolean => {
-    // Usa o service para aplicar o frete
     const result = applyDeliveryToCart(baseCart, fees, sanitizedZip);
 
     if (!result.success) {
@@ -362,10 +356,6 @@ export default function Checkout({
   const deliverySummary = useMemo(() => {
     const entries: DeliverySummaryEntry[] = [];
     const seenStores = new Set<number>();
-
-    console.log('📊 deliveryPrice recebido:', deliveryPrice);
-    console.log('📊 storesById:', Array.from(storesById.entries()));
-    console.log('📊 cartItems atual:', cartItems);
 
     deliveryPrice.forEach((item) => {
       const storeId = Number(item?.store_id);
@@ -425,7 +415,6 @@ export default function Checkout({
     return result;
   }, [deliveryPrice, storesById]);
 
-  // Usa o service para extrair o CEP do carrinho
   const cartDeliveryZip = useMemo(
     () => extractCartDeliveryZip(cartItems),
     [cartItems]
@@ -439,7 +428,6 @@ export default function Checkout({
     const fetchAddressFromCartZip = async () => {
       const currentZip = justNumber(address?.zipCode ?? "");
 
-      // Se o CEP já está preenchido e é o mesmo do carrinho, não faz nada
       if (currentZip === cartDeliveryZip) {
         return;
       }
@@ -447,11 +435,9 @@ export default function Checkout({
       
 
       try {
-        // Busca os dados do endereço pela API do ViaCEP
         const location = await getZipCode(cartDeliveryZip);
 
         if (!location?.erro) {
-          // Popula todos os campos do endereço automaticamente
           setAddress((prevAddress) => ({
             ...prevAddress,
             zipCode: formatCep(cartDeliveryZip),
@@ -465,16 +451,13 @@ export default function Checkout({
         } else {
          
 
-          // Mesmo que não encontre o endereço, preenche o CEP
           setAddress((prevAddress) => ({
             ...prevAddress,
             zipCode: formatCep(cartDeliveryZip),
           }));
         }
       } catch (error) {
-        console.error("❌ Erro ao buscar endereço do carrinho:", error);
-
-        // Em caso de erro, apenas preenche o CEP
+        console.error("Erro ao buscar endereço:", error);
         setAddress((prevAddress) => ({
           ...prevAddress,
           zipCode: formatCep(cartDeliveryZip),
@@ -500,10 +483,9 @@ export default function Checkout({
 
   
 
-    // Se o CEP está incompleto MAS já temos um lastFetched válido, não limpa
     if (sanitizedZip.length < 8) {
       if (lastFetchedZipRef.current && lastFetchedZipRef.current.length === 8) {
-        return; // Mantém os dados do carrinho
+        return;
       }
       setDeliveryPrice([]);
       lastFetchedZipRef.current = null;
@@ -520,7 +502,6 @@ export default function Checkout({
       setLoadingDeliveryPrice(true);
 
       try {
-        // Extrai os IDs dos produtos que estão no carrinho
         const cartProductIds = cartItems
           .map((item: any) => {
             const productId = typeof item?.product === 'object' 
@@ -544,7 +525,7 @@ export default function Checkout({
           },
         });
 
-        console.log('🚚 Resposta da API de frete:', { data, cartProductIds, sanitizedZip });
+        console.log('frete response:', { data, sanitizedZip });
 
         const rawList: DeliveryItem[] = Array.isArray(data?.data)
           ? data.data
@@ -552,7 +533,6 @@ export default function Checkout({
           ? data
           : [];
 
-        console.log('🚚 rawList extraído:', rawList);
 
         const mappedFees = rawList
           .map(
@@ -567,11 +547,9 @@ export default function Checkout({
               Number.isFinite(item.price) && Number.isFinite(item.store_id)
           );
 
-        console.log('🚚 Fretes mapeados:', mappedFees);
 
         const normalizedFees = normalizeDeliveryItems(mappedFees);
 
-        console.log('🚚 Fretes normalizados:', normalizedFees);
 
         if (!normalizedFees.length) {
           setDeliveryPrice([]);
@@ -580,7 +558,6 @@ export default function Checkout({
           return;
         }
 
-        console.log('🚚 Aplicando fretes ao carrinho:', { normalizedFees, sanitizedZip, cartItems });
 
         const success = applyDeliveryFeesLocal(
           normalizedFees,
@@ -588,7 +565,6 @@ export default function Checkout({
           cartItems
         );
 
-        console.log('🚚 Resultado da aplicação:', success);
 
         if (!success) {
           setDeliveryPrice([]);
@@ -740,6 +716,7 @@ export default function Checkout({
       const firstId = created?.orders?.[0]?.id;
 
       if (firstId) {
+        markCartConverted();
         Cookies.remove("fiestou.cart");
         window.location.href = `/dashboard/pedidos/pagamento/${firstId}`;
         return;
