@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { Label } from "@/src/components/ui/form";
 
@@ -11,9 +11,11 @@ interface UnavailableDatesProps {
 const UnavailableDates: React.FC<UnavailableDatesProps> = ({
   initialDates = [],
   onChange,
-  minDate = new Date()
+  minDate = new Date(),
 }) => {
-  const [selectedDates, setSelectedDates] = useState<string[]>(initialDates ?? []);
+  const [selectedDates, setSelectedDates] = useState<string[]>(
+    initialDates ?? [],
+  );
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -23,37 +25,54 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node) &&
-        inputRef.current && !inputRef.current.contains(event.target as Node)) {
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
         setIsCalendarOpen(false);
       }
 
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
         setIsModalOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   };
 
   const formatDisplayDate = (dateString: string): string => {
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('pt-BR');
+    const date = new Date(dateString + "T00:00:00");
+    return date.toLocaleDateString("pt-BR");
   };
 
   const formatLongDate = (dateString: string): string => {
-    const date = new Date(dateString + 'T00:00:00');
+    const date = new Date(dateString + "T00:00:00");
     const day = date.getDate();
     const monthNames = [
-      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+      "janeiro",
+      "fevereiro",
+      "março",
+      "abril",
+      "maio",
+      "junho",
+      "julho",
+      "agosto",
+      "setembro",
+      "outubro",
+      "novembro",
+      "dezembro",
     ];
     const month = monthNames[date.getMonth()];
     const year = date.getFullYear();
@@ -98,10 +117,10 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
     return days;
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentMonth(prev => {
+  const navigateMonth = (direction: "prev" | "next") => {
+    setCurrentMonth((prev) => {
       const newMonth = new Date(prev);
-      if (direction === 'prev') {
+      if (direction === "prev") {
         newMonth.setMonth(prev.getMonth() - 1);
       } else {
         newMonth.setMonth(prev.getMonth() + 1);
@@ -111,17 +130,26 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
   };
 
   const monthNames = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
   ];
 
-  const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+  const weekDays = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 
-  const displayText = (selectedDates?.length ?? 0) > 0
-    ? `${selectedDates.length} data${selectedDates.length > 1 ? 's' : ''} selecionada${selectedDates.length > 1 ? 's' : ''}`
-    : 'Selecione as datas indisponíveis';
-
-
+  const displayText =
+    (selectedDates?.length ?? 0) > 0
+      ? `${selectedDates.length} data${selectedDates.length > 1 ? "s" : ""} selecionada${selectedDates.length > 1 ? "s" : ""}`
+      : "Selecione as datas indisponíveis";
 
   return (
     <div className="relative">
@@ -130,12 +158,14 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
         className="form-control flex items-center justify-between cursor-pointer bg-white border border-gray-300 rounded-md px-3 py-2 hover:border-gray-400 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
         onClick={() => setIsCalendarOpen(!isCalendarOpen)}
       >
-        <span className={`${selectedDates?.length > 0 ? 'text-gray-900' : 'text-gray-500'}`}>
+        <span
+          className={`${selectedDates?.length > 0 ? "text-gray-900" : "text-gray-500"}`}
+        >
           {displayText}
         </span>
         <Icon
           icon="fa-calendar-alt"
-          className={`text-gray-400 transition-colors ${isCalendarOpen ? 'text-blue-500' : ''}`}
+          className={`text-gray-400 transition-colors ${isCalendarOpen ? "text-blue-500" : ""}`}
         />
       </div>
 
@@ -144,7 +174,7 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="inline-block px-2 py-1 bg-white border border-yellow-300 rounded text-yellow-300 text-xs hover:bg-yellow-300 hover:text-black transition-colors cursor-pointer"
+            className="inline-block px-3 py-1 bg-yellow-400 border border-yellow-500 rounded text-black text-xs font-medium hover:bg-yellow-500 transition-colors cursor-pointer"
           >
             Confira as datas selecionadas
           </button>
@@ -156,21 +186,21 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
           ref={calendarRef}
           className="absolute bottom-full right-0 z-50 mb-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 min-w-[320px]"
         >
-
           <div className="flex items-center justify-between mb-4">
             <button
               type="button"
-              onClick={() => navigateMonth('prev')}
+              onClick={() => navigateMonth("prev")}
               className="p-1 hover:bg-gray-100 rounded"
             >
               <Icon icon="fa-chevron-left" className="text-gray-600" />
             </button>
             <h3 className="font-medium text-gray-900">
-              {monthNames[currentMonth.getMonth()]} de {currentMonth.getFullYear()}
+              {monthNames[currentMonth.getMonth()]} de{" "}
+              {currentMonth.getFullYear()}
             </h3>
             <button
               type="button"
-              onClick={() => navigateMonth('next')}
+              onClick={() => navigateMonth("next")}
               className="p-1 hover:bg-gray-100 rounded"
             >
               <Icon icon="fa-chevron-right" className="text-gray-600" />
@@ -178,8 +208,11 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-2">
-            {weekDays.map(day => (
-              <div key={day} className="text-xs font-medium text-gray-500 text-center p-2">
+            {weekDays.map((day) => (
+              <div
+                key={day}
+                className="text-xs font-medium text-gray-500 text-center p-2"
+              >
                 {day}
               </div>
             ))}
@@ -204,17 +237,20 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
                   disabled={isDisabled}
                   className={`
                     p-2 text-sm rounded transition-colors
-                    ${isDisabled
-                      ? 'text-gray-300 cursor-not-allowed'
-                      : 'hover:bg-gray-100 cursor-pointer'
+                    ${
+                      isDisabled
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "hover:bg-gray-100 cursor-pointer"
                     }
-                    ${isSelected
-                      ? 'bg-gray-300 text-white hover:bg-gray-300'
-                      : ''
+                    ${
+                      isSelected
+                        ? "bg-gray-300 text-white hover:bg-gray-300"
+                        : ""
                     }
-                    ${isToday && !isSelected
-                      ? 'bg-yellow-400 text-gray-900 font-medium'
-                      : ''
+                    ${
+                      isToday && !isSelected
+                        ? "bg-yellow-400 text-gray-900 font-medium"
+                        : ""
                     }
                   `}
                 >
@@ -247,10 +283,11 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
 
             <div className="space-y-3 max-h-60 overflow-y-auto">
               {selectedDates.map((date, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="text-gray-900">
-                    {formatLongDate(date)}
-                  </span>
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                >
+                  <span className="text-gray-900">{formatLongDate(date)}</span>
                   <button
                     type="button"
                     onClick={() => toggleDate(date)}

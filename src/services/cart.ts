@@ -58,7 +58,6 @@ export function getCartFromCookies(): CartType[] {
   try {
     const cookie = Cookies.get(CART_COOKIE_KEY);
     const parsed = cookie ? JSON.parse(cookie) : [];
-    console.log('cart cookie:', parsed);
     return parsed;
   } catch {
     return [];
@@ -67,7 +66,7 @@ export function getCartFromCookies(): CartType[] {
 
 export function saveCartToCookies(cart: CartType[]): void {
   if (typeof window === "undefined") return;
-  
+
   const optimizedCart = cart.map((item) => {
     const optimizedProduct = item.product ? {
       id: item.product.id,
@@ -97,7 +96,6 @@ export function saveCartToCookies(cart: CartType[]): void {
     };
   });
 
-  
   const serialized = JSON.stringify(optimizedCart);
   Cookies.set(CART_COOKIE_KEY, serialized, { expires: CART_COOKIE_EXPIRY });
 
@@ -121,41 +119,56 @@ export function collectDeliverySummary(items: CartType[]): DeliverySummary {
     if (!Number.isFinite(feeValue) || feeValue < 0) return;
 
     const storeData = item?.product?.store ?? {};
-    const rawStoreId = item?.details?.deliveryStoreId ?? storeData?.id ?? storeData;
+    const rawStoreId =
+      item?.details?.deliveryStoreId ?? storeData?.id ?? storeData;
     const storeId = Number(rawStoreId);
     const hasNumericStoreId = Number.isFinite(storeId);
-    const entryKey = hasNumericStoreId ? `store-${storeId}` : `item-${item?.product?.id ?? Math.random()}`;
+    const entryKey = hasNumericStoreId
+      ? `store-${storeId}`
+      : `item-${item?.product?.id ?? Math.random()}`;
 
     if (!entriesMap.has(entryKey)) {
       let storeLogoUrl: string | null = null;
       if (storeData?.profile && typeof storeData.profile === "object") {
-        storeLogoUrl = getImage(storeData.profile, "thumb") || getImage(storeData.profile, "sm") || getImage(storeData.profile);
+        storeLogoUrl =
+          getImage(storeData.profile, "thumb") ||
+          getImage(storeData.profile, "sm") ||
+          getImage(storeData.profile);
       }
 
       entriesMap.set(entryKey, {
         key: entryKey,
         price: feeValue,
         storeId: hasNumericStoreId ? storeId : null,
-        storeName: storeData?.companyName ?? storeData?.title ?? "Loja parceira",
+        storeName:
+          storeData?.companyName ?? storeData?.title ?? "Loja parceira",
         storeSlug: storeData?.slug,
         storeLogoUrl,
       });
       total += feeValue;
     }
 
-    const rawZip = item?.details?.deliveryZipCode ?? item?.details?.deliveryZipCodeFormatted;
+    const rawZip =
+      item?.details?.deliveryZipCode ?? item?.details?.deliveryZipCodeFormatted;
     if (rawZip) {
       const sanitizedZip = rawZip.toString().replace(/\D/g, "");
       if (sanitizedZip.length >= 5) zipCodes.add(sanitizedZip);
     }
   });
 
-  return { total, zipCodes: Array.from(zipCodes), entries: Array.from(entriesMap.values()) };
+  return {
+    total,
+    zipCodes: Array.from(zipCodes),
+    entries: Array.from(entriesMap.values()),
+  };
 }
 
 export function calculateCartResume(items: CartType[]): CartResume {
   const dates = items.map((item) => item.details?.dateStart);
-  const subtotal = items.reduce((acc, item) => acc + Number(item.total ?? 0), 0);
+  const subtotal = items.reduce(
+    (acc, item) => acc + Number(item.total ?? 0),
+    0,
+  );
   const delivery = collectDeliverySummary(items);
   const dateRange = findDates(dates);
 
@@ -190,12 +203,75 @@ export function removeCartItem(cart: CartType[], index: number): CartType[] {
   return cart.filter((_, i) => i !== index);
 }
 
+export type StoreMinimumSummary = {
+  storeId: number;
+  storeTitle: string;
+  enabled: boolean;
+  minimumValue: number;
+  subtotal: number;
+  missing: number;
+};
+
+export function buildMinimumOrderSummary(items: CartType[]): StoreMinimumSummary[] {
+  const map = new Map<number, StoreMinimumSummary>();
+
+  for (const item of items) {
+    const store: any = item?.product?.store;
+    if (!store?.id) continue;
+
+    const enabled = !!store?.minimum_order?.enabled;
+    const minimumValue = Number(store?.minimum_order?.value ?? 0);
+
+    if (!map.has(store.id)) {
+      map.set(store.id, {
+        storeId: store.id,
+        storeTitle: store.title ?? store.companyName ?? "Loja",
+        enabled,
+        minimumValue,
+        subtotal: 0,
+        missing: 0,
+      });
+    }
+
+    const current = map.get(store.id)!;
+    current.subtotal += Number(item.total ?? 0);
+    current.enabled = current.enabled || enabled;
+    current.minimumValue = Math.max(current.minimumValue, minimumValue);
+  }
+
+  return Array.from(map.values()).map((s) => {
+    if (!s.enabled || s.minimumValue <= 0) return { ...s, missing: 0 };
+    return { ...s, missing: Math.max(0, s.minimumValue - s.subtotal) };
+  });
+}
+
+export function extractCartProductIds(items: any[]): number[] {
+  return items
+    .map((item: any) => {
+      const prod = item?.product;
+      return typeof prod === 'object' ? prod?.id : prod;
+    })
+    .filter((id: any) => id != null)
+    .map(Number);
+}
+
+export function hydrateCartProducts(cartItems: any[], products: any[]): any[] {
+  return cartItems.map((item: any) => {
+    const productId = typeof item.product === 'object' ? item.product?.id : item.product;
+    const fullProduct = products.find((p: any) => p.id == productId);
+    return fullProduct ? { ...item, product: fullProduct } : item;
+  });
+}
+
 export function extractDeliveryFees(items: CartType[]): { price: number; store_id: number }[] {
   const result = items
     .map((item) => {
       const fee = Number(item?.details?.deliveryFee);
-      const storeSource = item?.details?.deliveryStoreId ??
-        (typeof item?.product?.store === "object" ? (item?.product?.store as any)?.id : item?.product?.store);
+      const storeSource =
+        item?.details?.deliveryStoreId ??
+        (typeof item?.product?.store === "object"
+          ? (item?.product?.store as any)?.id
+          : item?.product?.store);
       const storeId = Number(storeSource);
 
       if (!Number.isFinite(fee) || !Number.isFinite(storeId)) return null;
@@ -206,7 +282,9 @@ export function extractDeliveryFees(items: CartType[]): { price: number; store_i
   return result;
 }
 
-export function normalizeDeliveryItems(items: { price: number; store_id: number }[]): { price: number; store_id: number }[] {
+export function normalizeDeliveryItems(
+  items: { price: number; store_id: number }[],
+): { price: number; store_id: number }[] {
   const map = new Map<number, { price: number; store_id: number }>();
   items.forEach((item) => {
     const storeId = Number(item?.store_id);
@@ -219,14 +297,23 @@ export function normalizeDeliveryItems(items: { price: number; store_id: number 
 }
 
 export function extractCartDeliveryZip(items: CartType[]): string {
-  const item = items.find((i) => i?.details?.deliveryZipCode || i?.details?.deliveryZipCodeFormatted);
+  const item = items.find(
+    (i) => i?.details?.deliveryZipCode || i?.details?.deliveryZipCodeFormatted,
+  );
   if (!item) return "";
-  const raw = item.details?.deliveryZipCode ?? item.details?.deliveryZipCodeFormatted ?? "";
+  const raw =
+    item.details?.deliveryZipCode ??
+    item.details?.deliveryZipCodeFormatted ??
+    "";
   const sanitized = raw.toString().replace(/\D/g, "");
   return sanitized.length === 8 ? sanitized : "";
 }
 
-export function updateCartItemQuantity(cart: CartType[], index: number, quantity: number): CartType[] {
+export function updateCartItemQuantity(
+  cart: CartType[],
+  index: number,
+  quantity: number,
+): CartType[] {
   if (quantity <= 0) return removeCartItem(cart, index);
   return cart.map((item, i) => (i === index ? { ...item, quantity } : item));
 }
@@ -238,9 +325,15 @@ export interface CartStorage {
 }
 
 export const cookieCartStorage: CartStorage = {
-  async get() { return getCartFromCookies(); },
-  async set(cart) { saveCartToCookies(cart); },
-  async clear() { clearCartCookies(); },
+  async get() {
+    return getCartFromCookies();
+  },
+  async set(cart) {
+    saveCartToCookies(cart);
+  },
+  async clear() {
+    clearCartCookies();
+  },
 };
 
 export const createApiCartStorage = (api: Api): CartStorage => ({
@@ -248,7 +341,9 @@ export const createApiCartStorage = (api: Api): CartStorage => ({
     try {
       const res: any = await api.bridge({ method: "get", url: "cart" });
       return res?.data?.items ?? res?.data ?? [];
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   },
   async set(cart) {
     await api.bridge({ method: "post", url: "cart", data: { items: cart } });
