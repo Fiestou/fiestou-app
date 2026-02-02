@@ -3,7 +3,6 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import Api from "@/src/services/api";
 import React, { useEffect, useMemo, useState } from "react";
-import { NextApiRequest, NextApiResponse } from "next";
 import { dateBRFormat, getImage, moneyFormat } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { RemoveToCart } from "@/src/components/pages/carrinho";
@@ -26,53 +25,6 @@ import {
   extractProductIds,
 } from "@/src/services/delivery";
 
-export async function getServerSideProps({
-  req,
-}: {
-  req: NextApiRequest;
-  res: NextApiResponse;
-}) {
-  const api = new Api();
-
-  const parse = req.cookies["fiestou.cart"] ?? "";
-  const cart = !!parse ? JSON.parse(parse) : [];
-
-  let request: any = await api.content({
-    method: "get",
-    url: "default",
-  });
-
-  const DataSeo = request?.data?.DataSeo ?? {};
-  const Scripts = request?.data?.Scripts ?? {};
-
-  request = await api.request({
-    method: "get",
-    url: "request/products",
-    data: {
-      whereIn: cart.map((item: any) => item.product),
-    },
-  });
-
-  const products = request?.data ?? [];
-
-  cart.map((item: any, key: any) => {
-    let handle = products.find((prod: any) => prod.id == item.product);
-
-    if (!!handle) {
-      cart[key]["product"] = handle;
-    }
-  });
-
-  return {
-    props: {
-      cart: cart,
-      products: products,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
-    },
-  };
-}
-
 type StoreMinimumOrder = {
   enabled: 0 | 1;
   value: number;
@@ -87,15 +39,23 @@ type StoreMinimumSummary = {
   missing: number;
 };
 
-export default function Carrinho({
-  cart,
-  DataSeo,
-  Scripts,
-}: {
+type PageData = {
   cart: Array<CartType>;
+  products: any[];
   DataSeo: any;
   Scripts: any;
-}) {
+};
+
+export default function Carrinho() {
+  const [pageData, setPageData] = useState<PageData>({
+    cart: [],
+    products: [],
+    DataSeo: {},
+    Scripts: {},
+  });
+
+  const { cart, DataSeo, Scripts } = pageData;
+
   const [listCart, setListCart] = useState<CartType[]>([]);
   const [resume, setResume] = useState<CartResume>({
     subtotal: 0,
@@ -230,6 +190,68 @@ export default function Carrinho({
     });
   };
 
+  // ✅ substitui getServerSideProps: carrega cookies + DataSeo/Scripts + products no client
+  useEffect(() => {
+    const load = async () => {
+      try {
+        // 1) pega carrinho do cookie (client-side)
+        const cookieStr =
+          typeof document !== "undefined" ? document.cookie ?? "" : "";
+        const match = cookieStr.match(
+          /(?:^|;\s*)fiestou\.cart=([^;]*)/,
+        );
+        const raw = match?.[1] ? decodeURIComponent(match[1]) : "";
+        const parsedCart = raw ? JSON.parse(raw) : [];
+
+        const api = new Api();
+
+        // 2) DataSeo/Scripts
+        let request: any = await api.content({
+          method: "get",
+          url: "default",
+        });
+
+        const DataSeo = request?.data?.DataSeo ?? {};
+        const Scripts = request?.data?.Scripts ?? {};
+
+        // 3) Produtos do carrinho
+        const whereIn = (parsedCart || []).map((item: any) => item.product);
+
+        request = await api.request({
+          method: "get",
+          url: "request/products",
+          data: { whereIn },
+        });
+
+        const products = request?.data ?? [];
+
+        // 4) hidrata cart com o objeto product completo
+        const hydratedCart = (parsedCart || []).map((item: any) => {
+          const handle = products.find((prod: any) => prod.id == item.product);
+          if (!handle) return item;
+          return { ...item, product: handle };
+        });
+
+        setPageData({
+          cart: hydratedCart,
+          products,
+          DataSeo,
+          Scripts,
+        });
+      } catch (e) {
+        // fallback seguro
+        setPageData({
+          cart: [],
+          products: [],
+          DataSeo: {},
+          Scripts: {},
+        });
+      }
+    };
+
+    load();
+  }, []);
+
   useEffect(() => {
     const initial = MockMinimumOrder(cart);
     setListCart(initial);
@@ -329,16 +351,16 @@ export default function Carrinho({
 
                   {!!listCart.length &&
                     listCart.map((item, key) => {
-                      const deliveryFeeValue = Number(
-                        item.details?.deliveryFee,
-                      );
+                      const deliveryFeeValue = Number(item.details?.deliveryFee);
                       const hasDeliveryFee =
                         Number.isFinite(deliveryFeeValue) &&
                         deliveryFeeValue >= 0;
+
                       const rawDeliveryZip =
                         item.details?.deliveryZipCode ??
                         item.details?.deliveryZipCodeFormatted ??
                         "";
+
                       const formattedDeliveryZip = rawDeliveryZip
                         ? formatCep(rawDeliveryZip.toString())
                         : "";
@@ -351,15 +373,9 @@ export default function Carrinho({
                           <div className="w-full max-w-[4rem] pt-1">
                             <div className="aspect aspect-square rounded-md relative overflow-hidden bg-zinc-200">
                               {!!item?.product?.gallery?.length &&
-                                !!getImage(
-                                  item?.product?.gallery[0],
-                                  "thumb",
-                                ) && (
+                                !!getImage(item?.product?.gallery[0], "thumb") && (
                                   <Img
-                                    src={getImage(
-                                      item?.product?.gallery[0],
-                                      "thumb",
-                                    )}
+                                    src={getImage(item?.product?.gallery[0], "thumb")}
                                     size="md"
                                     className="absolute object-cover h-full inset-0 w-full"
                                   />
@@ -401,9 +417,7 @@ export default function Carrinho({
                               <div className="w-full text-sm text-zinc-600 pt-2">
                                 <div className="flex gap-1">
                                   Data:
-                                  <span>
-                                    {dateBRFormat(item.details?.dateStart)}
-                                  </span>
+                                  <span>{dateBRFormat(item.details?.dateStart)}</span>
                                 </div>
                                 <div className="flex gap-1">
                                   Fornecido por:
@@ -417,21 +431,18 @@ export default function Carrinho({
                                   Array.isArray(item.attributes) &&
                                   item.attributes.length > 0 &&
                                   (() => {
-                                    const attributesWithSelected =
-                                      item.attributes
-                                        .map((attr: any) => ({
-                                          ...attr,
-                                          selectedVariations: (
-                                            attr.variations || []
-                                          ).filter((v: any) => v.quantity > 0),
-                                        }))
-                                        .filter(
-                                          (attr: any) =>
-                                            attr.selectedVariations.length > 0,
-                                        );
+                                    const attributesWithSelected = item.attributes
+                                      .map((attr: any) => ({
+                                        ...attr,
+                                        selectedVariations: (attr.variations || []).filter(
+                                          (v: any) => v.quantity > 0,
+                                        ),
+                                      }))
+                                      .filter(
+                                        (attr: any) => attr.selectedVariations.length > 0,
+                                      );
 
-                                    if (attributesWithSelected.length === 0)
-                                      return null;
+                                    if (attributesWithSelected.length === 0) return null;
 
                                     return (
                                       <div className="mt-2 pt-2 border-t border-zinc-200">
@@ -445,10 +456,7 @@ export default function Carrinho({
                                                 {attr.title}
                                               </p>
                                               {attr.selectedVariations.map(
-                                                (
-                                                  variation: any,
-                                                  varIdx: number,
-                                                ) => {
+                                                (variation: any, varIdx: number) => {
                                                   const price =
                                                     variation.price ||
                                                     variation.priceValue ||
@@ -456,54 +464,34 @@ export default function Carrinho({
                                                   const numPrice =
                                                     typeof price === "string"
                                                       ? parseFloat(
-                                                          price.replace(
-                                                            ",",
-                                                            ".",
-                                                          ),
+                                                          price.replace(",", "."),
                                                         )
                                                       : Number(price);
-                                                  const quantity =
-                                                    variation.quantity || 1;
-                                                  const totalPrice =
-                                                    numPrice * quantity;
+                                                  const quantity = variation.quantity || 1;
+                                                  const totalPrice = numPrice * quantity;
 
                                                   return (
-                                                    <div
-                                                      key={varIdx}
-                                                      className="ml-2 mb-2"
-                                                    >
+                                                    <div key={varIdx} className="ml-2 mb-2">
                                                       <div className="flex justify-between items-center gap-2 text-sm text-zinc-700">
                                                         <span className="flex items-center gap-1.5">
-                                                          <span className="text-zinc-400">
-                                                            •
-                                                          </span>
-                                                          <span>
-                                                            {variation.title}
-                                                          </span>
+                                                          <span className="text-zinc-400">•</span>
+                                                          <span>{variation.title}</span>
                                                         </span>
                                                         {numPrice > 0 && (
                                                           <span className="text-zinc-500 font-medium whitespace-nowrap text-xs">
-                                                            R${" "}
-                                                            {moneyFormat(
-                                                              numPrice,
-                                                            )}
+                                                            R$ {moneyFormat(numPrice)}
                                                           </span>
                                                         )}
                                                       </div>
-                                                      {quantity > 1 &&
-                                                        numPrice > 0 && (
-                                                          <div className="flex justify-between items-center gap-2 text-xs text-zinc-500 ml-4 mt-0.5">
-                                                            <span>
-                                                              Qtd: {quantity}
-                                                            </span>
-                                                            <span className="text-cyan-600 font-semibold">
-                                                              R${" "}
-                                                              {moneyFormat(
-                                                                totalPrice,
-                                                              )}
-                                                            </span>
-                                                          </div>
-                                                        )}
+
+                                                      {quantity > 1 && numPrice > 0 && (
+                                                        <div className="flex justify-between items-center gap-2 text-xs text-zinc-500 ml-4 mt-0.5">
+                                                          <span>Qtd: {quantity}</span>
+                                                          <span className="text-cyan-600 font-semibold">
+                                                            R$ {moneyFormat(totalPrice)}
+                                                          </span>
+                                                        </div>
+                                                      )}
                                                     </div>
                                                   );
                                                 },
@@ -569,10 +557,7 @@ export default function Carrinho({
                         {minimumOrderSummary.map((s) => {
                           if (!s.enabled || s.minimumValue <= 0) {
                             return (
-                              <div
-                                key={s.storeId}
-                                className="text-sm text-zinc-600"
-                              >
+                              <div key={s.storeId} className="text-sm text-zinc-600">
                                 <span className="font-semibold text-zinc-900">
                                   {s.storeTitle}
                                 </span>
