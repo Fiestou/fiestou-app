@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { Button } from "../ui/form";
@@ -6,11 +6,60 @@ import { GetCart, RemoveToCart } from "../pages/carrinho";
 import Api from "@/src/services/api";
 import CartItem from "./cart-preview/CartItem";
 import CartSummary from "./cart-preview/CartSummary";
+import { moneyFormat } from "@/src/helper";
 
 interface CartPreviewProps {
   isMobile?: boolean;
   onClose?: () => void;
 }
+
+type StoreMinimumOrder = {
+  enabled: 0 | 1;
+  value: number;
+};
+
+type StoreMinimumSummary = {
+  storeId: number;
+  storeTitle: string;
+  enabled: boolean;
+  minimumValue: number;
+  subtotal: number;
+  missing: number;
+};
+
+const buildMinimumOrderSummary = (items: any[]): StoreMinimumSummary[] => {
+  const map = new Map<number, StoreMinimumSummary>();
+
+  for (const item of items) {
+    const store = item?.product?.store;
+    if (!store?.id) continue;
+
+    const enabled = !!store?.minimum_order?.enabled;
+    const minimumValue = Number(store?.minimum_order?.value ?? 0);
+
+    if (!map.has(store.id)) {
+      map.set(store.id, {
+        storeId: store.id,
+        storeTitle: store.title ?? "Loja",
+        enabled,
+        minimumValue,
+        subtotal: 0,
+        missing: 0,
+      });
+    }
+
+    const current = map.get(store.id)!;
+
+    current.subtotal += Number(item.total ?? 0);
+    current.enabled = current.enabled || enabled;
+    current.minimumValue = Math.max(current.minimumValue, minimumValue);
+  }
+
+  return Array.from(map.values()).map((s) => {
+    if (!s.enabled || s.minimumValue <= 0) return { ...s, missing: 0 };
+    return { ...s, missing: Math.max(0, s.minimumValue - s.subtotal) };
+  });
+};
 
 export default function CartPreview({
   isMobile = false,
@@ -19,13 +68,45 @@ export default function CartPreview({
   const [cart, setCart] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* -------------------- Effects -------------------- */
+  // Dados Mockados de minimum_order
+  const MOCK_MINIMUM_ORDER = true;
+
+  const applyMockMinimumOrder = (items: any[]) => {
+    if (!MOCK_MINIMUM_ORDER) return items;
+
+    // Dados Mockados de minimum_order
+    const mockedByStoreId: Record<number, StoreMinimumOrder> = {
+      1: { enabled: 1, value: 50 },
+      2: { enabled: 1, value: 120 },
+      3: { enabled: 0, value: 0 },
+    };
+
+    return items.map((item) => {
+      const storeId = item?.product?.store?.id;
+      if (!storeId) return item;
+
+      const minimum_order = mockedByStoreId[storeId] ?? {
+        enabled: 1,
+        value: 80,
+      };
+
+      return {
+        ...item,
+        product: {
+          ...item.product,
+          store: {
+            ...item.product.store,
+            minimum_order,
+          },
+        },
+      };
+    });
+  };
 
   useEffect(() => {
     loadCart();
   }, []);
 
-  // Bloqueia scroll quando drawer aberto
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -33,7 +114,6 @@ export default function CartPreview({
     };
   }, []);
 
-  // Fecha com ESC
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape" && onClose) onClose();
@@ -42,12 +122,11 @@ export default function CartPreview({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
-  /* -------------------- Data -------------------- */
-
   const loadCart = async () => {
     setLoading(true);
 
     const cartData = GetCart();
+
     if (!cartData.length) {
       setCart([]);
       setLoading(false);
@@ -71,10 +150,11 @@ export default function CartPreview({
         product: products.find((p: any) => p.id === item.product) || null,
       }));
 
-      setCart(enrichedCart);
+      setCart(applyMockMinimumOrder(enrichedCart));
     } catch (err) {
       console.error("Erro ao carregar carrinho:", err);
-      setCart(cartData);
+
+      setCart(applyMockMinimumOrder(cartData));
     } finally {
       setLoading(false);
     }
@@ -89,7 +169,7 @@ export default function CartPreview({
 
   const totalValue = cart.reduce(
     (acc, item) => acc + (Number(item.total) || 0),
-    0
+    0,
   );
 
   const totalDeliveryFee = cart.reduce((acc, item) => {
@@ -97,25 +177,25 @@ export default function CartPreview({
     return Number.isFinite(fee) && fee > 0 ? acc + fee : acc;
   }, 0);
 
-  /* -------------------- Render -------------------- */
+  const minimumOrderSummary = useMemo(() => {
+    return buildMinimumOrderSummary(cart);
+  }, [cart]);
+
+  const hasMinimumPending = minimumOrderSummary.some(
+    (s) => s.enabled && s.minimumValue > 0 && s.missing > 0,
+  );
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
-
-      {/* Drawer */}
       <div className="fixed top-16 right-0 pt-2 w-96 h-[80vh] bg-white flex flex-col shadow-lg z-50 rounded-bl-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-zinc-200">
           <h4 className="font-bold text-zinc-900 text-lg">
             {loading
               ? "Carregando..."
               : cart.length === 0
-              ? "Carrinho vazio"
-              : `${totalItems} ${
-                  totalItems === 1 ? "item" : "itens"
-                } no carrinho `}
+                ? "Carrinho vazio"
+                : `${totalItems} ${totalItems === 1 ? "item" : "itens"} no carrinho `}
             <Icon
               icon="fa-shopping-cart"
               className="text-base lg:text-lg mr-2"
@@ -130,7 +210,6 @@ export default function CartPreview({
           </button>
         </div>
 
-        {/* Content */}
         {loading ? (
           <div>
             <p className="text-zinc-500 text-center py-8">Carregando...</p>
@@ -146,7 +225,6 @@ export default function CartPreview({
           </div>
         ) : (
           <>
-            {/* Items */}
             <div className="flex-1 overflow-y-auto">
               {cart.map((item: any, index: number) => (
                 <CartItem
@@ -158,9 +236,72 @@ export default function CartPreview({
                 />
               ))}
             </div>
-
-            {/* Footer */}
             <div className="p-4 bg-zinc-50 border-t border-zinc-200 rounded-bl-[10px]">
+              {minimumOrderSummary.length > 0 && (
+                <div className="mb-3 p-3 rounded-lg border bg-white">
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-zinc-900 text-sm">
+                      Pedido mínimo
+                    </p>
+                  </div>
+
+                  <div className="mt-2 grid gap-2">
+                    {minimumOrderSummary.map((s) => {
+                      if (!s.enabled || s.minimumValue <= 0) {
+                        return (
+                          <div
+                            key={s.storeId}
+                            className="text-xs text-zinc-600"
+                          >
+                            <span className="font-semibold text-zinc-900">
+                              {s.storeTitle}
+                            </span>
+                            : sem pedido mínimo
+                          </div>
+                        );
+                      }
+
+                      const ok = s.missing === 0;
+
+                      return (
+                        <div key={s.storeId} className="text-xs">
+                          <div className="flex justify-between gap-3">
+                            <span className="font-semibold text-zinc-900">
+                              {s.storeTitle}
+                            </span>
+                            <span className="text-zinc-600 whitespace-nowrap">
+                              Mín: R$ {moneyFormat(s.minimumValue)}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between gap-3 mt-1">
+                            <span className="text-zinc-600">
+                              Subtotal: R$ {moneyFormat(s.subtotal)}
+                            </span>
+
+                            {ok ? (
+                              <span className="font-bold text-green-600">
+                                Atingido
+                              </span>
+                            ) : (
+                              <span className="font-bold text-amber-600">
+                                Falta R$ {moneyFormat(s.missing)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {hasMinimumPending && (
+                    <p className="mt-2 text-[11px] text-zinc-500">
+                      Alguns itens ainda não atingiram o mínimo da loja.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <CartSummary
                 cart={cart}
                 totalValue={totalValue}

@@ -129,8 +129,6 @@ export default function CartSummary({
           </div>
 
           <div className="border-t"></div>
-
-          {/* Frete calculado */}
           {(resume.deliveryZipCodes.length > 0 ||
             resume.delivery > 0 ||
             resume.deliveryEntries.length > 0) && (
@@ -193,7 +191,6 @@ export default function CartSummary({
             </div>
           )}
 
-          {/* Total */}
           <div className="flex gap-2 mb-4">
             <div className="w-full text-zinc-900 font-bold">Total</div>
             <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
@@ -201,7 +198,6 @@ export default function CartSummary({
             </div>
           </div>
 
-          {/* Botão checkout */}
           {showCheckoutButton && (
             <div className="grid fixed md:relative bottom-0 left-0 w-full p-1 md:p-0">
               <Button
