@@ -21,8 +21,6 @@ export function useSegmentGroups() {
                 });
                 if (!mounted) return;
 
-                console.log("useSegmentGroups fetched:", res);
-
                 if (res?.response && Array.isArray(res?.data)) {
                     setSegments(res.data);
                     setError(null);

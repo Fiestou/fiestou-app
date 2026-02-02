@@ -1,8 +1,7 @@
-// TODO: Check the code and fix the types
 //@ts-nocheck
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Input, Select, TextArea } from "@/src/components/ui/form";
 import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
@@ -17,13 +16,15 @@ import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import SelectDropdown from "../../../src/components/ui/form/SelectDropdown";
 import MultiSelect from "../../../src/components/ui/form/MultiSelectUi";
+import { useSegmentGroups } from "@/src/hooks/useSegmentGroups";
 
 export async function getServerSideProps(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const api = new Api();
-  let request: any = {};
+
+  let request: NextApiResponse = {};
 
   request = await api.call(
     {
@@ -42,11 +43,12 @@ export async function getServerSideProps(
         },
       ],
     },
-    req
+    req,
   );
 
   const page = request?.data?.query?.page ?? [];
-  const storeTypes = request?.data?.query.storeType ?? [];
+  const storeTypes = request?.data?.query?.storeType ?? [];
+  const handle = request.data ?? {};
 
   return {
     props: {
@@ -61,22 +63,22 @@ const formInitial = {
   loading: false,
 };
 
-const days = [
-  { value: "Sunday", name: "Domingo" },
-  { value: "Monday", name: "Segunda" },
-  { value: "Tuesday", name: "Terça" },
-  { value: "Wednesday", name: "Quarta" },
-  { value: "Thursday", name: "Quinta" },
-  { value: "Friday", name: "Sexta" },
-  { value: "Saturday", name: "Sábado" },
-  { value: "Holiday", name: "Feriados" },
+const days: Record<string, string[]> = [
+  { value: "Domingo", name: "Domingo" },
+  { value: "Segunda", name: "Segunda" },
+  { value: "Terça", name: "Terça" },
+  { value: "Quarta", name: "Quarta" },
+  { value: "Quinta", name: "Quinta" },
+  { value: "Sexta", name: "Sexta" },
+  { value: "Sábado", name: "Sábado" },
+  { value: "Feriados", name: "Feriados" },
 ];
 
 export default function Loja({
   page,
   storeTypes,
 }: {
-  page: any;
+  page: interface;
   storeTypes: Array<RelationType>;
 }) {
   const api = new Api();
@@ -92,39 +94,86 @@ export default function Loja({
     let handle = store?.openClose ?? ([] as Array<DayType>);
 
     days.map(
-      (item: any, key: any) =>
+      (item: string, key: string) =>
         item.value == day &&
-        (handle[key] = { ...handle[key], ...value, day: day })
+        (handle[key] = { ...handle[key], ...value, day: day }),
     );
-
     setWeek(handle);
     setStore({ ...store, openClose: handle });
   };
 
   const [handleCover, setHandleCover] = useState(
-    {} as { preview: string; remove: number }
+    {} as { preview: string; remove: number },
   );
   const [handleProfile, setHandleProfile] = useState(
-    {} as {} as { preview: string; remove: number }
+    {} as {} as { preview: string; remove: number },
   );
 
-  const [oldStore, setOldStore] = useState({} as StoreType);
-  const [store, setStore] = useState({} as StoreType);
-  const [groupOptions, setGroupOptions] = useState([]);
+  const {
+    segments,
+    loading: segmentsLoading,
+    error: segmentsError,
+  } = useSegmentGroups();
   const handleStore = async (value: Object) => {
     setStore({ ...store, ...value });
   };
 
+  const [oldStore, setOldStore] = useState({} as StoreType);
+  const [store, setStore] = useState({} as StoreType);
+
+  const handleMinimumOrderEnabled = (enabled: boolean) => {
+    setStore({
+      ...store,
+      minimum_order: {
+        enabled: enabled ? 1 : 0,
+        value: enabled ? (store.minimum_order?.value ?? 0) : 0,
+      },
+    });
+  };
+
+  const handleMinimumOrderValue = (value: number) => {
+    setStore({
+      ...store,
+      minimum_order: {
+        ...store.minimum_order,
+        value,
+      },
+    });
+  };
+
   const getStore = async () => {
-    let request: any = await api.bridge({
+    let request: NextApiRequest = await api.bridge({
       method: "post",
       url: "stores/form",
     });
 
     const handle = request.data ?? {};
+
+    if (typeof handle.minimum_order === "string") {
+      try {
+        handle.minimum_order = JSON.parse(handle.minimum_order);
+      } catch {
+        handle.minimum_order = null;
+      }
+    }
+
+    handle.minimum_order = handle.minimum_order ?? {
+      enabled: 0,
+      value: 0,
+    };
+
+    handle.minimum_order.enabled = handle.minimum_order.enabled ? 1 : 0;
+
+    handle.minimum_order.value = handle.minimum_order.value
+      ? Number(handle.minimum_order.value).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        })
+      : "";
+
     handle.deliveryRegions = handle.zipcode_cities_ranges?.map(
       (item: { zipcode_cities_range_id: number }) =>
-        item.zipcode_cities_range_id
+        item.zipcode_cities_range_id,
     );
 
     setOldStore(handle);
@@ -142,7 +191,7 @@ export default function Loja({
     });
   };
 
-  const handleCoverRemove = async (e: any) => {
+  const handleCoverRemove = async (e: React.FormEvent) => {
     setHandleCover({
       preview: "",
       remove: store?.cover?.id ?? handleCover.remove,
@@ -151,10 +200,10 @@ export default function Loja({
     handleStore({ cover: {} });
   };
 
-  const handleCoverPreview = async (e: any) => {
+  const handleCoverPreview = async (e: React.FormEvent) => {
     const file = e.target.files[0];
 
-    const base64: any = await new Promise((resolve, reject) => {
+    const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result);
@@ -168,7 +217,7 @@ export default function Loja({
     return fileData;
   };
 
-  const handleSubmitCover = async (e: any) => {
+  const handleSubmitCover = async (e: React.FormEvent) => {
     e.preventDefault();
 
     handleForm({ loading: true });
@@ -184,7 +233,7 @@ export default function Loja({
           method: "remove",
           medias: [handleCover.remove],
         })
-        .then((res: any) => res);
+        .then((res: NextApiResponse) => res);
 
       if (request.response && !!request.removed) {
         coverValue = {};
@@ -200,7 +249,7 @@ export default function Loja({
           method: "upload",
           medias: [store?.cover?.files],
         })
-        .then((data: any) => data);
+        .then((data: NextApiResponse) => data);
 
       if (upload.response && !!upload.medias[0].status) {
         const media = upload.medias[0].media;
@@ -223,7 +272,7 @@ export default function Loja({
       cover: coverValue,
     };
 
-    const request: any = await api.bridge({
+    const request: NextApiResponse = await api.bridge({
       method: "post",
       url: "stores/register",
       data: handle,
@@ -242,7 +291,7 @@ export default function Loja({
     handleForm({ edit: "", loading: false });
   };
 
-  const handleProfileRemove = async (e: any) => {
+  const handleProfileRemove = async (e: React.FormEvent) => {
     setHandleProfile({
       preview: "",
       remove: store?.profile?.id ?? handleProfile.remove,
@@ -251,10 +300,10 @@ export default function Loja({
     handleStore({ profile: {} });
   };
 
-  const handleProfilePreview = async (e: any) => {
+  const handleProfilePreview = async (e: React.FormEvent) => {
     const file = e.target.files[0];
 
-    const base64: any = await new Promise((resolve, reject) => {
+    const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result);
@@ -268,12 +317,12 @@ export default function Loja({
     return fileData;
   };
 
-  const handleSubmitProfile = async (e: any) => {
+  const handleSubmitProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
     handleForm({ loading: true });
 
-    let profileValue: any = store?.profile;
+    let profileValue: Array<string> = store?.profile;
 
     if (!!handleProfile.remove) {
       const request = await api
@@ -284,7 +333,7 @@ export default function Loja({
           method: "remove",
           medias: [handleProfile.remove],
         })
-        .then((res: any) => res);
+        .then((res: NextApiResponse) => res);
 
       if (request.response && !!request.removed) {
         profileValue = {};
@@ -300,7 +349,7 @@ export default function Loja({
           method: "upload",
           medias: [store?.profile?.files],
         })
-        .then((data: any) => data);
+        .then((data: NextApiResponse) => data);
 
       if (upload.response && !!upload.medias[0].status) {
         const media = upload.medias[0].media;
@@ -323,7 +372,7 @@ export default function Loja({
       profile: profileValue,
     };
 
-    const request: any = await api.bridge({
+    const request: NextApiResponse = await api.bridge({
       method: "post",
       url: "stores/register",
       data: handle,
@@ -359,16 +408,15 @@ export default function Loja({
     }
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
 
     handleForm({ loading: true });
 
-    /* TO DO - TIPAR E ARRANCAR any */
-    const request: any = await api.bridge({
+    const request: NextApiResponse = await api.bridge({
       method: "post",
       url: "stores/register",
-      data: store,
+      data: payload,
     });
 
     if (request.response) {
@@ -389,12 +437,12 @@ export default function Loja({
 
   const renderAction = (
     name: string,
-    label?: { edit?: string; save?: string; cancel?: string }
+    label?: { edit?: string; save?: string; cancel?: string },
   ) => {
     return form.edit == name ? (
       <div className="flex gap-4">
         <Button
-          onClick={(e: any) => {
+          onClick={(e: React.FormEvent) => {
             handleForm({ edit: "" });
             setStore(oldStore);
             setHandleCover({
@@ -403,9 +451,10 @@ export default function Loja({
             });
           }}
           type="button"
-          style="btn-transparent"
+          variant="danger"
+          className="py-2 px-4"
         >
-          {label?.cancel ? label.cancel : <Icon icon="fa-undo" />}
+          {label?.cancel ? label.cancel : "Cancelar"}
         </Button>
         <Button
           loading={form.edit == name && form.loading}
@@ -416,23 +465,64 @@ export default function Loja({
       </div>
     ) : !form.loading ? (
       <Button
-        onClick={(e: any) => {
+        onClick={(e: React.FormEvent) => {
           handleForm({ edit: name });
           setStore(oldStore);
         }}
         type="button"
-        style="btn-link"
+        className="!py-2 !px-4"
       >
-        {label?.edit ? label.edit : "Editar"}
+        Editar
+        <Icon icon="fa-pen" type="far" />
       </Button>
     ) : (
       <button type="button" className="p-0 font-bold opacity-50">
-        {label?.edit ? label.edit : "Editar"}
+        Editar
+        <Icon icon="fa-pen" type="far" />
       </button>
     );
   };
 
   const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
+
+  function moneyBRToNumber(value?: string | number) {
+    if (value === null || value === undefined) return 0;
+
+    if (typeof value === "number") return value;
+
+    if (typeof value !== "string") return 0;
+
+    const onlyNumbers = value.replace(/\D/g, "");
+
+    if (!onlyNumbers) return 0;
+
+    return Number(onlyNumbers) / 100;
+  }
+
+  const payload = {
+    ...store,
+
+    default_delivery_fee: moneyBRToNumber(store?.default_delivery_fee),
+    minimum_order: {
+      enabled: store?.minimum_order?.enabled ? 1 : 0,
+      value: moneyBRToNumber(store?.minimum_order?.value),
+    },
+  };
+
+  const maskMoneyBR = (value: string) => {
+    const onlyNumbers = value.replace(/\D/g, "");
+
+    if (!onlyNumbers) return "";
+
+    const number = parseInt(onlyNumbers, 10);
+
+    const formatted = (number / 100).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+
+    return formatted;
+  };
 
   useEffect(() => {
     const fetchRegions = async () => {
@@ -445,7 +535,7 @@ export default function Loja({
           (response?.data?.data || []).map((region) => ({
             value: region.id,
             name: `${region.name} (${region.start} - ${region.finish})`,
-          }))
+          })),
         );
       } catch (e) {
         setDeliveryRegionsOptions([]);
@@ -504,7 +594,7 @@ export default function Loja({
               <div className="w-full grid gap-8 border-t pt-6">
                 {/* CAPA */}
                 <form
-                  onSubmit={(e: any) => handleSubmitCover(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmitCover(e)}
                   method="POST"
                   acceptCharset="UTF-8"
                   encType="multipart/form-data"
@@ -522,7 +612,9 @@ export default function Loja({
                     <FileInput
                       name="cover"
                       id="cover"
-                      onChange={async (e: any) => {
+                      onChange={async (
+                        e: React.ChangeEvent<HTMLInputElement>,
+                      ) => {
                         handleStore({
                           cover: {
                             files: await handleCoverPreview(e),
@@ -531,7 +623,9 @@ export default function Loja({
                       }}
                       aspect="aspect-[6/2.5]"
                       loading={form.loading}
-                      remove={(e: any) => handleCoverRemove(e)}
+                      remove={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleCoverRemove(e)
+                      }
                       preview={handleCover.preview}
                     />
                   ) : (
@@ -558,19 +652,21 @@ export default function Loja({
                 </form>
                 {/* PERFIL */}
                 <form
-                  onSubmit={(e: any) => handleSubmitProfile(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmitProfile(e)}
                   method="POST"
                   acceptCharset="UTF-8"
                   encType="multipart/form-data"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center justify-between gap-6">
                     <div className="w-[5rem]">
                       {form.edit == "profile" ? (
                         <FileInput
                           name="profile"
                           id="profile"
-                          onChange={async (e: any) => {
+                          onChange={async (
+                            e: React.ChangeEvent<HTMLInputElement>,
+                          ) => {
                             handleStore({
                               profile: {
                                 files: await handleProfilePreview(e),
@@ -581,7 +677,9 @@ export default function Loja({
                           placeholder="Abrir"
                           aspect="aspect-square"
                           loading={form.loading}
-                          remove={(e: any) => handleProfileRemove(e)}
+                          remove={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleProfileRemove(e)
+                          }
                           preview={handleProfile.preview}
                         />
                       ) : (
@@ -614,9 +712,9 @@ export default function Loja({
                     </div>
                   </div>
                 </form>
-                {/* TITULO */}
+                {/* Titulo da empresa */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -631,20 +729,20 @@ export default function Loja({
                   <div className="w-full">
                     {form.edit == "title" ? (
                       <Input
-                        onChange={(e: any) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           handleStore({ title: e.target.value })
                         }
                         value={store?.title}
                         placeholder="Digite o nome aqui"
                       />
                     ) : (
-                      oldStore?.title ?? "Informe o nome da sua loja"
+                      (oldStore?.title ?? "Informe o nome da sua loja")
                     )}
                   </div>
                 </form>
-                {/* DESCRICAO */}
+                {/* Descrição da empresa */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -659,21 +757,21 @@ export default function Loja({
                   <div className="w-full">
                     {form.edit == "description" ? (
                       <TextArea
-                        onChange={(e: any) =>
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                           handleStore({ description: e.target.value })
                         }
                         value={store?.description}
                         placeholder="Digite sua descrição aqui"
                       />
                     ) : (
-                      oldStore?.description ??
-                      "Insira uma descrição para sua loja"
+                      (oldStore?.description ??
+                      "Insira uma descrição para sua loja")
                     )}
                   </div>
                 </form>
-                {/* EMPRESA */}
+                {/* Dados da empresa*/}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -690,7 +788,7 @@ export default function Loja({
                       <div className="grid gap-2">
                         <Input
                           name="cnpj"
-                          onChange={(e: any) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             handleStore({
                               document: justNumber(e.target.value),
                             })
@@ -701,7 +799,7 @@ export default function Loja({
                         />
                         <Input
                           name="nome"
-                          onChange={(e: any) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             handleStore({ companyName: e.target.value })
                           }
                           required
@@ -719,9 +817,9 @@ export default function Loja({
                     )}
                   </div>
                 </form>
-                {/* HORARIO */}
+                {/* HORARIO de atendimento */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -737,7 +835,7 @@ export default function Loja({
                     {form.edit == "openClose" ? (
                       <div className="grid gap-2">
                         {!!days.length &&
-                          days.map((day: any, key: any) => (
+                          days.map((day: string, key: string) => (
                             <div
                               key={key}
                               className="flex items-center gap-4 text-sm"
@@ -747,10 +845,12 @@ export default function Loja({
                                 <Input
                                   type="time"
                                   value={week[key]?.open}
-                                  onChange={(e: any) =>
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLInputElement>,
+                                  ) =>
                                     handleWeek(
                                       { open: e.target.value },
-                                      day.value
+                                      day.value,
                                     )
                                   }
                                   className="p-0 border-0"
@@ -761,10 +861,12 @@ export default function Loja({
                                 <Input
                                   type="time"
                                   value={week[key]?.close}
-                                  onChange={(e: any) =>
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLInputElement>,
+                                  ) =>
                                     handleWeek(
                                       { close: e.target.value },
-                                      day.value
+                                      day.value,
                                     )
                                   }
                                   className="p-0 border-0"
@@ -773,10 +875,12 @@ export default function Loja({
                               <label className="text-xs flex gap-2 pl-2">
                                 <input
                                   type="checkbox"
-                                  onChange={(e: any) =>
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLInputElement>,
+                                  ) =>
                                     handleWeek(
                                       { working: e.target.value },
-                                      day.value
+                                      day.value,
                                     )
                                   }
                                   {...(week[key]?.working == "on"
@@ -790,7 +894,7 @@ export default function Loja({
                       </div>
                     ) : !!week.length ? (
                       <div className="text-sm">
-                        {week.map((day: any, key: any) => (
+                        {week.map((day: string, key: string) => (
                           <div key={key} className="grid grid-cols-6">
                             <div>{week[key]?.day}</div>
                             {week[key]?.working != "on" ? (
@@ -820,7 +924,7 @@ export default function Loja({
                 </form>
                 {/* ENDERECO */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -837,7 +941,9 @@ export default function Loja({
                       <div className="grid gap-2">
                         <Input
                           name="cep"
-                          onChange={(e: any) => handleZipCode(e.target.value)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleZipCode(e.target.value)
+                          }
                           required
                           value={store?.zipCode}
                           placeholder="CEP"
@@ -855,9 +961,9 @@ export default function Loja({
                           <div className="w-[10rem]">
                             <Input
                               name="numero"
-                              onChange={(e: any) =>
-                                handleStore({ number: e.target.value })
-                              }
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                              ) => handleStore({ number: e.target.value })}
                               required
                               value={store?.number}
                               placeholder="Número"
@@ -877,9 +983,9 @@ export default function Loja({
                           <div className="w-full">
                             <Input
                               name="complemento"
-                              onChange={(e: any) =>
-                                handleStore({ complement: e.target.value })
-                              }
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                              ) => handleStore({ complement: e.target.value })}
                               value={store?.complement}
                               placeholder="Complemento"
                             />
@@ -923,9 +1029,10 @@ export default function Loja({
                     )}
                   </div>
                 </form>
-                {/*  */}
+                {/* SEGMENTO */}
+                {/* SEGMENTO */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -937,32 +1044,41 @@ export default function Loja({
                     </div>
                     <div className="w-fit">{renderAction("segment")}</div>
                   </div>
+
                   <div className="w-full">
                     {form.edit == "segment" ? (
-                      <Select
-                        onChange={(e: any) =>
-                          handleStore({ segment: e.target.value })
-                        }
-                        value={store?.segment}
-                        placeholder="Selecione seu segmento"
-                        name="lojaTipo"
-                        options={groupOptions.map((item: any) => {
-                          return {
-                            name: item.title,
+                      segmentsLoading ? (
+                        <div className="text-sm text-zinc-500">
+                          Carregando segmentos...
+                        </div>
+                      ) : segmentsError ? (
+                        <div className="text-sm text-red-500">
+                          {segmentsError}
+                        </div>
+                      ) : (
+                        <Select
+                          onChange={(e) =>
+                            handleStore({ segment: e.target.value })
+                          }
+                          value={store?.segment}
+                          placeholder="Selecione seu segmento"
+                          name="lojaTipo"
+                          options={segments.map((item) => ({
+                            name: item.name,
                             value: item.id,
-                          };
-                        })}
-                      />
+                          }))}
+                        />
+                      )
                     ) : (
-                      storeTypes.filter((item) => item.id == store?.segment)[0]
-                        ?.title ?? "Informe o segmento da sua loja"
+                      (segments.find((item) => item.id == store?.segment)
+                        ?.name ?? "Informe o segmento da sua loja")
                     )}
                   </div>
                 </form>
-                {/*  */}
 
+                {/* Valores de entrega */}
                 <form
-                  onSubmit={(e: any) => handleSubmit(e)}
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
                   method="POST"
                   className="grid gap-4 border-b pb-8 mb-0"
                 >
@@ -991,7 +1107,7 @@ export default function Loja({
                                 onChange={(e) =>
                                   handleStore({
                                     is_delivery_fee_active: Number(
-                                      e.target.value
+                                      e.target.value,
                                     ),
                                   })
                                 }
@@ -1007,7 +1123,7 @@ export default function Loja({
                                 onChange={(e) =>
                                   handleStore({
                                     is_delivery_fee_active: Number(
-                                      e.target.value
+                                      e.target.value,
                                     ),
                                   })
                                 }
@@ -1028,7 +1144,9 @@ export default function Loja({
                               value={store?.default_delivery_fee}
                               onChange={(e) =>
                                 handleStore({
-                                  default_delivery_fee: e.target.value,
+                                  default_delivery_fee: maskMoneyBR(
+                                    e.target.value,
+                                  ),
                                 })
                               }
                             />
@@ -1061,8 +1179,163 @@ export default function Loja({
                           />
                         </div>
                       </div>
+                    ) : oldStore?.is_delivery_fee_active ? (
+                      <div className="text-sm grid gap-1">
+                        <div>
+                          Entrega ativa:{" "}
+                          <strong>
+                            {oldStore.is_delivery_fee_active ? "Sim" : "Não"}
+                          </strong>
+                        </div>
+
+                        {oldStore.default_delivery_fee && (
+                          <div>
+                            Valor por KM:{" "}
+                            <strong>
+                              {moneyBRToNumber(
+                                oldStore.default_delivery_fee,
+                              ).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })}
+                            </strong>
+                          </div>
+                        )}
+
+                        {!!oldStore.deliveryRegions?.length && (
+                          <div>
+                            Regiões:{" "}
+                            <strong>
+                              {oldStore.deliveryRegions.length} selecionadas
+                            </strong>
+                          </div>
+                        )}
+                      </div>
                     ) : (
-                      <>Informe as regras do frete</>
+                      "Informe as regras do frete"
+                    )}
+                  </div>
+                </form>
+                {/* PEDIDO MINIMO */}
+                <form
+                  onSubmit={(e: React.FormEvent) => handleSubmit(e)}
+                  method="POST"
+                  className="grid gap-4 border-b pb-8 mb-0"
+                >
+                  {/* Header */}
+                  <div className="flex items-center">
+                    <div className="w-full">
+                      <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
+                        Pedido mínimo
+                      </h4>
+                    </div>
+                    <div className="w-fit">{renderAction("minimum_order")}</div>
+                  </div>
+
+                  {/* Conteúdo */}
+                  <div className="w-full">
+                    {form.edit === "minimum_order" ? (
+                      <div className="grid gap-4">
+                        {/* Ativar pedido mínimo */}
+                        <div className="grid gap-2">
+                          <label className="font-medium">
+                            Deseja ativar pedido mínimo?
+                          </label>
+
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="minimum_order_enabled"
+                                value="1"
+                                checked={!!store?.minimum_order?.enabled}
+                                onChange={() =>
+                                  handleStore({
+                                    minimum_order: {
+                                      ...store.minimum_order,
+                                      enabled: 1,
+                                    },
+                                  })
+                                }
+                              />
+                              <span>Sim</span>
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="minimum_order_enabled"
+                                value="0"
+                                checked={!store?.minimum_order?.enabled}
+                                onChange={() =>
+                                  handleStore({
+                                    minimum_order: {
+                                      ...store.minimum_order,
+                                      enabled: 0,
+                                      value: 0,
+                                    },
+                                  })
+                                }
+                              />
+                              <span>Não</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Valor mínimo */}
+                        {!!store?.minimum_order?.enabled && (
+                          <div className="grid gap-2">
+                            <label className="font-medium">
+                              Valor mínimo do pedido
+                            </label>
+
+                            <div className="relative">
+                              <Input
+                                type="text"
+                                className="input w-full"
+                                value={store?.minimum_order?.value ?? ""}
+                                onChange={(e) =>
+                                  handleStore({
+                                    minimum_order: {
+                                      ...store.minimum_order,
+                                      value: maskMoneyBR(e.target.value),
+                                    },
+                                  })
+                                }
+                                placeholder="Ex: R$ 50,00"
+                              />
+
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-help group">
+                                <Icon
+                                  icon="fa-info-circle"
+                                  className="text-zinc-400"
+                                />
+                                <div className="absolute hidden group-hover:block right-0 bg-zinc-800 text-white p-2 rounded text-sm w-48">
+                                  Valor mínimo para liberar o pedido
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        {oldStore?.minimum_order?.enabled ? (
+                          <span>
+                            Pedido mínimo cadastrado:{" "}
+                            <strong>
+                              {moneyBRToNumber(
+                                oldStore?.minimum_order?.value,
+                              ).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })}
+                            </strong>
+                          </span>
+                        ) : (
+                          <span>Pedido mínimo desativado</span>
+                        )}
+                      </>
                     )}
                   </div>
                 </form>

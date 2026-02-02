@@ -2,8 +2,7 @@ import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import Api from "@/src/services/api";
-import { useEffect, useMemo, useState } from "react";
-import { NextApiRequest, NextApiResponse } from "next";
+import React, { useEffect, useMemo, useState } from "react";
 import { dateBRFormat, getImage, moneyFormat } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
 import { RemoveToCart } from "@/src/components/pages/carrinho";
@@ -14,10 +13,12 @@ import { CartType } from "@/src/models/cart";
 import { getProductUrl } from "@/src/urlHelpers";
 import { CartSummary } from "@/src/components/cart";
 
-// Services
 import {
   calculateCartResume,
   saveCartToCookies,
+  buildMinimumOrderSummary,
+  extractCartProductIds,
+  hydrateCartProducts,
   CartResume,
 } from "@/src/services/cart";
 import {
@@ -27,63 +28,23 @@ import {
   extractProductIds,
 } from "@/src/services/delivery";
 
-export async function getServerSideProps({
-  req,
-  res,
-}: {
-  req: NextApiRequest;
-  res: NextApiResponse;
-}) {
-  const api = new Api();
-
-  const parse = req.cookies["fiestou.cart"] ?? "";
-  const cart = !!parse ? JSON.parse(parse) : [];
-
-  let request: any = await api.content({
-    method: "get",
-    url: "default",
-  });
-
-  const DataSeo = request?.data?.DataSeo ?? {};
-  const Scripts = request?.data?.Scripts ?? {};
-
-  request = await api.request({
-    method: "get",
-    url: "request/products",
-    data: {
-      whereIn: cart.map((item: any) => item.product),
-    },
-  });
-
-  const products = request?.data ?? [];
-
-  cart.map((item: any, key: any) => {
-    let handle = products.find((prod: any) => prod.id == item.product);
-
-    if (!!handle) {
-      cart[key]["product"] = handle;
-    }
-  });
-
-  return {
-    props: {
-      cart: cart,
-      products: products,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
-    },
-  };
-}
-
-export default function Carrinho({
-  cart,
-  DataSeo,
-  Scripts,
-}: {
+type PageData = {
   cart: Array<CartType>;
+  products: any[];
   DataSeo: any;
   Scripts: any;
-}) {
+};
+
+export default function Carrinho() {
+  const [pageData, setPageData] = useState<PageData>({
+    cart: [],
+    products: [],
+    DataSeo: {},
+    Scripts: {},
+  });
+
+  const { cart, DataSeo, Scripts } = pageData;
+
   const [listCart, setListCart] = useState<CartType[]>([]);
   const [resume, setResume] = useState<CartResume>({
     subtotal: 0,
@@ -94,12 +55,12 @@ export default function Carrinho({
     startDate: null,
     endDate: null,
   });
+
   const apiClient = useMemo(() => new Api(), []);
   const [deliveryZipInput, setDeliveryZipInput] = useState("");
   const [deliveryLoading, setDeliveryLoading] = useState(false);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
-  // Usa o service para recalcular resumo do carrinho
   const recalcSummary = (items: CartType[]) => {
     const cartResume = calculateCartResume(items);
     setResume(cartResume);
@@ -114,10 +75,9 @@ export default function Carrinho({
     RemoveToCart(key);
   };
 
-  // Wrapper para aplicar frete usando o service
   const applyDeliveryToCartLocal = (
     fees: { price: number; store_id: number }[],
-    sanitizedZip: string
+    sanitizedZip: string,
   ): { success: boolean; message?: string } => {
     const result = applyDeliveryToCart(listCart, fees, sanitizedZip);
 
@@ -130,20 +90,17 @@ export default function Carrinho({
     return { success: result.success, message: result.message };
   };
 
-  // Handler de cálculo de frete usando services
   const handleCalculateDelivery = async () => {
-    // 1. Valida CEP usando service
     const validation = validateCep(deliveryZipInput);
     if (!validation.valid) {
       setDeliveryError(validation.error ?? "CEP inválido");
       return;
     }
 
-    // 2. Extrai IDs de produtos usando service
     const productIds = extractProductIds(listCart);
     if (!productIds.length) {
       setDeliveryError(
-        "Não encontramos produtos válidos no carrinho para calcular o frete."
+        "Não encontramos produtos válidos no carrinho para calcular o frete.",
       );
       return;
     }
@@ -152,24 +109,22 @@ export default function Carrinho({
     setDeliveryError(null);
 
     try {
-      // 3. Calcula frete via API usando service
       const calculation = await calculateDeliveryFees(
         apiClient,
         validation.sanitized,
-        productIds
+        productIds,
       );
 
       if (!calculation.success) {
         setDeliveryError(
-          calculation.error ?? "Não conseguimos calcular o frete."
+          calculation.error ?? "Não conseguimos calcular o frete.",
         );
         return;
       }
 
-      // 4. Aplica frete ao carrinho usando service
       const result = applyDeliveryToCartLocal(
         calculation.fees,
-        validation.sanitized
+        validation.sanitized,
       );
 
       if (!result.success) {
@@ -189,12 +144,56 @@ export default function Carrinho({
     }
   };
 
-  function handleDeliveryZipKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleCalculateDelivery();
-    }
-  }
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const cookieStr =
+          typeof document !== "undefined" ? document.cookie ?? "" : "";
+        const match = cookieStr.match(
+          /(?:^|;\s*)fiestou\.cart=([^;]*)/,
+        );
+        const raw = match?.[1] ? decodeURIComponent(match[1]) : "";
+        const parsedCart = raw ? JSON.parse(raw) : [];
+
+        const api = new Api();
+
+        let request: any = await api.content({
+          method: "get",
+          url: "default",
+        });
+
+        const DataSeo = request?.data?.DataSeo ?? {};
+        const Scripts = request?.data?.Scripts ?? {};
+
+        const whereIn = extractCartProductIds(parsedCart);
+
+        request = await api.request({
+          method: "get",
+          url: "request/products",
+          data: { whereIn },
+        });
+
+        const products = request?.data ?? [];
+        const hydratedCart = hydrateCartProducts(parsedCart, products);
+
+        setPageData({
+          cart: hydratedCart,
+          products,
+          DataSeo,
+          Scripts,
+        });
+      } catch {
+        setPageData({
+          cart: [],
+          products: [],
+          DataSeo: {},
+          Scripts: {},
+        });
+      }
+    };
+
+    load();
+  }, []);
 
   useEffect(() => {
     setListCart(cart);
@@ -206,6 +205,10 @@ export default function Carrinho({
       setDeliveryZipInput(formatCep(resume.deliveryZipCodes[0]));
     }
   }, [resume.deliveryZipCodes]);
+
+  const minimumOrderSummary = useMemo(() => {
+    return buildMinimumOrderSummary(listCart);
+  }, [listCart]);
 
   return (
     <Template
@@ -256,16 +259,16 @@ export default function Carrinho({
 
                   {!!listCart.length &&
                     listCart.map((item, key) => {
-                      const deliveryFeeValue = Number(
-                        item.details?.deliveryFee
-                      );
+                      const deliveryFeeValue = Number(item.details?.deliveryFee);
                       const hasDeliveryFee =
                         Number.isFinite(deliveryFeeValue) &&
                         deliveryFeeValue >= 0;
+
                       const rawDeliveryZip =
                         item.details?.deliveryZipCode ??
                         item.details?.deliveryZipCodeFormatted ??
                         "";
+
                       const formattedDeliveryZip = rawDeliveryZip
                         ? formatCep(rawDeliveryZip.toString())
                         : "";
@@ -278,21 +281,16 @@ export default function Carrinho({
                           <div className="w-full max-w-[4rem] pt-1">
                             <div className="aspect aspect-square rounded-md relative overflow-hidden bg-zinc-200">
                               {!!item?.product?.gallery?.length &&
-                                !!getImage(
-                                  item?.product?.gallery[0],
-                                  "thumb"
-                                ) && (
+                                !!getImage(item?.product?.gallery[0], "thumb") && (
                                   <Img
-                                    src={getImage(
-                                      item?.product?.gallery[0],
-                                      "thumb"
-                                    )}
+                                    src={getImage(item?.product?.gallery[0], "thumb")}
                                     size="md"
                                     className="absolute object-cover h-full inset-0 w-full"
                                   />
                                 )}
                             </div>
                           </div>
+
                           <div className="w-full">
                             <div className="flex gap-10 items-start">
                               <div className="w-full">
@@ -301,6 +299,7 @@ export default function Carrinho({
                                     {item.product?.title}
                                   </Link>
                                 </h5>
+
                                 <div className="mt-2 text-sm flex flex-wrap gap-1">
                                   {!!item.product?.subtitle && (
                                     <div>
@@ -314,19 +313,19 @@ export default function Carrinho({
                                   )}
                                 </div>
                               </div>
+
                               <div className="w-fit text-right flex items-center gap-4">
                                 <h3 className="font-bold text-xl whitespace-nowrap leading-tight text-zinc-900">
                                   R$ {moneyFormat(item.total)}
                                 </h3>
                               </div>
                             </div>
+
                             <div className="flex">
                               <div className="w-full text-sm text-zinc-600 pt-2">
                                 <div className="flex gap-1">
                                   Data:
-                                  <span>
-                                    {dateBRFormat(item.details?.dateStart)}
-                                  </span>
+                                  <span>{dateBRFormat(item.details?.dateStart)}</span>
                                 </div>
                                 <div className="flex gap-1">
                                   Fornecido por:
@@ -340,21 +339,18 @@ export default function Carrinho({
                                   Array.isArray(item.attributes) &&
                                   item.attributes.length > 0 &&
                                   (() => {
-                                    const attributesWithSelected =
-                                      item.attributes
-                                        .map((attr: any) => ({
-                                          ...attr,
-                                          selectedVariations: (
-                                            attr.variations || []
-                                          ).filter((v: any) => v.quantity > 0),
-                                        }))
-                                        .filter(
-                                          (attr: any) =>
-                                            attr.selectedVariations.length > 0
-                                        );
+                                    const attributesWithSelected = item.attributes
+                                      .map((attr: any) => ({
+                                        ...attr,
+                                        selectedVariations: (attr.variations || []).filter(
+                                          (v: any) => v.quantity > 0,
+                                        ),
+                                      }))
+                                      .filter(
+                                        (attr: any) => attr.selectedVariations.length > 0,
+                                      );
 
-                                    if (attributesWithSelected.length === 0)
-                                      return null;
+                                    if (attributesWithSelected.length === 0) return null;
 
                                     return (
                                       <div className="mt-2 pt-2 border-t border-zinc-200">
@@ -368,10 +364,7 @@ export default function Carrinho({
                                                 {attr.title}
                                               </p>
                                               {attr.selectedVariations.map(
-                                                (
-                                                  variation: any,
-                                                  varIdx: number
-                                                ) => {
+                                                (variation: any, varIdx: number) => {
                                                   const price =
                                                     variation.price ||
                                                     variation.priceValue ||
@@ -379,60 +372,40 @@ export default function Carrinho({
                                                   const numPrice =
                                                     typeof price === "string"
                                                       ? parseFloat(
-                                                          price.replace(
-                                                            ",",
-                                                            "."
-                                                          )
+                                                          price.replace(",", "."),
                                                         )
                                                       : Number(price);
-                                                  const quantity =
-                                                    variation.quantity || 1;
-                                                  const totalPrice =
-                                                    numPrice * quantity;
+                                                  const quantity = variation.quantity || 1;
+                                                  const totalPrice = numPrice * quantity;
 
                                                   return (
-                                                    <div
-                                                      key={varIdx}
-                                                      className="ml-2 mb-2"
-                                                    >
+                                                    <div key={varIdx} className="ml-2 mb-2">
                                                       <div className="flex justify-between items-center gap-2 text-sm text-zinc-700">
                                                         <span className="flex items-center gap-1.5">
-                                                          <span className="text-zinc-400">
-                                                            •
-                                                          </span>
-                                                          <span>
-                                                            {variation.title}
-                                                          </span>
+                                                          <span className="text-zinc-400">•</span>
+                                                          <span>{variation.title}</span>
                                                         </span>
                                                         {numPrice > 0 && (
                                                           <span className="text-zinc-500 font-medium whitespace-nowrap text-xs">
-                                                            R${" "}
-                                                            {moneyFormat(
-                                                              numPrice
-                                                            )}
+                                                            R$ {moneyFormat(numPrice)}
                                                           </span>
                                                         )}
                                                       </div>
-                                                      {quantity > 1 &&
-                                                        numPrice > 0 && (
-                                                          <div className="flex justify-between items-center gap-2 text-xs text-zinc-500 ml-4 mt-0.5">
-                                                            <span>
-                                                              Qtd: {quantity}
-                                                            </span>
-                                                            <span className="text-cyan-600 font-semibold">
-                                                              R${" "}
-                                                              {moneyFormat(
-                                                                totalPrice
-                                                              )}
-                                                            </span>
-                                                          </div>
-                                                        )}
+
+                                                      {quantity > 1 && numPrice > 0 && (
+                                                        <div className="flex justify-between items-center gap-2 text-xs text-zinc-500 ml-4 mt-0.5">
+                                                          <span>Qtd: {quantity}</span>
+                                                          <span className="text-cyan-600 font-semibold">
+                                                            R$ {moneyFormat(totalPrice)}
+                                                          </span>
+                                                        </div>
+                                                      )}
                                                     </div>
                                                   );
-                                                }
+                                                },
                                               )}
                                             </div>
-                                          )
+                                          ),
                                         )}
                                       </div>
                                     );
@@ -452,6 +425,7 @@ export default function Carrinho({
                                   </div>
                                 )}
                               </div>
+
                               <div>
                                 <Button
                                   style="btn-link"
@@ -466,6 +440,7 @@ export default function Carrinho({
                         </div>
                       );
                     })}
+
                   <div className="pt-4 md:pt-6 flex justify-center">
                     <Button
                       href={`${process.env.APP_URL}/produtos`}
@@ -477,18 +452,87 @@ export default function Carrinho({
                   </div>
                 </div>
 
-                <CartSummary
-                  resume={resume}
-                  listCart={listCart}
-                  deliveryZipInput={deliveryZipInput}
-                  deliveryLoading={deliveryLoading}
-                  deliveryError={deliveryError}
-                  onZipChange={(value) => {
-                    setDeliveryZipInput(value);
-                    setDeliveryError(null);
-                  }}
-                  onCalculateDelivery={handleCalculateDelivery}
-                />
+                <div className="w-full md:max-w-[420px] grid gap-4">
+                  {!!minimumOrderSummary.length && (
+                    <div className="border rounded-lg p-4 bg-white">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-title font-bold text-zinc-900 text-lg">
+                          Pedido mínimo
+                        </p>
+                      </div>
+
+                      <div className="mt-3 grid gap-3">
+                        {minimumOrderSummary.map((s) => {
+                          if (!s.enabled || s.minimumValue <= 0) {
+                            return (
+                              <div key={s.storeId} className="text-sm text-zinc-600">
+                                <span className="font-semibold text-zinc-900">
+                                  {s.storeTitle}
+                                </span>
+                                : sem pedido mínimo
+                              </div>
+                            );
+                          }
+
+                          const ok = s.missing === 0;
+
+                          return (
+                            <div
+                              key={s.storeId}
+                              className="text-sm border rounded-md p-3"
+                            >
+                              <div className="flex justify-between gap-3">
+                                <span className="font-semibold text-zinc-900">
+                                  {s.storeTitle}
+                                </span>
+                                <span className="text-zinc-600 whitespace-nowrap">
+                                  Mín: R$ {moneyFormat(s.minimumValue)}
+                                </span>
+                              </div>
+
+                              <div className="flex justify-between gap-3 mt-1">
+                                <span className="text-zinc-600">
+                                  Subtotal: R$ {moneyFormat(s.subtotal)}
+                                </span>
+
+                                {ok ? (
+                                  <span className="font-bold text-green-600">
+                                    Atingido
+                                  </span>
+                                ) : (
+                                  <span className="font-bold text-amber-600">
+                                    Falta R$ {moneyFormat(s.missing)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {minimumOrderSummary.some(
+                        (s) => s.enabled && s.minimumValue > 0 && s.missing > 0,
+                      ) && (
+                        <p className="text-xs text-zinc-500 mt-3">
+                          Você precisa atingir o mínimo por loja para finalizar.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <CartSummary
+                    resume={resume}
+                    listCart={listCart}
+                    deliveryZipInput={deliveryZipInput}
+                    deliveryLoading={deliveryLoading}
+                    deliveryError={deliveryError}
+                    onZipChange={(value) => {
+                      setDeliveryZipInput(value);
+                      setDeliveryError(null);
+                    }}
+                    onCalculateDelivery={handleCalculateDelivery}
+                  />
+                </div>
               </div>
             </div>
           </section>
