@@ -64,6 +64,10 @@ const menu = [
     title: "Configurações de Entrega",
     endpoint: "/admin/configuracoes-entrega",
   },
+  {
+    title: "Configurações do Sistema",
+    endpoint: "/admin/configuracoes",
+  },
 ];
 
 export default function Admin({

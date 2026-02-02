@@ -17,7 +17,6 @@ interface PedidosProps {
 
 export default function Pedidos({ orders = [], page = { help_list: [] } }: PedidosProps) {
 
-  console.log('Orders Page', orders);
   return (
     <Template
       header={{
@@ -54,7 +53,6 @@ export default function Pedidos({ orders = [], page = { help_list: [] } }: Pedid
             <div className="w-full grid gap-4 md:gap-8">
               {!!orders.length ? (
                 orders.map((item: OrderType, key: number) => {
-                  console.log('Order Item', item);
                   return (
                   <div
                     key={key}
@@ -81,21 +79,21 @@ export default function Pedidos({ orders = [], page = { help_list: [] } }: Pedid
                       </div>
                     </div>
                     <div className="order-2 md:order-1 text-right md:text-center w-[45%] md:w-full md:max-w-[8rem]">
-                      {item?.status === 1 ? (
-                        <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
-                          {item.statusText || "pago"}
-                        </div>
-                      ) : item?.metadata?.status === "expired" ? (
+                      {item?.metadata?.status === "expired" || item?.status === -2 ? (
                         <div className="bg-red-100 text-red-700 rounded text-sm inline-block px-2 py-1">
                           cancelado
                         </div>
-                      ) : item?.status === 0 ? (
-                        <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
-                          {item.statusText || "em aberto"}
+                      ) : item?.status === 1 || item?.metadata?.paid_at || item?.metadata?.payment_status === 'paid' || item?.metadata?.payment_status === 'approved' ? (
+                        <div className="bg-green-100 text-green-700 rounded text-sm inline-block px-2 py-1">
+                          {item.statusText || "pago"}
                         </div>
-                      ) : (
+                      ) : item?.status === -1 ? (
                         <div className="bg-zinc-100 text-zinc-700 rounded text-sm inline-block px-2 py-1">
                           {item.statusText || "processando"}
+                        </div>
+                      ) : (
+                        <div className="bg-yellow-100 text-yellow-700 rounded text-sm inline-block px-2 py-1">
+                          {item.statusText || "em aberto"}
                         </div>
                       )}
                     </div>
@@ -149,8 +147,6 @@ export const getServerSideProps: GetServerSideProps<PedidosProps> = async (ctx) 
       },
       ctx
     ) as { data?: OrderType[]; page?: any };
-
-    console.log('Orders Request', request);
 
     return {
       props: {

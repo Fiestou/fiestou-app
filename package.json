@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "up": "git add . && git commit -m 'up' && git pull && git push",
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3055",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
