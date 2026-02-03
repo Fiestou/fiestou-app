@@ -525,14 +525,11 @@ export default function Checkout({
           },
         });
 
-        console.log('frete response:', { data, sanitizedZip });
-
         const rawList: DeliveryItem[] = Array.isArray(data?.data)
           ? data.data
           : Array.isArray(data)
           ? data
           : [];
-
 
         const mappedFees = rawList
           .map(
@@ -547,9 +544,7 @@ export default function Checkout({
               Number.isFinite(item.price) && Number.isFinite(item.store_id)
           );
 
-
         const normalizedFees = normalizeDeliveryItems(mappedFees);
-
 
         if (!normalizedFees.length) {
           setDeliveryPrice([]);
@@ -558,13 +553,11 @@ export default function Checkout({
           return;
         }
 
-
         const success = applyDeliveryFeesLocal(
           normalizedFees,
           sanitizedZip,
           cartItems
         );
-
 
         if (!success) {
           setDeliveryPrice([]);
@@ -712,7 +705,6 @@ export default function Checkout({
 
     try {
       const created: any = await registerOrderService(payload);
-      console.log("Pedido registrado com sucesso:", created);
       const firstId = created?.orders?.[0]?.id;
 
       if (firstId) {
@@ -791,8 +783,7 @@ export default function Checkout({
         return store?.companyName ?? store?.title ?? null;
       })
       .filter(Boolean);
-    console.log(deliverySummary)
-    console.log(missingStoresNames)
+      
     return (
       <div className="grid gap-2">
         {deliverySummary.entries.map((entry) => {
