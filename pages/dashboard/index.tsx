@@ -26,9 +26,7 @@ export async function getStaticProps(ctx: GetStaticPropsContext) {
   const DataSeo = request?.data?.DataSeo ?? {};
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const Dashboard = request?.data?.Dashboard ?? {};
-  console.log('Dashboard', Dashboard);
-  console.log('HeaderFooter', HeaderFooter);
-  console.log('DataSeo', DataSeo);
+
   return {
     props: {
       HeaderFooter: HeaderFooter,

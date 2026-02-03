@@ -72,10 +72,6 @@ export const PaymentPanel = ({
 }: PaymentPanelProps) => {
   const hasPixOrBoleto = pix.status || boleto?.status;
 
-  useEffect(() => {
-   console.log('PaymentPanel - Recalculo do total do pedido', { productsCount, order, deliveryPrice });
-  }, [productsCount,order,deliveryPrice]);
-
   return (
     <div className="rounded-2xl bg-zinc-100 p-4 md:p-8 relative">
       <div className="hidden md:block font-title font-bold text-zinc-900 text-xl mb-4">
