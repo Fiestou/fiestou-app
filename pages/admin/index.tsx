@@ -1,10 +1,18 @@
 import { Button } from "@/src/components/ui/form";
-import { AuthContext } from "@/src/contexts/AuthContext";
+import { AuthContext, getUser } from "@/src/contexts/AuthContext";
+import { UserType } from "@/src/models/user";
 import Template from "@/src/template";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 
 export default function Admin() {
   const {} = useContext(AuthContext);
+  const [user, setUser] = useState({} as UserType);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setUser(getUser);
+    }
+  }, []);
 
   return (
     <Template
@@ -19,7 +27,7 @@ export default function Admin() {
       <section className="">
         <div className="container-medium py-14">
           <h1 className="font-title font-bold text-5xl flex gap-4 items-center mb-4 text-zinc-900">
-            Olá, Pedro!
+            Olá, {user.name || "Admin"}!
           </h1>
           <span>
             Seja bem-vindo ao painel administrativo. Aqui você pode gerenciar
