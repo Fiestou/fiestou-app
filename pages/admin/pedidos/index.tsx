@@ -196,13 +196,28 @@ export default function Order({ initialOrders, timestamp }: OrderPageProps) {
       width: "40rem",
       sortable: true,
       sortKey: "status",
-      selector: (row: Order) => (
-        <div
-          className={`rounded-md text-center py-2 ${row.status === 1 || row.status === "paid" ? "bg-green-200" : "bg-yellow-200"}`}
-        >
-          {row.statusText || (row.status === 1 || row.status === "paid" ? "Pago" : "Em Aberto")}
-        </div>
-      ),
+      selector: (row: Order) => {
+        const statusMap: Record<string, string> = {
+          paid: "Pago",
+          approved: "Pago",
+          pending: "Pendente",
+          processing: "Processando",
+          failed: "Falhou",
+          canceled: "Cancelado",
+          refunded: "Reembolsado",
+        };
+        const isPaid = row.status === 1 || row.status === "paid" || row.status === "approved" || row.statusText === "paid" || row.statusText === "approved";
+        const label = row.statusText
+          ? (statusMap[row.statusText] || row.statusText)
+          : (isPaid ? "Pago" : "Pendente");
+        return (
+          <div
+            className={`rounded-md text-center py-2 ${isPaid ? "bg-green-200" : "bg-yellow-200"}`}
+          >
+            {label}
+          </div>
+        );
+      },
     },
     {
       name: "Ações",
