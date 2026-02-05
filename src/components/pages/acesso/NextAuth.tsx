@@ -16,18 +16,11 @@ export const FacebookIcon = () => (
 );
 
 export function GoogleAuthButton() {
-  const disabled = true;
   return (
     <button
       type="button"
-      onClick={() => !disabled && signIn("google")}
-      disabled={disabled}
-      className={`w-full rounded flex items-center gap-4 justify-center border py-[.85rem] transition-colors ${
-        disabled
-          ? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed"
-          : "border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-900"
-      }`}
-      title={disabled ? "Em breve" : undefined}
+      onClick={() => signIn("google")}
+      className="w-full rounded flex items-center gap-4 justify-center border py-[.85rem] transition-colors border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-900"
     >
       <GoogleIcon /> Continuar com Google
     </button>
