@@ -177,7 +177,6 @@ export default function CreateProduct() {
   };
 
   const SearchProducts = async (search: string): Promise<any[]> => {
-    console.log("Searching products for:");
     if (search.length >= 3) {
       const request: any = await api.request({
         method: "get",
@@ -279,8 +278,6 @@ export default function CreateProduct() {
       setSubimitStatus("register_content");
 
       const payload = buildPayload();
-
-      console.log("Payload to submit:", payload);
 
       const request: any = await api.bridge({
         method: "post",

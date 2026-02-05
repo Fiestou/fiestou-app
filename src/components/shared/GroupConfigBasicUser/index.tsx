@@ -94,8 +94,6 @@ const GroupConfigBasicUser: React.FC<Props> = ({ title, content }) => {
                 }
             };
 
-            console.log("Payload enviado:", contentForm.id);
-
             const response = await api.bridge({
                 method: "put",
                 url: `info/recipient/${contentForm.id}/update`,
