@@ -1,9 +1,7 @@
 import { Button, Input, Label } from "@/src/components/ui/form";
 import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import Router from "next/router";
-import { getSession, signOut } from "next-auth/react";
-import Link from "next/link";
+import { getSession } from "next-auth/react";
 import { useContext, useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import Cookies from "js-cookie";

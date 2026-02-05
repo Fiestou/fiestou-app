@@ -170,9 +170,6 @@ export default function SejaParceiro({
                 noAppPrefix: false,
             });
 
-
-            console.log("Email validation response:", resp);
-
             const status = resp.status ?? 200;
 
             if (status === 404) {

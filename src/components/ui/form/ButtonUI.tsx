@@ -21,7 +21,6 @@ interface ButtonType {
   onClick?: React.MouseEventHandler<HTMLButtonElement | HTMLAnchorElement>;
   type?: "button" | "submit" | "reset";
   className?: string;
-  /** ⚠️ compat legado: seu seletor antigo, ex: 'btn-yellow', 'btn-light' */
   style?: string;
   id?: string;
   href?: string;
@@ -35,7 +34,6 @@ interface ButtonType {
   disable?: boolean;
   othersAttrs?: React.HTMLAttributes<HTMLElement>;
   children: React.ReactNode;
-  /** ✅ nova API recomendada */
   variant?: Variant;
   disabled?: boolean;
 }
