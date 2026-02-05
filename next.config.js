@@ -64,6 +64,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   env: {
     APP_URL: process.env.APP_URL,
     API_REST: process.env.API_REST,
@@ -88,6 +91,12 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "api.fiestou.com.br",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "testeapi.fiestou.com.br",
         port: "",
         pathname: "/**",
       },

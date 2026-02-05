@@ -1,0 +1,53 @@
+name: Deploy Production (Master)
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-app-prod
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+
+          timeout: 30m
+          command_timeout: 30m
+          debug: true
+          script_stop: true
+
+          script: |
+            set -euo pipefail
+
+            APP_DIR="/var/www/fiestou-app"
+
+            echo ">> Go to app dir"
+            cd "$APP_DIR"
+
+            echo ">> Updating code"
+            git fetch --all --prune
+            git checkout master
+            git reset --hard origin/master
+
+            echo ">> Installing dependencies"
+            npm ci
+
+            echo ">> Building app"
+            npm run build
+
+            echo ">> Restarting PM2"
+            pm2 restart fiestou-app || pm2 start npm --name "fiestou-app" -- start -- -p 3000
+
+            echo ">> Deploy producao finalizado"
