@@ -7,6 +7,7 @@ export interface DetailsCartType {
   deliveryZipCode?: string;
   deliveryZipCodeFormatted?: string;
   deliveryStoreId?: number;
+  deliverySelection?: 'delivery' | 'pickup';
 }
 
 export interface CartType {

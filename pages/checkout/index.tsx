@@ -234,7 +234,15 @@ export default function Checkout({
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    setCartItems(cart);
+    const updated = cart.map((item: any) => {
+      if (!item.details?.deliverySelection) {
+        const pType = item.product?.delivery_type;
+        const def = pType === 'pickup' ? 'pickup' : 'delivery';
+        return { ...item, details: { ...item.details, deliverySelection: def } };
+      }
+      return item;
+    });
+    setCartItems(updated);
   }, [cart]);
 
   useEffect(() => {
@@ -397,7 +405,14 @@ export default function Checkout({
       entries.push(entry);
     });
 
-    const requiredStoreIds = Array.from(storesById.keys());
+    const requiredStoreIds = Array.from(storesById.keys()).filter(storeId => {
+      return cartItems.some((item: any) => {
+        const pStore = item.product?.store;
+        const pId = Number(typeof pStore === 'object' ? pStore?.id : pStore);
+        return pId === storeId && item.details?.deliverySelection !== 'pickup';
+      });
+    });
+
     const missingStoreIds = requiredStoreIds.filter(
       (id) => !seenStores.has(id)
     );
@@ -410,10 +425,8 @@ export default function Checkout({
       missingStoreIds,
     };
 
-  
-
     return result;
-  }, [deliveryPrice, storesById]);
+  }, [deliveryPrice, storesById, cartItems]);
 
   const cartDeliveryZip = useMemo(
     () => extractCartDeliveryZip(cartItems),
@@ -503,9 +516,10 @@ export default function Checkout({
 
       try {
         const cartProductIds = cartItems
+          .filter((item: any) => item.details?.deliverySelection !== 'pickup')
           .map((item: any) => {
-            const productId = typeof item?.product === 'object' 
-              ? item?.product?.id 
+            const productId = typeof item?.product === 'object'
+              ? item?.product?.id
               : item?.product;
             return Number(productId);
           })
@@ -622,7 +636,9 @@ export default function Checkout({
       return;
     }
 
-    if (!deliverySummary.entries.length) {
+    const hasDeliveryItems = cartItems.some((item: any) => item.details?.deliverySelection !== 'pickup');
+
+    if (hasDeliveryItems && !deliverySummary.entries.length) {
       toast.error("Calcule o frete antes de finalizar o pedido.");
       return;
     }
@@ -695,7 +711,9 @@ export default function Checkout({
       listItems,
       freights: {
         zipcode: justNumber(address?.zipCode ?? ""),
-        productsIds: listItems.map((item: any) => item.product.id),
+        productsIds: listItems
+          .filter((item: any) => item.details?.deliverySelection !== 'pickup')
+          .map((item: any) => item.product.id),
       },
       platformCommission,
       deliverySchedule: schedule,

@@ -259,6 +259,7 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
               <div className="w-[32rem] max-w-[8rem]">Preço</div>
               <div className="w-[32rem] max-w-[9rem]">Exibição</div>
               <div className="w-[32rem] max-w-[7rem]">Tipo</div>
+              <div className="w-[32rem] max-w-[7rem]">Entrega</div>
               <div className="w-[32rem] max-w-[8rem]">Ações</div>
             </div>
 
@@ -327,6 +328,21 @@ export default function Produtos({ hasStore }: { hasStore: boolean }) {
                           ? item.comercialType.charAt(0).toUpperCase() +
                             item.comercialType.slice(1)
                           : "—"}
+                      </div>
+                    </div>
+
+                    <div className="w-full lg:w-[32rem] text-center">
+                      <div className={`rounded-md py-2 text-xs font-medium ${
+                        item?.delivery_type === 'pickup'
+                          ? 'bg-blue-100 text-blue-700'
+                          : item?.delivery_type === 'both'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-green-100 text-green-700'
+                      }`}>
+                        {item?.delivery_type === 'pickup' && 'Retirada'}
+                        {item?.delivery_type === 'delivery' && 'Entrega'}
+                        {item?.delivery_type === 'both' && 'Ambos'}
+                        {!item?.delivery_type && 'Entrega'}
                       </div>
                     </div>
 

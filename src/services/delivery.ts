@@ -41,6 +41,7 @@ export function validateCep(cep: string): CepValidationResult {
 
 export function extractProductIds(cart: CartType[]): number[] {
   return cart
+    .filter((item) => item?.details?.deliverySelection !== 'pickup')
     .map((item) => Number(item?.product?.id ?? (typeof item?.product === "number" ? item.product : NaN)))
     .filter((id) => Number.isFinite(id));
 }
@@ -105,12 +106,13 @@ export function applyDeliveryToCart(cart: CartType[], fees: DeliveryItem[], sani
     details.deliveryZipCode = sanitizedZip;
     details.deliveryZipCodeFormatted = formattedZip;
 
-    if (Number.isFinite(storeId)) {
+    if (item.details?.deliverySelection === 'pickup') {
+      delete details.deliveryFee;
+    } else if (Number.isFinite(storeId)) {
       details.deliveryStoreId = storeId;
       if (feeMap.has(storeId)) {
         const feeValue = feeMap.get(storeId) ?? 0;
         details.deliveryFee = feeValue;
-
       } else {
         delete details.deliveryFee;
         missingStores.push(productStore?.companyName ?? productStore?.title ?? item?.product?.title ?? `Produto #${item?.product?.id ?? ""}`);
