@@ -4,7 +4,7 @@ import { Button } from "@/src/components/ui/form";
 import Img from "@/src/components/utils/ImgBase";
 import { dateBRFormat, moneyFormat } from "@/src/helper";
 import { formatCep } from "@/src/components/utils/FormMasks";
-import { CartResume, calculateAddonsTotal } from "@/src/services/cart";
+import { CartResume, calculateAddonsTotal, StoreMinimumSummary } from "@/src/services/cart";
 import { CartType } from "@/src/models/cart";
 
 interface CartSummaryProps {
@@ -18,6 +18,7 @@ interface CartSummaryProps {
   checkoutHref?: string;
   checkoutButtonText?: string;
   showCheckoutButton?: boolean;
+  minimumOrderSummary?: StoreMinimumSummary[];
 }
 
 export default function CartSummary({
@@ -31,6 +32,7 @@ export default function CartSummary({
   checkoutHref = "checkout",
   checkoutButtonText = "Confirmar e combinar entrega",
   showCheckoutButton = true,
+  minimumOrderSummary = [],
 }: CartSummaryProps) {
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
@@ -40,6 +42,9 @@ export default function CartSummary({
   };
 
   const totalAddons = calculateAddonsTotal(listCart);
+  const hasMinimumOrderBlock = minimumOrderSummary.some(
+    (s) => s.enabled && s.minimumValue > 0 && s.missing > 0,
+  );
 
   return (
     <div className="w-full md:max-w-[28rem] md:mb-[2rem] relative">
@@ -204,15 +209,19 @@ export default function CartSummary({
                 style="btn-success"
                 href={checkoutHref}
                 className="py-6 mb-2 md:mb-0"
-                disable={!resume.deliveryEntries.length}
+                disable={!resume.deliveryEntries.length || hasMinimumOrderBlock}
               >
                 {checkoutButtonText}
               </Button>
-              {!resume.deliveryEntries.length && (
+              {hasMinimumOrderBlock ? (
+                <span className="text-xs text-red-500 text-center md:text-left">
+                  Pedido mínimo não atingido.
+                </span>
+              ) : !resume.deliveryEntries.length ? (
                 <span className="text-xs text-red-500 text-center md:text-left">
                   Calcule o frete para prosseguir.
                 </span>
-              )}
+              ) : null}
             </div>
           )}
         </div>
