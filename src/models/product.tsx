@@ -86,6 +86,7 @@ export interface ProductType {
   schedulingTax?: number;
   schedulingDiscount?: number | null;
   assembly?: string;
+  delivery_type?: 'delivery' | 'pickup' | 'both';
   status?: string | number | boolean;
   updated_at?: string;
   priceHigh?: number;
@@ -106,7 +107,7 @@ export interface VariationProductOrderType {
   quantity?: number;
   price?: string | number;
   canAddToCart?: boolean;
-  
+
 }
 
 export interface AttributeProductOrderType {

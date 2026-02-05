@@ -75,6 +75,46 @@ export default function Carrinho() {
     RemoveToCart(key);
   };
 
+  const handleDeliveryChange = (index: number, type: 'delivery' | 'pickup') => {
+    const updatedCart = [...listCart];
+    const item = { ...updatedCart[index] };
+    const details = { ...item.details, deliverySelection: type };
+
+    if (type === 'pickup') {
+      delete details.deliveryFee;
+      delete details.deliveryStoreId;
+    }
+
+    item.details = details;
+    updatedCart[index] = item;
+
+    setListCart(updatedCart);
+    saveCartToCookies(updatedCart);
+    recalcSummary(updatedCart);
+
+    if (type === 'delivery' && deliveryZipInput) {
+      setTimeout(() => {
+        document.getElementById('btn-calc-frete')?.click();
+      }, 100);
+    }
+  };
+
+  useEffect(() => {
+    if (!listCart.length) return;
+    const needsInit = listCart.some(item => !item.details?.deliverySelection);
+    if (!needsInit) return;
+
+    const updated = listCart.map(item => {
+      if (item.details?.deliverySelection) return item;
+      const pType = item.product?.delivery_type ?? 'delivery';
+      const def = pType === 'pickup' ? 'pickup' : 'delivery';
+      return { ...item, details: { ...item.details, deliverySelection: def } };
+    });
+
+    setListCart(updated);
+    saveCartToCookies(updated);
+  }, [listCart]);
+
   const applyDeliveryToCartLocal = (
     fees: { price: number; store_id: number }[],
     sanitizedZip: string,
@@ -98,6 +138,20 @@ export default function Carrinho() {
     }
 
     const productIds = extractProductIds(listCart);
+
+    if (productIds.length === 0 && listCart.some(i => i.details?.deliverySelection === 'pickup')) {
+      const cleared = listCart.map(item => {
+        const d = { ...item.details };
+        delete d.deliveryFee;
+        delete d.deliveryStoreId;
+        return { ...item, details: d };
+      });
+      setListCart(cleared);
+      saveCartToCookies(cleared);
+      recalcSummary(cleared);
+      return;
+    }
+
     if (!productIds.length) {
       setDeliveryError(
         "Não encontramos produtos válidos no carrinho para calcular o frete.",
@@ -333,6 +387,31 @@ export default function Carrinho() {
                                     {item.product?.store?.title}
                                   </span>
                                 </div>
+
+                                {item.product?.delivery_type === 'both' ? (
+                                  <div className="flex gap-1 mt-1">
+                                    <select
+                                      className="text-xs py-1 px-2 rounded border border-zinc-300 bg-white"
+                                      value={item.details?.deliverySelection || 'delivery'}
+                                      onChange={(e) => handleDeliveryChange(key, e.target.value as 'delivery' | 'pickup')}
+                                    >
+                                      <option value="delivery">Entrega</option>
+                                      <option value="pickup">Retirada na loja</option>
+                                    </select>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-1 mt-1">
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                      (item.details?.deliverySelection === 'pickup' || item.product?.delivery_type === 'pickup')
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : 'bg-green-100 text-green-700'
+                                    }`}>
+                                      {(item.details?.deliverySelection === 'pickup' || item.product?.delivery_type === 'pickup')
+                                        ? 'Retirada na loja'
+                                        : 'Entrega'}
+                                    </span>
+                                  </div>
+                                )}
 
                                 {/* Adicionais/Atributos */}
                                 {item.attributes &&

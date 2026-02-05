@@ -21,6 +21,22 @@ const TransportSection: React.FC<TransportSectionProps> = ({
       <h4 className="text-2xl text-zinc-900 mb-2">Transporte</h4>
 
       <div className="grid md:grid-cols-4 gap-4">
+        <div className="form-group">
+          <Label>Tipo de entrega</Label>
+          <Select
+            value={data?.delivery_type ?? "delivery"}
+            name="delivery_type"
+            options={[
+              { name: "Entrega", value: "delivery" },
+              { name: "Retirada na loja", value: "pickup" },
+              { name: "Ambos", value: "both" },
+            ]}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              handleData({ delivery_type: e.target.value as any })
+            }
+          />
+        </div>
+
         {/* Produto frágil */}
         <div className="form-group">
           <Label>Produto frágil?</Label>
