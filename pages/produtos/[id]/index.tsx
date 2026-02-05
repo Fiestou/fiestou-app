@@ -682,17 +682,19 @@ export default function Produto({
                       handleDetails={handleDetails}
                       required={!!product?.schedulingEnabled}
                     />
-                    {/* Constulte o Frete */}
-                    <ProductShippingCalculator
-                      cep={cep}
-                      setCep={setCep}
-                      formatCep={formatCep}
-                      loadingCep={loadingCep}
-                      handleCheckCep={handleCheckCep}
-                      cepError={cepError}
-                      cepErrorMessage={cepErrorMessage}
-                      deliveryFee={deliveryFee}
-                    />
+                    {/* Consulte o Frete */}
+                    {product?.delivery_type !== "pickup" && (
+                      <ProductShippingCalculator
+                        cep={cep}
+                        setCep={setCep}
+                        formatCep={formatCep}
+                        loadingCep={loadingCep}
+                        handleCheckCep={handleCheckCep}
+                        cepError={cepError}
+                        cepErrorMessage={cepErrorMessage}
+                        deliveryFee={deliveryFee}
+                      />
+                    )}
                     <div className="block md:hidden">
                       <ProductDeliveryBadge
                         product={product}
