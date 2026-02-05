@@ -531,6 +531,7 @@ export default function Carrinho() {
                       setDeliveryError(null);
                     }}
                     onCalculateDelivery={handleCalculateDelivery}
+                    minimumOrderSummary={minimumOrderSummary}
                   />
                 </div>
               </div>
