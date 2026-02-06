@@ -509,14 +509,46 @@ export default function Produto({
     return hasAllAttributesSelected && hasRequiredDate;
   }, [hasAllAttributesSelected, hasRequiredDate]);
 
+  const productUrl = getProductUrl(product, store);
+  const productImage = getImage(imageCover) || "";
+  const productDescription = product?.description
+    ? product.description.replace(/<[^>]*>/g, '').substring(0, 160)
+    : DataSeo?.site_description;
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product?.title,
+    "description": productDescription,
+    "image": productImage,
+    "url": `https://fiestou.com.br${productUrl}`,
+    "brand": {
+      "@type": "Brand",
+      "name": store?.title || "Fiestou"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": getPriceValue(product).price,
+      "priceCurrency": "BRL",
+      "availability": "https://schema.org/InStock",
+      "seller": {
+        "@type": "Organization",
+        "name": store?.title || "Fiestou"
+      }
+    }
+  };
+
   return (
     <Template
       scripts={Scripts}
       metaPage={{
         title: `${product?.title} - Produtos | ${DataSeo?.site_text}`,
-        image: !!getImage(imageCover) ? getImage(imageCover) : "",
-        description: DataSeo?.site_description,
-        url: getProductUrl(product, store),
+        image: productImage,
+        description: productDescription,
+        url: productUrl,
+        canonical: `https://fiestou.com.br${productUrl}`,
+        type: 'product',
+        jsonLd: productJsonLd,
       }}
       header={{
         template: "default",
