@@ -6,7 +6,8 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import UnavailableDates from "@/src/components/ui/form/UnavailableDates";
 
 interface ProductType {
-  unavailableDates?: string[]; // ou Date[] dependendo de como você armazena
+  unavailableDates?: string[];
+  schedulingPeriod?: number;
 }
 
 interface UnavailablePeriodsProps {
@@ -62,6 +63,7 @@ const UnavailablePeriods: React.FC<UnavailablePeriodsProps> = ({
             initialDates={data?.unavailableDates}
             onChange={handleUnavailableDatesChange}
             minDate={new Date()}
+            schedulingPeriod={data?.schedulingPeriod}
           />
         </div>
       </div>
