@@ -1068,6 +1068,8 @@ export default function Checkout({
                     value={schedule}
                     onChange={setSchedule}
                     required
+                    stores={storesList}
+                    selectedDate={resume.startDate}
                   />
                 </div>
 
