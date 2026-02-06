@@ -15,6 +15,7 @@ import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientMo
 import { RecipientStatusResponse, RecipientType } from "@/src/models/Recipient";
 import { getRecipientStatus } from "@/src/services/recipients";
 import { getOrdersByCustomer } from "@/src/services/order";
+import OnboardingProgress from "@/src/components/shared/OnboardingProgress";
 
 type BalanceType = {
   cash: number;
@@ -183,17 +184,6 @@ export default function Parceiro({ content }: { content: any }) {
                       <Icon icon="fa-hand-holding-usd" />
                       Solicitar saque
                     </Button> */}
-                    {recipientStatus && !recipientStatus.completed && (
-                      <Button
-                        type="button"
-                        onClick={() => setRecipientModalOpen(true)}
-                        className="mt-2 w-full p-2 pl-3 pr-5 text-sm text-nowrap bg-yellow-400 hover:bg-yellow-500 text-black border-2 border-red-500"
-                      >
-                        <Icon icon="fa-file-signature" className="mr-2" />
-                        Finalizar cadastro Pagar.me
-                      </Button>
-                    )}
-
                     {recipientStatus?.completed && (
                       <p className="mt-2 text-sm font-semibold text-green-600">
                         Código recebedor: {" "}
@@ -244,6 +234,7 @@ export default function Parceiro({ content }: { content: any }) {
               </div>
             </div>
             <div className="w-full order-2 md:order-1">
+              <OnboardingProgress onOpenPagarme={() => setRecipientModalOpen(true)} />
               <div className="flex gap-4 items-start">
                 <div className="w-3/4 md:w-full">
                   <div className="w-full flex gap-4">

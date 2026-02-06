@@ -51,7 +51,7 @@ export async function preRegisterPartner(
         email: data.email.toLowerCase().trim(),
         phone: phoneClean,
         password: data.password,
-        person: "partner",
+        type: "partner",
       },
     });
 
