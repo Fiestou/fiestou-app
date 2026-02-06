@@ -357,7 +357,7 @@ export default function Store({
           )}
 
           {/* Info da Loja */}
-          <div className="grid md:grid-cols-2 gap-6 mt-6 md:mt-8">
+          <div className="mt-6 md:mt-8">
             {/* Endereço */}
             {(store?.street || store?.city) && (
               <div className="bg-zinc-50 rounded-xl p-4 md:p-6">
@@ -389,35 +389,6 @@ export default function Store({
               </div>
             )}
 
-            {/* Horários */}
-            {store?.openClose && Array.isArray(store.openClose) && store.openClose.length > 0 && (
-              <div className="bg-zinc-50 rounded-xl p-4 md:p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Icon icon="fa-clock" type="far" className="text-primary" />
-                  <h3 className="font-semibold text-zinc-900">Horário de funcionamento</h3>
-                </div>
-                <ul className="space-y-1 text-sm text-zinc-700">
-                  {store.openClose.map((day: any, idx: number) => {
-                    const diasPT: Record<string, string> = {
-                      'sunday': 'Domingo', 'monday': 'Segunda', 'tuesday': 'Terça',
-                      'wednesday': 'Quarta', 'thursday': 'Quinta', 'friday': 'Sexta',
-                      'saturday': 'Sábado', 'holiday': 'Feriados'
-                    };
-                    const nomeDia = diasPT[day.day?.toLowerCase()] || day.day;
-                    return (
-                      <li key={idx} className="flex justify-between">
-                        <span>{nomeDia}</span>
-                        <span>
-                          {day.working === 'true' || day.working === true
-                            ? `${day.open} - ${day.close}`
-                            : 'Fechado'}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
           </div>
         </div>
       </section>
