@@ -32,16 +32,17 @@ function generateTimeSlots(stores: Array<any>, selectedDate?: string) {
 
   const date = new Date(selectedDate);
   const dayOfWeek = date.getDay();
-  const dayMap: Record<number, string> = {
-    0: "sunday",
-    1: "monday",
-    2: "tuesday",
-    3: "wednesday",
-    4: "thursday",
-    5: "friday",
-    6: "saturday",
+
+  const dayNames: Record<number, string[]> = {
+    0: ["sunday", "domingo"],
+    1: ["monday", "segunda"],
+    2: ["tuesday", "terça", "terca"],
+    3: ["wednesday", "quarta"],
+    4: ["thursday", "quinta"],
+    5: ["friday", "sexta"],
+    6: ["saturday", "sábado", "sabado"],
   };
-  const dayKey = dayMap[dayOfWeek];
+  const possibleNames = dayNames[dayOfWeek] || [];
 
   let commonOpen = "08:00";
   let commonClose = "21:00";
@@ -50,7 +51,12 @@ function generateTimeSlots(stores: Array<any>, selectedDate?: string) {
     if (!store.openClose || !Array.isArray(store.openClose)) continue;
 
     const daySchedule = store.openClose.find(
-      (d: any) => d.day?.toLowerCase() === dayKey
+      (d: any) => {
+        const dayLower = (d.day || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return possibleNames.some(name =>
+          dayLower === name || dayLower.includes(name)
+        );
+      }
     );
 
     if (
@@ -105,22 +111,22 @@ export default function TimeSlotPicker({
     [stores, selectedDate]
   );
   return (
-    <div className="border border-gray-200 rounded-lg p-4 relative">
+    <div className="relative">
       {required && (
         <div className="h-0 relative overflow-hidden">
           {!value && <input readOnly name="agendamento" required />}
         </div>
       )}
-      <div className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-700">
+      <div className="text-sm font-medium text-gray-700 mb-2">
         Horário
       </div>
 
       {TIME_SLOTS.length === 0 ? (
-        <div className="mt-2 text-center py-4 text-gray-500">
+        <div className="text-center py-4 text-gray-500">
           Nenhum horário disponível para retirada nesta data. Escolha outra data ou entre em contato com a loja.
         </div>
       ) : (
-        <div className="mt-2">
+        <div>
           <Swiper
             spaceBetween={12}
             breakpoints={{

@@ -30,13 +30,12 @@ export default function ProductBadges({
       )}
 
       {/* Produto frágil */}
-      <div className="bg-yellow-300 px-1 rounded-md">
-        {product.fragility === "yes" && (
-          <Badge style="light">
-            <Icon icon="fa-fragile" type="far" /> Atenção! Material Frágil
-          </Badge>
-        )}
-      </div>
+      {product.fragility === "yes" && (
+        <div className="bg-yellow-100 border border-yellow-300 px-2 py-1 rounded-md flex items-center gap-1.5">
+          <Icon icon="fa-wine-glass-crack" type="fas" className="text-yellow-600" />
+          <span className="text-yellow-800 text-sm font-medium">Atenção! Material Frágil</span>
+        </div>
+      )}
 
       {/* Tipo comercial */}
       <div className="flex gap-1">

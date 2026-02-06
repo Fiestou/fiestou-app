@@ -17,8 +17,9 @@ interface CalendarType {
 export default function Calendar(attr: CalendarType) {
   const today = new Date();
 
+  const availabilityDays = Number(attr?.availability) || 1;
   const minDate = new Date();
-  minDate.setDate(today.getDate() + (attr?.availability ?? 1));
+  minDate.setDate(today.getDate() + availabilityDays);
 
   const [dateStart, setDateStart] = useState<Date | null>(
     attr?.dateStart ? new Date(attr.dateStart) : null

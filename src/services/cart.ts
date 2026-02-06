@@ -85,6 +85,7 @@ export function saveCartToCookies(cart: CartType[]): void {
       schedulingTax: item.product.schedulingTax,
       schedulingDiscount: item.product.schedulingDiscount,
       schedulingPeriod: item.product.schedulingPeriod,
+      delivery_type: item.product.delivery_type,
     } : item.product;
 
     return {

@@ -91,7 +91,8 @@ export async function getServerSideProps(ctx: any) {
   const products: Array<ProductType> = request?.data?.products ?? [];
 
   cart.map((item: any, key: any) => {
-    let handle = products.find((product: any) => product.id == item.product);
+    const productId = typeof item.product === 'object' ? item.product?.id : item.product;
+    let handle = products.find((product: any) => product.id == productId);
 
     if (!!handle) {
       cart[key]["product"] = handle;
@@ -220,8 +221,8 @@ export default function Checkout({
 
   const [form, setForm] = useState(FormInitialType);
 
-  const [schedule, setSchedule] = useState("" as string);
-  const [pickupSchedule, setPickupSchedule] = useState("" as string);
+  const [deliverySchedules, setDeliverySchedules] = useState<Record<number, string>>({});
+  const [pickupSchedules, setPickupSchedules] = useState<Record<number, string>>({});
   const [deliveryTo, setDeliveryTo] = useState("reception" as string);
 
   const [customLocation, setCustomLocation] = useState(false as boolean);
@@ -759,8 +760,8 @@ export default function Checkout({
           .map((item: any) => item.product.id),
       },
       platformCommission,
-      deliverySchedule: schedule,
-      pickupSchedule: pickupSchedule,
+      deliverySchedules: deliverySchedules,
+      pickupSchedules: pickupSchedules,
       deliveryStatus: "pending",
       deliveryTo,
     };
@@ -1097,101 +1098,123 @@ export default function Checkout({
 
                 {/* Produtos para ENTREGA */}
                 {deliveryProducts.length > 0 && (
-                  <div className="space-y-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="space-y-4 bg-blue-50 border border-blue-200 rounded-xl p-5">
                     <div className="flex items-center gap-2">
-                      <Icon icon="fa-truck" className="text-blue-600" />
+                      <Icon icon="fa-truck" className="text-yellow-600" />
                       <h2 className="text-base font-semibold text-zinc-800">
                         Produtos para Entrega ({deliveryProducts.length})
                       </h2>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {deliveryProducts.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-blue-100">
-                          {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
-                            <img
-                              src={getImage(item.product.gallery[0], "thumb")}
-                              alt={item.product?.title}
-                              className="w-10 h-10 rounded object-cover"
-                            />
-                          )}
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
-                            <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Opções de Entrega */}
                     <DeliveryOptions
                       value={deliveryTo}
                       onChange={setDeliveryTo}
                     />
 
-                    <TimeSlotPicker
-                      value={schedule}
-                      onChange={setSchedule}
-                      required
-                      stores={deliveryStores}
-                      selectedDate={resume.startDate}
-                    />
+                    {deliveryStores.map((store) => {
+                      const storeProducts = deliveryProducts.filter((item) => {
+                        const storeRaw = item.product?.store;
+                        let storeId = 0;
+                        if (typeof storeRaw === 'number') storeId = storeRaw;
+                        else if (typeof storeRaw === 'string') storeId = parseInt(storeRaw);
+                        else if (typeof storeRaw === 'object' && storeRaw !== null) storeId = Number(storeRaw.id);
+                        return storeId === Number(store.id);
+                      });
+
+                      return (
+                        <div key={store.id} className="bg-white rounded-lg p-4 border border-blue-100 space-y-3">
+                          <div className="font-medium text-zinc-800">{store.title}</div>
+                          <div className="flex flex-wrap gap-2">
+                            {storeProducts.map((item, idx) => (
+                              <div key={idx} className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2">
+                                {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
+                                  <img
+                                    src={getImage(item.product.gallery[0], "thumb")}
+                                    alt={item.product?.title}
+                                    className="w-10 h-10 rounded object-cover"
+                                  />
+                                )}
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
+                                  <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <TimeSlotPicker
+                            value={deliverySchedules[Number(store.id)] || ""}
+                            onChange={(val) => setDeliverySchedules(prev => ({ ...prev, [Number(store.id)]: val }))}
+                            required
+                            stores={[store]}
+                            selectedDate={resume.startDate}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
-                {/* Produtos para RETIRADA NA LOJA */}
                 {pickupProducts.length > 0 && (
-                  <div className="space-y-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <div className="space-y-4 bg-amber-50 border border-amber-200 rounded-xl p-5">
                     <div className="flex items-center gap-2">
-                      <Icon icon="fa-store" className="text-amber-600" />
+                      <Icon icon="fa-store" className="text-yellow-600" />
                       <h2 className="text-base font-semibold text-zinc-800">
                         Produtos para Retirada na Loja ({pickupProducts.length})
                       </h2>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {pickupProducts.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-amber-100">
-                          {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
-                            <img
-                              src={getImage(item.product.gallery[0], "thumb")}
-                              alt={item.product?.title}
-                              className="w-10 h-10 rounded object-cover"
-                            />
-                          )}
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
-                            <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
+                    {pickupStores.map((store) => {
+                      const storeProducts = pickupProducts.filter((item) => {
+                        const storeRaw = item.product?.store;
+                        let storeId = 0;
+                        if (typeof storeRaw === 'number') storeId = storeRaw;
+                        else if (typeof storeRaw === 'string') storeId = parseInt(storeRaw);
+                        else if (typeof storeRaw === 'object' && storeRaw !== null) storeId = Number(storeRaw.id);
+                        return storeId === Number(store.id);
+                      });
+
+                      return (
+                        <div key={store.id} className="bg-white rounded-lg p-4 border border-amber-100 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Icon icon="fa-map-marker-alt" className="text-yellow-600" />
+                            <div className="text-sm">
+                              <span className="font-medium text-zinc-800">{store.title}</span>
+                              {store.street && (
+                                <span className="text-zinc-500">
+                                  {" - "}{store.street}{store.number ? `, ${store.number}` : ''}
+                                  {store.neighborhood && ` - ${store.neighborhood}`}
+                                  {store.city && ` • ${store.city}`}{store.state && `-${store.state}`}
+                                </span>
+                              )}
+                            </div>
                           </div>
+                          <div className="flex flex-wrap gap-2">
+                            {storeProducts.map((item, idx) => (
+                              <div key={idx} className="flex items-center gap-2 bg-amber-50 rounded-lg px-3 py-2">
+                                {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
+                                  <img
+                                    src={getImage(item.product.gallery[0], "thumb")}
+                                    alt={item.product?.title}
+                                    className="w-10 h-10 rounded object-cover"
+                                  />
+                                )}
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
+                                  <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <TimeSlotPicker
+                            value={pickupSchedules[Number(store.id)] || ""}
+                            onChange={(val) => setPickupSchedules(prev => ({ ...prev, [Number(store.id)]: val }))}
+                            required
+                            stores={[store]}
+                            selectedDate={resume.startDate}
+                          />
                         </div>
-                      ))}
-                    </div>
-
-                    {pickupStores.map((store, idx) => (
-                      <div key={idx} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-amber-200">
-                        <Icon icon="fa-map-marker-alt" className="text-amber-600" />
-                        <div className="text-sm">
-                          <span className="font-medium text-zinc-800">{store.title}</span>
-                          {store.street && (
-                            <span className="text-zinc-500">
-                              {" - "}{store.street}{store.number ? `, ${store.number}` : ''}
-                              {store.neighborhood && ` - ${store.neighborhood}`}
-                              {store.city && ` • ${store.city}`}{store.state && `-${store.state}`}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    <div className="mt-3">
-                    <TimeSlotPicker
-                      value={pickupSchedule}
-                      onChange={setPickupSchedule}
-                      required
-                      stores={pickupStores}
-                      selectedDate={resume.startDate}
-                    />
-                    </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -1235,18 +1258,24 @@ export default function Checkout({
                               ? `- ${dateBRFormat(resume.endDate)}`
                               : ""}
                           </div>
-                          {schedule && (
-                            <div className="text-blue-600 font-medium flex items-center justify-end gap-1">
-                              <Icon icon="fa-truck" className="text-xs" />
-                              <span>{schedule}</span>
-                            </div>
-                          )}
-                          {pickupSchedule && (
-                            <div className="text-amber-600 font-medium flex items-center justify-end gap-1">
-                              <Icon icon="fa-store" className="text-xs" />
-                              <span>{pickupSchedule}</span>
-                            </div>
-                          )}
+                          {Object.entries(deliverySchedules).map(([storeId, sched]) => {
+                            const store = deliveryStores.find(s => Number(s.id) === Number(storeId));
+                            return sched ? (
+                              <div key={storeId} className="text-yellow-600 font-medium flex items-center justify-end gap-1 text-xs">
+                                <Icon icon="fa-truck" className="text-xs" />
+                                <span>{store?.title}: {sched}</span>
+                              </div>
+                            ) : null;
+                          })}
+                          {Object.entries(pickupSchedules).map(([storeId, sched]) => {
+                            const store = pickupStores.find(s => Number(s.id) === Number(storeId));
+                            return sched ? (
+                              <div key={storeId} className="text-yellow-600 font-medium flex items-center justify-end gap-1 text-xs">
+                                <Icon icon="fa-store" className="text-xs" />
+                                <span>{store?.title}: {sched}</span>
+                              </div>
+                            ) : null;
+                          })}
                         </div>
                       </div>
 
@@ -1339,11 +1368,17 @@ export default function Checkout({
                             if (!address?.street) missingItems.push("rua");
                             if (!address?.number) missingItems.push("número");
                             if (!address?.complement) missingItems.push("complemento");
-                            if (!schedule) missingItems.push("horário de entrega");
+                            const missingDeliverySchedules = deliveryStores.filter(s => !deliverySchedules[Number(s.id)]);
+                            if (missingDeliverySchedules.length > 0) {
+                              missingItems.push(`horário de entrega (${missingDeliverySchedules.map(s => s.title).join(", ")})`);
+                            }
                           }
 
-                          if (pickupProducts.length > 0 && !pickupSchedule) {
-                            missingItems.push("horário de retirada");
+                          if (pickupProducts.length > 0) {
+                            const missingPickupSchedules = pickupStores.filter(s => !pickupSchedules[Number(s.id)]);
+                            if (missingPickupSchedules.length > 0) {
+                              missingItems.push(`horário de retirada (${missingPickupSchedules.map(s => s.title).join(", ")})`);
+                            }
                           }
 
                           if (!isPhoneValid(phone)) missingItems.push("telefone");

@@ -101,12 +101,18 @@ export default function Carrinho() {
 
   useEffect(() => {
     if (!listCart.length) return;
-    const needsInit = listCart.some(item => !item.details?.deliverySelection);
+    const needsInit = listCart.some(item => {
+      const pType = item.product?.delivery_type ?? 'delivery';
+      // Só precisa inicializar se NÃO for 'both' e não tiver seleção
+      return pType !== 'both' && !item.details?.deliverySelection;
+    });
     if (!needsInit) return;
 
     const updated = listCart.map(item => {
       if (item.details?.deliverySelection) return item;
       const pType = item.product?.delivery_type ?? 'delivery';
+      // Se for 'both', não define padrão - usuário precisa escolher
+      if (pType === 'both') return item;
       const def = pType === 'pickup' ? 'pickup' : 'delivery';
       return { ...item, details: { ...item.details, deliverySelection: def } };
     });
@@ -389,23 +395,61 @@ export default function Carrinho() {
                                 </div>
 
                                 {item.product?.delivery_type === 'both' ? (
-                                  <div className="flex gap-1 mt-1">
-                                    <select
-                                      className="text-xs py-1 px-2 rounded border border-zinc-300 bg-white"
-                                      value={item.details?.deliverySelection || 'delivery'}
-                                      onChange={(e) => handleDeliveryChange(key, e.target.value as 'delivery' | 'pickup')}
+                                  <div className="flex gap-2 mt-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeliveryChange(key, 'delivery')}
+                                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium border transition-all ${
+                                        item.details?.deliverySelection === 'delivery'
+                                          ? 'bg-yellow-100 border-yellow-400 text-yellow-800'
+                                          : 'bg-zinc-50 border-zinc-200 text-zinc-400 hover:border-zinc-300'
+                                      }`}
                                     >
-                                      <option value="delivery">Entrega</option>
-                                      <option value="pickup">Retirada na loja</option>
-                                    </select>
+                                      <span className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                                        item.details?.deliverySelection === 'delivery'
+                                          ? 'border-yellow-500'
+                                          : 'border-zinc-300'
+                                      }`}>
+                                        {item.details?.deliverySelection === 'delivery' && (
+                                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                                        )}
+                                      </span>
+                                      <Icon icon="fa-truck" type="far" className="text-sm" />
+                                      Entrega
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeliveryChange(key, 'pickup')}
+                                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium border transition-all ${
+                                        item.details?.deliverySelection === 'pickup'
+                                          ? 'bg-yellow-100 border-yellow-400 text-yellow-800'
+                                          : 'bg-zinc-50 border-zinc-200 text-zinc-400 hover:border-zinc-300'
+                                      }`}
+                                    >
+                                      <span className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                                        item.details?.deliverySelection === 'pickup'
+                                          ? 'border-yellow-500'
+                                          : 'border-zinc-300'
+                                      }`}>
+                                        {item.details?.deliverySelection === 'pickup' && (
+                                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                                        )}
+                                      </span>
+                                      <Icon icon="fa-store" type="far" className="text-sm" />
+                                      Retirada
+                                    </button>
+                                    {!item.details?.deliverySelection && (
+                                      <span className="text-xs text-red-500 self-center">Selecione</span>
+                                    )}
                                   </div>
                                 ) : (
-                                  <div className="flex gap-1 mt-1">
-                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                      (item.details?.deliverySelection === 'pickup' || item.product?.delivery_type === 'pickup')
-                                        ? 'bg-blue-100 text-blue-700'
-                                        : 'bg-green-100 text-green-700'
-                                    }`}>
+                                  <div className="flex gap-1 mt-2">
+                                    <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-yellow-100 border border-yellow-400 text-yellow-800">
+                                      <Icon
+                                        icon={(item.details?.deliverySelection === 'pickup' || item.product?.delivery_type === 'pickup') ? 'fa-store' : 'fa-truck'}
+                                        type="far"
+                                        className="text-sm"
+                                      />
                                       {(item.details?.deliverySelection === 'pickup' || item.product?.delivery_type === 'pickup')
                                         ? 'Retirada na loja'
                                         : 'Entrega'}

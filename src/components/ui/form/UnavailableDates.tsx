@@ -6,12 +6,14 @@ interface UnavailableDatesProps {
   initialDates?: string[];
   onChange: (dates: string[]) => void;
   minDate?: Date;
+  schedulingPeriod?: number;
 }
 
 const UnavailableDates: React.FC<UnavailableDatesProps> = ({
   initialDates = [],
   onChange,
   minDate = new Date(),
+  schedulingPeriod = 0,
 }) => {
   const [selectedDates, setSelectedDates] = useState<string[]>(
     initialDates ?? [],
@@ -94,6 +96,16 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
 
   const isDateDisabled = (date: Date): boolean => {
     return date < minDate;
+  };
+
+  // Verifica se a data está dentro do período mínimo de disponibilidade
+  const isDateInSchedulingPeriod = (date: Date): boolean => {
+    if (!schedulingPeriod || schedulingPeriod <= 0) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const limitDate = new Date(today);
+    limitDate.setDate(today.getDate() + schedulingPeriod);
+    return date >= today && date < limitDate;
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -227,18 +239,23 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
               const dateString = formatDate(day);
               const isSelected = isDateSelected(dateString);
               const isDisabled = isDateDisabled(day);
+              const isInSchedulingPeriod = isDateInSchedulingPeriod(day);
+              const isBlocked = isDisabled || isInSchedulingPeriod;
               const isToday = formatDate(day) === formatDate(new Date());
 
               return (
                 <button
                   key={index}
                   type="button"
-                  onClick={() => !isDisabled && toggleDate(dateString)}
-                  disabled={isDisabled}
+                  onClick={() => !isBlocked && toggleDate(dateString)}
+                  disabled={isBlocked}
+                  title={isInSchedulingPeriod ? `Bloqueado: período mínimo de ${schedulingPeriod} dias` : undefined}
                   className={`
                     p-2 text-sm rounded transition-colors
                     ${
-                      isDisabled
+                      isInSchedulingPeriod
+                        ? "bg-red-100 text-red-400 cursor-not-allowed"
+                        : isDisabled
                         ? "text-gray-300 cursor-not-allowed"
                         : "hover:bg-gray-100 cursor-pointer"
                     }
@@ -248,7 +265,7 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
                         : ""
                     }
                     ${
-                      isToday && !isSelected
+                      isToday && !isSelected && !isInSchedulingPeriod
                         ? "bg-yellow-400 text-gray-900 font-medium"
                         : ""
                     }
@@ -260,7 +277,14 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
             })}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-gray-200 text-xs text-gray-500">
+          {schedulingPeriod > 0 && (
+            <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-red-500 flex items-center gap-1">
+              <span className="w-3 h-3 bg-red-100 rounded"></span>
+              Bloqueado: período mínimo de {schedulingPeriod} dias
+            </div>
+          )}
+
+          <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500">
             Clique nas datas para marcar/desmarcar
           </div>
         </div>

@@ -1,5 +1,3 @@
-"use client";
-
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { ProductType } from "@/src/models/product";
 
@@ -20,11 +18,13 @@ export default function ProductDeliveryBadge({ product, productToCart }: Product
         <div className="leading-tight w-full">
           <div className="flex gap-2 items-center mb-2">
             <div className="w-[1.25rem] flex justify-center">
-              <Icon icon="fa-store" type="far" className="text-blue-500 text-base" />
+              <Icon icon="fa-store" type="far" className="text-yellow-500 text-base" />
             </div>
             <strong className="text-zinc-950">Retirada na loja</strong>
           </div>
-          <p>Esse produto deve ser retirado na loja do parceiro.</p>
+          <p>
+            Disponível para retirada em até <strong>{availability}</strong> dia{availability > 1 ? "s" : ""} na loja do parceiro.
+          </p>
         </div>
       </div>
     );
