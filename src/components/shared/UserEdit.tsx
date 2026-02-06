@@ -205,18 +205,7 @@ export default function UserEdit({ user }: { user: UserType }) {
         initialData={content?.bank_account as any}
       />
 
-      <GroupConfig
-        title="Configurações"
-        content={{
-          autoTransfer: "Sim",
-          transferFrequency: "Mensal",
-          transferDay: "Dia 15",
-          autoAdvance: "Sim",
-          advanceType: "Full",
-          advanceVolume: "50",
-          advanceDays: "Dia X",
-        }}
-      />
+      <GroupConfig title="Configurações de transferência" />
 
     </>
   );
