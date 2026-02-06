@@ -202,6 +202,27 @@ export default function Store({
   }, []);
 
   const baseUrl = `https://fiestou.com.br${getStoreUrl(store)}`;
+  const storeImage = getImage(store?.cover, "default") || getImage(DataSeo?.site_image) || "";
+  const storeDescription = store?.description || DataSeo?.site_description;
+
+  const storeJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": store?.title,
+    "description": storeDescription,
+    "image": storeImage,
+    "url": baseUrl,
+    ...(store?.street && store?.city && {
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": `${store.street}${store.number ? `, ${store.number}` : ''}`,
+        "addressLocality": store.city,
+        "addressRegion": store.state,
+        "postalCode": store.zipCode,
+        "addressCountry": "BR"
+      }
+    })
+  };
 
   if (isFallback) {
     return null;
@@ -213,14 +234,11 @@ export default function Store({
       scripts={Scripts}
       metaPage={{
         title: `${store?.title} - ${DataSeo?.site_text} - ${DataSeo?.site_description}`,
-        image: !!getImage(store?.cover, "default")
-          ? getImage(store?.cover)
-          : !!getImage(DataSeo?.site_image)
-            ? getImage(DataSeo?.site_image)
-            : "",
-        description: !!store?.description
-          ? store?.description
-          : DataSeo?.site_description,
+        image: storeImage,
+        description: storeDescription,
+        url: getStoreUrl(store),
+        canonical: baseUrl,
+        jsonLd: storeJsonLd,
       }}
       header={{
         template: "default",

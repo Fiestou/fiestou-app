@@ -10,6 +10,9 @@ interface MetaType {
   image?: string;
   description?: string;
   url?: string;
+  canonical?: string;
+  type?: 'website' | 'article' | 'product';
+  jsonLd?: object;
 }
 
 export default function Template({
@@ -27,9 +30,11 @@ export default function Template({
 }) {
   const meta = {
     title: metaPage?.title ?? "",
-    image: "/images/fiestou-logo.png",
+    image: metaPage?.image || "/images/fiestou-logo.png",
     description: metaPage?.description ?? "",
-    url: `https://www.fiestou.com.br/${metaPage?.url}`,
+    url: `https://www.fiestou.com.br/${metaPage?.url ?? ''}`,
+    canonical: metaPage?.canonical || `https://www.fiestou.com.br/${metaPage?.url ?? ''}`,
+    type: metaPage?.type || 'website',
   };
 
   const [renderLgpd, setRenderLgpd] = useState(false as boolean);
@@ -65,6 +70,8 @@ export default function Template({
         <meta name="audience" content="all" />
 
         <title>{meta.title}</title>
+        <meta name="description" content={meta.description} />
+        <link rel="canonical" href={meta.canonical} />
 
         <link rel="icon" href="/images/favicon.png" type="image/png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png" />
@@ -92,6 +99,20 @@ export default function Template({
         <meta property="og:image:secure_url" content={meta.image} />
         <meta property="og:image:alt" content="Thumbnail" />
         <meta property="og:image:type" content="image/png" />
+
+        {/* Twitter Cards */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={meta.title} />
+        <meta name="twitter:description" content={meta.description} />
+        <meta name="twitter:image" content={meta.image} />
+
+        {/* JSON-LD Structured Data */}
+        {metaPage?.jsonLd && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(metaPage.jsonLd) }}
+          />
+        )}
       </Head>
 
       <Header {...header} />
