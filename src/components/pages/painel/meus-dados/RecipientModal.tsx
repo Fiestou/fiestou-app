@@ -27,9 +27,10 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
   const [submitting, setSubmitting] = useState(false);
 
   const userType: RecipientTypeEnum = useMemo(() => {
-    const doc = user?.cpf || user?.document || store?.document || "";
+    if (store) return "PJ";
+    const doc = user?.cpf || user?.document || "";
     return justNumber(doc).length === 14 ? "PJ" : "PF";
-  }, [user?.cpf, user?.document, store?.document]);
+  }, [user?.cpf, user?.document, store]);
 
   useEffect(() => setMounted(true), []);
 
@@ -54,6 +55,8 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     if (status?.recipient) {
       const r = status.recipient as RecipientType;
       const cfg = (r as any).configs ?? r.config ?? null;
+      const userDetails = (user as any)?.details || {};
+      const storeMetadata = store?.metadata || {};
 
       setFormData({
         ...buildInitialForm(),
@@ -61,12 +64,12 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
         email: user?.email || r.email || "",
         document: user?.cpf || user?.document || r.document || "",
         name: user?.name || r.name || "",
-        birth_date: user?.date || r.birth_date || "",
+        birth_date: user?.date || r.birth_date || userDetails?.birthDate || "",
         company_name: userType === "PJ" ? (r.company_name ?? store?.companyName ?? "") : null,
         trading_name: userType === "PJ" ? (r.trading_name ?? store?.title ?? "") : null,
-        annual_revenue: r.annual_revenue ? Number(r.annual_revenue) : null,
-        monthly_income: r.monthly_income ? Number(r.monthly_income) : null,
-        professional_occupation: r.professional_occupation || "",
+        annual_revenue: r.annual_revenue ? Number(r.annual_revenue) : (storeMetadata?.annual_revenue || null),
+        monthly_income: r.monthly_income ? Number(r.monthly_income) : (userDetails?.monthlyIncome || null),
+        professional_occupation: r.professional_occupation || userDetails?.profession || userDetails?.occupation || "",
         addresses: r.addresses?.length ? r.addresses.map((a: AddressType) => ({
           id: a.id, type: "Recipient" as const, partner_document: a.partner_document ?? "",
           street: a.street ?? "", complementary: a.complementary ?? "", street_number: a.street_number ?? "",
@@ -95,15 +98,21 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
         } : buildBankFromAvailable(),
       });
     } else {
+      const userDetails = (user as any)?.details || {};
+      const storeMetadata = store?.metadata || {};
+
       setFormData({
         ...buildInitialForm(),
         type_enum: userType,
         email: user?.email || "",
         document: user?.cpf || user?.document || store?.document || "",
         name: user?.name || "",
-        birth_date: user?.date || "",
+        birth_date: user?.date || userDetails?.birthDate || "",
         company_name: userType === "PJ" ? (store?.companyName || store?.title || "") : null,
         trading_name: userType === "PJ" ? (store?.title || "") : null,
+        professional_occupation: userDetails?.profession || userDetails?.occupation || userDetails?.cargo || "",
+        monthly_income: userDetails?.monthlyIncome || userDetails?.renda || null,
+        annual_revenue: userType === "PJ" ? (storeMetadata?.annual_revenue || storeMetadata?.faturamento || null) : null,
         addresses: [buildAddressFromAvailable()],
         phones: [buildPhoneFromUser()],
         bank_account: buildBankFromAvailable(),

@@ -26,8 +26,13 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId, initialData }) =
     const handleSubmit = async () => {
         try {
             if (!recipientId) {
-                console.warn("Recipient ainda não cadastrado no Pagar.me");
                 toast.warning("Para editar esses dados, primeiro conclua o cadastro no Pagar.me clicando em 'Concluir cadastro agora'.");
+                return;
+            }
+
+            const storeId = getStore();
+            if (!storeId) {
+                toast.error("Loja não encontrada.");
                 return;
             }
 
@@ -40,65 +45,48 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId, initialData }) =
                 account_check_digit: contentForm.account_check_digit,
             };
 
-            // Atualiza dados bancários do recebedor
-            const responseBank = await api.bridge<any>({
-                method: "put",
-                url: `info/recipient/${recipientId}/bank`,
-                data: payloadBank
-            });
-
-            if (!responseBank?.success) {
-                toast.error("Erro ao atualizar dados bancários.");
-                return;
-            }
-
-            // resolve store id from context (getStore()) or fallback to recipientId
-            const storeId = getStore() || recipientId;
-
-            // Try the new endpoint POST /withdraw/{storeId} first
             const checkWithdraw = await api.bridge<any>({
-                method: "post",
+                method: "get",
                 url: `/withdraw/${storeId}`,
             });
 
-            // normalize withdraw data from multiple possible response shapes
-            const withdrawData =
-                checkWithdraw?.data ?? checkWithdraw?.data?.data ?? checkWithdraw?.data?.[0] ?? null;
+            const withdrawData = checkWithdraw?.[0] ?? checkWithdraw?.data?.[0] ?? null;
 
-            const payloadWithdraw = {
-                store: storeId,
-                split_payment: 1,
-                bankAccount: payloadBank,
-                is_split: 1,
-            };
-
-            if (withdrawData && withdrawData.code) {
+            if (withdrawData && withdrawData.id) {
                 const updateWithdraw = await api.bridge<any>({
-                    method: "put",
-                    url: `/withdraw/update`,
+                    method: "post",
+                    url: "/withdraw/update",
                     data: {
-                        code: withdrawData.code,
-                        status: 1,
-                        bankAccount: payloadBank,
+                        id: withdrawData.id,
+                        store: storeId,
+                        ...payloadBank,
+                        holder_name: payloadBank.title,
                     },
                 });
 
                 if (updateWithdraw?.response) {
-                    toast.success("Saque atualizado com sucesso!");
+                    toast.success("Dados bancários atualizados!");
                 } else {
-                    toast.error("Erro ao atualizar saque.");
+                    toast.error("Erro ao atualizar dados bancários.");
                 }
             } else {
                 const createWithdraw = await api.bridge<any>({
                     method: "post",
                     url: "/withdraw/register",
-                    data: payloadWithdraw,
+                    data: {
+                        store: storeId,
+                        recipient_id: recipientId,
+                        ...payloadBank,
+                        holder_name: payloadBank.title,
+                        split_payment: 1,
+                        is_split: 1,
+                    },
                 });
 
-                if (createWithdraw?.success || createWithdraw?.response) {
-                    toast.success("Saque criado com sucesso!");
+                if (createWithdraw?.response) {
+                    toast.success("Dados bancários salvos!");
                 } else {
-                    toast.error("Erro ao criar saque.");
+                    toast.error("Erro ao salvar dados bancários.");
                 }
             }
 
@@ -118,19 +106,29 @@ const GroupConfigBank: React.FC<Props> = ({ title, recipientId, initialData }) =
                     url: `/withdraw/${storeId}`,
                 });
 
-                const withdrawData = checkWithdraw[0]?.data ?? checkWithdraw?.data?.data ?? checkWithdraw?.data?.[0] ?? null;
-                const bankAccountRaw = withdrawData?.account_number || withdrawData?.account_number || null;
+                const withdrawData = checkWithdraw?.[0] ?? checkWithdraw?.data?.[0] ?? checkWithdraw?.data ?? null;
 
-                if (bankAccountRaw) {
-                    const bankAccount = typeof bankAccountRaw === "string" ? JSON.parse(bankAccountRaw) : bankAccountRaw;
+                if (withdrawData?.bank || withdrawData?.holder_name) {
+                    setContentForm({
+                        title: withdrawData.holder_name ?? "",
+                        bank: withdrawData.bank ?? "",
+                        branch_number: withdrawData.branch_number ?? "",
+                        branch_check_digit: withdrawData.branch_check_digit ?? "",
+                        account_number: withdrawData.account_number ?? "",
+                        account_check_digit: withdrawData.account_check_digit ?? "",
+                    });
+                } else if (withdrawData?.bankAccount) {
+                    const bankAccount = typeof withdrawData.bankAccount === "string"
+                        ? JSON.parse(withdrawData.bankAccount)
+                        : withdrawData.bankAccount;
 
                     setContentForm({
-                        title: bankAccount.title ?? "",
+                        title: bankAccount.title ?? bankAccount.holder_name ?? "",
                         bank: bankAccount.bank ?? "",
-                        branch_number: bankAccount.branch_number ?? bankAccount.branch_number ?? "",
-                        branch_check_digit: bankAccount.branch_check_digit ?? "",
-                        account_number: bankAccount.account_number ?? "",
-                        account_check_digit: bankAccount.account_check_digit ?? "",
+                        branch_number: bankAccount.branch_number ?? bankAccount.agence ?? "",
+                        branch_check_digit: bankAccount.branch_check_digit ?? bankAccount.agenceDigit ?? "",
+                        account_number: bankAccount.account_number ?? bankAccount.accountNumber ?? "",
+                        account_check_digit: bankAccount.account_check_digit ?? bankAccount.accountDigit ?? "",
                     });
                 } else if (initialData) {
                     // Usa dados iniciais como fallback
