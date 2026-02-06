@@ -1243,56 +1243,66 @@ export default function Checkout({
 
                     <div className="space-y-4">
                       {/* Data da Locação */}
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="font-semibold text-sm text-zinc-900 flex items-center">
-                          <Icon
-                            icon="fa-calendar"
-                            className="text-sm mr-2 opacity-75 flex-shrink-0"
-                          />
-                          <span>Data da locação</span>
-                        </div>
-                        <div className="text-right text-sm">
-                          <div>
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="font-semibold text-sm text-zinc-900 flex items-center">
+                            <Icon
+                              icon="fa-calendar"
+                              className="text-sm mr-2 opacity-75 flex-shrink-0"
+                            />
+                            <span>Data da locação</span>
+                          </div>
+                          <div className="text-right text-sm font-medium">
                             {dateBRFormat(resume.startDate)}{" "}
                             {resume.endDate != resume.startDate
                               ? `- ${dateBRFormat(resume.endDate)}`
                               : ""}
                           </div>
-                          {Object.entries(deliverySchedules).map(([storeId, sched]) => {
-                            const store = deliveryStores.find(s => Number(s.id) === Number(storeId));
-                            return sched ? (
-                              <div key={storeId} className="text-yellow-600 font-medium flex items-center justify-end gap-1 text-xs">
-                                <Icon icon="fa-truck" className="text-xs" />
-                                <span>{store?.title}: {sched}</span>
-                              </div>
-                            ) : null;
-                          })}
-                          {Object.entries(pickupSchedules).map(([storeId, sched]) => {
-                            const store = pickupStores.find(s => Number(s.id) === Number(storeId));
-                            return sched ? (
-                              <div key={storeId} className="text-yellow-600 font-medium flex items-center justify-end gap-1 text-xs">
-                                <Icon icon="fa-store" className="text-xs" />
-                                <span>{store?.title}: {sched}</span>
-                              </div>
-                            ) : null;
-                          })}
                         </div>
+                        {Object.entries(deliverySchedules).map(([storeId, sched]) => {
+                          const store = deliveryStores.find(s => Number(s.id) === Number(storeId));
+                          return sched ? (
+                            <div key={storeId} className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 sm:p-3">
+                              <div className="flex items-center gap-2 text-yellow-700">
+                                <Icon icon="fa-truck" className="text-sm flex-shrink-0" />
+                                <div className="text-xs sm:text-sm">
+                                  <div className="font-semibold">{store?.title}</div>
+                                  <div className="font-medium">Manhã - {sched}</div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : null;
+                        })}
+                        {Object.entries(pickupSchedules).map(([storeId, sched]) => {
+                          const store = pickupStores.find(s => Number(s.id) === Number(storeId));
+                          return sched ? (
+                            <div key={storeId} className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 sm:p-3">
+                              <div className="flex items-center gap-2 text-yellow-700">
+                                <Icon icon="fa-store" className="text-sm flex-shrink-0" />
+                                <div className="text-xs sm:text-sm">
+                                  <div className="font-semibold">{store?.title}</div>
+                                  <div className="font-medium">Manhã - {sched}</div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : null;
+                        })}
                       </div>
 
-                      <div className="border-t border-gray-300"></div>
+                      <div className="border-t border-gray-200 my-1"></div>
 
                       {/* Subtotal */}
-                      <div className="flex justify-between items-center">
-                        <div className="text-sm">
+                      <div className="flex justify-between items-center py-1">
+                        <div className="text-sm text-zinc-600">
                           Subtotal ({listCart.length}{" "}
                           {listCart.length == 1 ? "item" : "itens"})
                         </div>
-                        <div className="font-medium">
+                        <div className="font-semibold text-base">
                           R$ {moneyFormat(resume.subtotal)}
                         </div>
                       </div>
 
-                      <div className="border-t border-gray-300"></div>
+                      <div className="border-t border-gray-200 my-1"></div>
 
                       {/* Frete */}
                       <div className="space-y-2">
@@ -1321,11 +1331,11 @@ export default function Checkout({
                         <div>{renderDeliveryPrice()}</div>
                       </div>
 
-                      <div className="border-t border-gray-300"></div>
+                      <div className="border-t border-gray-200 my-1"></div>
 
                       {/* Total */}
-                      <div className="flex justify-between items-center pt-2">
-                        <div className="text-lg font-bold text-zinc-900">
+                      <div className="flex justify-between items-center pt-3 pb-1">
+                        <div className="text-base lg:text-lg font-bold text-zinc-900">
                           TOTAL
                         </div>
                         <div className="text-2xl lg:text-3xl text-zinc-900 font-bold">
