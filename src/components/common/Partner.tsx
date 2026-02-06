@@ -27,16 +27,12 @@ export default function Partner({ params }: { params: StoreType }) {
               {params?.title ?? params?.companyName}
             </h6>
           </div>
-          <div>
-            <Badge style="light" className="text-xs md:text-sm">
-              {params?.segment}
-            </Badge>
-            <Badge style="light" className="text-xs md:text-sm">
-              {params?.city}
-            </Badge>
-            <Badge style="light" className="text-xs md:text-sm">
-              {params?.state}
-            </Badge>
+          <div className="text-xs md:text-sm text-zinc-600">
+            {params?.segment && <span>{params.segment}</span>}
+            {params?.segment && (params?.city || params?.state) && <span className="mx-1">•</span>}
+            {(params?.city || params?.state) && (
+              <span>{[params?.city, params?.state].filter(Boolean).join(', ')}</span>
+            )}
           </div>
         </div>
       </div>

@@ -92,13 +92,15 @@ export default function UserEdit({ user }: { user: UserType }) {
 
   const getRecipientCode = async (storeId: string) => {
     try {
+      // Sincroniza dados com Pagar.me antes de carregar
+      await api.bridge({ method: "POST", url: "info/recipients/sync" }).catch(() => {});
+
       const res: any = await api.bridge({
         method: "GET",
         url: `info/recipient/${storeId}`,
       });
 
       if (!res?.response || !res?.data) {
-        // Usa dados do usuário como fallback quando não existe recipient
         setContent(buildFromUser());
         return;
       }
@@ -151,7 +153,18 @@ export default function UserEdit({ user }: { user: UserType }) {
         partners: [],
         annual_revenue: null,
         created_at: "",
-        updated_at: ""
+        updated_at: "",
+        bank_account: d.bank ? {
+          holder_name: d.bank.holder_name ?? "",
+          holder_type: d.bank.holder_type ?? "individual",
+          holder_document: d.bank.holder_document ?? "",
+          bank: d.bank.bank ?? "",
+          branch_number: d.bank.branch_number ?? "",
+          branch_check_digit: d.bank.branch_check_digit ?? "",
+          account_number: d.bank.account_number ?? "",
+          account_check_digit: d.bank.account_check_digit ?? "",
+          type: d.bank.type ?? "checking",
+        } : undefined,
       };
 
       setContent(mapped);
@@ -184,7 +197,7 @@ export default function UserEdit({ user }: { user: UserType }) {
     <>
       <GroupConfigBasicUser content={content} />
 
-      <GroupConfigUsers title="Pessoa Física" content={content} />
+      <GroupConfigUsers title={content?.type_enum === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"} content={content} />
 
       <GroupConfigBank
         title="Contas bancárias"
