@@ -174,11 +174,54 @@ export default function Checkout({
     [storesById]
   );
 
+  const { deliveryProducts, pickupProducts, deliveryStores, pickupStores } = useMemo(() => {
+    const delivery: CartType[] = [];
+    const pickup: CartType[] = [];
+    const deliveryStoreIds = new Set<number>();
+    const pickupStoreIds = new Set<number>();
+
+    cartItems.forEach((item) => {
+      const isPickup = item.product?.delivery_type === 'pickup' ||
+                       item.details?.deliverySelection === 'pickup';
+
+      let storeId = 0;
+      const storeRaw = item.product?.store;
+      if (typeof storeRaw === 'number') {
+        storeId = storeRaw;
+      } else if (typeof storeRaw === 'string') {
+        storeId = parseInt(storeRaw);
+      } else if (typeof storeRaw === 'object' && storeRaw !== null) {
+        storeId = Number(storeRaw.id);
+      }
+
+      if (isPickup) {
+        pickup.push(item);
+        if (storeId > 0) pickupStoreIds.add(storeId);
+      } else {
+        delivery.push(item);
+        if (storeId > 0) deliveryStoreIds.add(storeId);
+      }
+    });
+
+    const deliveryStoresFiltered = storesList.filter(s => deliveryStoreIds.has(Number(s.id)));
+    const pickupStoresFiltered = storesList.filter(s => pickupStoreIds.has(Number(s.id)));
+
+
+
+    return {
+      deliveryProducts: delivery,
+      pickupProducts: pickup,
+      deliveryStores: deliveryStoresFiltered,
+      pickupStores: pickupStoresFiltered,
+    };
+  }, [cartItems, storesList]);
+
   const { isFallback } = useRouter();
 
   const [form, setForm] = useState(FormInitialType);
 
   const [schedule, setSchedule] = useState("" as string);
+  const [pickupSchedule, setPickupSchedule] = useState("" as string);
   const [deliveryTo, setDeliveryTo] = useState("reception" as string);
 
   const [customLocation, setCustomLocation] = useState(false as boolean);
@@ -717,6 +760,7 @@ export default function Checkout({
       },
       platformCommission,
       deliverySchedule: schedule,
+      pickupSchedule: pickupSchedule,
       deliveryStatus: "pending",
       deliveryTo,
     };
@@ -1051,27 +1095,105 @@ export default function Checkout({
                   <ToastContainer position="top-right" />
                 </div>
 
-                {/* Detalhes de Entrega */}
-                <div className="space-y-4 lg:space-y-6">
-                  <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
-                    Detalhes de entrega
-                  </h2>
+                {/* Produtos para ENTREGA */}
+                {deliveryProducts.length > 0 && (
+                  <div className="space-y-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2">
+                      <Icon icon="fa-truck" className="text-blue-600" />
+                      <h2 className="text-base font-semibold text-zinc-800">
+                        Produtos para Entrega ({deliveryProducts.length})
+                      </h2>
+                    </div>
 
-                  {/* Opções de Entrega */}
-                  <DeliveryOptions
-                    value={deliveryTo}
-                    onChange={setDeliveryTo}
-                  />
+                    <div className="flex flex-wrap gap-2">
+                      {deliveryProducts.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-blue-100">
+                          {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
+                            <img
+                              src={getImage(item.product.gallery[0], "thumb")}
+                              alt={item.product?.title}
+                              className="w-10 h-10 rounded object-cover"
+                            />
+                          )}
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
+                            <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
 
-                  {/* Seleção de Horário */}
-                  <TimeSlotPicker
-                    value={schedule}
-                    onChange={setSchedule}
-                    required
-                    stores={storesList}
-                    selectedDate={resume.startDate}
-                  />
-                </div>
+                    {/* Opções de Entrega */}
+                    <DeliveryOptions
+                      value={deliveryTo}
+                      onChange={setDeliveryTo}
+                    />
+
+                    <TimeSlotPicker
+                      value={schedule}
+                      onChange={setSchedule}
+                      required
+                      stores={deliveryStores}
+                      selectedDate={resume.startDate}
+                    />
+                  </div>
+                )}
+
+                {/* Produtos para RETIRADA NA LOJA */}
+                {pickupProducts.length > 0 && (
+                  <div className="space-y-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2">
+                      <Icon icon="fa-store" className="text-amber-600" />
+                      <h2 className="text-base font-semibold text-zinc-800">
+                        Produtos para Retirada na Loja ({pickupProducts.length})
+                      </h2>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {pickupProducts.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-amber-100">
+                          {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
+                            <img
+                              src={getImage(item.product.gallery[0], "thumb")}
+                              alt={item.product?.title}
+                              className="w-10 h-10 rounded object-cover"
+                            />
+                          )}
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
+                            <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {pickupStores.map((store, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-amber-200">
+                        <Icon icon="fa-map-marker-alt" className="text-amber-600" />
+                        <div className="text-sm">
+                          <span className="font-medium text-zinc-800">{store.title}</span>
+                          {store.street && (
+                            <span className="text-zinc-500">
+                              {" - "}{store.street}{store.number ? `, ${store.number}` : ''}
+                              {store.neighborhood && ` - ${store.neighborhood}`}
+                              {store.city && ` • ${store.city}`}{store.state && `-${store.state}`}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="mt-3">
+                    <TimeSlotPicker
+                      value={pickupSchedule}
+                      onChange={setPickupSchedule}
+                      required
+                      stores={pickupStores}
+                      selectedDate={resume.startDate}
+                    />
+                    </div>
+                  </div>
+                )}
 
                 {/* Fornecedores */}
                 <div className="space-y-4 lg:space-y-6">
@@ -1114,8 +1236,15 @@ export default function Checkout({
                               : ""}
                           </div>
                           {schedule && (
-                            <div className="text-yellow-600 font-medium">
-                              {schedule}
+                            <div className="text-blue-600 font-medium flex items-center justify-end gap-1">
+                              <Icon icon="fa-truck" className="text-xs" />
+                              <span>{schedule}</span>
+                            </div>
+                          )}
+                          {pickupSchedule && (
+                            <div className="text-amber-600 font-medium flex items-center justify-end gap-1">
+                              <Icon icon="fa-store" className="text-xs" />
+                              <span>{pickupSchedule}</span>
                             </div>
                           )}
                         </div>
@@ -1204,11 +1333,19 @@ export default function Checkout({
                       <div className="pt-4">
                         {(() => {
                           const missingItems = [];
-                          if (!address?.zipCode || !isCEPInRegion(address?.zipCode)) missingItems.push("CEP válido");
-                          if (!address?.street) missingItems.push("rua");
-                          if (!address?.number) missingItems.push("número");
-                          if (!address?.complement) missingItems.push("complemento");
-                          if (!schedule) missingItems.push("horário");
+
+                          if (deliveryProducts.length > 0) {
+                            if (!address?.zipCode || !isCEPInRegion(address?.zipCode)) missingItems.push("CEP válido");
+                            if (!address?.street) missingItems.push("rua");
+                            if (!address?.number) missingItems.push("número");
+                            if (!address?.complement) missingItems.push("complemento");
+                            if (!schedule) missingItems.push("horário de entrega");
+                          }
+
+                          if (pickupProducts.length > 0 && !pickupSchedule) {
+                            missingItems.push("horário de retirada");
+                          }
+
                           if (!isPhoneValid(phone)) missingItems.push("telefone");
 
                           const isFormValid = missingItems.length === 0;
