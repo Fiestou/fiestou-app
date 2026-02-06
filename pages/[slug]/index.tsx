@@ -337,6 +337,62 @@ export default function Store({
               {store?.description}
             </div>
           )}
+
+          {/* Info da Loja */}
+          <div className="grid md:grid-cols-2 gap-6 mt-6 md:mt-8">
+            {/* Endereço */}
+            {(store?.street || store?.city) && (
+              <div className="bg-zinc-50 rounded-xl p-4 md:p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon icon="fa-map-marker-alt" className="text-primary" />
+                  <h3 className="font-semibold text-zinc-900">Endereço</h3>
+                </div>
+                <p className="text-zinc-700 leading-relaxed">
+                  {store?.street}{store?.number ? `, ${store.number}` : ''}
+                  {store?.complement ? ` - ${store.complement}` : ''}
+                  <br />
+                  {store?.neighborhood}{store?.city ? `, ${store.city}` : ''}
+                  {store?.state ? ` - ${store.state}` : ''}
+                  {store?.zipCode ? <><br />CEP: {store.zipCode}</> : ''}
+                </p>
+                {store?.city && store?.state && (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${store.street || ''} ${store.number || ''}, ${store.neighborhood || ''}, ${store.city} - ${store.state}`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-3 text-primary hover:underline text-sm"
+                  >
+                    <Icon icon="fa-external-link-alt" className="text-xs" />
+                    Ver no mapa
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Horários */}
+            {store?.openClose && Array.isArray(store.openClose) && store.openClose.length > 0 && (
+              <div className="bg-zinc-50 rounded-xl p-4 md:p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon icon="fa-clock" type="far" className="text-primary" />
+                  <h3 className="font-semibold text-zinc-900">Horário de funcionamento</h3>
+                </div>
+                <ul className="space-y-1 text-sm text-zinc-700">
+                  {store.openClose.map((day: any, idx: number) => (
+                    <li key={idx} className="flex justify-between">
+                      <span className="capitalize">{day.day}</span>
+                      <span>
+                        {day.working === 'true' || day.working === true
+                          ? `${day.open} - ${day.close}`
+                          : 'Fechado'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
