@@ -201,7 +201,7 @@ export default function Store({
     getProducts();
   }, []);
 
-  const baseUrl = `https://fiestou.com.br${getStoreUrl(store)}`;
+  const baseUrl = `${process.env.APP_URL}${getStoreUrl(store)}`;
   const storeImage = getImage(store?.cover, "default") || getImage(DataSeo?.site_image) || "";
   const storeDescription = store?.description || DataSeo?.site_description;
 

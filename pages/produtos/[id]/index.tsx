@@ -132,7 +132,7 @@ export default function Produto({
   const api = new Api();
   const { isFallback } = useRouter();
   const [share, setShare] = useState(false as boolean);
-  const baseUrl = `https://fiestou.com.br${getProductUrl(product, store)}`;
+  const baseUrl = `${process.env.APP_URL}${getProductUrl(product, store)}`;
   const [loadCart, setLoadCart] = useState(false as boolean);
   const [blockdate, setBlockdate] = useState(Array<string>());
   const [cep, setCep] = useState("");
@@ -522,7 +522,7 @@ export default function Produto({
     "name": product?.title,
     "description": productDescription,
     "image": productImage,
-    "url": `https://fiestou.com.br${productUrl}`,
+    "url": `${process.env.APP_URL}${productUrl}`,
     "brand": {
       "@type": "Brand",
       "name": store?.title || "Fiestou"
@@ -547,7 +547,7 @@ export default function Produto({
         image: productImage,
         description: productDescription,
         url: productUrl,
-        canonical: `https://fiestou.com.br${productUrl}`,
+        canonical: `${process.env.APP_URL}${productUrl}`,
         type: 'product',
         jsonLd: productJsonLd,
       }}

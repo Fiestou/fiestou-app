@@ -253,7 +253,7 @@ export function Footer(props: FooterType) {
             <div>
               Desenvolvido por
               <a
-                href="https://www.fiestou.com.br/"
+                href="/"
                 target="_blank"
                 className="hover:underline hover:text-yellow-600 ease font-semibold pl-1"
                 rel="noreferrer"
