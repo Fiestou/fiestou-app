@@ -32,8 +32,8 @@ export default function Template({
     title: metaPage?.title ?? "",
     image: metaPage?.image || "/images/fiestou-logo.png",
     description: metaPage?.description ?? "",
-    url: `https://www.fiestou.com.br/${metaPage?.url ?? ''}`,
-    canonical: metaPage?.canonical || `https://www.fiestou.com.br/${metaPage?.url ?? ''}`,
+    url: `${process.env.APP_URL}/${metaPage?.url ?? ''}`,
+    canonical: metaPage?.canonical || `${process.env.APP_URL}/${metaPage?.url ?? ''}`,
     type: metaPage?.type || 'website',
   };
 
