@@ -15,6 +15,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Wait for SSH availability
+        run: |
+          for i in 1 2 3 4 5; do
+            echo "Tentativa $i de conexao SSH..."
+            if nc -z -w 10 ${{ secrets.VPS_HOST }} ${{ secrets.VPS_PORT }} 2>/dev/null; then
+              echo "SSH disponivel"
+              exit 0
+            fi
+            echo "SSH indisponivel, aguardando 15s..."
+            sleep 15
+          done
+          echo "SSH nao disponivel apos 5 tentativas"
+          exit 1
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
