@@ -5,6 +5,7 @@ import Checkbox from "@/src/components/ui/form/CheckboxUI";
 import QtdInput from "@/src/components/ui/form/QtdUI";
 import Img from "@/src/components/utils/ImgBase";
 import { getImage } from "@/src/helper";
+import { formatMoney } from "@/src/components/utils/Currency";
 
 interface ProductAttributesProps {
   attributes: AttributeType[];
@@ -22,18 +23,6 @@ export default function ProductAttributes({
   activeVariations,
   updateOrder,
 }: ProductAttributesProps) {
-  const formatMoney = (value: any): string => {
-    const num =
-      typeof value === "string"
-        ? parseFloat(value.replace(/\./g, "").replace(",", "."))
-        : Number(value);
-
-    return new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
-
   if (!Array.isArray(attributes)) return null;
 
   return (

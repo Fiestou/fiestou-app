@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getUser, getUserType } from "@/src/contexts/AuthContext";
 import { UserType } from "@/src/models/user";
@@ -32,14 +32,15 @@ export function Header(props: HeaderType) {
   });
 
   useEffect(() => {
-    if (!!window) {
-      setUser(getUser);
+    setUser(getUser);
 
-      window.addEventListener("scroll", function () {
-        setParams({ ...params, scroll: window.scrollY > 0 });
-      });
-    }
-  }, [params]);
+    const handleScroll = () => {
+      setParams(prev => ({ ...prev, scroll: window.scrollY > 0 }));
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const userType = getUserType(user);
 

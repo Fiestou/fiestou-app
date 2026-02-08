@@ -1,7 +1,7 @@
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { fetchOrderById } from "@/src/services/order";
-import { useDebugValue, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CopyClipboard,
   dateBRFormat,
@@ -160,6 +160,14 @@ export default function Pagamento({
 
   const [boleto, setBoleto] = useState<any>({});
 
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
+
   const ConfirmManager = async () => {
     try {
       const handle = await fetchOrderById(api, orderId);
@@ -174,13 +182,15 @@ export default function Pagamento({
 
   const CardManager = () => {
     let attempts = 6;
+    if (pollingRef.current) clearInterval(pollingRef.current);
 
-    const interval = setInterval(() => {
+    pollingRef.current = setInterval(() => {
       attempts--;
       ConfirmManager();
 
       if (attempts <= 0) {
-        clearInterval(interval);
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        pollingRef.current = null;
         handleForm({
           loading: false,
           sended: false,
@@ -191,8 +201,6 @@ export default function Pagamento({
         }, 3000);
       }
     }, 5000);
-
-    return () => clearInterval(interval);
   };
 
   const PixManager = (charge: any) => {
@@ -218,8 +226,9 @@ export default function Pagamento({
     };
 
     updateExpire();
+    if (pollingRef.current) clearInterval(pollingRef.current);
 
-    const interval = setInterval(() => {
+    pollingRef.current = setInterval(() => {
       if (!!expire && expire !== "expired") {
         updateExpire();
 
@@ -233,14 +242,14 @@ export default function Pagamento({
 
       if (expire === "expired") {
         setExpire("");
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        pollingRef.current = null;
         handleForm({ loading: false, sended: false, feedback: "Seu código PIX expirou. Tente novamente." });
         setTimeout(() => {
           window.location.href = `/dashboard/pedidos`;
         }, 3000);
       }
     }, 1000);
-
-    return () => clearInterval(interval);
   };
 
   const BoletoManager = (charge: any) => {
