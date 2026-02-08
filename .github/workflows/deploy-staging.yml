@@ -15,54 +15,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Wait for SSH availability
+      - name: Preparar chave SSH
         run: |
-          for i in 1 2 3 4 5; do
-            echo "Tentativa $i de conexao SSH..."
-            if nc -z -w 10 ${{ secrets.VPS_HOST }} ${{ secrets.VPS_PORT }} 2>/dev/null; then
-              echo "SSH disponivel"
-              exit 0
-            fi
-            echo "SSH indisponivel, aguardando 15s..."
-            sleep 15
-          done
-          echo "SSH nao disponivel apos 5 tentativas"
-          exit 1
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: nick-fields/retry@v3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_wait_seconds: 120
+          command: |
+            ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no \
+              -i ~/.ssh/deploy_key \
+              -p ${{ secrets.VPS_PORT }} \
+              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              'set -euo pipefail
 
-          timeout: 30m
-          command_timeout: 30m
-          debug: true
-          script_stop: true
+              APP_DIR="/var/www/fiestou-app-staging"
 
-          script: |
-            set -euo pipefail
+              echo ">> Go to app dir"
+              cd "$APP_DIR"
 
-            APP_DIR="/var/www/fiestou-app-staging"
+              echo ">> Updating code"
+              git fetch --all --prune
+              git checkout develop
+              git reset --hard origin/develop
 
-            echo ">> Go to app dir"
-            cd "$APP_DIR"
+              echo ">> Installing dependencies"
+              rm -rf node_modules
+              npm ci
 
-            echo ">> Updating code"
-            git fetch --all --prune
-            git checkout develop
-            git reset --hard origin/develop
+              echo ">> Building app"
+              npm run build
 
-            echo ">> Installing dependencies"
-            rm -rf node_modules
-            npm ci
+              echo ">> Restarting PM2"
+              pm2 restart fiestou-app-staging || pm2 start npm --name "fiestou-app-staging" -- start -- -p 3030
 
-            echo ">> Building app"
-            npm run build
-
-            echo ">> Restarting PM2"
-            pm2 restart fiestou-app-staging || pm2 start npm --name "fiestou-app-staging" -- start -- -p 3030
-
-            echo ">> Deploy staging finalizado"
+              echo ">> Deploy staging finalizado"'
