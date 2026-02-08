@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/form";
 import Cookies from "js-cookie";
 import Api from "@/src/services/api";
@@ -16,10 +16,17 @@ export default function SidebarCart(attr: SidebarCartType) {
   const [effect, setEffect] = useState(false as boolean);
   const [placeholder, setPlaceholder] = useState(true as boolean);
   const [products, setProducts] = useState([] as any);
+  const closeTimer = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   const onClose = () => {
     setEffect(false);
-    setTimeout(() => {
+    closeTimer.current = setTimeout(() => {
       attr.close();
       setStatus(false);
       setPlaceholder(false);
