@@ -6,17 +6,7 @@ import { StoreType } from "@/src/models/store";
 import LikeButton from "../ui/LikeButton";
 import { getImage } from "@/src/helper";
 import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
-
-const formatMoney = (value: any): string => {
-  const num =
-    typeof value === "string"
-      ? parseFloat(value.replace(/\./g, "").replace(",", "."))
-      : Number(value);
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
-};
+import { formatMoney } from "@/src/components/utils/Currency";
 
 export default function Product({ product }: { product: ProductType | any }) {
   const imageCover = !!product?.gallery?.length ? product?.gallery[0] : {};

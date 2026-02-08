@@ -8,6 +8,7 @@ import ProductQuantity from "../../../../../../pages/produtos/components/product
 import { ProductType } from "@/src/models/product";
 import { useCart } from "../../../../../hooks/useCart";
 import ProductShippingCalculator from "../../../../../../pages/produtos/components/product-shipping-calculator/ProductShippingCalculator";
+import { formatMoney } from "@/src/components/utils/Currency";
 
 interface ProductFormProps {
   product: ProductType;
@@ -54,17 +55,6 @@ export default function ProductForm({ product, store }: ProductFormProps) {
       .replace(/\D/g, "")
       .replace(/(\d{5})(\d)/, "$1-$2")
       .slice(0, 9);
-
-  const formatMoney = (value: any): string => {
-    const num =
-      typeof value === "string"
-        ? parseFloat(value.replace(/\./g, "").replace(",", "."))
-        : Number(value);
-    return new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
 
   return (
     <div className="flex flex-col gap-6 w-full md:w-1/2">

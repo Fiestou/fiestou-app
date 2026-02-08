@@ -3,6 +3,7 @@
 import { Button } from "@/src/components/ui/form";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { formatMoney } from "@/src/components/utils/Currency";
 
 interface BottomCartProps {
   productToCart: { total: number } | null;
@@ -34,18 +35,6 @@ export default function BottomCart({
 
   if (productToCart?.total == null || isNaN(productToCart.total)) return null;
 
-  const formatMoney = (value: any): string => {
-    const num =
-      typeof value === "string"
-        ? parseFloat(value.replace(/\./g, "").replace(",", "."))
-        : Number(value);
-    return new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
-
-  // Função simples para redirecionar
   const handleAddClick = () => {
     router.push("/produtos?openCart=1");
   };

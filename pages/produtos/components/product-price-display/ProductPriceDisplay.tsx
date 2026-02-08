@@ -1,6 +1,7 @@
 "use client";
 
 import { ProductType, getPrice, getPriceValue } from "@/src/models/product";
+import { formatMoney } from "@/src/components/utils/Currency";
 
 interface ProductPriceDisplayProps {
   product: ProductType;
@@ -16,17 +17,6 @@ export default function ProductPriceDisplay({
     !!product?.schedulingTax && product?.schedulingTax > priceValue
       ? product?.schedulingTax
       : priceValue;
-
-  const formatMoney = (value: any): string => {
-    const num =
-      typeof value === "string"
-        ? parseFloat(value.replace(/\./g, "").replace(",", "."))
-        : Number(value);
-    return new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
 
   return (
     <div className="w-fit md:text-right leading-tight md:pt-0">

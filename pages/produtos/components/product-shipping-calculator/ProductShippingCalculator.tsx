@@ -3,6 +3,7 @@
 import { Button } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { formatCep } from "@/src/components/utils/FormMasks";
+import { formatMoney } from "@/src/components/utils/Currency";
 
 interface ProductShippingCalculatorProps {
   cep: string;
@@ -24,17 +25,6 @@ export default function ProductShippingCalculator({
   cepErrorMessage,
   deliveryFee,
 }: ProductShippingCalculatorProps) {
-  const formatMoney = (value: any): string => {
-    const num =
-      typeof value === "string"
-        ? parseFloat(value.replace(/\./g, "").replace(",", "."))
-        : Number(value);
-    return new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
-
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-2">
