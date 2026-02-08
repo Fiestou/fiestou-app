@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Label } from "@/src/components/ui/form";
+import { formatCurrency } from "@/src/components/utils/Currency";
 
 interface ProductType {
   price?: number;
@@ -14,13 +15,6 @@ interface ProductPriceProps {
 }
 
 const ProductPrice: React.FC<ProductPriceProps> = ({ data, handleData }) => {
-  const formatCurrency = (value?: number) => {
-    if (value == null || isNaN(value)) return "";
-    return value.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
-  };
 
   const parseCurrency = (value: string) => {
     const numeric = parseFloat(value.replace(/\D/g, "")) / 100;
