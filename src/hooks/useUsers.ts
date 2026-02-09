@@ -14,7 +14,7 @@ export function useUsers() {
       const request: any = await api.bridge({
         method: "get",
         url: "users/list",
-        data: { person: "client" },
+        data: { type: "user" },
       });
 
       if (request.response) setUsers(request.data);
