@@ -3,10 +3,9 @@
 import Link from "next/link";
 import Template from "@/src/template";
 import { Button, Input } from "@/src/components/ui/form";
-import { ChangeEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Editor from "@/src/components/ui/form/EditorUI";
 import FileManager from "@/src/components/ui/form/FileManager";
@@ -47,19 +46,6 @@ export default function Form() {
   const handleContent = (value: Partial<PostType>) =>
     setContent((prev) => ({ ...prev, ...value }));
 
-  const handleCache = async () => {
-    try {
-      await axios.get(`/api/cache`, {
-        params: { route: `/blog/${content.slug}` },
-      });
-    } catch (error: any) {
-      console.error(
-        "Erro ao atualizar o cache:",
-        error?.response?.data || error.message
-      );
-    }
-  };
-
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setFormValue({ loading: true });
@@ -80,21 +66,14 @@ export default function Form() {
       },
     });
 
-    // Agora o backend devolve o slug correto
     if (response?.data) {
-      // Atualiza o estado com o conteúdo REAL vindo do backend
       setContent(response.data);
 
-      // Limpando cache automaticamente
       try {
         await axios.get("/api/cache", {
-          params: {
-            route: `/blog/${response.data.slug}`,
-          },
+          params: { route: `/blog/${response.data.slug}` },
         });
-      } catch (error: any) {
-        console.error("Erro ao limpar cache:", error.message);
-      }
+      } catch (error: any) {}
     }
 
     if (response.response) {
@@ -106,7 +85,7 @@ export default function Form() {
 
   const getPost = async () => {
     if (!id || id === "form") {
-      setContent((prev) => ({ ...prev, status: 1 })); // garante status = 1 em novo post
+      setContent((prev) => ({ ...prev, status: 1 }));
       setPlaceholder(false);
       return;
     }
@@ -118,7 +97,6 @@ export default function Form() {
       data: { type: "blog", id },
     });
 
-    // garante que o status nunca seja nulo ou undefined
     setContent({ ...request.data, status: request.data?.status ?? 1 });
     setPlaceholder(false);
   };
@@ -127,132 +105,102 @@ export default function Form() {
     if (router.isReady) getPost();
   }, [router.isReady, id]);
 
+  const isNew = id === "form";
+
   return (
     <Template
       header={{ template: "admin", position: "solid" }}
       footer={{ template: "clean" }}
     >
-      {placeholder ? null : (
+      <section>
+        <div className="container-medium pt-8">
+          <div className="flex items-center justify-between">
+            <Breadcrumbs
+              links={[
+                { url: "/admin", name: "Admin" },
+                { url: "/admin/blog", name: "Blog" },
+                { url: `/admin/blog/${id}`, name: isNew ? "Novo post" : content?.title || "Editando" },
+              ]}
+            />
+            {!!content?.slug && (
+              <Link
+                href={`/api/cache?route=/blog/${content.slug}&redirect=/blog/${content.slug}`}
+                target="_blank"
+                className="text-sm text-zinc-500 hover:text-zinc-700"
+              >
+                Limpar cache
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {placeholder ? (
+        <section>
+          <div className="container-medium py-16 flex justify-center items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-zinc-400"></div>
+            <span className="ml-3 text-zinc-500">Carregando...</span>
+          </div>
+        </section>
+      ) : (
         <form onSubmit={handleSubmit}>
           <section>
-            <div className="container-medium pt-6 md:pt-12 pb-4 md:pb-8">
-              <div className="flex justify-between">
-                <div className="pb-4">
-                  <Breadcrumbs
-                    links={[
-                      { url: "/admin", name: "Admin" },
-                      { url: "/admin/blog", name: "Blog" },
-                    ]}
-                  />
-                </div>
-                {!!content?.slug && (
-                  <Link
-                    href={`/api/cache?route=/blog/${content.slug}&redirect=/blog/${content.slug}`}
-                    target="_blank"
-                  >
-                    Limpar cache
-                  </Link>
-                )}
-              </div>
+            <div className="container-medium py-6">
+              <h1 className="font-title font-bold text-3xl text-zinc-900 mb-6">
+                {isNew ? "Novo post" : content?.title || "Editando"}
+              </h1>
 
-              <div className="flex items-end">
-                <div className="w-full flex items-center">
-                  <Link passHref href="/admin/blog">
-                    <Icon
-                      icon="fa-long-arrow-left"
-                      className="mr-6 text-2xl text-zinc-900"
-                    />
-                  </Link>
-                  <div className="font-title font-bold text-2xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                    {id !== "form"
-                      ? "Editar: " + content.title
-                      : "Criar novo post"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <div className="container-medium pb-12">
-              <div className="grid lg:flex gap-10 ld:gap-20 items-start">
-                <div className="w-full grid gap-8">
-                  {/* Campo de título */}
-                  <div className="grid gap-2">
-                    <label
-                      htmlFor="post-title"
-                      className="font-medium text-zinc-800"
-                    >
-                      Título
-                    </label>
+              <div className="grid lg:grid-cols-[1fr_20rem] gap-6 items-start">
+                <div className="grid gap-6">
+                  <div className="bg-white border rounded-xl p-6">
+                    <label className="block text-sm text-zinc-500 mb-2">Titulo</label>
                     <Input
-                      id="post-title"
                       value={content.title}
-                      onChange={(e) => handleContent({ title: e.target.value })}
-                      placeholder="Digite o título do post"
+                      onChange={(e: any) => handleContent({ title: e.target.value })}
+                      placeholder="Titulo do post"
                     />
                     {!!content?.slug && (
-                      <Link
-                        href={`/blog/${content.slug}`}
-                        target="_blank"
-                        className="text-sm text-blue-600 hover:underline"
-                      >
-                        /blog/{content.slug}
-                      </Link>
+                      <div className="mt-2">
+                        <Link
+                          href={`/blog/${content.slug}`}
+                          target="_blank"
+                          className="text-sm text-blue-600 hover:underline"
+                        >
+                          /blog/{content.slug}
+                        </Link>
+                      </div>
                     )}
                   </div>
 
-                  {/* Editor de conteúdo */}
-                  <div className="grid gap-2">
-                    <label
-                      htmlFor="post-content"
-                      className="font-medium text-zinc-800"
-                    >
-                      Conteúdo
-                    </label>
+                  <div className="bg-white border rounded-xl p-6">
+                    <label className="block text-sm text-zinc-500 mb-2">Conteudo</label>
                     <Editor
                       value={content?.blocks?.[0]?.content ?? ""}
-                      onChange={(val) =>
+                      onChange={(val: any) =>
                         handleContent({
                           blocks: [{ id: 1, type: "text", content: val }],
                         })
                       }
                       minHeight={180}
-                      className="your-tailwind-classes quill-textarea"
+                      className="quill-textarea"
                     />
                   </div>
                 </div>
 
-                <div className="w-full lg:max-w-[24rem] grid gap-4 pb-2">
-                  <div className="order-last lg:order-1 grid">
-                    <Button className="py-4" loading={form.loading}>
-                      Salvar
-                    </Button>
-                  </div>
-
-                  <div className="grid gap-4 order-1 lg:order-2 form-group">
+                <div>
+                  <div className="bg-white border rounded-xl p-6 sticky top-24 grid gap-4">
                     <div>
-                      <label style={{ float: "right" }}>
-                        Visualização:{" "}
-                        {content?.status === 1 ? "Público" : "Privado"}
-                      </label>
-
+                      <label className="block text-sm text-zinc-500 mb-1">Visibilidade</label>
                       <select
                         name="status"
                         value={String(content.status)}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           handleContent({ status: Number(e.target.value) })
                         }
-                        className="form-control"
+                        className="w-full px-3 py-2.5 border rounded-lg text-sm outline-none"
                       >
-                        {[
-                          { name: "Público", value: 1 },
-                          { name: "Privado", value: 0 },
-                        ].map((option, key) => (
-                          <option value={String(option.value)} key={key}>
-                            {option.name}
-                          </option>
-                        ))}
+                        <option value="1">Publico</option>
+                        <option value="0">Privado</option>
                       </select>
                     </div>
 
@@ -266,6 +214,10 @@ export default function Form() {
                         options={{ dir: "blog" }}
                       />
                     </div>
+
+                    <Button className="w-full py-3" loading={form.loading}>
+                      Salvar
+                    </Button>
                   </div>
                 </div>
               </div>

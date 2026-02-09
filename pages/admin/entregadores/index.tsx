@@ -1,13 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import { Button } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
-import { ProductType } from "@/src/models/product";
-import { moneyFormat } from "@/src/helper";
 import { UserType } from "@/src/models/user";
+import { NextApiRequest, NextApiResponse } from "next";
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { useState } from "react";
 
 export async function getServerSideProps(
   req: NextApiRequest,
@@ -18,16 +16,10 @@ export async function getServerSideProps(
 
   request = await api.bridge(
     {
-      method: "post",
+      method: "get",
       url: "users/list",
       data: {
-        filter: [
-          {
-            key: "person",
-            value: "delivery",
-            compare: "=",
-          },
-        ],
+        type: "delivery",
       },
     },
     req
@@ -35,12 +27,26 @@ export async function getServerSideProps(
 
   return {
     props: {
-      users: request.data,
+      users: request?.data ?? [],
     },
   };
 }
 
-export default function Usuarios({ users }: { users: Array<UserType> }) {
+export default function Entregadores({ users }: { users: Array<UserType> }) {
+  const [search, setSearch] = useState("");
+
+  const filtered = users.filter((item) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      item?.name?.toLowerCase().includes(q) ||
+      item?.email?.toLowerCase().includes(q) ||
+      item?.phone?.includes(q)
+    );
+  });
+
+  const activeCount = users.filter((i) => !!i.status).length;
+
   return (
     <Template
       header={{
@@ -48,86 +54,124 @@ export default function Usuarios({ users }: { users: Array<UserType> }) {
         position: "solid",
       }}
     >
-      <section className="">
-        <div className="container-medium pt-12">
-          <div className="flex">
-            <div className="w-full">usuarios {">"} Title</div>
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <div className="underline">Precisa de ajuda?</div>{" "}
-              <Icon icon="fa-question-circle" />
-            </div>
-          </div>
-          <div className="flex mt-10">
-            <div className="w-full">
-              <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
-                Entregadores
-              </div>
-            </div>
-            <div className="flex gap-6 w-fit">
-              <button
-                type="button"
-                className="rounded-xl whitespace-nowrap border py-4 text-zinc-900 font-semibold px-8"
-              >
-                Filtrar{" "}
-                <Icon
-                  icon="fa-chevron-down"
-                  type="far"
-                  className="text-xs ml-1"
-                />
-              </button>
-            </div>
-          </div>
+      <section>
+        <div className="container-medium pt-8">
+          <Breadcrumbs
+            links={[
+              { url: "/admin", name: "Admin" },
+              { url: "/admin/entregadores", name: "Entregadores" },
+            ]}
+          />
         </div>
       </section>
-      <section className="pt-6">
-        <div className="container-medium pb-12">
-          <div className="border">
-            <div className="flex bg-zinc-100 p-8 gap-8 font-bold text-zinc-900 font-title">
-              <div className="w-full">Nome</div>
-              <div className="w-[48rem]">Celular</div>
-              <div className="w-[64rem]">E-mail</div>
-              <div className="w-[32rem]">Status</div>
-              <div className="w-[48rem]">Ações</div>
+
+      <section>
+        <div className="container-medium py-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="font-title font-bold text-3xl text-zinc-900">
+              Entregadores
+            </h1>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-white border rounded-xl p-4">
+              <p className="text-sm text-zinc-500">Total</p>
+              <p className="text-2xl font-bold text-zinc-900">{users.length}</p>
             </div>
-            {!!users &&
-              users.map((item, key) => (
+            <div className="bg-white border rounded-xl p-4">
+              <p className="text-sm text-zinc-500">Ativos</p>
+              <p className="text-2xl font-bold text-green-600">{activeCount}</p>
+            </div>
+            <div className="bg-white border rounded-xl p-4">
+              <p className="text-sm text-zinc-500">Bloqueados</p>
+              <p className="text-2xl font-bold text-red-600">
+                {users.length - activeCount}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white border rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <Icon icon="fa-search" type="far" className="text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Buscar por nome, e-mail ou telefone..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full outline-none text-sm text-zinc-700 placeholder:text-zinc-400"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="text-zinc-400 hover:text-zinc-600"
+                >
+                  <Icon icon="fa-times" type="far" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white border rounded-xl overflow-hidden">
+            <div className="grid grid-cols-[1fr_10rem_1fr_8rem_6rem] gap-4 px-5 py-3 bg-zinc-50 border-b text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+              <div>Nome</div>
+              <div>Celular</div>
+              <div>E-mail</div>
+              <div className="text-center">Status</div>
+              <div className="text-center">Ações</div>
+            </div>
+            {filtered.length > 0 ? (
+              filtered.map((item, key) => (
                 <div
                   key={key}
-                  className="flex border-t p-8 gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 ease items-center"
+                  className="grid grid-cols-[1fr_10rem_1fr_8rem_6rem] gap-4 px-5 py-4 border-b last:border-0 hover:bg-zinc-50 transition-colors items-center"
                 >
-                  <div className="w-full">
-                    <div>{item?.name}</div>
+                  <div className="font-medium text-zinc-900 truncate">
+                    {item?.name}
                   </div>
-                  <div className="w-[48rem]">
-                    <div>{item?.phone}</div>
+                  <div className="text-sm text-zinc-600">
+                    {item?.phone || "-"}
                   </div>
-                  <div className="w-[64rem]">
-                    <div>{item?.email}</div>
+                  <div className="text-sm text-zinc-600 truncate">
+                    {item?.email}
                   </div>
-                  <div className="w-[32rem] text-center">
-                    <div className="rounded-md bg-zinc-100 py-2">
+                  <div className="text-center">
+                    <span
+                      className={`inline-block text-xs px-3 py-1 rounded-full font-medium ${
+                        item?.status
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
                       {!!item?.status ? "Ativo" : "Bloqueado"}
-                    </div>
+                    </span>
                   </div>
-                  <div className="w-[48rem] text-center flex gap-2">
+                  <div className="flex justify-center gap-2">
                     <Link
                       title="Editar"
                       href={`/admin/entregadores/${item?.id}`}
-                      className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
+                      className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-100 hover:bg-blue-100 hover:text-blue-600 transition-colors text-zinc-500"
                     >
-                      <Icon icon="fa-pen" type="far" />
+                      <Icon icon="fa-pen" type="far" className="text-xs" />
                     </Link>
-                    <button
-                      title="Bloquear"
-                      className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
-                    >
-                      <Icon icon="fa-ban" type="far" />
-                    </button>
                   </div>
                 </div>
-              ))}
+              ))
+            ) : (
+              <div className="text-center py-12 text-zinc-400">
+                <Icon
+                  icon="fa-search"
+                  type="far"
+                  className="text-3xl mb-2"
+                />
+                <p>Nenhum entregador encontrado</p>
+              </div>
+            )}
           </div>
-          <div className="pt-4">Mostrando 1 página de 1 com 4 usuarios</div>
+          <div className="pt-3 text-sm text-zinc-400">
+            {search
+              ? `${filtered.length} de ${users.length} entregadores`
+              : `${filtered.length} entregadores`}
+          </div>
         </div>
       </section>
     </Template>

@@ -1,8 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
 import { useEffect, useState } from "react";
 import { getExtenseData } from "@/src/helper";
@@ -13,8 +11,10 @@ export default function Blog() {
   const api = new Api();
 
   const [posts, setPosts] = useState([] as Array<any>);
+  const [loading, setLoading] = useState(true);
 
   const getPosts = async () => {
+    setLoading(true);
     let request: any = await api.bridge({
       method: "get",
       url: "admin/content/list",
@@ -27,6 +27,7 @@ export default function Blog() {
     if (request.response) {
       setPosts(request.data);
     }
+    setLoading(false);
   };
 
   const removePost = async (postID: string | number) => {
@@ -55,6 +56,8 @@ export default function Blog() {
     getPosts();
   }, []);
 
+  const publicCount = posts.filter((i: any) => i.status !== 0).length;
+
   return (
     <Template
       header={{
@@ -65,105 +68,132 @@ export default function Blog() {
         template: "clean",
       }}
     >
-      <section className="">
-        <div className="container-medium pt-12">
-          <div className="pb-4">
-            <Breadcrumbs
-              links={[
-                { url: "/admin", name: "Admin" },
-                { url: "/admin/blog", name: "Blog" },
-              ]}
-            />
-          </div>
-          <div className="grid md:flex gap-4 items-center w-full">
-            <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-              <span className="font-title font-bold">Blog</span>
-            </div>
-            <div className="flex gap-6 w-fit items-center">
-              <Button
-                href="/admin/blog/form"
-                className="whitespace-nowrap py-4 px-8"
-              >
-                Novo post
-              </Button>
-            </div>
-          </div>
+      <section>
+        <div className="container-medium pt-8">
+          <Breadcrumbs
+            links={[
+              { url: "/admin", name: "Admin" },
+              { url: "/admin/blog", name: "Blog" },
+            ]}
+          />
         </div>
       </section>
-      <section className="pt-6">
-        <div className="container-medium pb-12">
-          <div className="border">
-            <div className="flex bg-zinc-100 p-8 gap-8 font-bold text-zinc-900 font-title">
-              <div className="w-full">Título</div>
-              <div className="w-[48rem]">Última atualização</div>
-              <div className="w-[32rem]">Status</div>
-              <div className="w-[32rem]">Ações</div>
+
+      <section>
+        <div className="container-medium py-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="font-title font-bold text-3xl text-zinc-900">
+              Blog
+            </h1>
+            <Button
+              href="/admin/blog/form"
+              className="whitespace-nowrap py-3 px-6"
+            >
+              Novo post
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-white border rounded-xl p-4">
+              <p className="text-sm text-zinc-500">Total de posts</p>
+              <p className="text-2xl font-bold text-zinc-900">{posts.length}</p>
             </div>
-            {!!posts?.length &&
-              posts.map((item: any, key: any) => (
-                <div
-                  key={key}
-                  className="flex border-t p-8 gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 ease items-center"
-                >
-                  <div className="w-full">
-                    <div>{item.title}</div>
-                  </div>
-                  <div className="w-[48rem]">
-                    <div>
+            <div className="bg-white border rounded-xl p-4">
+              <p className="text-sm text-zinc-500">Publicados</p>
+              <p className="text-2xl font-bold text-green-600">
+                {publicCount}
+              </p>
+            </div>
+            <div className="bg-white border rounded-xl p-4">
+              <p className="text-sm text-zinc-500">Privados</p>
+              <p className="text-2xl font-bold text-zinc-500">
+                {posts.length - publicCount}
+              </p>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-zinc-400"></div>
+              <span className="ml-3 text-zinc-500">Carregando...</span>
+            </div>
+          ) : (
+            <div className="bg-white border rounded-xl overflow-hidden">
+              <div className="grid grid-cols-[1fr_12rem_8rem_8rem] gap-4 px-5 py-3 bg-zinc-50 border-b text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                <div>Título</div>
+                <div>Atualizado em</div>
+                <div className="text-center">Status</div>
+                <div className="text-center">Ações</div>
+              </div>
+              {posts.length > 0 ? (
+                posts.map((item: any, key: any) => (
+                  <div
+                    key={key}
+                    className="grid grid-cols-[1fr_12rem_8rem_8rem] gap-4 px-5 py-4 border-b last:border-0 hover:bg-zinc-50 transition-colors items-center"
+                  >
+                    <div className="font-medium text-zinc-900 truncate">
+                      {item.title}
+                    </div>
+                    <div className="text-sm text-zinc-600">
                       {!!item.updated_at
                         ? getExtenseData(item.updated_at)
                         : "sem cadastro"}
                     </div>
-                  </div>
-                  <div className="w-[32rem] text-center">
-                    <div
-                      className={`rounded-md text-sm py-2 text-center ${
-                        item.status === 0
-                          ? "bg-zinc-100 text-zinc-800"
-                          : "bg-green-100 text-green-800"
-                      }`}
-                    >
-                      {item.status === 0 ? "Privado" : "Público"}
+                    <div className="text-center">
+                      <span
+                        className={`inline-block text-xs px-3 py-1 rounded-full font-medium ${
+                          item.status === 0
+                            ? "bg-zinc-100 text-zinc-600"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        {item.status === 0 ? "Privado" : "Público"}
+                      </span>
                     </div>
-                  </div>
-                  <div className="w-[32rem] text-center flex gap-2">
-                    {!!item?.publicUrl && (
-                      <>
+                    <div className="flex justify-center gap-2">
+                      {!!item?.publicUrl && (
                         <Link
                           target="_blank"
                           href={`${item?.publicUrl}`}
-                          className="hover:text-purple-700 ease py-2 px-3"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-100 hover:bg-blue-100 hover:text-blue-600 transition-colors text-zinc-500"
                         >
-                          <Icon icon="fa-eye" type="far" />
+                          <Icon icon="fa-eye" type="far" className="text-xs" />
                         </Link>
-                        <Button
-                          type="button"
-                          style="btn-link"
-                          className="py-2 px-3"
-                        >
-                          <Icon icon="fa-share-alt" type="far" />
-                        </Button>
-                      </>
-                    )}
-                    <Button
-                      href={`/admin/blog/${item.id}`}
-                      style="btn-transparent"
-                      className="py-2 px-3"
-                    >
-                      <Icon icon="fa-edit" type="far" />
-                    </Button>
-                    <Button
-                      onClick={() => removePost(item.id)}
-                      style="btn-transparent"
-                      className="py-2 px-3"
-                    >
-                      <Icon icon="fa-trash" type="far" />
-                    </Button>
+                      )}
+                      <Link
+                        href={`/admin/blog/${item.id}`}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-100 hover:bg-blue-100 hover:text-blue-600 transition-colors text-zinc-500"
+                      >
+                        <Icon icon="fa-pen" type="far" className="text-xs" />
+                      </Link>
+                      <button
+                        onClick={() => removePost(item.id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-100 hover:bg-red-100 hover:text-red-600 transition-colors text-zinc-500"
+                      >
+                        <Icon
+                          icon="fa-trash"
+                          type="far"
+                          className="text-xs"
+                        />
+                      </button>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-zinc-400">
+                  <Icon
+                    icon="fa-inbox"
+                    type="far"
+                    className="text-3xl mb-2"
+                  />
+                  <p>Nenhum post encontrado</p>
                 </div>
-              ))}
+              )}
+            </div>
+          )}
+          <div className="pt-3 text-sm text-zinc-400">
+            Mostrando {posts.length} posts
           </div>
-          {/* <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div> */}
         </div>
       </section>
     </Template>

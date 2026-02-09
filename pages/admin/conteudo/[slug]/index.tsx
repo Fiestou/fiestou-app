@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { Button, Label, Select } from "@/src/components/ui/form";
 import { useEffect, useState } from "react";
@@ -9,6 +8,7 @@ import HandleField from "@/src/components/ui/form/HandleField";
 import { HandleGetFields } from "@/src/components/pages/admin/conteudo/ContentForm";
 import axios from "axios";
 import { shortId } from "@/src/helper";
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
@@ -115,10 +115,10 @@ export default function Form({
       sections.map((group: any, key: any) => (
         <div
           key={key}
-          className={`${group?.width ?? "w-full"} border-t pt-4 pb-2`}
+          className="bg-white border rounded-xl p-6"
         >
           {group.title && (
-            <h4 className="text-2xl text-zinc-900 mb-2">{group.title}</h4>
+            <h4 className="text-lg font-semibold text-zinc-900 mb-4">{group.title}</h4>
           )}
           <div className="grid grid-cols-6 justify-between gap-2">
             {group.fields &&
@@ -173,50 +173,49 @@ export default function Form({
   return (
     !router.isFallback && (
       <Template
-        header={{
-          template: "admin",
-          position: "solid",
-        }}
-        footer={{
-          template: "clear",
-        }}
+        header={{ template: "admin", position: "solid" }}
+        footer={{ template: "clear" }}
       >
-        <form onSubmit={(e: any) => handleSubmit(e)}>
-          <section className="">
-            <div className="container-medium pt-6 md:pt-12 pb-4 md:pb-8">
-              <div className="flex">
-                <div className="w-full">Produtos {">"} Title</div>
-                {!!page.publicUrl && (
-                  <Link
-                    href={`/api/cache?route=${page.publicUrl}&redirect=${page.publicUrl}`}
-                    target="_blank"
-                    className="whitespace-nowrap flex items-center gap-2 ease hover:text-zinc-950 font-semibold"
-                  >
-                    Limpar cache
-                    <Icon icon="fa-sync" className="text-xs mt-1" />
-                  </Link>
-                )}
-              </div>
-              <div className="flex items-end">
-                <div className="w-full flex items-center mt-6 md:mt-10">
-                  <Link passHref href="/admin/conteudo">
-                    <Icon
-                      icon="fa-long-arrow-left"
-                      className="mr-6 text-2xl text-zinc-900"
-                    />
-                  </Link>
-                  <div className="font-title font-bold text-2xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                    Editando {`"${formFields?.title}"`}
-                  </div>
-                </div>
-              </div>
+        <section>
+          <div className="container-medium pt-8">
+            <div className="flex items-center justify-between">
+              <Breadcrumbs
+                links={[
+                  { url: "/admin", name: "Admin" },
+                  { url: "/admin/conteudo", name: "Conteudo" },
+                  { url: `/admin/conteudo/${slug}`, name: formFields?.title || "Editando" },
+                ]}
+              />
+              {!!page.publicUrl && (
+                <Link
+                  href={`/api/cache?route=${page.publicUrl}&redirect=${page.publicUrl}`}
+                  target="_blank"
+                  className="text-sm text-zinc-500 hover:text-zinc-700"
+                >
+                  Limpar cache
+                </Link>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {placeholder ? (
+          <section>
+            <div className="container-medium py-16 flex justify-center items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-zinc-400"></div>
+              <span className="ml-3 text-zinc-500">Carregando...</span>
             </div>
           </section>
-          <section className="">
-            <div className="container-medium pb-12">
-              <div className="grid lg:flex gap-10 ld:gap-20 items-start">
-                <div className="w-full grid gap-8">
-                  <div className="flex flex-wrap w-full gap-6">
+        ) : (
+          <form onSubmit={(e: any) => handleSubmit(e)}>
+            <section>
+              <div className="container-medium py-6">
+                <h1 className="font-title font-bold text-3xl text-zinc-900 mb-6">
+                  {formFields?.title || "Editando"}
+                </h1>
+
+                <div className="grid lg:grid-cols-[1fr_20rem] gap-6 items-start">
+                  <div className="grid gap-6">
                     {!!formFields?.form &&
                       renderSectionsForm(
                         formFields?.form.filter(
@@ -224,47 +223,46 @@ export default function Form({
                         )
                       )}
                   </div>
-                </div>
-                <div className="w-full lg:max-w-[20rem] grid gap-4 pb-2">
-                  <div className="order-last lg:order-1 grid">
-                    <Button loading={form.loading}>Salvar</Button>
-                  </div>
-                  <div className="order-1 lg:order-2 form-group">
-                    <Label style="float">Visualização</Label>
-                    <Select
-                      name="status"
-                      value={content?.status ?? 1}
-                      onChange={(e: any) =>
-                        handleContent("status", e.target.value)
-                      }
-                      options={[
-                        {
-                          name: "Público",
-                          value: 1,
-                        },
-                        {
-                          name: "Privado",
-                          value: 0,
-                        },
-                      ]}
-                    />
-                  </div>
-                  {!!formFields?.form.filter(
-                    (item: any) => item.column == "sidebar"
-                  ).length && (
-                      <div className="order-3 grid gap-6 mt-5">
-                        {renderSectionsForm(
-                          formFields?.form.filter(
-                            (item: any) => item.column == "sidebar"
-                          )
-                        )}
+
+                  <div>
+                    <div className="bg-white border rounded-xl p-6 sticky top-24 grid gap-4">
+                      <div>
+                        <label className="block text-sm text-zinc-500 mb-1">Visibilidade</label>
+                        <Select
+                          name="status"
+                          value={content?.status ?? 1}
+                          onChange={(e: any) =>
+                            handleContent("status", e.target.value)
+                          }
+                          options={[
+                            { name: "Publico", value: 1 },
+                            { name: "Privado", value: 0 },
+                          ]}
+                        />
                       </div>
-                    )}
+
+                      {!!formFields?.form.filter(
+                        (item: any) => item.column == "sidebar"
+                      ).length && (
+                        <div className="grid gap-4 border-t pt-4">
+                          {renderSectionsForm(
+                            formFields?.form.filter(
+                              (item: any) => item.column == "sidebar"
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      <Button className="w-full py-3" loading={form.loading}>
+                        Salvar
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
-        </form>
+            </section>
+          </form>
+        )}
       </Template>
     )
   );
