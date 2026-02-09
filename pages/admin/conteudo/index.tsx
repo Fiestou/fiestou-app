@@ -1,22 +1,22 @@
-import Image from "next/image";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import { Button } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
 import Api from "@/src/services/api";
 import { useEffect, useState } from "react";
 import { getExtenseData } from "@/src/helper";
 import { HandleForm } from "@/src/components/pages/admin/conteudo/ContentForm";
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export default function Conteudo() {
   const api = new Api();
 
   const [origin, setOrigin] = useState("todos");
-
   const [pages, setPages] = useState([] as Array<any>);
+  const [loading, setLoading] = useState(true);
 
   const getPosts = async () => {
+    setLoading(true);
     let request: any = await api.bridge({
       method: "get",
       url: "admin/content/list",
@@ -38,11 +38,18 @@ export default function Conteudo() {
 
       setPages(listPages);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
     getPosts();
   }, []);
+
+  const filtered = pages.filter(
+    (itm: any) => itm.origin == origin || origin == "todos"
+  );
+
+  const origins = [...new Set(pages.map((p: any) => p.origin).filter(Boolean))];
 
   return (
     <Template
@@ -54,113 +61,146 @@ export default function Conteudo() {
         template: "clean",
       }}
     >
-      <section className="">
-        <div className="container-medium pt-12">
-          <div className="flex">
-            <div className="w-full">Produtos {">"} Title</div>
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <div className="underline">Precisa de ajuda?</div>{" "}
-              <Icon icon="fa-question-circle" />
-            </div>
-          </div>
-          <div className="flex mt-10">
-            <div className="w-full">
-              <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
-                Conteúdo
-              </div>
-            </div>
-            <div className="flex gap-6 w-fit items-center">
-              <div>
-                <select
-                  onChange={(e) => setOrigin(e.target.value)}
-                  className="rounded-md relative z-[1] whitespace-nowrap border py-4 text-zinc-900 font-semibold px-2"
-                >
-                  <option value="todos">todos</option>
-                  <option value="site">site</option>
-                  <option value="painel">painel</option>
-                  <option value="dashboard">dashboard</option>
-                </select>
-              </div>
+      <section>
+        <div className="container-medium pt-8">
+          <Breadcrumbs
+            links={[
+              { url: "/admin", name: "Admin" },
+              { url: "/admin/conteudo", name: "Conteúdo" },
+            ]}
+          />
+        </div>
+      </section>
+
+      <section>
+        <div className="container-medium py-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="font-title font-bold text-3xl text-zinc-900">
+              Conteúdo
+            </h1>
+            <div className="flex gap-3 items-center">
+              <select
+                onChange={(e) => setOrigin(e.target.value)}
+                value={origin}
+                className="rounded-xl border px-4 py-2.5 text-sm text-zinc-700 bg-white outline-none"
+              >
+                <option value="todos">Todos</option>
+                {origins.map((o: string) => (
+                  <option key={o} value={o}>
+                    {o.charAt(0).toUpperCase() + o.slice(1)}
+                  </option>
+                ))}
+              </select>
               <Button
                 href="/api/cache"
                 target="_blank"
                 type="button"
-                className="whitespace-nowrap py-4 px-8"
+                className="whitespace-nowrap py-2.5 px-6"
               >
                 Limpar cache
               </Button>
             </div>
           </div>
-        </div>
-      </section>
-      <section className="pt-6">
-        <div className="container-medium pb-12">
-          <div className="border">
-            <div className="flex bg-zinc-100 p-8 gap-8 font-bold text-zinc-900 font-title">
-              <div className="w-full">Página</div>
-              <div className="w-[32rem]">Origem</div>
-              <div className="w-[48rem]">Última atualização</div>
-              <div className="w-[14rem]">Status</div>
-              <div className="w-[32rem]">Ações</div>
+
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-white border rounded-xl p-4">
+              <p className="text-sm text-zinc-500">Total</p>
+              <p className="text-2xl font-bold text-zinc-900">{pages.length}</p>
             </div>
-            {/* Estamos aqui */}
-            {!!pages?.length &&
-              pages
-                .filter((itm: any) => itm.origin == origin || origin == "todos")
-                .map((item: any, key: any) => (
+            <div className="bg-white border rounded-xl p-4">
+              <p className="text-sm text-zinc-500">Com cadastro</p>
+              <p className="text-2xl font-bold text-green-600">
+                {pages.filter((p: any) => !!p.meta).length}
+              </p>
+            </div>
+            <div className="bg-white border rounded-xl p-4">
+              <p className="text-sm text-zinc-500">Sem cadastro</p>
+              <p className="text-2xl font-bold text-zinc-500">
+                {pages.filter((p: any) => !p.meta).length}
+              </p>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-zinc-400"></div>
+              <span className="ml-3 text-zinc-500">Carregando...</span>
+            </div>
+          ) : (
+            <div className="bg-white border rounded-xl overflow-hidden">
+              <div className="grid grid-cols-[1fr_6rem_12rem_6rem_6rem] gap-4 px-5 py-3 bg-zinc-50 border-b text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                <div>Página</div>
+                <div>Origem</div>
+                <div>Atualizado em</div>
+                <div className="text-center">Status</div>
+                <div className="text-center">Ações</div>
+              </div>
+              {filtered.length > 0 ? (
+                filtered.map((item: any, key: any) => (
                   <div
                     key={key}
-                    className="flex border-t p-8 gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 ease items-center"
+                    className="grid grid-cols-[1fr_6rem_12rem_6rem_6rem] gap-4 px-5 py-4 border-b last:border-0 hover:bg-zinc-50 transition-colors items-center"
                   >
-                    <div className="w-full">
-                      <div>{item.title}</div>
+                    <div className="font-medium text-zinc-900 truncate">
+                      {item.title}
                     </div>
-                    <div className="w-[32rem]">
-                      <div className="py-2">{item.origin}</div>
+                    <div className="text-sm text-zinc-600">{item.origin}</div>
+                    <div className="text-sm text-zinc-600">
+                      {!!item?.meta
+                        ? getExtenseData(item.meta.updated_at)
+                        : "sem cadastro"}
                     </div>
-                    <div className="w-[48rem]">
-                      <div className="text-xs">
-                        {!!item?.meta
-                          ? getExtenseData(item.meta.updated_at)
-                          : "sem cadastro"}
-                      </div>
-                    </div>
-                    <div className="w-[14rem] text-center">
-                      <div className="rounded-md bg-zinc-100 py-2 text-xs">
-                        {!!item?.meta
-                          ? !!item.meta.status
-                            ? "Público"
-                            : "Privado"
-                          : "sem cadastro"}
-                      </div>
-                    </div>
-                    <div className="w-[32rem] text-center flex gap-2">
-                      {!!item?.publicUrl && (
-                        <>
-                          <Link
-                            target="_blank"
-                            href={`${item?.publicUrl}`}
-                            className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
-                          >
-                            <Icon icon="fa-eye" type="far" />
-                          </Link>
-                          <Button style="btn-light" className="py-2 px-3">
-                            <Icon icon="fa-share-alt" type="far" />
-                          </Button>
-                        </>
+                    <div className="text-center">
+                      {!!item?.meta ? (
+                        <span
+                          className={`inline-block text-xs px-3 py-1 rounded-full font-medium ${
+                            !!item.meta.status
+                              ? "bg-green-100 text-green-700"
+                              : "bg-zinc-100 text-zinc-600"
+                          }`}
+                        >
+                          {!!item.meta.status ? "Público" : "Privado"}
+                        </span>
+                      ) : (
+                        <span className="inline-block text-xs px-3 py-1 rounded-full font-medium bg-amber-100 text-amber-700">
+                          Pendente
+                        </span>
                       )}
-                      <Button
+                    </div>
+                    <div className="flex justify-center gap-2">
+                      {!!item?.publicUrl && (
+                        <Link
+                          target="_blank"
+                          href={`${item?.publicUrl}`}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-100 hover:bg-blue-100 hover:text-blue-600 transition-colors text-zinc-500"
+                        >
+                          <Icon icon="fa-eye" type="far" className="text-xs" />
+                        </Link>
+                      )}
+                      <Link
                         href={`/admin/conteudo/${item.slug}`}
-                        style="btn-light"
-                        className="py-2 px-3"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-100 hover:bg-blue-100 hover:text-blue-600 transition-colors text-zinc-500"
                       >
-                        <Icon icon="fa-edit" type="far" />
-                      </Button>
+                        <Icon icon="fa-pen" type="far" className="text-xs" />
+                      </Link>
                     </div>
                   </div>
-                ))}
+                ))
+              ) : (
+                <div className="text-center py-12 text-zinc-400">
+                  <Icon
+                    icon="fa-inbox"
+                    type="far"
+                    className="text-3xl mb-2"
+                  />
+                  <p>Nenhuma página encontrada</p>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="pt-3 text-sm text-zinc-400">
+            Mostrando {filtered.length} de {pages.length} páginas
           </div>
-          <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div>
         </div>
       </section>
     </Template>

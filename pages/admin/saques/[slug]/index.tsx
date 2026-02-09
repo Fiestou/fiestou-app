@@ -1,15 +1,13 @@
 import Api from "@/src/services/api";
 import { BankAccountType, UserType } from "@/src/models/user";
-import UserEdit from "@/src/components/shared/UserEdit";
 import { useRouter } from "next/router";
-import HelpCard from "@/src/components/common/HelpCard";
 import Template from "@/src/template";
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { Button, Label, Select } from "@/src/components/ui/form";
-import { getExtenseData, moneyFormat, print_r } from "@/src/helper";
+import { getExtenseData, moneyFormat } from "@/src/helper";
 import { useEffect, useState } from "react";
 import { WithdrawType } from "@/src/models/withdraw";
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 const formInitial = {
   placeholder: true,
@@ -41,7 +39,7 @@ export default function Saque({ user }: { user: UserType }) {
     handleForm({ placeholder: true });
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "withdraw/get",
       data: {
         slug: slug,
@@ -61,7 +59,7 @@ export default function Saque({ user }: { user: UserType }) {
     handleForm({ loading: true });
 
     const request: any = await api.bridge({
-      method: 'post',
+      method: "post",
       url: "withdraw/update",
       data: withdraw,
     });
@@ -75,6 +73,20 @@ export default function Saque({ user }: { user: UserType }) {
     }
   }, [slug]);
 
+  const statusLabel =
+    withdraw?.status == 1
+      ? "Aprovado"
+      : withdraw?.status == 0
+      ? "Em análise"
+      : "Negado";
+
+  const statusColor =
+    withdraw?.status == 1
+      ? "bg-green-100 text-green-700"
+      : withdraw?.status == 0
+      ? "bg-blue-100 text-blue-700"
+      : "bg-red-100 text-red-700";
+
   return (
     !router.isFallback && (
       <Template
@@ -83,123 +95,175 @@ export default function Saque({ user }: { user: UserType }) {
           position: "solid",
         }}
       >
-        <section className="">
-          <div className="container-medium pt-12 pb-8 md:py-12">
-            <div className="flex">
-              <div className="w-full">Produtos {">"} Title</div>
-              <div className="flex items-center gap-2 whitespace-nowrap">
-                <div className="underline">Precisa de ajuda?</div>{" "}
-                <Icon icon="fa-question-circle" />
-              </div>
-            </div>
-            <div className="flex items-center mt-10">
-              <Link passHref href="/admin/saques">
-                <Icon
-                  icon="fa-long-arrow-left"
-                  className="mr-6 text-2xl text-zinc-900"
-                />
-              </Link>
-              <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                Pedido de saque
-              </div>
-            </div>
+        <section>
+          <div className="container-medium pt-8">
+            <Breadcrumbs
+              links={[
+                { url: "/admin", name: "Admin" },
+                { url: "/admin/saques", name: "Saques" },
+                { url: `/admin/saques/${slug}`, name: `#${withdraw?.id || ""}` },
+              ]}
+            />
           </div>
         </section>
-        <section className="">
-          <div className="container-medium pb-12">
-            <div className="grid md:flex items-start gap-10 md:gap-24">
-              <div className="w-full grid gap-4">
-                <div>
-                  <div className="font-bold text-zinc-900 text-xl">
-                    #{withdraw?.id ?? ""}
-                  </div>
-                </div>
 
-                <div>
-                  <div className="text-sm">Valor:</div>
-                  <div className="text-xl">
-                    R$ {moneyFormat(withdraw?.value)}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm">Conta bancária:</div>
-                  <div className="">
-                    <div className="bg-zinc-100 grid grid-cols-2 py-1 px-2 rounded">
-                      <div>Banco</div>
-                      <div>{bankAccount?.bank ?? ""}</div>
-                    </div>
-                    <div className="grid grid-cols-2 py-1 px-2">
-                      <div>Conta bancária</div>
-                      <div>{bankAccount?.accountNumber ?? ""}</div>
-                    </div>
-                    <div className="bg-zinc-100 grid grid-cols-2 py-1 px-2 rounded">
-                      <div>Agência</div>
-                      <div>{bankAccount?.agence ?? ""}</div>
-                    </div>
-                    <div className="grid grid-cols-2 py-1 px-2">
-                      <div>Operação</div>
-                      <div>{bankAccount?.operation ?? ""}</div>
-                    </div>
-                    <div className="bg-zinc-100 grid grid-cols-2 py-1 px-2 rounded">
-                      <div>Descrição da conta</div>
-                      <div>{bankAccount?.title ?? ""}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm">Usuário:</div>
-                  {Object.entries(partner).map((item: any, key: any) => (
-                    <div key={key} className="flex gap-2 border-b py-2">
-                      <div className="font-semibold">{item[0]}:</div>{" "}
-                      <pre className="whitespace-pre-wrap">
-                        {print_r(item[1])}
-                      </pre>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="w-full max-w-[24rem] grid gap-4">
-                <form className="grid" onSubmit={(e: any) => submitWithdraw(e)}>
-                  <Button loading={form.loading}>Salvar</Button>
-                </form>
-
-                <div>
-                  <div className="">Solicitado em</div>
-                  <div className="text-xl">
-                    {getExtenseData(withdraw?.created_at)}
-                  </div>
-                </div>
-
-                {withdraw?.status == 0 ? (
-                  <div className="form-group">
-                    <Label style="float">Status</Label>
-                    <Select
-                      name="status"
-                      value={withdraw?.status}
-                      onChange={(e: any) =>
-                        handleWithdraw({ status: e.target.value })
-                      }
-                      options={[
-                        { name: "Aguardando análise", value: 0 },
-                        { name: "Negado", value: 2 },
-                        { name: "Aprovado", value: 1 },
-                      ]}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <div className="">
-                      {withdraw?.status == 1 ? "Aprovado" : "Negado"} em
-                    </div>
-                    <div className="text-xl">
-                      {getExtenseData(withdraw?.updated_at)}
-                    </div>
-                  </div>
-                )}
-              </div>
+        <section>
+          <div className="container-medium py-6">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="font-title font-bold text-3xl text-zinc-900">
+                Pedido de Saque
+              </h1>
+              <span
+                className={`inline-block text-sm px-4 py-1.5 rounded-full font-medium ${statusColor}`}
+              >
+                {statusLabel}
+              </span>
             </div>
+
+            {form.placeholder ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-zinc-400"></div>
+                <span className="ml-3 text-zinc-500">Carregando...</span>
+              </div>
+            ) : (
+              <div className="grid lg:grid-cols-[1fr_20rem] gap-6">
+                <div className="grid gap-6">
+                  <div className="bg-white border rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-zinc-900 mb-4">
+                      Informações do Saque
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-zinc-500">Código</p>
+                        <p className="text-lg font-medium text-zinc-900">
+                          #{withdraw?.id ?? ""}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-zinc-500">Valor</p>
+                        <p className="text-lg font-medium text-zinc-900">
+                          R$ {moneyFormat(withdraw?.value)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-zinc-500">Solicitado em</p>
+                        <p className="text-sm text-zinc-700">
+                          {getExtenseData(withdraw?.created_at)}
+                        </p>
+                      </div>
+                      {withdraw?.status != 0 && (
+                        <div>
+                          <p className="text-sm text-zinc-500">
+                            {withdraw?.status == 1 ? "Aprovado" : "Negado"} em
+                          </p>
+                          <p className="text-sm text-zinc-700">
+                            {getExtenseData(withdraw?.updated_at)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-white border rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-zinc-900 mb-4">
+                      Conta Bancária
+                    </h3>
+                    <div className="grid gap-0 text-sm">
+                      <div className="grid grid-cols-[10rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
+                        <span className="text-zinc-500">Banco</span>
+                        <span className="text-zinc-900">{bankAccount?.bank ?? "-"}</span>
+                      </div>
+                      <div className="grid grid-cols-[10rem_1fr] py-2.5 px-3">
+                        <span className="text-zinc-500">Conta</span>
+                        <span className="text-zinc-900">{bankAccount?.accountNumber ?? "-"}</span>
+                      </div>
+                      <div className="grid grid-cols-[10rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
+                        <span className="text-zinc-500">Agência</span>
+                        <span className="text-zinc-900">{bankAccount?.agence ?? "-"}</span>
+                      </div>
+                      <div className="grid grid-cols-[10rem_1fr] py-2.5 px-3">
+                        <span className="text-zinc-500">Operação</span>
+                        <span className="text-zinc-900">{bankAccount?.operation ?? "-"}</span>
+                      </div>
+                      <div className="grid grid-cols-[10rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
+                        <span className="text-zinc-500">Descrição</span>
+                        <span className="text-zinc-900">{bankAccount?.title ?? "-"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-zinc-900 mb-4">
+                      Dados do Parceiro
+                    </h3>
+                    <div className="grid gap-0 text-sm">
+                      {partner?.name && (
+                        <div className="grid grid-cols-[10rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
+                          <span className="text-zinc-500">Nome</span>
+                          <span className="text-zinc-900">{partner.name}</span>
+                        </div>
+                      )}
+                      {partner?.email && (
+                        <div className="grid grid-cols-[10rem_1fr] py-2.5 px-3">
+                          <span className="text-zinc-500">E-mail</span>
+                          <span className="text-zinc-900">{partner.email}</span>
+                        </div>
+                      )}
+                      {partner?.phone && (
+                        <div className="grid grid-cols-[10rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
+                          <span className="text-zinc-500">Telefone</span>
+                          <span className="text-zinc-900">{partner.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="bg-white border rounded-xl p-6 sticky top-24">
+                    {withdraw?.status == 0 ? (
+                      <form onSubmit={(e: any) => submitWithdraw(e)}>
+                        <div className="mb-4">
+                          <Label style="float">Status</Label>
+                          <Select
+                            name="status"
+                            value={withdraw?.status}
+                            onChange={(e: any) =>
+                              handleWithdraw({ status: e.target.value })
+                            }
+                            options={[
+                              { name: "Aguardando análise", value: 0 },
+                              { name: "Aprovado", value: 1 },
+                              { name: "Negado", value: 2 },
+                            ]}
+                          />
+                        </div>
+                        <Button loading={form.loading} className="w-full py-3">
+                          Salvar
+                        </Button>
+                      </form>
+                    ) : (
+                      <div className="text-center">
+                        <span
+                          className={`inline-block text-sm px-4 py-1.5 rounded-full font-medium ${statusColor}`}
+                        >
+                          {statusLabel}
+                        </span>
+                        <p className="text-sm text-zinc-500 mt-2">
+                          {getExtenseData(withdraw?.updated_at)}
+                        </p>
+                      </div>
+                    )}
+                    <Link
+                      href="/admin/saques"
+                      className="block text-center text-sm text-zinc-500 hover:text-zinc-700 mt-4"
+                    >
+                      Voltar para saques
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </Template>

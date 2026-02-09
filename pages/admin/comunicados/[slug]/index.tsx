@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
 import { NextApiRequest, NextApiResponse } from "next";
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Editor from "@/src/components/ui/form/EditorUI";
 import FileManager from "@/src/components/ui/form/FileManager";
@@ -122,67 +121,64 @@ export default function Form({ slug }: { slug: string }) {
     getPost();
   }, []);
 
+  const isNew = slug === "form";
+
   return (
     <Template
-      header={{
-        template: "admin",
-        position: "solid",
-      }}
-      footer={{
-        template: "clean",
-      }}
+      header={{ template: "admin", position: "solid" }}
+      footer={{ template: "clean" }}
     >
+      <section>
+        <div className="container-medium pt-8">
+          <Breadcrumbs
+            links={[
+              { url: "/admin", name: "Admin" },
+              { url: "/admin/comunicados", name: "Comunicados" },
+              { url: `/admin/comunicados/${slug}`, name: isNew ? "Novo" : content?.title || "Editando" },
+            ]}
+          />
+        </div>
+      </section>
+
       {placeholder ? (
-        <></>
+        <section>
+          <div className="container-medium py-16 flex justify-center items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-zinc-400"></div>
+            <span className="ml-3 text-zinc-500">Carregando...</span>
+          </div>
+        </section>
       ) : (
         <form onSubmit={(e: any) => handleSubmit(e)}>
-          <section className="">
-            <div className="container-medium pt-6 md:pt-12 pb-4 md:pb-8">
-              <div className="flex">
-                <div className="pb-4">
-                  <Breadcrumbs
-                    links={[
-                      { url: "/admin", name: "Admin" },
-                      { url: "/admin/comunicados", name: "Comunicados" },
-                    ]}
-                  />
-                </div>
-              </div>
-              <div className="flex items-end">
-                <div className="w-full flex items-center">
-                  <Link passHref href="/admin/comunicados">
-                    <Icon
-                      icon="fa-long-arrow-left"
-                      className="mr-6 text-2xl text-zinc-900"
-                    />
-                  </Link>
-                  <div className="font-title font-bold text-2xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                    {slug != "form" ? "Editando" : "Novo post"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-          <section className="">
-            <div className="container-medium pb-12">
-              <div className="grid lg:flex gap-10 ld:gap-20 items-start">
-                <div className="w-full grid gap-8">
-                  <div className="">
+          <section>
+            <div className="container-medium py-6">
+              <h1 className="font-title font-bold text-3xl text-zinc-900 mb-6">
+                {isNew ? "Novo comunicado" : content?.title || "Editando"}
+              </h1>
+
+              <div className="grid lg:grid-cols-[1fr_20rem] gap-6 items-start">
+                <div className="grid gap-6">
+                  <div className="bg-white border rounded-xl p-6">
+                    <label className="block text-sm text-zinc-500 mb-2">Titulo</label>
                     <Input
                       value={content.title}
                       onChange={(e: any) =>
                         handleContent({ title: e.target.value })
                       }
-                      placeholder="Título"
+                      placeholder="Titulo do comunicado"
                     />
-                    <div className="pt-2 text-sm">
-                      <Link
-                        target="_blank"
-                        href={`/comunicados/${content.slug}`}
-                      >{`/comunicados/${content.slug}`}</Link>
-                    </div>
+                    {!isNew && content?.slug && (
+                      <div className="mt-2">
+                        <Link
+                          target="_blank"
+                          href={`/comunicados/${content.slug}`}
+                          className="text-sm text-blue-600 hover:underline"
+                        >{`/comunicados/${content.slug}`}</Link>
+                      </div>
+                    )}
                   </div>
-                  <div className="">
+
+                  <div className="bg-white border rounded-xl p-6">
+                    <label className="block text-sm text-zinc-500 mb-2">Conteudo</label>
                     <Editor
                       value={
                         content?.blocks && content?.blocks[0]
@@ -200,21 +196,15 @@ export default function Form({ slug }: { slug: string }) {
                           ],
                         })
                       }
-                      placeholder="Escreva seu conteúdo..."
+                      placeholder="Escreva seu conteudo..."
                     />
                   </div>
                 </div>
-                <div className="w-full lg:max-w-[24rem] grid gap-4 pb-2">
-                  <div className="order-last lg:order-1 grid">
-                    <Button className="py-4" loading={form.loading}>
-                      Salvar
-                    </Button>
-                  </div>
-                  <div className="grid gap-4 order-1 lg:order-2 form-group">
+
+                <div>
+                  <div className="bg-white border rounded-xl p-6 sticky top-24 grid gap-4">
                     <div>
-                      <Label style="float">
-                        Visualização {content?.status}
-                      </Label>
+                      <label className="block text-sm text-zinc-500 mb-1">Visibilidade</label>
                       <Select
                         name="status"
                         value={content?.status}
@@ -222,33 +212,30 @@ export default function Form({ slug }: { slug: string }) {
                           handleContent({ status: e.target.value })
                         }
                         options={[
-                          {
-                            name: "Público",
-                            value: 1,
-                          },
-                          {
-                            name: "Privado",
-                            value: 0,
-                          },
+                          { name: "Publico", value: 1 },
+                          { name: "Privado", value: 0 },
                         ]}
                       />
                     </div>
+
                     <div>
-                      <div className="">
-                        <FileManager
-                          placeholder="Imagem destaque"
-                          value={content?.image ?? []}
-                          aspect="aspect-square"
-                          multiple={false}
-                          onChange={(emit: any) =>
-                            handleContent({ image: emit })
-                          }
-                          options={{
-                            dir: "blog",
-                          }}
-                        />
-                      </div>
+                      <FileManager
+                        placeholder="Imagem destaque"
+                        value={content?.image ?? []}
+                        aspect="aspect-square"
+                        multiple={false}
+                        onChange={(emit: any) =>
+                          handleContent({ image: emit })
+                        }
+                        options={{
+                          dir: "blog",
+                        }}
+                      />
                     </div>
+
+                    <Button className="w-full py-3" loading={form.loading}>
+                      Salvar
+                    </Button>
                   </div>
                 </div>
               </div>

@@ -1,15 +1,11 @@
 import Api from "@/src/services/api";
 import { UserType } from "@/src/models/user";
-import UserEdit from "@/src/components/shared/UserEdit";
 import { useRouter } from "next/router";
-import HelpCard from "@/src/components/common/HelpCard";
 import Template from "@/src/template";
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
-import { Button, Select } from "@/src/components/ui/form";
-import { print_r } from "@/src/helper";
 import { useEffect, useState } from "react";
 import UserEditAdmin from "@/src/components/shared/UserEditAdmin";
+import Breadcrumbs from "@/src/components/common/Breadcrumb";
 
 export default function Usuario() {
   const router = useRouter();
@@ -46,29 +42,28 @@ export default function Usuario() {
         position: "solid",
       }}
     >
-      <section className="">
-        <div className="container-medium pt-12 pb-8 md:py-12">
-          <div className="flex">
-            <div className="w-full">Produtos {">"} Title</div>
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <div className="underline">Precisa de ajuda?</div>{" "}
-              <Icon icon="fa-question-circle" />
-            </div>
-          </div>
-          <div className="flex items-center mt-10">
-            <Link passHref href="/dashboard">
-              <Icon
-                icon="fa-long-arrow-left"
-                className="mr-6 text-2xl text-zinc-900"
-              />
-            </Link>
-            <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-              Dados de usuário
-            </div>
-          </div>
+      <section>
+        <div className="container-medium pt-8">
+          <Breadcrumbs
+            links={[
+              { url: "/admin", name: "Admin" },
+              { url: "/admin/usuarios", name: "Usuários" },
+              { url: `/admin/usuarios/${query.id}`, name: user?.name || "Editar" },
+            ]}
+          />
         </div>
       </section>
-      <UserEditAdmin user={user} />
+
+      <section>
+        <div className="container-medium py-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="font-title font-bold text-3xl text-zinc-900">
+              {user?.name || "Dados de usuário"}
+            </h1>
+          </div>
+          <UserEditAdmin user={user} />
+        </div>
+      </section>
     </Template>
   );
 }
