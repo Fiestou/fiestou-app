@@ -68,28 +68,10 @@ export function saveCartToCookies(cart: CartType[]): void {
   if (typeof window === "undefined") return;
 
   const optimizedCart = cart.map((item) => {
-    const optimizedProduct = item.product ? {
-      id: item.product.id,
-      title: item.product.title,
-      slug: item.product.slug,
-      price: item.product.price,
-      priceSale: item.product.priceSale,
-      gallery: item.product.gallery?.length ? [item.product.gallery[0]] : [],
-      store: typeof item.product.store === 'object' ? {
-        id: item.product.store.id,
-        companyName: item.product.store.companyName,
-        slug: item.product.store.slug,
-        title: item.product.store.title,
-      } : item.product.store,
-      comercialType: item.product.comercialType,
-      schedulingTax: item.product.schedulingTax,
-      schedulingDiscount: item.product.schedulingDiscount,
-      schedulingPeriod: item.product.schedulingPeriod,
-      delivery_type: item.product.delivery_type,
-    } : item.product;
+    const productId = typeof item.product === 'object' ? item.product?.id : item.product;
 
     return {
-      product: optimizedProduct,
+      product: productId,
       attributes: item.attributes,
       quantity: item.quantity,
       details: item.details,

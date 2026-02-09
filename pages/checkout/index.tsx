@@ -281,6 +281,7 @@ export default function Checkout({
     const updated = cart.map((item: any) => {
       if (!item.details?.deliverySelection) {
         const pType = item.product?.delivery_type;
+        if (pType === 'both') return item;
         const def = pType === 'pickup' ? 'pickup' : 'delivery';
         return { ...item, details: { ...item.details, deliverySelection: def } };
       }
