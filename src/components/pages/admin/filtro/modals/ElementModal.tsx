@@ -1,190 +1,282 @@
-import FileManager from "@/src/components/ui/form/FileManager";
-import React, { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import React, { useEffect, useState, useRef } from "react";
+import { X, Trash2, Upload, Loader2 } from "lucide-react";
 import SelectElements from "../selectElements/selectElements";
-
-import { Trash2 } from "lucide-react";
-
 import { toast } from "react-toastify";
 import { categorie } from "@/src/store/filter";
+import Api from "@/src/services/api";
+import Cookies from "js-cookie";
+
 interface ElementModalProps {
-    open: boolean;
-    onRequestClose: () => void;
-    localElementsRelatedDetails: categorie[];
-    groupId: number;
-    grouptargeadc?: boolean;
-    relatedElements: categorie[];
-    onSaveClick: (data: ReturnElementData) => void;
-    data?: categorie | null
+  open: boolean;
+  onRequestClose: () => void;
+  localElementsRelatedDetails: categorie[];
+  groupId: number;
+  grouptargeadc?: boolean;
+  relatedElements: categorie[];
+  onSaveClick: (data: ReturnElementData) => void;
+  data?: categorie | null;
+  existingIcons?: string[];
 }
 
-
 export interface ReturnElementData {
-    id?: number,
-    group_id: number,
-    icon: string,
-    name: string,
-    description: string,
-    active?: boolean,
-    element_related_id: number[]
+  id?: number;
+  group_id: number;
+  icon: string;
+  name: string;
+  description: string;
+  active?: boolean;
+  element_related_id: number[];
 }
 
 const ElementModal: React.FC<ElementModalProps> = (props) => {
-    const [icon, setIcon] = useState<string>('');
-    const [name, setName] = useState<string>('');
-    const [description, setDescription] = useState<string>('');
-    const [openSelect, setOpenSelect] = useState<boolean>(false);
-    const [selectedList, setSelectedList] = useState<categorie[]>([]);
+  const api = new Api();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-    }, [props.relatedElements])
+  const [icon, setIcon] = useState<string>("");
+  const [name, setName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [openSelect, setOpenSelect] = useState<boolean>(false);
+  const [selectedList, setSelectedList] = useState<categorie[]>([]);
+  const [uploading, setUploading] = useState(false);
 
-    const onSaveClick = () => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-        if (!icon) {
-            toast.error('Selecione um ícone');
-            return;
-        } else if (!name) {
-            toast.error('Preencha o campo de nome');
-            return;
-        }
+    setUploading(true);
+    try {
+      const base64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
 
-        let data: ReturnElementData = {
-            group_id: props.groupId,
-            icon: icon,
-            name: name,
-            active: true,
-            description: description,
-            element_related_id: selectedList.map((value) => Number(value.id))
-        }
+      let cookie = Cookies.get("fiestou.user") ?? JSON.stringify([]);
+      let user = JSON.parse(cookie);
 
-        if (props.data) {
-            data.id = props.data.id;
-        }
+      const upload: any = await api.media({
+        app: user.type === "master" ? -1 : user?.store ? user.store : -1,
+        dir: "categories",
+        index: "media",
+        method: "upload",
+        medias: [{ base64, fileName: file.name }],
+      });
 
-        props.onSaveClick(data);
+      if (upload?.response && upload?.medias?.[0]) {
+        const media = upload.medias[0];
+        const url = media.base_url + media.permanent_url;
+        setIcon(url);
+      } else {
+        toast.error("Erro ao fazer upload");
+      }
+    } catch {
+      toast.error("Erro ao fazer upload");
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-        setIcon('');
-        setName('');
-        setDescription('');
-        setSelectedList([]);
+  const onSaveClick = () => {
+    if (!icon) {
+      toast.error("Selecione um ícone");
+      return;
+    }
+    if (!name) {
+      toast.error("Preencha o nome");
+      return;
     }
 
-    useEffect(() => {
-        if (props.data) {
-            setIcon(props.data.icon);
-            setName(props.data.name);
-            setDescription(props.data.description || '');
-            setSelectedList(props.localElementsRelatedDetails)
-        } else {
-            setIcon('');
-            setName('');
-            setDescription('');
-            setSelectedList([]);
-        }
-    }, [props.data, props.localElementsRelatedDetails])
+    let data: ReturnElementData = {
+      group_id: props.groupId,
+      icon: icon,
+      name: name,
+      active: true,
+      description: description,
+      element_related_id: selectedList.map((value) => Number(value.id)),
+    };
 
-    useEffect(() => {
-    }, [props.relatedElements]);
+    if (props.data) {
+      data.id = props.data.id;
+    }
 
-    const hideRelatedElements =
-        (props.grouptargeadc === true && props.relatedElements?.[0]?.id === -1) ||
-        (props.relatedElements?.length === 1 && props.relatedElements?.[0]?.id === -1) ||
-        !props.relatedElements || props.relatedElements.length === 0;
+    props.onSaveClick(data);
 
-    return !props.open ? null : (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-[600px] relative gap-5 flex flex-col">
-                <h1 className="text-[30px] font-semibold mb-4 text-black underline decoration-[1.5px] decoration-gray-400 underline-offset-8">
+    setIcon("");
+    setName("");
+    setDescription("");
+    setSelectedList([]);
+  };
 
-                    {
-                        props.data?.id ? 'Editar Elemento' : 'Criar Elemento'
-                    }
+  useEffect(() => {
+    if (props.data) {
+      setIcon(props.data.icon);
+      setName(props.data.name);
+      setDescription(props.data.description || "");
+      setSelectedList(props.localElementsRelatedDetails);
+    } else {
+      setIcon("");
+      setName("");
+      setDescription("");
+      setSelectedList([]);
+    }
+  }, [props.data, props.localElementsRelatedDetails]);
 
-                </h1>
-                <button
-                    onClick={props.onRequestClose}
-                    className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
-                >
-                    <X size={25} />
-                </button>
+  const uniqueIcons = (props.existingIcons || []).filter(
+    (url, idx, arr) => url && arr.indexOf(url) === idx
+  );
 
-                <div className="flex flex-row w-full gap-3 justify-center items-center">
-                    {icon !== '' ? (
-                        <button onClick={() => { setIcon('') }} className="relative p-2 bg-transparent border-none cursor-pointer group">
-                            <img
-                                src={icon}
-                                alt="icon"
-                                className="w-6 h-6 transition-opacity duration-200 group-hover:opacity-0"
-                            />
-                            <Trash2
-                                className="absolute inset-0 m-auto text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-4 h-4"
-                            />
-                        </button>
-                    ) : (
-                        <FileManager
-                            multiple={false}
-                            value={icon}
-                            onChange={(value: any) => {
-                                if (value) {
-                                    setIcon(value.medias[0].base_url + value.medias[0].permanent_url)
-                                }
-                            }}
-                            options={{
-                                dir: "categories",
-                                type: "thumb",
-                            }}
-                            className="py-[.6rem] text-sm p-2 z-50"
-                        />
-                    )}
-                    <input
-                        value={name}
-                        onChange={(event) => { setName(event.target.value) }}
-                        required
-                        type="text"
-                        className="flex-1 w-full border-[1px] border-black rounded-md p-2"
-                        placeholder="Insira o nome do elemento"
-                    />
-                </div>
-                <div className="flex flex-col w-full items-start justify-start gap-2">
-                    <h2 className="text-[20px] font-semibold text-black underline-offset-4">
-                        Descrição
-                    </h2>
-                    <textarea
-                        value={description}
-                        onChange={(event) => { setDescription(event.target.value) }}
-                        required
-                        className="flex-1 w-full border-[1px] border-gray-500 min-h-[90px] rounded-md p-2" placeholder="Digite aqui a descrição do elemento" />
-                </div>
-                {!hideRelatedElements && (
-                    <div className="flex flex-col w-full justify-start items-start space-y-2">
-                        <h2 className="text-xl font-semibold text-black underline-offset-4">
-                            Selecione os elementos relacionados
-                        </h2>
-                        <p className="text-sm text-gray-700">{}</p>
-                        <SelectElements
-                            selectedList={selectedList}
-                            onRequestClose={() => setOpenSelect(false)}
-                            onRequestOpen={() => setOpenSelect(!openSelect)}
-                            open={openSelect}
-                            relatedElements={props.relatedElements}
-                            onChageSelectList={(data) => setSelectedList(data)}
-                        />
-                    </div>
-                )}
-                <div className="flex w-full justify-end gap-3">
-                    <button onClick={props.onRequestClose}
-                        className={`flex ${!openSelect && ('z-10')} justify-center w-[100px] items-center p-2 text-yellow-400 border-2 border-yellow-400 rounded-md active:bg-yellow-400 active:text-black`}>
-                        Cancelar
-                    </button>
-                    <button onClick={() => onSaveClick()}
-                        className={`flex ${!openSelect && ('z-10')} justify-center w-[100px] items-center p-2 bg-yellow-400 text-black border-2 border-yellow-400 rounded-md active:bg-white active:text-yellow-400`}>
-                        Salvar
-                    </button>
-                </div>
-            </div>
+  const hideRelatedElements =
+    (props.grouptargeadc === true && props.relatedElements?.[0]?.id === -1) ||
+    (props.relatedElements?.length === 1 && props.relatedElements?.[0]?.id === -1) ||
+    !props.relatedElements ||
+    props.relatedElements.length === 0;
+
+  return !props.open ? null : (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-[520px] mx-4 max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
+          <h2 className="text-lg font-semibold text-zinc-900">
+            {props.data?.id ? "Editar Elemento" : "Novo Elemento"}
+          </h2>
+          <button
+            onClick={props.onRequestClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-400"
+          >
+            <X size={18} />
+          </button>
         </div>
-    );
-}
+
+        <div className="px-6 py-5 grid gap-4 overflow-y-auto">
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-2">
+              Ícone
+            </label>
+
+            {icon ? (
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg border-2 border-zinc-200 flex items-center justify-center bg-zinc-50">
+                  <img src={icon} alt="icon" className="w-7 h-7 object-contain" />
+                </div>
+                <button
+                  onClick={() => setIcon("")}
+                  className="text-sm text-red-500 hover:text-red-600 flex items-center gap-1"
+                >
+                  <Trash2 size={14} />
+                  Remover
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {uniqueIcons.length > 0 && (
+                  <div>
+                    <p className="text-xs text-zinc-400 mb-2">Selecionar existente</p>
+                    <div className="flex flex-wrap gap-2">
+                      {uniqueIcons.map((url, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setIcon(url)}
+                          className="w-10 h-10 rounded-lg border hover:border-zinc-400 hover:bg-zinc-50 flex items-center justify-center transition-all"
+                        >
+                          <img src={url} alt="" className="w-6 h-6 object-contain" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  {uniqueIcons.length > 0 && (
+                    <p className="text-xs text-zinc-400 mb-2">Ou fazer upload</p>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex items-center gap-2 px-3 py-2.5 border border-dashed border-zinc-300 rounded-lg text-sm text-zinc-400 hover:border-zinc-400 hover:text-zinc-600 transition-colors w-full justify-center disabled:opacity-50"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={14} />
+                        Fazer upload de novo ícone
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+              Nome <span className="text-red-500">*</span>
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              type="text"
+              className="w-full px-3 py-2.5 border rounded-lg text-sm outline-none focus:border-zinc-400 transition-colors"
+              placeholder="Nome do elemento"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+              Descrição
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2.5 border rounded-lg text-sm outline-none focus:border-zinc-400 transition-colors min-h-[80px] resize-none"
+              placeholder="Descrição do elemento"
+            />
+          </div>
+
+          {!hideRelatedElements && (
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+                Elementos relacionados
+              </label>
+              <SelectElements
+                selectedList={selectedList}
+                onRequestClose={() => setOpenSelect(false)}
+                onRequestOpen={() => setOpenSelect(!openSelect)}
+                open={openSelect}
+                relatedElements={props.relatedElements}
+                onChageSelectList={(data) => setSelectedList(data)}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-3 px-6 py-4 border-t bg-zinc-50 rounded-b-xl shrink-0">
+          <button
+            onClick={props.onRequestClose}
+            className="px-4 py-2.5 text-sm text-zinc-600 hover:text-zinc-800 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => onSaveClick()}
+            className="px-5 py-2.5 bg-zinc-900 text-white text-sm rounded-lg hover:bg-zinc-800 transition-colors"
+          >
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default ElementModal;
