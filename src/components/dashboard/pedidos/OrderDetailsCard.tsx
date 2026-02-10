@@ -6,8 +6,8 @@ interface OrderDetailsCardProps {
   order: OrderType;
   resume: { startDate?: string; endDate?: string };
   deliveryAddress?: AddressType | null;
-  deliverySchedule?: string;
-  deliveryTo?: string; // já é texto pronto
+  deliverySchedule?: any;
+  deliveryTo?: string;
 }
 
 export const OrderDetailsCard = ({
@@ -43,7 +43,9 @@ export const OrderDetailsCard = ({
           {resume.endDate !== resume.startDate
             ? ` - ${dateBRFormat(resume.endDate)}`
             : ""}{" "}
-          | {deliverySchedule}
+          | {typeof deliverySchedule === 'object' && deliverySchedule
+            ? [deliverySchedule.period, deliverySchedule.time].filter(Boolean).join(' - ')
+            : deliverySchedule ?? ''}
         </div>
       </div>
 

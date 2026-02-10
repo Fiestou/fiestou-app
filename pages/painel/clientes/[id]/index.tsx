@@ -1,194 +1,163 @@
+import Link from "next/link";
 import Api from "@/src/services/api";
 import { UserType } from "@/src/models/user";
-import UserEdit from "@/src/components/shared/UserEdit";
-import { useRouter } from "next/router";
-import HelpCard from "@/src/components/common/HelpCard";
-import Template from "@/src/template";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import Link from "next/link";
-import { Button, Select } from "@/src/components/ui/form";
-import { getExtenseData, moneyFormat, print_r } from "@/src/helper";
+import { getExtenseData, moneyFormat } from "@/src/helper";
 import { useEffect, useState } from "react";
-import UserEditAdmin from "@/src/components/shared/UserEditAdmin";
-import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { ArrowLeft, User, MapPin, ShoppingBag, Mail, Phone, CreditCard } from "lucide-react";
+import { PainelLayout, Badge, EmptyState } from "@/src/components/painel";
 
 export async function getServerSideProps(ctx: any) {
   const { id } = ctx.query;
   const store = ctx.req.cookies["fiestou.store"] ?? 0;
-
-  return {
-    props: {
-      id: id,
-      store: store,
-    },
-  };
+  return { props: { id, store } };
 }
 
 export default function Cliente({ id, store }: { id: number; store: number }) {
   const api = new Api();
-
   const [user, setUser] = useState({} as UserType);
-  const [orders, setOrders] = useState([] as any);
-
-  const getUser = async () => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "stores/customers",
-      data: {
-        id: id,
-        store: store,
-      },
-    });
-
-    setUser(request.data);
-  };
-
-  const getOrders = async () => {
-    let request: any = await api.bridge({
-      method: "post",
-      url: "orders/customer-list",
-      data: {
-        customer: id,
-        store: store,
-      },
-    });
-
-    setOrders(request.data);
-  };
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!!window) {
-      getUser();
-      getOrders();
-    }
+    const fetchData = async () => {
+      try {
+        const [userReq, ordersReq]: any[] = await Promise.all([
+          api.bridge({ method: "post", url: "stores/customers", data: { id, store } }),
+          api.bridge({ method: "post", url: "orders/customer-list", data: { customer: id, store } }),
+        ]);
+        if (userReq?.data) setUser(userReq.data);
+        if (ordersReq?.data) setOrders(ordersReq.data);
+      } catch {}
+      setLoading(false);
+    };
+    fetchData();
   }, []);
 
   return (
-    <Template
-      header={{
-        template: "painel",
-        position: "solid",
-      }}
-      footer={{
-        template: "clean",
-      }}
-    >
-      <section className="pb-6">
-        <div className="container-medium pt-12">
-          <div className="pb-4">
-            <Breadcrumbs
-              links={[
-                { url: "/painel", name: "Painel" },
-                { url: "/painel/clientes", name: "Clientes" },
-              ]}
-            />
-          </div>
-          <div className="grid md:flex gap-4 items-center w-full">
-            <div className="w-full flex items-center">
-              <Link passHref href="/painel/clientes">
-                <Icon
-                  icon="fa-long-arrow-left"
-                  className="mr-6 text-2xl text-zinc-900"
-                />
-              </Link>
-              <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                <span className="font-title font-bold">Cliente</span>
-              </div>
-            </div>
-          </div>
+    <PainelLayout>
+      <div className="flex items-center gap-3 mb-6">
+        <Link
+          href="/painel/clientes"
+          className="p-2 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-600"
+        >
+          <ArrowLeft size={20} />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900">{user.name || "Cliente"}</h1>
+          {user?.created_at && (
+            <p className="text-sm text-zinc-500">
+              Primeira interacao em {getExtenseData(user.created_at)}
+            </p>
+          )}
         </div>
-      </section>
+      </div>
 
-      <section>
-        <div className="container-medium pt-6">
-          <div className="grid lg:flex gap-10 lg:gap-20">
-            <div className="w-full">
-              <div className="grid gap-4 border-b pb-8 mb-8">
-                <h3 className="text-xl md:text-2xl text-zinc-950">
-                  {user.name}
-                </h3>
-                {!!user?.created_at && (
-                  <div>
-                    Primeira interação em {getExtenseData(user?.created_at)}
-                  </div>
-                )}
-              </div>
-              <div>
-                <h3 className="text-xl md:text-2xl text-zinc-950 mb-6">
-                  Compras
-                </h3>
-                <div className="grid gap-6">
-                  {orders.map((order: any, key: any) => (
-                    <div
-                      key={key}
-                      className="p-4 md:p-6 border rounded-md lg:rounded-2xl grid gap-2"
-                    >
-                      <div className="flex justify-between font-bold text-zinc-950">
-                        <div>#{order.id}</div>
-                        <div>R$ {moneyFormat(order.total)}</div>
-                      </div>
-                      <div className="flex justify-between text-zinc-400">
-                        <div>{getExtenseData(order.created_at)}</div>
-                        <div></div>
-                      </div>
+      <div className="grid lg:grid-cols-[1fr_340px] gap-6">
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-zinc-200 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <ShoppingBag size={18} className="text-zinc-400" />
+              <h2 className="text-lg font-semibold text-zinc-900">Compras</h2>
+              {orders.length > 0 && (
+                <Badge variant="neutral">{orders.length}</Badge>
+              )}
+            </div>
 
-                      <div className="flex gap-4 pt-4 text-sm">
-                        {order?.metadata?.payment_status == "paid" ? (
-                          <div className="inline-block text-sm py-3 px-5 rounded-md bg-green-400 text-white">
-                            pago
-                          </div>
+            {!loading && orders.length === 0 ? (
+              <EmptyState
+                icon={<ShoppingBag size={28} />}
+                title="Nenhuma compra"
+                description="Este cliente ainda nao realizou compras"
+              />
+            ) : (
+              <div className="space-y-3">
+                {orders.map((order: any, key: any) => (
+                  <Link
+                    href={`/painel/pedidos/${order.id}`}
+                    key={key}
+                    className="block p-4 rounded-lg border border-zinc-100 hover:border-zinc-300 hover:bg-zinc-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-semibold text-zinc-900">#{order.id}</span>
+                      <span className="font-semibold text-zinc-900">
+                        R$ {moneyFormat(order.total)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-zinc-400">
+                        {getExtenseData(order.created_at)}
+                      </span>
+                      <div className="flex gap-2">
+                        {order?.metadata?.payment_status === "paid" ? (
+                          <Badge variant="success">Pago</Badge>
                         ) : (
-                          <div className="inline-block text-sm py-3 px-5 rounded-md bg-zinc-100 text-zinc-500">
-                            processando
-                          </div>
+                          <Badge variant="neutral">Processando</Badge>
                         )}
-                        <div className="rounded-lg py-3 px-5 font-bold text-zinc-950 bg-yellow-200">
-                          Por enviar
-                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </Link>
+                ))}
               </div>
-            </div>
-            <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
-              <div className="rounded-2xl border p-4 lg:p-8 grid gap-2">
-                <div>
-                  <div className="font-title font-bold lg:text-xl text-zinc-900 pb-2">
-                    Dados do cliente
-                  </div>
-                  <div className="grid text-zinc-500 gap-1">
-                    <span>{user.name}</span>
-                    <span>{user.email}</span>
-                    <span>{user.phone}</span>
-                    <span>{user.cpf}</span>
-                  </div>
-                </div>
-                <div className="my-6 border-dashed border-t"></div>
-                <div>
-                  <div className="font-title font-bold lg:text-xl text-zinc-900 pb-2">
-                    Endereço de cobrança
-                  </div>
-                  {(user?.address ?? []).map((item: any, key: any) => (
-                    <div key={key}>
-                      <div>
-                        {item?.street}, {item?.number}
-                      </div>
-                      <div>{item?.neighborhood}</div>
-                      <div>CEP: {item?.zipCode}</div>
-                      <div>
-                        {item?.city} | {item?.state}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
-      </section>
 
-      {/* <UserEditAdmin user={user} /> */}
-    </Template>
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-zinc-200 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <User size={16} className="text-zinc-400" />
+              <h3 className="font-semibold text-zinc-900">Dados do cliente</h3>
+            </div>
+            <div className="space-y-2.5 text-sm">
+              {user.name && (
+                <div className="flex items-center gap-2 text-zinc-600">
+                  <User size={14} className="text-zinc-300" />
+                  {user.name}
+                </div>
+              )}
+              {user.email && (
+                <div className="flex items-center gap-2 text-zinc-600">
+                  <Mail size={14} className="text-zinc-300" />
+                  {user.email}
+                </div>
+              )}
+              {user.phone && (
+                <div className="flex items-center gap-2 text-zinc-600">
+                  <Phone size={14} className="text-zinc-300" />
+                  {user.phone}
+                </div>
+              )}
+              {user.cpf && (
+                <div className="flex items-center gap-2 text-zinc-600">
+                  <CreditCard size={14} className="text-zinc-300" />
+                  {user.cpf}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {Array.isArray((user as any)?.address) && (user as any).address.length > 0 && (
+            <div className="bg-white rounded-xl border border-zinc-200 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin size={16} className="text-zinc-400" />
+                <h3 className="font-semibold text-zinc-900">Endereco</h3>
+              </div>
+              {(user as any).address.map((item: any, key: any) => (
+                <div key={key} className="text-sm text-zinc-600 space-y-0.5">
+                  <div>
+                    {item?.street}, {item?.number}
+                  </div>
+                  <div>{item?.neighborhood}</div>
+                  <div>CEP: {item?.zipCode}</div>
+                  <div>
+                    {item?.city} | {item?.state}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </PainelLayout>
   );
 }

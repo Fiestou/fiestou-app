@@ -1,345 +1,218 @@
-import Image from "next/image";
-import Link from "next/link";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import Template from "@/src/template";
 import { useEffect, useState } from "react";
-import { Button, Input, Select, TextArea } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
+import { Plus, CreditCard } from "lucide-react";
 import Api from "@/src/services/api";
-import { useRouter } from "next/router";
+import { Input, Select } from "@/src/components/ui/form";
 import { BankAccountType, UserType } from "@/src/models/user";
-import Img from "@/src/components/utils/ImgBase";
-import FileInput from "@/src/components/ui/form/FileInputUI";
-import { getExtenseData } from "@/src/helper";
 import HelpCard from "@/src/components/common/HelpCard";
-import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { PainelLayout, PageHeader, EmptyState } from "@/src/components/painel";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
   let request: any = await api.call(
     {
-      method: 'post',
+      method: "post",
       url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "bank",
-              compare: "=",
-            },
-          ],
-        },
-      ],
+      data: [{ model: "page", filter: [{ key: "slug", value: "bank", compare: "=" }] }],
     },
     ctx
   );
-
   let page: any = request?.data?.query?.page[0] ?? {};
-
-  return {
-    props: {
-      page: page,
-    },
-  };
+  return { props: { page } };
 }
 
-const formInitial = {
-  edit: -1,
-  loading: false,
-};
+const formInitial = { edit: -1, loading: false };
 
 export default function Conta({ page }: { page: any }) {
   const api = new Api();
-
   const [content, setContent] = useState({} as UserType);
   const [user, setUser] = useState({} as UserType);
+  const [banks, setBanks] = useState<BankAccountType[]>([]);
+  const [form, setForm] = useState(formInitial);
 
-  const [banks, setBanks] = useState([] as Array<BankAccountType>);
+  const handleForm = (value: any) => setForm({ ...form, ...value });
+
   const handleBankAccounts = (value: any, key: any) => {
-    setBanks((banks: Array<BankAccountType>) =>
-      banks.map((bank: BankAccountType, index: any) =>
-        index == key
-          ? {
-              ...bank,
-              ...value,
-            }
-          : bank
-      )
+    setBanks((prev) =>
+      prev.map((bank, index) => (index == key ? { ...bank, ...value } : bank))
     );
   };
 
   const getUserData = async () => {
-    const request: any = await api.bridge({
-      method: "get",
-      url: "users/get",
-    });
-
+    const request: any = await api.bridge({ method: "get", url: "users/get" });
     if (request.response) {
       setUser(request.data);
       setContent(request.data);
-      setBanks(request.data.bankAccounts);
+      setBanks(request.data.bankAccounts || []);
     }
   };
 
-  useEffect(() => {
-    getUserData();
-  }, []);
-
-  const [form, setForm] = useState(formInitial);
-  const handleForm = (value: Object) => {
-    setForm({ ...form, ...value });
-  };
+  useEffect(() => { getUserData(); }, []);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
     handleForm({ loading: true });
-
     const handle: UserType = { ...content, id: user.id, bankAccounts: banks };
-
-    const request: any = await api.bridge({
-      method: 'post',
-      url: "users/update",
-      data: handle,
-    });
-
+    const request: any = await api.bridge({ method: "post", url: "users/update", data: handle });
     if (request.response) {
       setContent(handle);
-      setBanks(handle?.bankAccounts ?? ([] as Array<BankAccountType>));
+      setBanks(handle?.bankAccounts ?? []);
     }
-
     handleForm({ edit: -1, loading: false });
   };
 
   const addAccount = () => {
-    let accounts = (content?.bankAccounts ?? []).filter(
-      (bank: BankAccountType) => bank
-    );
-
+    let accounts = (content?.bankAccounts ?? []).filter((b: any) => b);
     accounts.push({} as BankAccountType);
-
     setBanks(accounts);
-
     handleForm({ edit: accounts.length - 1 });
   };
 
-  const renderAction = (
-    key: number,
-    label?: { edit?: string; save?: string; cancel?: string }
-  ) => {
-    return form.edit == key ? (
-      <div className="flex gap-10">
-        <Button
-          onClick={(e: any) => {
-            handleForm({ edit: -1 });
-            setBanks(content?.bankAccounts ?? []);
-          }}
-          type="button"
-          style="btn-link"
-        >
-          {label?.cancel ? label.cancel : "Cancelar"}
-        </Button>
-          <Button
-            loading={form.edit == key && form.loading}
-            className="py-2 px-4"
-          >
-            {label?.save ? label.save : "Salvar"}
-          </Button>
-      </div>
-    ) : !form.loading ? (
-      <Button
-        onClick={(e: any) => {
-          handleForm({ edit: key });
-          setBanks(content?.bankAccounts ?? []);
-        }}
-        type="button"
-        style="btn-link"
-      >
-        {label?.edit ? label.edit : "Editar"}
-      </Button>
-    ) : (
-      <button type="button" className="p-0 font-bold opacity-50">
-        {label?.edit ? label.edit : "Editar"}
-      </button>
-    );
-  };
-
   return (
-    <Template
-      header={{
-        template: "painel",
-        position: "solid",
-      }}
-      footer={{
-        template: "clean",
-      }}
-    >
-      <section className="">
-        <div className="container-medium pt-12">
-          <div className="pb-4">
-            <Breadcrumbs
-              links={[
-                { url: "/painel", name: "Painel" },
-                { url: "/painel/conta", name: "Conta Bancária" },
-              ]}
-            />
-          </div>
-          <div className="grid md:flex gap-4 items-center w-full">
-            <div className="w-full flex items-center">
-              <Link passHref href="/painel">
-                <Icon
-                  icon="fa-long-arrow-left"
-                  className="mr-6 text-2xl text-zinc-900"
-                />
-              </Link>
-              <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                <span className="font-title font-bold">Conta Bancária</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      {!!user?.id && (
-        <section className="pt-6">
-          <div className="container-medium pb-12">
-            <div className="grid md:flex align-top gap-10 lg:gap-20">
-              <div className="w-full">
-                {!!Array.isArray(banks) && banks.length ? (
-                  <div className="grid">
-                    {banks.map((bank: BankAccountType, key: any) => (
-                      <form
-                        key={key}
-                        onSubmit={(e: any) => handleSubmit(e)}
-                        method="POST"
-                        className="border-t py-4 md:py-8"
+    <PainelLayout>
+      <PageHeader
+        title="Minha Conta"
+        description="Gerencie suas contas bancarias"
+        actions={
+          form.edit === -1 ? (
+            <button
+              type="button"
+              onClick={addAccount}
+              className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <Plus size={16} />
+              Nova conta
+            </button>
+          ) : undefined
+        }
+      />
+
+      <div className="grid lg:grid-cols-[1fr_320px] gap-8">
+        <div>
+          {Array.isArray(banks) && banks.length > 0 ? (
+            <div className="grid gap-4">
+              {banks.map((bank: BankAccountType, key: any) => (
+                <form
+                  key={key}
+                  onSubmit={handleSubmit}
+                  className="bg-white rounded-xl border border-zinc-200 p-6"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-zinc-900">
+                      {bank.title || "Nova Conta"}
+                    </h3>
+                    {form.edit === key ? (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleForm({ edit: -1 });
+                            setBanks(content?.bankAccounts ?? []);
+                          }}
+                          className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={form.loading}
+                          className="px-4 py-1.5 text-sm bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {form.loading ? "Salvando..." : "Salvar"}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleForm({ edit: key });
+                          setBanks(content?.bankAccounts ?? []);
+                        }}
+                        disabled={form.loading}
+                        className="px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors disabled:opacity-50"
                       >
-                        <div className="flex items-center">
-                          <div className="w-full">
-                            <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                              {!!bank.title ? bank.title : "Nova Conta"}
-                            </h4>
-                          </div>
-                        </div>
-                        <div className="w-full pt-4">
-                          {form.edit == key ? (
-                            <div className="grid gap-2">
-                              <Input
-                                onChange={(e: any) =>
-                                  handleBankAccounts(
-                                    {
-                                      title: e.target.value,
-                                    },
-                                    key
-                                  )
-                                }
-                                required
-                                value={bank.title}
-                                placeholder="Apelido/Nome da conta"
-                              />
-                              <div className="flex gap-2">
-                                <div className="w-1/3">
-                                  <Input
-                                    onChange={(e: any) =>
-                                      handleBankAccounts(
-                                        {
-                                          agence: e.target.value,
-                                        },
-                                        key
-                                      )
-                                    }
-                                    required
-                                    value={bank.agence}
-                                    placeholder="Agência"
-                                  />
-                                </div>
-                                <div className="w-full">
-                                  <Input
-                                    onChange={(e: any) =>
-                                      handleBankAccounts(
-                                        {
-                                          accountNumber: e.target.value,
-                                        },
-                                        key
-                                      )
-                                    }
-                                    required
-                                    value={bank.accountNumber}
-                                    placeholder="Número da conta"
-                                  />
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <div className="w-1/3">
-                                  <Select
-                                    name="op"
-                                    onChange={(e: any) =>
-                                      handleBankAccounts(
-                                        {
-                                          operation:
-                                            e.target.value ?? "conta-corrente",
-                                        },
-                                        key
-                                      )
-                                    }
-                                    required
-                                    value={bank.operation ?? "conta-corrente"}
-                                    options={[
-                                      {
-                                        name: "Conta Corrente",
-                                        value: "conta-corrente",
-                                      },
-                                      {
-                                        name: "Conta Poupança",
-                                        value: "conta-poupanca",
-                                      },
-                                    ]}
-                                  />
-                                </div>
-                                <div className="w-full">
-                                  <Input
-                                    onChange={(e: any) =>
-                                      handleBankAccounts(
-                                        {
-                                          bank: e.target.value,
-                                        },
-                                        key
-                                      )
-                                    }
-                                    required
-                                    value={bank.bank}
-                                    placeholder="Banco"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            "Conta Corrente: " + bank.accountNumber
-                          )}
-                        </div>
-                        <div className="flex w-full justify-end items-end mt-2">{renderAction(key)}</div>
-                      </form>
-                    ))}
+                        Editar
+                      </button>
+                    )}
                   </div>
-                ) : (
-                  <div className="border-b py-4">Sem contas cadastradas</div>
-                )}
-                {form.edit == -1 && (
-                  <div className="grid md:block py-6 border-t">
-                    <Button type="button" onClick={() => addAccount()}>
-                      Adicionar uma conta
-                    </Button>
-                  </div>
-                )}
-              </div>
-              <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
-                <HelpCard list={page.help_list} />
-              </div>
+
+                  {form.edit === key ? (
+                    <div className="grid gap-3">
+                      <Input
+                        onChange={(e: any) => handleBankAccounts({ title: e.target.value }, key)}
+                        required
+                        value={bank.title}
+                        placeholder="Apelido/Nome da conta"
+                      />
+                      <div className="grid sm:grid-cols-[1fr_2fr] gap-3">
+                        <Input
+                          onChange={(e: any) => handleBankAccounts({ agence: e.target.value }, key)}
+                          required
+                          value={bank.agence}
+                          placeholder="Agencia"
+                        />
+                        <Input
+                          onChange={(e: any) => handleBankAccounts({ accountNumber: e.target.value }, key)}
+                          required
+                          value={bank.accountNumber}
+                          placeholder="Numero da conta"
+                        />
+                      </div>
+                      <div className="grid sm:grid-cols-[1fr_2fr] gap-3">
+                        <Select
+                          name="op"
+                          onChange={(e: any) => handleBankAccounts({ operation: e.target.value ?? "conta-corrente" }, key)}
+                          required
+                          value={bank.operation ?? "conta-corrente"}
+                          options={[
+                            { name: "Conta Corrente", value: "conta-corrente" },
+                            { name: "Conta Poupanca", value: "conta-poupanca" },
+                          ]}
+                        />
+                        <Input
+                          onChange={(e: any) => handleBankAccounts({ bank: e.target.value }, key)}
+                          required
+                          value={bank.bank}
+                          placeholder="Banco"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-zinc-600">
+                      <div className="flex items-center gap-2">
+                        <CreditCard size={14} className="text-zinc-400" />
+                        <span>Conta Corrente: {bank.accountNumber}</span>
+                      </div>
+                      {bank.bank && <div className="mt-1 ml-[22px] text-zinc-400">Banco: {bank.bank}</div>}
+                    </div>
+                  )}
+                </form>
+              ))}
             </div>
-          </div>
-        </section>
-      )}
-    </Template>
+          ) : (
+            <div className="bg-white rounded-xl border border-zinc-200">
+              <EmptyState
+                icon={<CreditCard size={32} />}
+                title="Sem contas cadastradas"
+                description="Adicione uma conta bancaria para receber seus pagamentos"
+                action={
+                  <button
+                    type="button"
+                    onClick={addAccount}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg px-4 py-2 text-sm font-medium transition-colors inline-flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Adicionar conta
+                  </button>
+                }
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="hidden lg:block">
+          <HelpCard list={page.help_list} />
+        </div>
+      </div>
+    </PainelLayout>
   );
 }

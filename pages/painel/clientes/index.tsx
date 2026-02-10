@@ -1,137 +1,121 @@
 import Link from "next/link";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import Template from "@/src/template";
-import { Button } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
-import Api from "@/src/services/api";
-import { getExtenseData, moneyFormat } from "@/src/helper";
 import { useEffect, useState } from "react";
-import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import { Users, Eye } from "lucide-react";
+import Api from "@/src/services/api";
+import {
+  PainelLayout,
+  PageHeader,
+  DataTable,
+  EmptyState,
+  SearchInput,
+} from "@/src/components/painel";
+import type { Column } from "@/src/components/painel";
 
 export async function getServerSideProps(ctx: any) {
   const store = ctx.req.cookies["fiestou.store"] ?? 0;
-
-  return {
-    props: {
-      store: store,
-    },
-  };
+  return { props: { store } };
 }
 
 export default function Clientes({ store }: { store: any }) {
   const api = new Api();
-
-  const [clients, setClients] = useState([] as Array<any>);
-
-  const relationship = async () => {
-    let request: any = await api.bridge({
-      method: 'post',
-      url: "stores/customers",
-      data: {
-        store: store,
-      },
-    });
-
-    setClients(request.data || []);
-  };
+  const [clients, setClients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (!!window) {
-      relationship();
-    }
+    const fetch = async () => {
+      try {
+        const request: any = await api.bridge({
+          method: "post",
+          url: "stores/customers",
+          data: { store },
+        });
+        setClients(request.data || []);
+      } catch {
+        setClients([]);
+      }
+      setLoading(false);
+    };
+    fetch();
   }, []);
 
+  const filtered = clients.filter((c) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      (c.name || "").toLowerCase().includes(q) ||
+      (c.email || "").toLowerCase().includes(q)
+    );
+  });
+
+  const columns: Column<any>[] = [
+    {
+      key: "name",
+      label: "Nome",
+      sortable: true,
+      render: (row) => (
+        <div>
+          <p className="font-medium text-zinc-900">{row.name}</p>
+        </div>
+      ),
+    },
+    {
+      key: "email",
+      label: "E-mail",
+      sortable: true,
+      render: (row) => <span className="text-zinc-600">{row.email}</span>,
+    },
+    {
+      key: "actions",
+      label: "Acoes",
+      className: "w-28",
+      render: (row) => (
+        <Link
+          href={`/painel/clientes/${row.id}`}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
+        >
+          <Eye size={14} />
+          Detalhes
+        </Link>
+      ),
+    },
+  ];
+
   return (
-    <Template
-      header={{
-        template: "painel",
-        position: "solid",
-      }}
-      footer={{
-        template: "clean",
-      }}
-    >
-      <section className="">
-        <div className="container-medium pt-12">
-          <div className="pb-4">
-            <Breadcrumbs
-              links={[
-                { url: "/painel", name: "Painel" },
-                { url: "/painel/clientes", name: "Clientes" },
-              ]}
-            />
-          </div>
-          <div className="grid md:flex gap-4 items-center w-full">
-            <div className="w-full flex items-center">
-              <Link passHref href="/painel">
-                <Icon
-                  icon="fa-long-arrow-left"
-                  className="mr-6 text-2xl text-zinc-900"
-                />
-              </Link>
-              <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                <span className="font-title font-bold">Clientes</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-6 w-full md:w-fit">
-              <div>
-                <button
-                  type="button"
-                  className="rounded-xl whitespace-nowrap border py-4 text-zinc-900 font-semibold px-8"
-                >
-                  Filtrar{" "}
-                  <Icon
-                    icon="fa-chevron-down"
-                    type="far"
-                    className="text-xs ml-1"
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
+    <PainelLayout>
+      <PageHeader title="Clientes" description="Clientes que compraram na sua loja" />
+
+      <div className="flex items-center gap-3 bg-white p-4 rounded-xl border border-zinc-200 mb-4">
+        <SearchInput
+          placeholder="Buscar clientes..."
+          value={search}
+          onChange={setSearch}
+          className="w-full sm:w-72"
+        />
+      </div>
+
+      {!loading && filtered.length === 0 ? (
+        <div className="bg-white rounded-xl border border-zinc-200">
+          <EmptyState
+            icon={<Users size={32} />}
+            title="Nenhum cliente encontrado"
+            description={
+              search
+                ? "Tente ajustar a busca"
+                : "Quando clientes comprarem na sua loja, eles vao aparecer aqui"
+            }
+          />
         </div>
-      </section>
-      <section className="pt-6">
-        <div className="container-medium pb-12">
-          <div className="border border-t-0 grid md:grid-cols-2 lg:block w-full">
-            <div className="hidden lg:flex border-t bg-zinc-100 p-4 lg:p-8 gap-4 lg:gap-8 font-bold text-zinc-900 font-title">
-              <div className="w-[40rem]">Nome</div>
-              <div className="w-full">E-mail</div>
-              <div className="w-[22rem]"></div>
-            </div>
-            {!!clients &&
-              clients.map((client: any, key: any) => (
-                <div
-                  key={key}
-                  className="grid lg:flex border-t p-4 lg:p-8 gap-2 lg:gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 ease items-center"
-                >
-                  <div className="w-full lg:w-[40rem]">
-                    <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
-                      Nome
-                    </span>
-                    {client?.name}
-                  </div>
-                  <div className="w-full">
-                    <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
-                      E-mail
-                    </span>
-                    {client?.email}
-                  </div>
-                  <div className="w-full lg:w-[22rem] grid">
-                    <Button
-                      href={`/painel/clientes/${client.id}`}
-                      style="btn-light"
-                      className="text-zinc-900 py-2 px-3 mt-4 lg:mt-0 text-sm whitespace-nowrap"
-                    >
-                      Ver detalhes
-                    </Button>
-                  </div>
-                </div>
-              ))}
-          </div>
-          <div className="pt-4">Mostrando 1 página de 1 com 4 produtos</div>
-        </div>
-      </section>
-    </Template>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filtered}
+          keyField="id"
+          pageSize={15}
+          loading={loading}
+          emptyMessage="Nenhum cliente encontrado"
+        />
+      )}
+    </PainelLayout>
   );
 }
