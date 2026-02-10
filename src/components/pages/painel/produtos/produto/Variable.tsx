@@ -1,12 +1,16 @@
 import { AttributeType, ProductType } from "@/src/models/product";
-import { Button, Label } from "@/src/components/ui/form";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import { useEffect, useState } from "react";
-import Variations from "./Variations";
-import SelectDropdown from "@/src/components/ui/form/SelectDropdown";
-import { shortId } from "@/src/helper";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { shortId, realMoneyNumber, getImage } from "@/src/helper";
+import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical, ImageIcon, X, Smile, Type, Upload, CircleDot, CheckSquare, Hash } from "lucide-react";
+import Api from "@/src/services/api";
 
-// Normaliza qualquer formato vindo do back para AttributeType[]
+interface MediaItem {
+  id: number;
+  base_url?: string;
+  details?: any;
+  [key: string]: any;
+}
+
 function normalizeAttributes(input: unknown): AttributeType[] {
   if (!input) return [];
   if (Array.isArray(input)) return input as AttributeType[];
@@ -21,6 +25,217 @@ function normalizeAttributes(input: unknown): AttributeType[] {
   return [];
 }
 
+const SELECT_TYPES = [
+  { value: "radio", label: "Seleção única", desc: "Cliente escolhe 1 opção" },
+  { value: "checkbox", label: "Múltipla escolha", desc: "Cliente pode marcar várias" },
+  { value: "quantity", label: "Por quantidade", desc: "Cliente define a qtde" },
+  { value: "text", label: "Texto personalizado", desc: "Cliente digita um texto" },
+  { value: "image", label: "Envio de imagem", desc: "Cliente envia uma foto" },
+];
+
+function ImagePicker({
+  value,
+  gallery,
+  onChange,
+  productId,
+}: {
+  value?: string | number;
+  gallery: MediaItem[];
+  onChange: (imageId: string | number | null, newMedia?: MediaItem) => void;
+  productId?: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const selected = gallery.find((m) => m.id == value);
+  const thumb = selected ? getImage(selected, "thumb") : null;
+
+  const handleUpload = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        const api = new Api();
+        const res: any = await api.bridge({
+          method: "post",
+          url: "files/upload-base64",
+          data: {
+            index: productId || "variation",
+            dir: "products",
+            medias: [{ base64, fileName: file.name.replace(/\.[^/.]+$/, "") }],
+          },
+        });
+        const uploaded = res?.data?.[0];
+        if (uploaded?.status && uploaded?.media) {
+          onChange(uploaded.media.id, uploaded.media);
+        }
+        setUploading(false);
+        setOpen(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      {thumb ? (
+        <div className="relative group">
+          <img
+            src={thumb}
+            alt=""
+            onClick={() => setOpen(!open)}
+            className="w-8 h-8 rounded-md object-cover cursor-pointer border border-zinc-200 hover:border-yellow-400 transition-colors"
+          />
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onChange(null); }}
+            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <X size={8} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className={`w-8 h-8 rounded-md border border-dashed border-zinc-300 hover:border-yellow-400 hover:bg-yellow-50 flex items-center justify-center transition-colors ${uploading ? "opacity-50" : ""}`}
+          title="Adicionar imagem"
+          disabled={uploading}
+        >
+          {uploading ? (
+            <div className="w-3 h-3 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <ImageIcon size={14} className="text-zinc-400" />
+          )}
+        </button>
+      )}
+
+      {open && (
+        <div className="absolute z-20 top-10 left-0 bg-white rounded-lg shadow-lg border border-zinc-200 p-2 w-52">
+          {gallery.length > 0 && (
+            <div className="grid grid-cols-4 gap-1.5 mb-2">
+              {gallery.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => { onChange(m.id); setOpen(false); }}
+                  className={`w-10 h-10 rounded-md overflow-hidden border-2 transition-colors ${
+                    m.id == value ? "border-yellow-400" : "border-transparent hover:border-zinc-300"
+                  }`}
+                >
+                  <img src={getImage(m, "thumb")} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+          <label className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded-md cursor-pointer transition-colors">
+            <Upload size={12} />
+            <span>Enviar nova imagem</span>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleUpload(f);
+              }}
+            />
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const EMOJI_CATEGORIES = [
+  { label: "Festas", emojis: ["🎈", "🎉", "🎊", "🎂", "🎁", "🎀", "🎆", "🎇", "🪅", "🎃", "🎄", "🧁", "🍰", "🎵", "🎶", "🎤", "🎧", "🎪", "🎭", "🎠"] },
+  { label: "Comida", emojis: ["🍕", "🍔", "🍟", "🌭", "🍿", "🧀", "🍩", "🍪", "🍫", "🍬", "🍭", "🍦", "🧃", "🥤", "🍺", "🍷", "☕", "🥂", "🍾", "🧊"] },
+  { label: "Natureza", emojis: ["🌸", "🌺", "🌻", "🌹", "🌷", "💐", "🌿", "🍀", "🌳", "🌴", "⭐", "🌙", "☀️", "🌈", "🦋", "🐾", "🌊", "🔥", "❄️", "💎"] },
+  { label: "Esportes", emojis: ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏓", "🥊", "🏆", "🥇", "🎯", "🎲", "🎮", "🏊", "🚴", "⛷️", "🏄", "🤸", "🎳", "🛹"] },
+  { label: "Simbolos", emojis: ["❤️", "💛", "💚", "💙", "💜", "🖤", "🤍", "💖", "✨", "💫", "🔴", "🟡", "🟢", "🔵", "🟣", "⬛", "⬜", "✅", "❌", "💯"] },
+];
+
+function EmojiPicker({
+  onSelect,
+}: {
+  onSelect: (emoji: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
+          open ? "bg-yellow-100 text-yellow-600" : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600"
+        }`}
+        title="Inserir emoji"
+      >
+        <Smile size={15} />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 top-9 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl border border-zinc-200 w-64">
+          <div className="flex border-b border-zinc-100 px-1 pt-1 gap-0.5 overflow-x-auto">
+            {EMOJI_CATEGORIES.map((cat, i) => (
+              <button
+                key={cat.label}
+                type="button"
+                onClick={() => setTab(i)}
+                className={`px-2 py-1.5 text-[10px] font-medium rounded-t-md whitespace-nowrap transition-colors ${
+                  tab === i ? "bg-zinc-100 text-zinc-800" : "text-zinc-400 hover:text-zinc-600"
+                }`}
+              >
+                {cat.emojis[0]} {cat.label}
+              </button>
+            ))}
+          </div>
+          <div className="p-2 grid grid-cols-8 gap-0.5 max-h-36 overflow-y-auto">
+            {EMOJI_CATEGORIES[tab].emojis.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => { onSelect(emoji); setOpen(false); }}
+                className="w-7 h-7 flex items-center justify-center text-base hover:bg-zinc-100 rounded-md transition-colors"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Variable({
   product,
   emitAttributes,
@@ -28,23 +243,37 @@ export default function Variable({
   product: ProductType;
   emitAttributes: (attrs: AttributeType[] | string) => void;
 }) {
-  const [modalAttrStatus, setModalAttrStatus] = useState("");
-  const [collapseTrash, setCollapseTrash] = useState("");
+  const api = new Api();
   const [attributes, setAttributes] = useState<AttributeType[]>([]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmDeleteVar, setConfirmDeleteVar] = useState<string | null>(null);
+  const [galleryMedia, setGalleryMedia] = useState<MediaItem[]>([]);
 
-  // Mantém o state SEMPRE como array
+  const fetchGallery = useCallback(async () => {
+    if (!product?.id) return;
+    try {
+      const res: any = await api.bridge({
+        method: "get",
+        url: `products/gallery/${product.id}`,
+      });
+      setGalleryMedia(res?.data ?? []);
+    } catch {}
+  }, [product?.id]);
+
+  useEffect(() => {
+    fetchGallery();
+  }, [product?.id]);
+
   useEffect(() => {
     const next = normalizeAttributes(product?.attributes ?? []);
     if (JSON.stringify(next) !== JSON.stringify(attributes)) {
       setAttributes(next);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.attributes]);
 
-  // 🔧 Helper para emitir sempre o valor correto para o pai
-  const emitSerializedAttributes = (attrs: AttributeType[]) => {
+  const emit = (attrs: AttributeType[]) => {
     try {
-      // se o pai usa FormData, ele deve receber string JSON
       emitAttributes(JSON.stringify(attrs));
     } catch {
       emitAttributes(attrs);
@@ -52,276 +281,383 @@ export default function Variable({
   };
 
   const addAttribute = () => {
-    const add: AttributeType = {
+    const newAttr: AttributeType = {
       id: shortId(),
-      title: `Rascunho ${attributes.length + 1}`,
+      title: "",
       variations: [],
       selectType: "radio",
       limit: 0,
       priceType: "on",
     };
-    setAttributes((prev) => {
-      const next = [...prev, add];
-      emitSerializedAttributes(next);
-      return next;
-    });
-    setModalAttrStatus(add.id);
+    const next = [...attributes, newAttr];
+    setAttributes(next);
+    emit(next);
+    setOpenId(newAttr.id);
   };
 
   const removeAttribute = (id: string) => {
-    setAttributes((prev) => {
-      const next = prev.filter((a) => a.id !== id);
-      emitSerializedAttributes(next);
-      return next;
-    });
+    const next = attributes.filter((a) => a.id !== id);
+    setAttributes(next);
+    emit(next);
+    setConfirmDelete(null);
+    if (openId === id) setOpenId(null);
   };
 
-  const updateAttribute = (value: Partial<AttributeType>, id: string) => {
-    setAttributes((prev) => {
-      const next = prev.map((a) => (a.id === id ? { ...a, ...value } : a));
-      emitSerializedAttributes(next);
-      return next;
-    });
+  const updateAttribute = (id: string, value: Partial<AttributeType>) => {
+    const next = attributes.map((a) => (a.id === id ? { ...a, ...value } : a));
+    setAttributes(next);
+    emit(next);
+  };
+
+  const addVariation = (attrId: string) => {
+    const attr = attributes.find((a) => a.id === attrId);
+    if (!attr) return;
+    const newVar = { id: shortId(), title: "", price: 0 };
+    updateAttribute(attrId, { variations: [...(attr.variations || []), newVar] });
+  };
+
+  const updateVariation = (attrId: string, varId: string, value: any) => {
+    const attr = attributes.find((a) => a.id === attrId);
+    if (!attr) return;
+    const vars = (attr.variations || []).map((v: any) =>
+      v.id === varId ? { ...v, ...value } : v
+    );
+    updateAttribute(attrId, { variations: vars });
+  };
+
+  const removeVariation = (attrId: string, varId: string) => {
+    const attr = attributes.find((a) => a.id === attrId);
+    if (!attr) return;
+    const vars = (attr.variations || []).filter((v: any) => v.id !== varId);
+    updateAttribute(attrId, { variations: vars });
+    setConfirmDeleteVar(null);
   };
 
   return (
-    <div className="border-t pt-4 pb-2">
-      <h4 className="text-2xl text-zinc-900 mb-2">
-        Grupo de variações/adicionais
-      </h4>
+    <div className="space-y-3">
+      {attributes.map((attr) => {
+        const isOpen = openId === attr.id;
+        const varCount = attr.variations?.length ?? 0;
 
-      {!!attributes?.length &&
-        attributes.map((attribute, key) => (
-          <div key={attribute.id ?? key}>
-            <div className="border-b py-2">
-              <div className="flex items-center">
-                <div className="w-full">
-                  <h4
-                    className="font-semibold text-sm text-zinc-900 cursor-pointer whitespace-nowrap"
-                    onClick={() =>
-                      setModalAttrStatus((cur) =>
-                        cur === attribute.id ? "" : attribute.id
-                      )
-                    }
-                  >
-                    {attribute.title}
-                  </h4>
-
-                  <div className="text-sm grid gap-1 opacity-70 w-full">
-                    {attribute?.variations?.length ?? 0} opções
-                  </div>
+        return (
+          <div
+            key={attr.id}
+            className={`border rounded-xl transition-all ${
+              isOpen ? "border-blue-200 bg-blue-50/30" : "border-zinc-200 bg-white"
+            }`}
+          >
+            <div
+              className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
+              onClick={() => setOpenId(isOpen ? null : attr.id)}
+            >
+              <GripVertical size={16} className="text-zinc-300 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm text-zinc-900 truncate">
+                  {attr.title || "Grupo sem nome"}
                 </div>
-
-                <div
-                  className={`${
-                    collapseTrash === attribute.id ? "" : "hidden"
-                  } w-fit flex gap-2`}
-                >
-                  <Button
-                    type="button"
-                    style="btn-white"
-                    className="font-semibold text-sm py-1 px-2"
-                    onClick={() => setCollapseTrash("")}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="button"
-                    style="btn-danger"
-                    className="text-sm py-1 px-2"
-                    onClick={() => removeAttribute(attribute.id)}
-                  >
-                    Confirmar
-                  </Button>
+                <div className="text-xs text-zinc-400">
+                  {(attr.selectType === "text" || attr.selectType === "image") ? (
+                    attr.selectType === "text" ? "Texto personalizado" : "Envio de imagem"
+                  ) : (
+                    <>
+                      {varCount} {varCount === 1 ? "opção" : "opções"} · {
+                        attr.selectType === "radio" ? "Seleção única" :
+                        attr.selectType === "checkbox" ? "Múltipla escolha" : "Quantidade"
+                      }
+                      {attr.priceType === "on" ? " · Com preços" : ""}
+                    </>
+                  )}
                 </div>
+              </div>
 
-                <div
-                  className={`${
-                    collapseTrash === attribute.id ? "hidden" : ""
-                  } w-fit flex gap-2`}
-                >
-                  <Button
+              <div className="flex items-center gap-1.5 shrink-0">
+                {confirmDelete === attr.id ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
+                      className="px-2.5 py-1 text-xs font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-md transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeAttribute(attr.id); }}
+                      className="px-2.5 py-1 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors"
+                    >
+                      Excluir
+                    </button>
+                  </>
+                ) : (
+                  <button
                     type="button"
-                    style="btn-white"
-                    className="font-semibold text-sm py-1 px-2 border"
-                    onClick={() =>
-                      setModalAttrStatus((cur) =>
-                        cur === attribute.id ? "" : attribute.id
-                      )
-                    }
+                    onClick={(e) => { e.stopPropagation(); setConfirmDelete(attr.id); }}
+                    className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                   >
-                    {modalAttrStatus === attribute.id ? "confirmar" : "editar"}
-                  </Button>
-                  <Button
-                    type="button"
-                    style="btn-white"
-                    className="text-sm py-1 px-2 border"
-                    onClick={() => setCollapseTrash(attribute.id)}
-                  >
-                    <Icon icon="fa-trash" />
-                  </Button>
-                </div>
+                    <Trash2 size={14} />
+                  </button>
+                )}
+                {isOpen ? (
+                  <ChevronUp size={16} className="text-zinc-400" />
+                ) : (
+                  <ChevronDown size={16} className="text-zinc-400" />
+                )}
               </div>
             </div>
 
-            {/* Modal */}
-            <div
-              className={`fixed top-0 left-0 w-full z-10 ${
-                modalAttrStatus === attribute.id
-                  ? "h-screen overflow-y-scroll"
-                  : "h-0 overflow-hidden"
-              }`}
-            >
-              <div className="absolute w-full min-h-full pt-10 md:pb-10 flex items-end md:items-start">
-                <div
-                  onClick={() => setModalAttrStatus("")}
-                  className="absolute inset-0 min-h-screen bg-zinc-900 bg-opacity-75"
-                />
-                <div className="relative w-full max-w-2xl mx-auto rounded-t-xl md:rounded-xl bg-white p-4 pb-14 md:p-6">
-                  <div className="flex items-center">
-                    <h4 className="text-xl text-zinc-900 w-full pb-2">
-                      Editando Grupo
-                    </h4>
-                    <Button
-                      type="button"
-                      style="btn-white"
-                      onClick={() => setModalAttrStatus("")}
-                      className="cursor-pointer font-semibold text-zinc-900 bg-zinc-200 hover:bg-zinc-300 hover:text-green-600 px-4 py-2 rounded-md transition-colors duration-200"
-                    >
-                      Concluir
-                    </Button>
-                  </div>
-
-                  <div className="form-group">
-                    <Label>Título</Label>
+            {isOpen && (
+              <div className="px-4 pb-4 space-y-4 border-t border-zinc-100">
+                <div className="pt-4">
+                  <label className="block text-xs font-medium text-zinc-600 mb-1.5">
+                    Nome do grupo <span className="ml-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
+                  </label>
+                  <div className="flex items-center gap-1.5">
                     <input
-                      value={attribute?.title ?? ""}
-                      onBlur={(e) =>
-                        !e.currentTarget.value
-                          ? updateAttribute(
-                              { title: `Grupo ${key + 1}` },
-                              attribute.id
-                            )
-                          : undefined
-                      }
-                      onChange={(e) =>
-                        updateAttribute(
-                          { title: e.currentTarget.value },
-                          attribute.id
-                        )
-                      }
-                      name="titulo_atrbt"
-                      placeholder="Ex: Tamanho, Cor, Material"
-                      required
-                      className="form-control"
+                      type="text"
+                      value={attr.title ?? ""}
+                      onChange={(e) => updateAttribute(attr.id, { title: e.target.value })}
+                      placeholder="Ex: Tamanho, Sabor, Adicional de balões..."
+                      className="flex-1 px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none bg-white"
                     />
+                    <EmojiPicker onSelect={(emoji) => updateAttribute(attr.id, { title: (attr.title ?? "") + emoji })} />
                   </div>
+                </div>
 
-                  <div className="flex gap-6">
-                    <div className="w-full form-group">
-                      <Label style="light">Tipo de seleção</Label>
-                      <SelectDropdown
-                        name="tipo_selecao"
-                        onChange={(value: any) =>
-                          updateAttribute({ selectType: value }, attribute.id)
-                        }
-                        value={attribute.selectType ?? "radio"}
-                        options={[
-                          {
-                            icon: "fa-dot-circle",
-                            value: "radio",
-                            name: "Seleção única",
-                          },
-                          {
-                            icon: "fa-check-square",
-                            value: "checkbox",
-                            name: "Seleção múltipla",
-                          },
-                          {
-                            icon: "fa-sort-numeric-up-alt",
-                            value: "quantity",
-                            name: "Por quantidade",
-                          },
-                        ]}
-                      />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1.5">
+                      Tipo de seleção
+                    </label>
+                    <div className="space-y-1.5">
+                      {SELECT_TYPES.map((st) => (
+                        <button
+                          key={st.value}
+                          type="button"
+                          onClick={() => updateAttribute(attr.id, { selectType: st.value })}
+                          className={`w-full px-3 py-2 rounded-lg border text-left text-sm transition-all ${
+                            attr.selectType === st.value
+                              ? "border-blue-300 bg-blue-50 text-zinc-900"
+                              : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {st.value === "radio" && <CircleDot size={13} className="text-zinc-400" />}
+                            {st.value === "checkbox" && <CheckSquare size={13} className="text-zinc-400" />}
+                            {st.value === "quantity" && <Hash size={13} className="text-zinc-400" />}
+                            {st.value === "text" && <Type size={13} className="text-zinc-400" />}
+                            {st.value === "image" && <Upload size={13} className="text-zinc-400" />}
+                            <div>
+                              <div className="font-medium text-xs">{st.label}</div>
+                              <div className="text-[10px] text-zinc-400">{st.desc}</div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
 
-                    {attribute?.selectType === "checkbox" && (
-                      <div className="w-1/4 form-group">
-                        <Label style="light">Limite de seleção</Label>
+                    {attr.selectType === "checkbox" && (
+                      <div className="mt-2">
+                        <label className="block text-xs text-zinc-500 mb-1">Limite de seleção (0 = sem limite)</label>
                         <input
                           type="number"
-                          value={attribute.limit ?? 0}
-                          onChange={(e) =>
-                            updateAttribute(
-                              { limit: Number(e.currentTarget.value) || 0 },
-                              attribute.id
-                            )
-                          }
-                          name="limite_atrbt"
-                          className="text-sm p-3 form-control"
+                          value={attr.limit ?? 0}
+                          onChange={(e) => updateAttribute(attr.id, { limit: Number(e.target.value) || 0 })}
+                          min={0}
+                          className="w-24 px-3 py-1.5 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
                         />
                       </div>
                     )}
+                  </div>
 
-                    <div className="w-full form-group">
-                      <Label style="light">Preços</Label>
-                      <SelectDropdown
-                        name="tipo_preco"
-                        onChange={(value: any) =>
-                          updateAttribute({ priceType: value }, attribute.id)
-                        }
-                        value={attribute.priceType ?? "on"}
-                        options={[
-                          {
-                            icon: "fa-usd-circle",
-                            value: "on",
-                            name: "Incluir valores",
-                          },
-                          {
-                            icon: "fa-check",
-                            value: "off",
-                            name: "Apenas seleção",
-                          },
-                        ]}
-                      />
+                  {attr.selectType !== "text" && attr.selectType !== "image" && (
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1.5">
+                        Preços nas opções
+                      </label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => updateAttribute(attr.id, { priceType: "on" })}
+                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                            attr.priceType === "on"
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                              : "border-zinc-200 text-zinc-500 bg-white hover:border-zinc-300"
+                          }`}
+                        >
+                          Com preços
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateAttribute(attr.id, { priceType: "off" })}
+                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                            attr.priceType === "off"
+                              ? "border-zinc-400 bg-zinc-100 text-zinc-700"
+                              : "border-zinc-200 text-zinc-500 bg-white hover:border-zinc-300"
+                          }`}
+                        >
+                          Sem preços
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="pt-6">
-                    <Variations
-                      product={product}
-                      attribute={attribute}
-                      emitVariations={(param: any) =>
-                        updateAttribute({ variations: param }, attribute.id)
-                      }
-                    />
-                  </div>
+                  {(attr.selectType === "text" || attr.selectType === "image") && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-600 mb-1.5">
+                          Placeholder <span className="ml-1 text-[10px] font-normal text-zinc-400">opcional</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={(attr as any).placeholder ?? ""}
+                          onChange={(e) => updateAttribute(attr.id, { placeholder: e.target.value } as any)}
+                          placeholder={attr.selectType === "text" ? "Ex: Digite o nome aqui..." : "Ex: Envie a foto aqui..."}
+                          className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-600 mb-1.5">
+                          Taxa de personalização <span className="ml-1 text-[10px] font-normal text-zinc-400">opcional</span>
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-zinc-400">R$</span>
+                          <input
+                            type="text"
+                            value={(attr as any).customPrice ?? ""}
+                            onChange={(e) => updateAttribute(attr.id, { customPrice: realMoneyNumber(e.target.value) } as any)}
+                            placeholder="0,00"
+                            className="w-28 px-2 py-2 text-sm text-right border border-zinc-200 rounded-lg focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="bg-zinc-50 rounded-lg p-3 text-xs text-zinc-500">
+                        {attr.selectType === "text" ? (
+                          <div className="flex items-start gap-2">
+                            <Type size={14} className="mt-0.5 shrink-0" />
+                            <span>O cliente vai ver um campo de texto na página do produto. Exemplo: "Qual o nome do aniversariante?"</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            <Upload size={14} className="mt-0.5 shrink-0" />
+                            <span>O cliente vai poder enviar uma imagem na página do produto. Exemplo: "Envie a foto para o topo do bolo"</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {attr.selectType !== "text" && attr.selectType !== "image" && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-medium text-zinc-600">
+                      Opções ({varCount})
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => addVariation(attr.id)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                    >
+                      <Plus size={12} />
+                      Adicionar opção
+                    </button>
+                  </div>
+
+                  {varCount === 0 && (
+                    <div className="text-center py-6 bg-white border border-dashed border-zinc-200 rounded-lg">
+                      <p className="text-sm text-zinc-400 mb-2">Nenhuma opção adicionada</p>
+                      <button
+                        type="button"
+                        onClick={() => addVariation(attr.id)}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Adicionar primeira opção
+                      </button>
+                    </div>
+                  )}
+
+                  {varCount > 0 && (
+                    <div className="space-y-2">
+                      {(attr.variations || []).map((v: any, vi: number) => (
+                        <div key={v.id ?? vi} className="flex items-center gap-2 bg-white rounded-lg border border-zinc-200 px-3 py-2">
+                          <ImagePicker
+                            value={v.image}
+                            gallery={galleryMedia}
+                            productId={product?.id}
+                            onChange={(imgId, newMedia) => {
+                              updateVariation(attr.id, v.id, { image: imgId ?? "" });
+                              if (newMedia && !galleryMedia.find((m) => m.id === newMedia.id)) {
+                                setGalleryMedia((prev) => [...prev, newMedia]);
+                              }
+                            }}
+                          />
+                          <input
+                            type="text"
+                            value={v.title ?? ""}
+                            onChange={(e) => updateVariation(attr.id, v.id, { title: e.target.value })}
+                            placeholder="Nome da opção (ex: Sim, Não, P, M, G...)"
+                            className="flex-1 px-2 py-1 text-sm border-0 focus:ring-0 outline-none bg-transparent min-w-0"
+                          />
+                          <EmojiPicker onSelect={(emoji) => updateVariation(attr.id, v.id, { title: (v.title ?? "") + emoji })} />
+                          {attr.priceType === "on" && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-xs text-zinc-400">R$</span>
+                              <input
+                                type="text"
+                                value={v.price ?? ""}
+                                onChange={(e) => updateVariation(attr.id, v.id, { price: realMoneyNumber(e.target.value) })}
+                                placeholder="0,00"
+                                className="w-20 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                              />
+                            </div>
+                          )}
+
+                          {confirmDeleteVar === v.id ? (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteVar(null)}
+                                className="px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 bg-zinc-100 rounded"
+                              >
+                                Nao
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeVariation(attr.id, v.id)}
+                                className="px-1.5 py-0.5 text-[10px] font-medium text-white bg-red-500 rounded"
+                              >
+                                Sim
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteVar(v.id)}
+                              className="p-1 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors shrink-0"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
-        ))}
+        );
+      })}
 
-      <div className="grid pt-2">
-        <Button
-          type="button"
-          onClick={addAttribute}
-          style="btn-white"
-          className="text-sm whitespace-nowrap py-2 px-4"
-        >
-          <Icon icon="fa-plus" />
-          Add grupo
-        </Button>
-      </div>
-
-      {/* trava scroll quando modal está aberto */}
-      <style global jsx>{`
-        body,
-        html {
-          overflow-y: ${!!modalAttrStatus ? "hidden" : ""};
-        }
-      `}</style>
+      <button
+        type="button"
+        onClick={addAttribute}
+        className="w-full py-3 border-2 border-dashed border-zinc-200 hover:border-blue-300 hover:bg-blue-50/50 rounded-xl text-sm font-medium text-zinc-500 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
+      >
+        <Plus size={16} />
+        Adicionar grupo de variações
+      </button>
     </div>
   );
 }

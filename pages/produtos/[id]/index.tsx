@@ -249,12 +249,12 @@ export default function Produto({
       const index = attributes.findIndex((a) => a.id === attr.id);
       let variations = [...attributes[index].variations];
 
-      // ✅ RADIO
+      // RADIO
       if (attr.selectType === "radio") {
         variations = [value];
       }
 
-      // ✅ CHECKBOX
+      // CHECKBOX
       if (attr.selectType === "checkbox") {
         const exists = variations.find((v) => v.id === value.id);
         variations = exists
@@ -262,7 +262,7 @@ export default function Produto({
           : variations.concat(value);
       }
 
-      // ✅ QUANTITY (🔥 O QUE FALTAVA)
+      // QUANTITY
       if (attr.selectType === "quantity") {
         const existsIndex = variations.findIndex((v) => v.id === value.id);
 
@@ -278,6 +278,15 @@ export default function Produto({
           }
         } else {
           variations = variations.filter((v) => v.id !== value.id);
+        }
+      }
+
+      // TEXT / IMAGE
+      if (attr.selectType === "text" || attr.selectType === "image") {
+        if (value.value) {
+          variations = [value];
+        } else {
+          variations = [];
         }
       }
 
@@ -495,7 +504,14 @@ export default function Produto({
           (attr: any) => attr.id === attribute.id
         );
 
-        if (!selected) return false;
+        if (!selected) {
+          if (attribute.selectType === "text" || attribute.selectType === "image") return true;
+          return false;
+        }
+
+        if (attribute.selectType === "text" || attribute.selectType === "image") {
+          return true;
+        }
 
         if (attribute.selectType === "quantity") {
           return selected.variations.some((v: any) => Number(v.quantity) > 0);

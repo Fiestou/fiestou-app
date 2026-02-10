@@ -515,6 +515,16 @@ export default function Carrinho() {
                                                         )}
                                                       </div>
 
+                                                      {variation.value && typeof variation.value === "string" && (
+                                                        variation.value.startsWith("http") || variation.value.startsWith("/") || variation.value.startsWith("data:image") ? (
+                                                          <div className="ml-4 mt-1">
+                                                            <img src={variation.value} alt="" className="max-h-16 rounded border border-zinc-200 object-contain" />
+                                                          </div>
+                                                        ) : (
+                                                          <p className="ml-4 mt-0.5 text-xs text-zinc-500 italic">"{variation.value}"</p>
+                                                        )
+                                                      )}
+
                                                       {quantity > 1 && numPrice > 0 && (
                                                         <div className="flex justify-between items-center gap-2 text-xs text-zinc-500 ml-4 mt-0.5">
                                                           <span>Qtd: {quantity}</span>

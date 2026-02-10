@@ -80,7 +80,7 @@ export interface ProductType {
   fragility?: string;
   vehicle?: string;
   freeTax?: string;
-  comercialType?: string | "aluguel" | "venda";
+  comercialType?: string | "aluguel" | "venda" | "comestivel" | "servicos";
   unavailableDates?: string[];
   schedulingPeriod?: number | null;
   schedulingTax?: number;
@@ -106,6 +106,7 @@ export interface VariationProductOrderType {
   title: string;
   quantity?: number;
   price?: string | number;
+  value?: string;
   canAddToCart?: boolean;
 
 }
