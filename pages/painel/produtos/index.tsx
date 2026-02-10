@@ -1,420 +1,355 @@
-"use client";
-
 import Link from "next/link";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import Template from "@/src/template";
-import { Button } from "@/src/components/ui/form";
+import { useEffect, useState, useCallback } from "react";
+import { Plus, FileUp, Pencil, Trash2, Package } from "lucide-react";
 import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
-import { useEffect, useRef, useState, useCallback, use } from "react";
+import { moneyFormat } from "@/src/helper";
 import Img from "@/src/components/utils/ImgBase";
-import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import Filter from "@/src/components/common/filters/Filter";
+import {
+  PainelLayout,
+  PageHeader,
+  DataTable,
+  Badge,
+  EmptyState,
+  SearchInput,
+  FilterDropdown,
+} from "@/src/components/painel";
+import type { Column } from "@/src/components/painel";
 
-type ProductPage<T = any> = {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  pages: number;
-};
+export async function getServerSideProps(ctx: any) {
+  const store = ctx.req.cookies["fiestou.store"] ?? 0;
+  return {
+    props: { store },
+  };
+}
 
-export default function Produtos({ hasStore }: { hasStore: boolean }) {
+const STATUS_OPTIONS = [
+  { label: "Ativos", value: "1" },
+  { label: "Inativos", value: "0" },
+];
+
+const TYPE_OPTIONS = [
+  { label: "Aluguel", value: "aluguel" },
+  { label: "Venda", value: "venda" },
+  { label: "Comestivel", value: "comestivel" },
+  { label: "Servicos", value: "servicos" },
+];
+
+const PAGE_SIZE = 15;
+
+export default function Produtos({ store }: { store: any }) {
   const api = new Api();
 
-  const [placeholder, setPlaceholder] = useState<boolean>(true);
   const [products, setProducts] = useState<ProductType[]>([]);
-  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [selectedRows, setSelectedRows] = useState<Set<string | number>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
-  // scroll infinito
-  const [page, setPage] = useState<number>(1);
-  const [hasMore, setHasMore] = useState<boolean>(true);
-  const [loadingMore, setLoadingMore] = useState<boolean>(false);
-  const [filters, setFilters] = useState<Record<string, any>>({});
-  const observerRef = useRef<HTMLDivElement | null>(null);
-
-  // --------- Buscar produtos ---------
-  const DEFAULT_PAGE_SIZE = 20; // mesma default do backend
-
-  const fetchProducts = async (
-    params: Record<string, any>
-  ): Promise<ProductPage<ProductType>> => {
-    const normalized = {
-      search: params.busca ?? "",
-      order: params.ordem ?? "desc",
-      range: Number(params.range ?? 100),
-      colors: params.cores ?? [],
-      // envia 'category[]' e 'category' para compatibilidade com backends diferentes
-      "category[]": params["categoria[]"] ?? params.categories ?? [],
-      category: params.category ?? params["categoria[]"] ?? [],
-      page: Number(params.page ?? 1),
-      limit: Number(params.limit ?? DEFAULT_PAGE_SIZE), // garante que enviamos limit
-    };
-
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
     try {
-      if (normalized.page === 1) setPlaceholder(true);
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      params.set("page", "1");
+      params.set("limit", "200");
 
-      const queryString = new URLSearchParams(normalized as any).toString();
       const res: any = await api.bridge({
         method: "get",
-        url: "stores/products?" + queryString,
+        url: "stores/products?" + params.toString(),
       });
 
       const raw = res?.data ?? res ?? {};
-
-      const items = raw.items ?? raw.data ?? (Array.isArray(raw) ? raw : []);
-      const total = Number(raw.total ?? raw.count ?? 0);
-
-      const currentPage = Number(
-        raw.page ?? raw.current_page ?? normalized.page
-      );
-
-      const pageSize =
-        Number(
-          raw.pageSize ??
-            raw.per_page ??
-            raw.perPage ??
-            raw.limit ??
-            normalized.limit
-        ) || DEFAULT_PAGE_SIZE;
-
-      const pages =
-        Number(
-          raw.pages ??
-            raw.last_page ??
-            (total > 0
-              ? Math.ceil(total / pageSize)
-              : items.length
-              ? Math.ceil(items.length / pageSize)
-              : 1)
-        ) || 1;
-
-      return { items, total, page: currentPage, pageSize, pages };
+      const items: ProductType[] = raw.items ?? raw.data ?? (Array.isArray(raw) ? raw : []);
+      setProducts(items);
+    } catch (err) {
+      setProducts([]);
     } finally {
-      if (normalized.page === 1) setPlaceholder(false);
+      setLoading(false);
+    }
+  }, [search]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [search]);
+
+  const filteredProducts = products.filter((p) => {
+    if (statusFilter && String(p.status) !== statusFilter) return false;
+    if (typeFilter && p.comercialType !== typeFilter) return false;
+    return true;
+  });
+
+  const removeProduct = async (item: ProductType) => {
+    if (!confirm(`Remover "${item.title}"?`)) return;
+
+    try {
+      const req: any = await api.bridge({
+        method: "post",
+        url: "products/remove",
+        data: { id: item.id },
+      });
+
+      if (req?.response) {
+        const removedId = req.data ?? item.id;
+        setProducts((prev) => prev.filter((p) => p.id !== removedId));
+        setSelectedRows((prev) => {
+          const next = new Set(prev);
+          next.delete(item.id);
+          return next;
+        });
+      }
+    } catch {}
+  };
+
+  const bulkAction = async (action: "activate" | "deactivate" | "delete") => {
+    if (selectedRows.size === 0) return;
+    setBulkLoading(true);
+
+    const ids = Array.from(selectedRows);
+    try {
+      if (action === "delete") {
+        for (const id of ids) {
+          await api.bridge({
+            method: "post",
+            url: "products/remove",
+            data: { id },
+          });
+        }
+        setProducts((prev) => prev.filter((p) => !selectedRows.has(p.id)));
+      }
+      // TODO: implementar ativar/desativar em massa quando API suportar
+      setSelectedRows(new Set());
+    } catch {} finally {
+      setBulkLoading(false);
     }
   };
 
-  // --------- Quando filtro muda ---------
-  const onFilterResults = (data: ProductPage<ProductType>, params?: any) => {
-    setProducts(data.items);
-    setPage(1);
-    // usa pages quando disponível, senão confia no pageSize/items
-    setHasMore(data.page < data.pages || data.items.length === data.pageSize);
-    setPlaceholder(false);
-
-    // salva filtros e força que exista limit nos próximos requests
-    const saved = {
-      ...(params ?? {}),
-      limit: params?.limit ?? DEFAULT_PAGE_SIZE,
-    };
-    setFilters(saved);
-  };
-
-  // --------- Carregar mais produtos ---------
-  const loadMoreProducts = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-
-    const nextPage = page + 1;
-    const data = await fetchProducts({
-      ...filters,
-      page: nextPage,
-      limit: DEFAULT_PAGE_SIZE,
-    });
-
-    setProducts((prev) => [...prev, ...data.items]);
-    setPage(nextPage);
-
-    const nextHasMore =
-      data.page < data.pages || data.items.length === data.pageSize;
-
-    setHasMore(Boolean(nextHasMore));
-    setLoadingMore(false);
-  }, [page, hasMore, loadingMore, filters]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Exibe o botão se o usuário rolou mais de 400px
-      setShowScrollTop(window.scrollY > 400);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // --- Adiciona este useEffect logo após a declaração dos states ---
-  useEffect(() => {
-    if (!observerRef.current || !hasMore) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !loadingMore) {
-          loadMoreProducts();
-        }
-      },
-      { threshold: 0.5 }
+  const formatPrice = (price: number, priceSale?: number) => {
+    const hasDiscount = priceSale != null && priceSale > 0 && priceSale < price;
+    return (
+      <div className="flex flex-col">
+        {hasDiscount && (
+          <span className="text-xs text-zinc-400 line-through">
+            R$ {moneyFormat(price)}
+          </span>
+        )}
+        <span className="font-medium text-zinc-900">
+          R$ {moneyFormat(hasDiscount ? priceSale : price)}
+        </span>
+      </div>
     );
-
-    observer.observe(observerRef.current);
-    return () => observer.disconnect();
-  }, [loadingMore, hasMore, loadMoreProducts]);
-
-  // --------- Observer: detecta fim da lista ---------
-  useEffect(() => {
-    if (!observerRef.current || !hasMore) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !loadingMore) {
-          setPage((prev) => prev + 1);
-        }
-      },
-      { threshold: 0.5 } // mais sensível que 1.0
-    );
-
-    observer.observe(observerRef.current);
-    return () => observer.disconnect();
-  }, [loadingMore, hasMore]);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // --------- Remover produto ---------
-  const RemoveProduct = async (item: ProductType) => {
-    setPlaceholder(true);
+  const columns: Column<ProductType>[] = [
+    {
+      key: "gallery",
+      label: "Imagem",
+      className: "w-16",
+      render: (row) => {
+        const media = row.gallery?.[0];
+        const imgUrl = media?.base_url && media?.details?.sizes?.sm
+          ? media.base_url + media.details.sizes.sm
+          : null;
 
-    const request: any = await api.bridge({
-      method: "post",
-      url: "products/remove",
-      data: { id: item.id },
-    });
-
-    if (!!request?.response) {
-      const productId: number = request.data ?? 0;
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
-    }
-
-    setPlaceholder(false);
-  };
-
-  return (
-    <Template header={{ template: "painel", position: "solid" }}>
-      <section>
-        <div className="container-medium pt-12">
-          <div className="pb-4">
-            <Breadcrumbs
-              links={[
-                { url: "/painel", name: "Painel" },
-                { url: "/painel/produtos", name: "Produtos" },
-              ]}
-            />
-          </div>
-
-          <div className="lg:flex items-center">
-            <Link passHref href="/painel">
-              <Icon
-                icon="fa-long-arrow-left"
-                className="mr-4 lg:mr-6 text-2xl text-zinc-900"
-              />
-            </Link>
-
-            <div className="grid md:flex gap-4 items-center w-full">
-              <div className="w-fit pr-10">
-                <div className="font-title font-bold text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900">
-                  Produtos
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 w-full md:w-fit">
-                <div className="w-full grid">
-                  <Button
-                    className="whitespace-nowrap"
-                    href="/painel/produtos/novo"
-                  >
-                    Novo produto
-                  </Button>
-                </div>
-              </div>
-
-              <Filter
-                context="panel"
-                storeView
-                fetchProducts={fetchProducts}
-                onResults={(data, params) => onFilterResults(data, params)}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="pt-6">
-        <div className="container-medium pb-12">
-          <div className="border border-t-0 grid md:grid-cols-2 lg:block w-full">
-            {/* Cabeçalho */}
-            <div className="hidden lg:flex border-t bg-zinc-100 p-4 lg:p-8 gap-4 lg:gap-8 font-bold text-zinc-900 font-title">
-              <div className="w-full">Produto</div>
-              <div className="w-[32rem] max-w-[7rem]">Estoque</div>
-              <div className="w-[32rem] max-w-[8rem]">Preço</div>
-              <div className="w-[32rem] max-w-[9rem]">Exibição</div>
-              <div className="w-[32rem] max-w-[7rem]">Tipo</div>
-              <div className="w-[32rem] max-w-[7rem]">Entrega</div>
-              <div className="w-[32rem] max-w-[8rem]">Ações</div>
-            </div>
-
-            {placeholder ? (
-              [1, 2, 3, 4, 5].map((_, key) => (
-                <div key={key} className="my-4 md:my-8 px-4 md:px-8">
-                  <div className="bg-zinc-200 rounded-md animate-pulse py-10" />
-                </div>
-              ))
-            ) : products.length ? (
-              <>
-                {products.map((item, key) => (
-                  <div
-                    key={key}
-                    className="grid grid-cols-2 lg:flex border-t p-4 lg:p-8 gap-2 lg:gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 items-center"
-                  >
-                    {/* conteúdo do item */}
-                    <div className="col-span-2 w-full flex items-center gap-4">
-                      <div className="aspect-square relative overflow-hidden w-[4rem] rounded-md bg-zinc-100">
-                        {!!item?.gallery?.length ? (
-                          <Img
-                            src={
-                              item?.gallery[0]?.base_url +
-                              item?.gallery[0]?.details?.sizes["sm"]
-                            }
-                            size="xs"
-                            className="absolute object-cover h-full inset-0 w-full"
-                          />
-                        ) : (
-                          <Icon
-                            icon="fa-image"
-                            className="text-2xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-25"
-                          />
-                        )}
-                      </div>
-                      <div className="font-semibold">{item.title}</div>
-                    </div>
-
-                    <div className="w-full lg:w-[32rem] lg:max-w-[6rem] text-center">
-                      {!!item?.quantity ? (
-                        <div className="rounded-md bg-zinc-100 py-2">
-                          {item?.quantity}
-                        </div>
-                      ) : (
-                        <div className="rounded-md bg-zinc-100 py-3 px-2 text-xs whitespace-nowrap">
-                          sem estoque
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="w-full lg:w-[32rem] text-center">
-                      <div className="rounded-md bg-zinc-100">
-                        <div className="w-full py-2">R$ {item.price}</div>
-                      </div>
-                    </div>
-
-                    <div className="w-full lg:w-[32rem] text-center">
-                      <div className="rounded-md bg-zinc-100 py-2">
-                        {item.status === 1 ? "Exibindo" : "Oculto"}
-                      </div>
-                    </div>
-
-                    <div className="w-full lg:w-[32rem] text-center">
-                      <div className="rounded-md bg-zinc-100 py-2">
-                        {item?.comercialType
-                          ? item.comercialType.charAt(0).toUpperCase() +
-                            item.comercialType.slice(1)
-                          : "—"}
-                      </div>
-                    </div>
-
-                    <div className="w-full lg:w-[32rem] text-center">
-                      <div className={`rounded-md py-2 text-xs font-medium ${
-                        item?.delivery_type === 'pickup'
-                          ? 'bg-blue-100 text-blue-700'
-                          : item?.delivery_type === 'both'
-                            ? 'bg-purple-100 text-purple-700'
-                            : 'bg-green-100 text-green-700'
-                      }`}>
-                        {item?.delivery_type === 'pickup' && 'Retirada'}
-                        {item?.delivery_type === 'delivery' && 'Entrega'}
-                        {item?.delivery_type === 'both' && 'Ambos'}
-                        {!item?.delivery_type && 'Entrega'}
-                      </div>
-                    </div>
-
-                    <div className="col-span-2 w-full lg:w-[32rem] text-center grid grid-cols-3 gap-2">
-                      <Link
-                        href={`/painel/produtos/${item.id}`}
-                        className="rounded-md bg-zinc-100 hover:bg-yellow-300 ease py-2 px-3"
-                      >
-                        <Icon icon="fa-pen" type="far" />
-                      </Link>
-
-                      <div className="group relative">
-                        <button
-                          type="button"
-                          className="rounded-md bg-zinc-100 group-hover:bg-yellow-300 ease py-2 px-3"
-                        >
-                          <Icon icon="fa-trash" type="far" />
-                        </button>
-                        <input className="cursor-pointer absolute h-full w-full top-0 left-0 opacity-0" />
-                        <div className="absolute w-full bottom-0 left-0 hidden group-focus-within:block">
-                          <div className="absolute border top-0 -mt-1 left-1/2 -translate-x-1/2 flex bg-white py-2 px-4 text-sm rounded-md gap-5">
-                            <div className="cursor-pointer font-semibold text-zinc-900 bg-zinc-200 hover:bg-zinc-300 hover:text-red-600 px-4 py-2 rounded-md transition-colors duration-200">
-                              Cancelar
-                            </div>
-                            <button
-                              onClick={() => RemoveProduct(item)}
-                              className="cursor-pointer font-semibold text-zinc-900 bg-zinc-200 hover:bg-zinc-300 hover:text-green-600 px-4 py-2 rounded-md transition-colors duration-200"
-                            >
-                              Confirmar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div />
-                    </div>
-                  </div>
-                ))}
-
-                {/* Sentinela */}
-                <div
-                  ref={observerRef}
-                  className="h-12 flex items-center justify-center"
-                >
-                  {loadingMore && (
-                    <div className="text-sm text-zinc-500">
-                      Carregando mais...
-                    </div>
-                  )}
-                  {!hasMore && (
-                    <div className="text-sm text-zinc-400">
-                      Todos os produtos carregados!
-                    </div>
-                  )}
-                </div>
-              </>
+        return (
+          <div className="w-10 h-10 rounded-lg bg-zinc-100 overflow-hidden flex items-center justify-center flex-shrink-0">
+            {imgUrl ? (
+              <Img src={imgUrl} size="xs" className="w-full h-full object-cover" />
             ) : (
-              <div className="text-center px-4 py-10">
-                Não encontramos resultados para essa busca!
-              </div>
+              <Package size={18} className="text-zinc-300" />
             )}
           </div>
-          {showScrollTop && (
-            <button
-              onClick={scrollToTop}
-              className="fixed bottom-6 right-6 z-50 bg-yellow-300 text-black rounded-full p-3 shadow-lg hover:bg-yellow-400 transition-all duration-200"
-              aria-label="Voltar ao topo"
-            >
-              <Icon icon="fa-arrow-up" type="fas" className="text-lg" />
-            </button>
+        );
+      },
+    },
+    {
+      key: "title",
+      label: "Nome",
+      sortable: true,
+      render: (row) => (
+        <div>
+          <p className="font-medium text-zinc-900 truncate max-w-[200px]">{row.title}</p>
+          {row.subtitle && (
+            <p className="text-xs text-zinc-400 truncate max-w-[200px]">{row.subtitle}</p>
           )}
         </div>
-      </section>
-    </Template>
+      ),
+    },
+    {
+      key: "price",
+      label: "Preço",
+      sortable: true,
+      render: (row) => formatPrice(row.price, row.priceSale),
+    },
+    {
+      key: "quantity",
+      label: "Estoque",
+      sortable: true,
+      className: "w-24",
+      render: (row) => (
+        <span className={`text-sm ${row.quantity ? "text-zinc-700" : "text-red-500"}`}>
+          {row.quantity ?? 0}
+        </span>
+      ),
+    },
+    {
+      key: "comercialType",
+      label: "Tipo",
+      className: "w-28",
+      render: (row) => {
+        if (!row.comercialType) return <span className="text-zinc-300">-</span>;
+        const typeMap: Record<string, { label: string; variant: string }> = {
+          aluguel: { label: "Aluguel", variant: "info" },
+          venda: { label: "Venda", variant: "success" },
+          comestivel: { label: "Comestivel", variant: "warning" },
+          servicos: { label: "Servicos", variant: "neutral" },
+        };
+        const t = typeMap[row.comercialType] || { label: row.comercialType, variant: "neutral" };
+        return <Badge variant={t.variant as any}>{t.label}</Badge>;
+      },
+    },
+    {
+      key: "status",
+      label: "Status",
+      className: "w-28",
+      render: (row) => (
+        <Badge variant={Number(row.status) === 1 ? "success" : "danger"} dot>
+          {Number(row.status) === 1 ? "Ativo" : "Inativo"}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Acoes",
+      className: "w-28",
+      render: (row) => (
+        <div className="flex items-center gap-1">
+          <Link
+            href={`/painel/produtos/${row.id}`}
+            className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-700 transition-colors"
+          >
+            <Pencil size={15} />
+          </Link>
+          <button
+            onClick={() => removeProduct(row)}
+            className="p-2 rounded-lg hover:bg-red-50 text-zinc-500 hover:text-red-600 transition-colors"
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <PainelLayout>
+      <PageHeader
+        title="Produtos"
+        description="Gerencie seu catalogo de produtos"
+        actions={
+          <>
+            <Link href="/painel/produtos/importar" className="bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2">
+              <FileUp size={16} />
+              Importar
+            </Link>
+            <Link
+              href="/painel/produtos/novo"
+              className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <Plus size={16} />
+              Novo Produto
+            </Link>
+          </>
+        }
+      />
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white p-4 rounded-xl border border-zinc-200 mb-4">
+        <SearchInput
+          placeholder="Buscar produtos..."
+          value={search}
+          onChange={setSearch}
+          className="w-full sm:w-72"
+        />
+        <FilterDropdown
+          label="Status"
+          options={STATUS_OPTIONS}
+          value={statusFilter}
+          onChange={setStatusFilter}
+        />
+        <FilterDropdown
+          label="Tipo"
+          options={TYPE_OPTIONS}
+          value={typeFilter}
+          onChange={setTypeFilter}
+        />
+      </div>
+
+      {selectedRows.size > 0 && (
+        <div className="flex items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 mb-4">
+          <span className="text-sm font-medium text-zinc-700">
+            {selectedRows.size} selecionado{selectedRows.size > 1 ? "s" : ""}
+          </span>
+          <div className="h-4 w-px bg-zinc-300" />
+          <button
+            onClick={() => bulkAction("activate")}
+            disabled={bulkLoading}
+            className="text-sm text-emerald-700 hover:text-emerald-800 font-medium disabled:opacity-50"
+          >
+            Ativar
+          </button>
+          <button
+            onClick={() => bulkAction("deactivate")}
+            disabled={bulkLoading}
+            className="text-sm text-amber-700 hover:text-amber-800 font-medium disabled:opacity-50"
+          >
+            Desativar
+          </button>
+          <button
+            onClick={() => bulkAction("delete")}
+            disabled={bulkLoading}
+            className="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
+          >
+            Excluir
+          </button>
+        </div>
+      )}
+
+      {!loading && filteredProducts.length === 0 ? (
+        <div className="bg-white rounded-xl border border-zinc-200">
+          <EmptyState
+            icon={<Package size={32} />}
+            title="Nenhum produto encontrado"
+            description={search || statusFilter || typeFilter
+              ? "Tente ajustar os filtros ou a busca"
+              : "Adicione seu primeiro produto para comecar"}
+            action={
+              !search && !statusFilter && !typeFilter ? (
+                <Link
+                  href="/painel/produtos/novo"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg px-4 py-2 text-sm font-medium transition-colors inline-flex items-center gap-2"
+                >
+                  <Plus size={16} />
+                  Novo Produto
+                </Link>
+              ) : undefined
+            }
+          />
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredProducts}
+          keyField="id"
+          selectable
+          selectedRows={selectedRows}
+          onSelectionChange={setSelectedRows}
+          pageSize={PAGE_SIZE}
+          loading={loading}
+          emptyMessage="Nenhum produto encontrado"
+        />
+      )}
+    </PainelLayout>
   );
 }
