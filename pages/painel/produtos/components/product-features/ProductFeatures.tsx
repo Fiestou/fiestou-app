@@ -58,13 +58,11 @@ const ProductFeatures: React.FC<ProductFeaturesProps> = ({
     [];
 
   return (
-    <div className="border-t pt-4 pb-2">
-      <h4 className="text-2xl text-zinc-900 pb-6">Características</h4>
-
+    <div>
       <div className="grid gap-8">
         {/* Cores */}
         <div>
-          <Label>Cor</Label>
+          <Label>Cor <span className="ml-1 text-[10px] font-normal text-zinc-400">opcional</span></Label>
           <Colors value={colors} onChange={handleColorsChange} maxSelect={3} />
           <div className="text-sm text-zinc-400 whitespace-nowrap">
             {colors?.length} de 3
@@ -74,7 +72,7 @@ const ProductFeatures: React.FC<ProductFeaturesProps> = ({
         {/* Tags */}
         <div>
           <div className="flex items-center">
-            <Label>Adicionar Tag</Label>
+            <Label>Adicionar Tag <span className="ml-1 text-[10px] font-normal text-zinc-400">opcional</span></Label>
             <div className="text-xs pt-1 pl-2">(máx 6 tags)</div>
           </div>
 

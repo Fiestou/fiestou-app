@@ -22,7 +22,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({
   handleData,
 }) => {
   return (
-    <div className="border-t pt-4 pb-2">
+    <div>
       <div className="form-group">
         <Gallery
           product={data?.id}

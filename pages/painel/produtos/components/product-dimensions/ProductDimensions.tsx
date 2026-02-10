@@ -1,7 +1,4 @@
-"use client";
-
 import React from "react";
-import { Label } from "@/src/components/ui/form";
 import { decimalNumber } from "@/src/helper";
 
 interface ProductType {
@@ -16,75 +13,74 @@ interface ProductDimensionsProps {
   handleData: (updated: Partial<ProductType>) => void;
 }
 
+function DimensionInput({
+  label,
+  value,
+  unit,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: any;
+  unit: string;
+  placeholder: string;
+  onChange: (val: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-zinc-700 mb-1.5">{label} <span className="ml-1 text-[10px] font-normal text-zinc-400">opcional</span></label>
+      <div className="relative">
+        <input
+          type="text"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-3 py-2.5 pr-10 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 font-medium">
+          {unit}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const ProductDimensions: React.FC<ProductDimensionsProps> = ({
   data,
   handleData,
 }) => {
   return (
-    <div className="border-t pt-4 pb-2">
-      <h4 className="text-2xl text-zinc-900 mb-2">Peso e dimensões</h4>
-      <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
-        {/* Peso */}
-        <div className="form-group">
-          <Label>Peso</Label>
-          <input
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleData({ weight: e.target.value })
-            }
-            value={data?.weight ?? ""}
-            type="text"
-            name="peso"
-            placeholder="0.00 (kg)"
-            className="form-control"
-          />
-        </div>
-
-        {/* Comprimento */}
-        <div className="form-group">
-          <Label>Comprimento</Label>
-          <input
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleData({ length: decimalNumber(e.target.value) })
-            }
-            value={data?.length ?? ""}
-            type="text"
-            name="comprimento"
-            placeholder="0.00 (m)"
-            className="form-control"
-          />
-        </div>
-
-        {/* Largura */}
-        <div className="form-group">
-          <Label>Largura</Label>
-          <input
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleData({ width: decimalNumber(e.target.value) })
-            }
-            value={data?.width ?? ""}
-            type="text"
-            name="largura"
-            placeholder="0.00 (m)"
-            className="form-control"
-          />
-        </div>
-
-        {/* Altura */}
-        <div className="form-group">
-          <Label>Altura</Label>
-          <input
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleData({ height: decimalNumber(e.target.value) })
-            }
-            value={data?.height ?? ""}
-            type="text"
-            name="altura"
-            placeholder="0.00 (m)"
-            className="form-control"
-          />
-        </div>
-      </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <DimensionInput
+        label="Peso"
+        value={data?.weight}
+        unit="kg"
+        placeholder="0.00"
+        onChange={(v) => handleData({ weight: v })}
+      />
+      <DimensionInput
+        label="Comprimento"
+        value={data?.length}
+        unit="cm"
+        placeholder="0.00"
+        onChange={(v) => handleData({ length: decimalNumber(v) })}
+      />
+      <DimensionInput
+        label="Largura"
+        value={data?.width}
+        unit="cm"
+        placeholder="0.00"
+        onChange={(v) => handleData({ width: decimalNumber(v) })}
+      />
+      <DimensionInput
+        label="Altura"
+        value={data?.height}
+        unit="cm"
+        placeholder="0.00"
+        onChange={(v) => handleData({ height: decimalNumber(v) })}
+      />
     </div>
   );
 };
+
 export default ProductDimensions;

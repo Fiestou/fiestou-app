@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { slugfy } from "@/src/helper";
 
@@ -20,63 +18,69 @@ export const NameAndDescription: React.FC<NameAndDescriptionProps> = ({
   data,
   handleData,
 }) => {
+  const titleLen = (data?.title || "").length;
+  const descLen = (data?.description || "").length;
+
   return (
-    <div className="border-t pt-4 pb-2">
-      <h4 className="text-2xl text-zinc-900 mb-2">Nome e descrição</h4>
-
-      <div className="grid gap-2">
-        {/* Título e Slug */}
-        <div className="form-group">
-          <label className="block text-sm font-medium mb-1">Título</label>
-          <input
-            type="text"
-            name="title"
-            onChange={(e) => handleData({ title: e.target.value })}
-            value={data?.title ?? ""}
-            required
-            placeholder="Digite o nome do produto"
-            className="form-control"
-          />
-
-          <input
-            type="text"
-            name="slug"
-            onChange={(e) => handleData({ slug: slugfy(e.target.value) })}
-            value={slugfy(data?.slug ?? data?.title ?? "")}
-            required
-            placeholder="Configure a slug para o link"
-            className="mt-2 text-sm p-2 rounded-md bg-zinc-100 border-0 w-full"
-          />
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+          Título do produto <span className="ml-1.5 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
+        </label>
+        <input
+          type="text"
+          onChange={(e) => handleData({ title: e.target.value })}
+          value={data?.title ?? ""}
+          required
+          placeholder="Ex: Kit Decoração Frozen"
+          className="w-full px-3 py-2.5 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
+        />
+        <div className="flex items-center justify-between mt-1.5">
+          <div className="text-xs text-zinc-400">
+            fiestou.com.br/produtos/<span className="text-zinc-600">{slugfy(data?.slug ?? data?.title ?? "")  || "..."}</span>
+          </div>
+          <span className={`text-xs ${titleLen > 80 ? "text-red-400" : "text-zinc-400"}`}>
+            {titleLen}/80
+          </span>
         </div>
+        <input
+          type="hidden"
+          name="slug"
+          value={slugfy(data?.slug ?? data?.title ?? "")}
+        />
+      </div>
 
-        {/* Subtítulo */}
-        <div className="form-group">
-          <label className="block text-sm font-medium mb-1">Subtítulo</label>
-          <input
-            type="text"
-            name="subtitle"
-            onChange={(e) => handleData({ subtitle: e.target.value })}
-            value={data?.subtitle ?? ""}
-            required
-            placeholder="Digite o subtítulo do produto"
-            className="form-control"
-          />
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-zinc-700 mb-1.5">Subtítulo <span className="ml-1 text-[10px] font-normal text-zinc-400">opcional</span></label>
+        <input
+          type="text"
+          onChange={(e) => handleData({ subtitle: e.target.value })}
+          value={data?.subtitle ?? ""}
+          placeholder="Uma frase curta que descreve o produto"
+          className="w-full px-3 py-2.5 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
+        />
+      </div>
 
-        {/* Descrição */}
-        <div className="form-group">
-          <label className="block text-sm font-medium mb-1">Descrição</label>
-          <textarea
-            name="description"
-            onChange={(e) => handleData({ description: e.target.value })}
-            value={data?.description ?? ""}
-            required
-            placeholder="Adicione a descrição detalhada do produto"
-            className="w-full p-2 border rounded-md resize-y min-h-[100px]"
-          />
+      <div>
+        <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+          Descrição <span className="ml-1.5 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
+        </label>
+        <textarea
+          onChange={(e) => handleData({ description: e.target.value })}
+          value={data?.description ?? ""}
+          required
+          placeholder="Descreva o produto em detalhes: o que inclui, tamanhos, materiais..."
+          className="w-full px-3 py-2.5 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all resize-y min-h-[120px]"
+          rows={4}
+        />
+        <div className="flex justify-end mt-1">
+          <span className={`text-xs ${descLen > 500 ? "text-amber-500" : "text-zinc-400"}`}>
+            {descLen} caracteres
+          </span>
         </div>
       </div>
     </div>
   );
 };
+
 export default NameAndDescription;

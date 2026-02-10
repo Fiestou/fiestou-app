@@ -15,8 +15,8 @@ const VisibilitySection: React.FC<VisibilitySectionProps> = ({
   handleData,
 }) => {
   return (
-    <div className="border-t pt-2 pb-2">
-      <div className="grid gap-2">
+    <div>
+      <div className="grid gap-4">
         <div className="form-group">
           <Label>Exibir na minha loja</Label>
           <Select
