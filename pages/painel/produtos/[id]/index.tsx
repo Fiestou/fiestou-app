@@ -1,22 +1,33 @@
-"use client";
-
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
 import axios from "axios";
+import {
+  FileText,
+  Image,
+  DollarSign,
+  Package,
+  Layers,
+  Palette,
+  Truck,
+  Link2,
+  ArrowLeft,
+  ExternalLink,
+  Loader2,
+  CheckCircle2,
+  Save,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
-import Template from "@/src/template";
-import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import HelpCard from "@/src/components/common/HelpCard";
-import { Button } from "@/src/components/ui/form";
-import Icon from "@/src/icons/fontAwesome/FIcon";
 import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
 import { RelationType } from "@/src/models/relation";
 import { Variable } from "@/src/components/pages/painel/produtos/produto";
 import { getStore } from "@/src/contexts/AuthContext";
 import CategorieCreateProdutct from "@/src/components/common/createProduct/categorieCreateProdutct";
+import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
 
 import NameAndDescription from "../components/name-and-description/NameAndDescriptionProps";
 import ProductGallery from "../components/product-image/ProductGalleryProps";
@@ -27,9 +38,34 @@ import UnavailablePeriods from "../components/unavailable-periods/UnavailablePer
 import ProductDimensions from "../components/product-dimensions/ProductDimensions";
 import ProductFeatures from "../components/product-features/ProductFeatures";
 import TransportSection from "../components/transport-section/TransportSection";
-import VisibilitySection from "../components/visibility-section/VisibilitySection";
-import PblalvoCreateProdutct from "@/src/components/common/createProduct/PblalvoCreateProdutct ";
 import ProductBundle from "@/src/components/pages/painel/produtos/product-bundle/ProductBundle";
+import { PainelLayout, PageHeader } from "@/src/components/painel";
+
+function SectionCard({
+  icon,
+  title,
+  iconColor = "bg-zinc-100 text-zinc-600",
+  children,
+  className = "",
+}: {
+  icon: React.ReactNode;
+  title: string;
+  iconColor?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`bg-white rounded-xl border border-zinc-200 shadow-sm ${className}`}>
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconColor}`}>
+          {icon}
+        </div>
+        <h3 className="text-base font-semibold text-zinc-900">{title}</h3>
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  );
+}
 
 const formInitial = {
   sended: false,
@@ -42,7 +78,6 @@ export default function CreateProduct() {
   const { id } = router.query;
   const api = new Api();
 
-  const [content, setContent] = useState<any>({});
   const [loadingContent, setLoadingContent] = useState(true);
   const [subimitStatus, setSubimitStatus] = useState("");
   const [placeholder, setPlaceholder] = useState(true);
@@ -53,7 +88,6 @@ export default function CreateProduct() {
     suggestions: true,
     status: 1,
   } as ProductType);
-  const [product, setProduct] = useState({} as ProductType);
 
   const parseRealMoneyNumber = (value: string): number => {
     if (!value) return 0;
@@ -147,15 +181,6 @@ export default function CreateProduct() {
       ? data.combinations.map((c: any) => Number(c?.id)).filter(Boolean)
       : [];
 
-    let attributesJson: string = "[]";
-    if (data.attributes && typeof data.attributes !== "string") {
-      try {
-        attributesJson = JSON.stringify(data.attributes);
-      } catch {
-        attributesJson = "[]";
-      }
-    }
-
     const payload: any = {
       ...data,
       attributes: data.attributes,
@@ -165,13 +190,8 @@ export default function CreateProduct() {
       status: data?.status ?? 1,
     };
 
-    // Ensure numeric fields are properly typed
-    if (data.id) {
-      payload.id = Number(data.id);
-    }
-    if (data.store) {
-      payload.store = Number(data.store);
-    }
+    if (data.id) payload.id = Number(data.id);
+    if (data.store) payload.store = Number(data.store);
 
     return sanitize(payload);
   };
@@ -224,7 +244,6 @@ export default function CreateProduct() {
           handle.suggestions === true ||
           handle.suggestions === "true";
 
-    setProduct({ ...handle, suggestions });
     setData({ ...handle, color: handle.color, suggestions });
 
     setColors(
@@ -243,29 +262,7 @@ export default function CreateProduct() {
       return;
     }
 
-    (async () => {
-      try {
-        setLoadingContent(true);
-        const request: any = await api.call({
-          method: "post",
-          url: "request/graph",
-          data: [
-            {
-              model: "page",
-              filter: [{ key: "slug", value: "product", compare: "=" }],
-            },
-          ],
-        });
-
-        const pages = request?.data?.query?.page ?? [];
-        setContent(pages[0] ?? {});
-      } catch (err) {
-        console.error("Erro carregando conteúdo:", err);
-      } finally {
-        setLoadingContent(false);
-      }
-    })();
-
+    setLoadingContent(false);
     getProduct();
   }, [id]);
 
@@ -308,173 +305,249 @@ export default function CreateProduct() {
     }
   };
 
-  if (loadingContent)
-    return <div className="container-medium py-6">Carregando...</div>;
+  const isEditing = !!data?.id;
+  const pageTitle = isEditing ? `Editar: ${data?.title || "Produto"}` : "Novo Produto";
+
+  if (loadingContent) {
+    return (
+      <PainelLayout>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="animate-spin text-zinc-400" size={32} />
+        </div>
+      </PainelLayout>
+    );
+  }
 
   return (
-    <Template
-      header={{ template: "painel", position: "solid" }}
-      footer={{ template: "clean" }}
-    >
-      <section className="container-medium py-6 lg:py-12">
-        <div className="flex justify-between pb-4">
-          <Breadcrumbs
-            links={[
-              { url: "/painel", name: "Painel" },
-              { url: "/painel/produtos", name: "Produtos" },
-            ]}
-          />
-          {!!data?.id && (
+    <PainelLayout>
+      <PageHeader
+        title={pageTitle}
+        description={isEditing ? "Altere as informações do seu produto" : "Preencha os dados para criar um novo produto"}
+        actions={
+          <div className="flex items-center gap-3">
+            {isEditing && data?.slug && (
+              <Link
+                href={`/produtos/${data.slug}`}
+                target="_blank"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-600 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
+              >
+                <ExternalLink size={16} />
+                Ver produto
+              </Link>
+            )}
             <Link
-              href={`/produtos/${data.slug}`}
-              target="_blank"
-              className="flex items-center gap-2 font-semibold hover:text-zinc-950"
+              href="/painel/produtos"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-600 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
             >
-              Acessar produto
-              <Icon icon="fa-link" className="text-xs mt-1" />
+              <ArrowLeft size={16} />
+              Voltar
             </Link>
-          )}
-        </div>
-
-        <div className="flex items-center">
-          <Link passHref href="/painel/produtos">
-            <Icon
-              icon="fa-long-arrow-left"
-              className="mr-4 md:mr-6 text-2xl text-zinc-900"
-            />
-          </Link>
-          <div className="font-title font-bold text-2xl md:text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-            {data?.id ? (
-              <>
-                Editar:{" "}
-                <span
-                  style={{
-                    color: data?.color || "#000000",
-                  }}
-                >
-                  {data?.title || "Produto"}
-                </span>
-              </>
-            ) : (
-              "Adicionar novo produto"
-            )}
           </div>
-        </div>
-      </section>
+        }
+      />
 
-      <section className="container-medium pb-12">
-        <form onSubmit={handleSubmit} method="POST">
-          <div className="grid lg:flex items-start gap-10 lg:gap-20">
-            {placeholder ? (
-              <div className="w-full grid gap-4 cursor-wait">
-                {[1, 2, 3, 4, 5, 6].map((key) => (
-                  <div
-                    key={key}
-                    className="bg-zinc-200 rounded-md animate-pulse py-8"
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="w-full grid gap-8">
-                <div className="grid gap-6">
-                  <NameAndDescription
-                    data={data}
-                    handleData={(updated) =>
-                      setData((prev) => ({ ...prev, ...updated }))
+      <form onSubmit={handleSubmit}>
+        {placeholder ? (
+          <div className="grid gap-4">
+            {[1, 2, 3, 4, 5].map((key) => (
+              <div
+                key={key}
+                className="bg-white rounded-xl border border-zinc-200 animate-pulse h-32"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-5">
+            <SectionCard
+              icon={<FileText size={18} />}
+              title="Informações Básicas"
+              iconColor="bg-cyan-50 text-cyan-600"
+            >
+              <NameAndDescription
+                data={data}
+                handleData={(updated) =>
+                  setData((prev) => ({ ...prev, ...updated }))
+                }
+              />
+              <div className="mt-4 pt-4 border-t border-zinc-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-zinc-700">
+                    {data?.status === 1 || data?.status === undefined ? (
+                      <Eye size={16} className="text-emerald-500" />
+                    ) : (
+                      <EyeOff size={16} className="text-zinc-400" />
+                    )}
+                    Visibilidade
+                  </div>
+                  <select
+                    value={data?.status ?? 1}
+                    onChange={(e) =>
+                      setData((prev) => ({ ...prev, status: Number(e.target.value) }))
                     }
-                  />
-                  <ProductGallery data={data} handleData={handleData} />
-                  <ProductPrice data={data} handleData={handleData} />
+                    className="text-sm border border-zinc-200 rounded-lg px-3 py-1.5 bg-white"
+                  >
+                    <option value={1}>Visível na loja</option>
+                    <option value={-1}>Oculto</option>
+                  </select>
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              icon={<Image size={18} />}
+              title="Imagens do Produto"
+              iconColor="bg-yellow-50 text-yellow-600"
+            >
+              <ProductGallery data={data} handleData={handleData} />
+            </SectionCard>
+
+            <div className="grid lg:grid-cols-2 gap-5">
+              <SectionCard
+                icon={<DollarSign size={18} />}
+                title="Preço"
+                iconColor="bg-emerald-50 text-emerald-600"
+              >
+                <ProductPrice data={data} handleData={handleData} />
+                <div className="mt-4">
                   <ProductCommercialType data={data} handleData={handleData} />
-                  <Variable
-                    product={data}
-                    emitAttributes={(param) =>
-                      handleData({ attributes: param })
-                    }
-                  />
-                  <ProductStock
-                    data={data}
-                    handleData={(updated) =>
-                      setData((prev) => ({ ...prev, ...updated }))
-                    }
-                  />
-                  <UnavailablePeriods data={data} handleData={handleData} />
-                  <ProductDimensions data={data} handleData={handleData} />
-                  <ProductFeatures data={data} handleData={handleData} />
-                  <PblalvoCreateProdutct
-                    value={coerceIds(data?.category ?? [])}
-                    onToggle={(id: number, selected: boolean) => {
-                      setData((prev) => {
-                        const prevCat = coerceIds(prev?.category ?? []);
-                        const s = new Set(prevCat.map(String));
-                        selected ? s.add(String(id)) : s.delete(String(id));
-                        return { ...prev, category: Array.from(s) };
-                      });
-                    }}
-                  />
-                  <CategorieCreateProdutct
-                    value={data?.category ?? []}
-                    onRemove={(id) =>
-                      setData((prev) => {
-                        const curr = (
-                          Array.isArray(prev?.category) ? prev.category : []
-                        )
-                          .map(Number)
-                          .filter(Number.isFinite);
-                        const next = curr.filter((x) => x !== Number(id));
-                        return curr.length === next.length
-                          ? prev
-                          : { ...prev, category: next };
-                      })
-                    }
-                    onChange={(ids) =>
-                      setData((prev) => ({ ...prev, category: ids }))
-                    }
-                  />
-                  <ProductBundle
-                    data={data}
-                    handleData={handleData}
-                    productsFind={productsFind}
-                    SearchProducts={SearchProducts}
-                  />
-                  <TransportSection
-                    data={data}
-                    handleData={handleData}
-                    realMoneyNumber={formatRealMoney}
-                  />
-                  <VisibilitySection data={data} handleData={handleData} />
                 </div>
+              </SectionCard>
 
-                <div className="flex items-center gap-4">
-                  <div className="w-full ">
-                    <Link
-                      passHref
-                      href="/painel/produtos/"
-                      className="border border-red-500 py-4 px-[26px] rounded-[7px] bg-red-500 text-white hover:bg-red-600 transition duration-300"
-                    >
-                      Cancelar
-                    </Link>
-                  </div>
-                  <div>
-                    <Button loading={form.loading} className="px-10">
-                      Salvar
-                    </Button>
-                  </div>
-                </div>
+              <SectionCard
+                icon={<Package size={18} />}
+                title="Estoque"
+                iconColor="bg-purple-50 text-purple-600"
+              >
+                <ProductStock
+                  data={data}
+                  handleData={(updated) =>
+                    setData((prev) => ({ ...prev, ...updated }))
+                  }
+                />
+              </SectionCard>
+            </div>
+
+            <SectionCard
+              icon={<Layers size={18} />}
+              title="Variações e Adicionais"
+              iconColor="bg-blue-50 text-blue-600"
+            >
+              <Variable
+                product={data}
+                emitAttributes={(param) =>
+                  handleData({ attributes: param })
+                }
+              />
+            </SectionCard>
+
+            <SectionCard
+              icon={<Palette size={18} />}
+              title="Características"
+              iconColor="bg-orange-50 text-orange-600"
+            >
+              <ProductFeatures data={data} handleData={handleData} />
+
+              <div className="mt-6 pt-4 border-t border-zinc-100">
+                <PblalvoCreateProdutct
+                  value={coerceIds(data?.category ?? [])}
+                  onToggle={(id: number, selected: boolean) => {
+                    setData((prev) => {
+                      const prevCat = coerceIds(prev?.category ?? []);
+                      const s = new Set(prevCat.map(String));
+                      selected ? s.add(String(id)) : s.delete(String(id));
+                      return { ...prev, category: Array.from(s) };
+                    });
+                  }}
+                />
               </div>
-            )}
 
-            <div className="w-full md:max-w-[18rem] lg:max-w-[24rem]">
-              <HelpCard list={content.help_list} />
+              <div className="mt-6 pt-4 border-t border-zinc-100">
+                <CategorieCreateProdutct
+                  value={data?.category ?? []}
+                  onRemove={(id) =>
+                    setData((prev) => {
+                      const curr = (
+                        Array.isArray(prev?.category) ? prev.category : []
+                      )
+                        .map(Number)
+                        .filter(Number.isFinite);
+                      const next = curr.filter((x) => x !== Number(id));
+                      return curr.length === next.length
+                        ? prev
+                        : { ...prev, category: next };
+                    })
+                  }
+                  onChange={(ids) =>
+                    setData((prev) => ({ ...prev, category: ids }))
+                  }
+                />
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              icon={<Truck size={18} />}
+              title="Logística e Transporte"
+              iconColor="bg-slate-100 text-slate-600"
+            >
+              <ProductDimensions data={data} handleData={handleData} />
+              <div className="mt-4">
+                <TransportSection
+                  data={data}
+                  handleData={handleData}
+                  realMoneyNumber={formatRealMoney}
+                />
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              icon={<Layers size={18} />}
+              title="Períodos de Indisponibilidade"
+              iconColor="bg-red-50 text-red-600"
+            >
+              <UnavailablePeriods data={data} handleData={handleData} productId={data.id} />
+            </SectionCard>
+
+            <SectionCard
+              icon={<Link2 size={18} />}
+              title="Venda Combinada"
+              iconColor="bg-teal-50 text-teal-600"
+            >
+              <ProductBundle
+                data={data}
+                handleData={handleData}
+                productsFind={productsFind}
+                SearchProducts={SearchProducts}
+              />
+            </SectionCard>
+
+            <div className="sticky bottom-0 z-20 bg-white border border-zinc-200 rounded-xl shadow-lg p-4 flex items-center justify-between">
+              <Link
+                href="/painel/produtos"
+                className="px-6 py-2.5 text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
+              >
+                Cancelar
+              </Link>
+              <button
+                type="submit"
+                disabled={form.loading}
+                className="inline-flex items-center gap-2 px-8 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-sm rounded-lg transition-colors disabled:opacity-50"
+              >
+                {form.loading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Save size={16} />
+                )}
+                {form.loading ? "Salvando..." : "Salvar Produto"}
+              </button>
             </div>
           </div>
-        </form>
-      </section>
+        )}
+      </form>
 
       {form.loading && (
-        <div className="fixed inset-0 bg-white flex justify-center items-center">
-          <div className="grid text-center gap-4">
-            <div className="text-zinc-900">
+        <div className="fixed inset-0 z-[100] bg-white/90 backdrop-blur-sm flex justify-center items-center">
+          <div className="text-center space-y-4">
+            <div className="text-lg font-medium text-zinc-800">
               {subimitStatus === "upload_images"
                 ? "Enviando imagens..."
                 : subimitStatus === "register_content"
@@ -483,21 +556,22 @@ export default function CreateProduct() {
                 ? "Limpando cache..."
                 : subimitStatus === "register_complete"
                 ? "Salvo com sucesso!"
+                : subimitStatus === "register_failed"
+                ? "Erro ao salvar"
                 : ""}
             </div>
-            <div className="text-2xl">
+            <div>
               {subimitStatus === "register_complete" ? (
-                <Icon icon="fa-check-circle" className="text-green-500" />
+                <CheckCircle2 size={40} className="text-emerald-500 mx-auto" />
+              ) : subimitStatus === "register_failed" ? (
+                <div className="text-red-500 text-sm">Tente novamente</div>
               ) : (
-                <Icon
-                  icon="fa-spinner-third"
-                  className="animate-spin text-yellow-500"
-                />
+                <Loader2 size={40} className="animate-spin text-yellow-500 mx-auto" />
               )}
             </div>
           </div>
         </div>
       )}
-    </Template>
+    </PainelLayout>
   );
 }
