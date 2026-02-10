@@ -1,171 +1,282 @@
 import Link from "next/link";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import Template from "@/src/template";
-import { Button } from "@/src/components/ui/form";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { ShoppingBag, Eye, SlidersHorizontal, X } from "lucide-react";
 import { getExtenseData, moneyFormat } from "@/src/helper";
-import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { OrderStatusBadge } from "@/src/components/order";
-import { useEffect, useState } from "react";
-import { getMyOrders } from "@/src/services/order";
+import { getMyOrders, OrderFilters } from "@/src/services/order";
+import {
+  PainelLayout,
+  PageHeader,
+  DataTable,
+  EmptyState,
+  SearchInput,
+  FilterDropdown,
+} from "@/src/components/painel";
+import type { Column } from "@/src/components/painel";
+
+const STATUS_OPTIONS = [
+  { label: "Em aberto", value: "0" },
+  { label: "Pago", value: "1" },
+  { label: "Cancelado", value: "-1" },
+];
 
 export default function Pedidos() {
   const [orders, setOrders] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const debounceRef = useRef<any>(null);
+
+  const fetchOrders = useCallback(async (filters: OrderFilters = {}) => {
+    setLoading(true);
+    try {
+      const data = await getMyOrders(filters);
+      setOrders(Array.isArray(data) ? data : []);
+    } catch {
+      setOrders([]);
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const data = await getMyOrders();
-        setOrders(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Erro ao buscar pedidos:", error);
-        setOrders([]);
-      }
-      setLoading(false);
-    };
     fetchOrders();
   }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const filters: OrderFilters = {};
+      if (statusFilter) filters.status = statusFilter;
+      if (search) filters.search = search;
+      if (dateFrom) filters.date_from = dateFrom;
+      if (dateTo) filters.date_to = dateTo;
+      if (priceMin) filters.price_min = priceMin;
+      if (priceMax) filters.price_max = priceMax;
+      fetchOrders(filters);
+    }, 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [search, statusFilter, dateFrom, dateTo, priceMin, priceMax]);
+
+  const activeFilterCount = [statusFilter, dateFrom, dateTo, priceMin, priceMax].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setStatusFilter("");
+    setDateFrom("");
+    setDateTo("");
+    setPriceMin("");
+    setPriceMax("");
+    setSearch("");
+  };
+
+  const columns: Column<any>[] = [
+    {
+      key: "id",
+      label: "Pedido",
+      sortable: true,
+      className: "w-24",
+      render: (row) => (
+        <span className="font-medium text-zinc-900">
+          #{row.mainOrderId || row.id}
+          {row.ordersCount > 1 && (
+            <span className="text-xs text-zinc-400 ml-1">(+{row.ordersCount - 1})</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "createdAt",
+      label: "Data",
+      sortable: true,
+      render: (row) => (
+        <span className="text-sm text-zinc-600">
+          {getExtenseData(row.createdAt || row.created_at)}
+        </span>
+      ),
+    },
+    {
+      key: "customer",
+      label: "Cliente",
+      render: (row) => {
+        const name = row.customer?.name || row.user?.name;
+        const email = row.customer?.email || row.user?.email;
+        return (
+          <div>
+            <p className="font-medium text-zinc-900 truncate max-w-[180px]">{name}</p>
+            {email && <p className="text-xs text-zinc-400 truncate max-w-[180px]">{email}</p>}
+          </div>
+        );
+      },
+    },
+    {
+      key: "total",
+      label: "Total",
+      sortable: true,
+      className: "w-32",
+      render: (row) => (
+        <span className="font-semibold text-zinc-900">R$ {moneyFormat(row.total)}</span>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      className: "w-36",
+      render: (row) => (
+        <OrderStatusBadge
+          status={row.status}
+          metadataStatus={row.metadata?.status}
+          paymentStatus={row.metadata?.payment_status}
+          paidAt={row.metadata?.paid_at}
+          statusText={row.statusText}
+        />
+      ),
+    },
+    {
+      key: "actions",
+      label: "Acoes",
+      className: "w-28",
+      render: (row) => (
+        <Link
+          href={`/painel/pedidos/${row.mainOrderId || row.id}`}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
+        >
+          <Eye size={14} />
+          Detalhes
+        </Link>
+      ),
+    },
+  ];
+
   return (
-    <Template
-      header={{
-        template: "painel",
-        position: "solid",
-      }}
-      footer={{
-        template: "clean",
-      }}
-    >
-      <section className="">
-        <div className="container-medium pt-12">
-          <div className="pb-4">
-            <Breadcrumbs
-              links={[
-                { url: "/painel", name: "Painel" },
-                { url: "/painel/pedidos", name: "Pedidos" },
-              ]}
-            />
-          </div>
-          <div className="grid md:flex gap-4 items-center w-full">
-            <div className="w-full flex items-center">
-              <Link passHref href="/painel">
-                <Icon
-                  icon="fa-long-arrow-left"
-                  className="mr-6 text-2xl text-zinc-900"
-                />
-              </Link>
-              <div className="text-3xl lg:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                <span className="font-title font-bold">Pedidos</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-6 w-full md:w-fit">
-              <div>
-                <button
-                  type="button"
-                  className="rounded-xl whitespace-nowrap border py-4 text-zinc-900 font-semibold px-8"
-                >
-                  Filtrar{" "}
-                  <Icon
-                    icon="fa-chevron-down"
-                    type="far"
-                    className="text-xs ml-1"
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="pt-6">
-        <div className="container-medium pb-12">
-          <div className="border border-t-0 grid md:grid-cols-2 lg:block w-full">
-            <div className="hidden lg:flex border-t bg-zinc-100 p-4 lg:p-8 gap-4 lg:gap-8 font-bold text-zinc-900 font-title">
-              <div className="w-[16rem]">Pedido</div>
-              <div className="w-[40rem]">Data</div>
-              <div className="w-[48rem]">Cliente</div>
-              <div className="w-[32rem]">Total</div>
-              <div className="w-[32rem]">Status</div>
-              <div className="w-[22rem]">Ações</div>
-            </div>
-            {loading ? (
-              <div className="border-t p-8 text-center text-zinc-500">
-                Carregando pedidos...
-              </div>
-            ) : orders.length === 0 ? (
-              <div className="border-t p-8 text-center text-zinc-500">
-                Nenhum pedido encontrado
-              </div>
-            ) : (
-              orders.map((order, key) => (
-                <div
-                  key={key}
-                  className="grid lg:flex border-t p-4 lg:p-8 gap-2 lg:gap-8 text-zinc-900 hover:bg-zinc-50 bg-opacity-5 ease items-center"
-                >
-                  <div className="w-full lg:w-[16rem]">
-                    <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
-                      pedido:
-                    </span>
-                    #{order.mainOrderId || order.id}
-                    {order.ordersCount > 1 && (
-                      <span className="text-xs text-zinc-500 ml-1">
-                        (+{order.ordersCount - 1})
-                      </span>
-                    )}
-                  </div>
-                  <div className="w-full lg:w-[40rem] whitespace-nowrap text-sm lg:text-base">
-                    <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
-                      data:
-                    </span>
-                    {getExtenseData(order.createdAt || order.created_at)}
-                  </div>
-                  <div className="w-full lg:w-[48rem]">
-                    <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
-                      cliente:
-                    </span>
+    <PainelLayout>
+      <PageHeader
+        title="Pedidos"
+        description="Acompanhe os pedidos da sua loja"
+      />
 
-                    <span className="font-bold">{order.customer?.name || order.user?.name}</span>
-                    <div className="text-sm">{order.customer?.email || order.user?.email}</div>
-                  </div>
-                  <div className="w-full lg:w-[32rem]">
-                    <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
-                      valor:
-                    </span>
-                    <span className="font-bold">
-                      R$ {moneyFormat(order.total)}
-                    </span>
-                  </div>
-                  <div className="w-full lg:w-[32rem]">
-                    <span className="text-sm pr-2 w-[4rem] inline-block lg:hidden text-zinc-400">
-                      status:
-                    </span>
-
-                    <OrderStatusBadge
-                      status={order.status}
-                      metadataStatus={order.metadata?.status}
-                      paymentStatus={order.metadata?.payment_status}
-                      paidAt={order.metadata?.paid_at}
-                      statusText={order.statusText}
-                    />
-                  </div>
-                  <div className="w-full lg:w-[22rem] grid">
-                    <Button
-                      href={`/painel/pedidos/${order.mainOrderId || order.id}`}
-                      style="btn-light"
-                      className="text-zinc-900 py-2 px-3 mt-4 lg:mt-0 text-sm whitespace-nowrap"
-                    >
-                      Ver detalhes
-                    </Button>
-                  </div>
-                </div>
-              ))
+      <div className="bg-white rounded-xl border border-zinc-200 mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4">
+          <SearchInput
+            placeholder="Buscar por pedido, cliente..."
+            value={search}
+            onChange={setSearch}
+            className="w-full sm:w-72"
+          />
+          <FilterDropdown
+            label="Status"
+            options={STATUS_OPTIONS}
+            value={statusFilter}
+            onChange={setStatusFilter}
+          />
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
+              showFilters || activeFilterCount > 0
+                ? "border-yellow-400 bg-yellow-50 text-zinc-900"
+                : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
+            }`}
+          >
+            <SlidersHorizontal size={15} />
+            Filtros
+            {activeFilterCount > 0 && (
+              <span className="bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {activeFilterCount}
+              </span>
             )}
-          </div>
-          {orders && orders.length > 0 && (
-            <div className="pt-4 text-sm text-zinc-500">
-              Mostrando {orders.length} {orders.length === 1 ? "pedido" : "pedidos"}
-            </div>
+          </button>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-xs text-red-500 hover:text-red-700 font-medium"
+            >
+              Limpar filtros
+            </button>
           )}
         </div>
-      </section>
-    </Template>
+
+        {showFilters && (
+          <div className="px-4 pb-4 border-t border-zinc-100 pt-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Data inicio</label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Data fim</label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Preço mínimo</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">R$</span>
+                  <input
+                    type="number"
+                    value={priceMin}
+                    onChange={(e) => setPriceMin(e.target.value)}
+                    placeholder="0"
+                    min={0}
+                    className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Preço máximo</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">R$</span>
+                  <input
+                    type="number"
+                    value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    placeholder="0"
+                    min={0}
+                    className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {!loading && orders.length === 0 ? (
+        <div className="bg-white rounded-xl border border-zinc-200">
+          <EmptyState
+            icon={<ShoppingBag size={32} />}
+            title="Nenhum pedido encontrado"
+            description={
+              search || activeFilterCount > 0
+                ? "Tente ajustar os filtros ou a busca"
+                : "Quando seus clientes fizerem pedidos, eles vao aparecer aqui"
+            }
+          />
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={orders}
+          keyField="id"
+          pageSize={15}
+          loading={loading}
+          emptyMessage="Nenhum pedido encontrado"
+        />
+      )}
+    </PainelLayout>
   );
 }
