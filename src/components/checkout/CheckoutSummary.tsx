@@ -27,6 +27,7 @@ interface CheckoutSummaryProps {
   isPhoneValid: boolean;
   formLoading: boolean;
   termsContent?: { term_description: string }[];
+  storesList?: any[];
 }
 
 export default function CheckoutSummary({
@@ -42,6 +43,7 @@ export default function CheckoutSummary({
   isPhoneValid,
   formLoading,
   termsContent,
+  storesList,
 }: CheckoutSummaryProps) {
   const canSubmit =
     !!address?.street &&
@@ -136,26 +138,35 @@ export default function CheckoutSummary({
               </div>
             </div>
 
-            {/* Termos */}
-            {!!termsContent?.length && (
+            {/* Regras de locacao por loja */}
+            {storesList?.some((s: any) => s.rental_rules?.enabled) && (
               <div className="bg-gray-100 rounded-lg p-4 space-y-3 text-sm">
-                {termsContent.map((term, key) => (
-                  <div key={key} className="flex gap-3">
-                    <div className="pt-1">
-                      <input
-                        type="checkbox"
-                        required
-                        className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-                      />
+                {storesList.filter((s: any) => s.rental_rules?.enabled).map((s: any) => {
+                  const rules = s.rental_rules;
+                  const parts: string[] = [];
+                  const returnLabels: any = { same_day: "mesmo dia", next_day: "dia seguinte", "24h": "24 horas", "48h": "48 horas" };
+                  const returnText = rules.return_period === "custom" ? rules.return_period_custom : returnLabels[rules.return_period];
+                  if (returnText) parts.push(`devolução: ${returnText}`);
+                  if (rules.deposit_enabled) parts.push(rules.deposit_type === "fixed" ? `caução de R$ ${rules.deposit_value}` : `caução de ${rules.deposit_value}% do valor`);
+                  if (rules.cancellation_deadline) {
+                    let cancel = `cancelamento até ${rules.cancellation_deadline}h antes`;
+                    if (rules.cancellation_fee) cancel += ` (multa de ${rules.cancellation_fee}%)`;
+                    parts.push(cancel);
+                  }
+                  if (rules.late_fee_enabled && rules.late_fee_value) parts.push(`multa por atraso: R$ ${rules.late_fee_value}/dia`);
+                  return (
+                    <div key={s.id} className="flex gap-3">
+                      <div className="pt-1">
+                        <input type="checkbox" required className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500" />
+                      </div>
+                      <div className="text-sm leading-relaxed">
+                        <span>Li e aceito as regras de locação de <strong>{s.title}</strong></span>
+                        {parts.length > 0 && <span>: {parts.join(", ")}.</span>}
+                        {!!rules.additional_rules && <p className="text-zinc-500 mt-1">{rules.additional_rules}</p>}
+                      </div>
                     </div>
-                    <div
-                      className="text-sm leading-relaxed"
-                      dangerouslySetInnerHTML={{
-                        __html: term.term_description,
-                      }}
-                    ></div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

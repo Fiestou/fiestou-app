@@ -1344,28 +1344,73 @@ export default function Checkout({
                         </div>
                       </div>
 
-                      {/* Termos */}
-                      {!!CheckoutPageContent?.terms_list?.length && (
-                        <div className="bg-gray-100 rounded-lg p-4 space-y-3 text-sm">
-                          {CheckoutPageContent?.terms_list.map(
-                            (term: any, key: any) => (
-                              <div key={key} className="flex gap-3">
-                                <div className="pt-1">
+                      {/* Regras de locacao por loja */}
+                      {storesList.some((s: any) => s.rental_rules?.enabled) && (
+                        <div className="space-y-3">
+                          {storesList.filter((s: any) => s.rental_rules?.enabled).map((s: any) => {
+                            const rules = s.rental_rules;
+                            const profileUrl = s.profile?.base_url && s.profile?.details?.sizes?.thumb
+                              ? s.profile.base_url + s.profile.details.sizes.thumb
+                              : null;
+
+                            const ruleItems: { icon: string; text: string }[] = [];
+                            const returnLabels: any = { same_day: "mesmo dia", next_day: "dia seguinte", "24h": "24 horas", "48h": "48 horas" };
+                            const returnText = rules.return_period === "custom" ? rules.return_period_custom : returnLabels[rules.return_period];
+                            if (returnText) ruleItems.push({ icon: "fa-undo", text: `Devolução: ${returnText}` });
+                            if (rules.deposit_enabled) {
+                              ruleItems.push({ icon: "fa-shield", text: rules.deposit_type === "fixed" ? `Caução: R$ ${rules.deposit_value}` : `Caução: ${rules.deposit_value}% do valor` });
+                            }
+                            if (rules.cancellation_deadline) {
+                              let cancel = `Cancelamento até ${rules.cancellation_deadline}h antes`;
+                              if (rules.cancellation_fee) cancel += ` (multa ${rules.cancellation_fee}%)`;
+                              ruleItems.push({ icon: "fa-ban", text: cancel });
+                            }
+                            if (rules.late_fee_enabled && rules.late_fee_value) {
+                              ruleItems.push({ icon: "fa-clock", text: `Atraso: R$ ${rules.late_fee_value}/dia` });
+                            }
+
+                            return (
+                              <div key={s.id} className="border border-gray-200 rounded-xl p-4 bg-white">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
+                                    {profileUrl ? (
+                                      <Img src={profileUrl} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                        <Icon icon="fa-store" className="text-sm" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-semibold text-sm text-zinc-900 truncate">{s.title}</div>
+                                    <div className="text-xs text-zinc-500">Regras de locação</div>
+                                  </div>
+                                </div>
+
+                                {ruleItems.length > 0 && (
+                                  <div className="space-y-1.5 mb-3 pl-1">
+                                    {ruleItems.map((item, i) => (
+                                      <div key={i} className="flex items-center gap-2 text-xs text-zinc-600">
+                                        <Icon icon={item.icon} className="text-[10px] text-yellow-600 w-4 text-center flex-shrink-0" />
+                                        <span>{item.text}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                <div className="flex items-start gap-2.5 pt-2 border-t border-gray-100">
                                   <input
                                     type="checkbox"
                                     required
-                                    className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                                    className="mt-0.5 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
                                   />
+                                  <span className="text-xs text-zinc-700 leading-relaxed">
+                                    Li e aceito as regras de locação de <strong>{s.title}</strong>
+                                  </span>
                                 </div>
-                                <div
-                                  className="text-sm leading-relaxed"
-                                  dangerouslySetInnerHTML={{
-                                    __html: term.term_description,
-                                  }}
-                                ></div>
                               </div>
-                            )
-                          )}
+                            );
+                          })}
                         </div>
                       )}
 
