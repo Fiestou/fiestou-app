@@ -224,6 +224,7 @@ export default function Checkout({
   const [deliverySchedules, setDeliverySchedules] = useState<Record<number, string>>({});
   const [pickupSchedules, setPickupSchedules] = useState<Record<number, string>>({});
   const [deliveryTo, setDeliveryTo] = useState("reception" as string);
+  const [rulesModalStore, setRulesModalStore] = useState<any>(null);
 
   const [customLocation, setCustomLocation] = useState(false as boolean);
   const [locations, setLocations] = useState([] as Array<AddressType>);
@@ -896,7 +897,7 @@ export default function Checkout({
     );
   };
 
-  return !isFallback && !!token ? (
+  const page = !isFallback && !!token ? (
     <Template
       scripts={Scripts}
       metaPage={{
@@ -1398,6 +1399,17 @@ export default function Checkout({
                                   </div>
                                 )}
 
+                                {(ruleItems.length > 0 || rules.additional_rules) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setRulesModalStore(s)}
+                                    className="text-xs text-yellow-700 hover:text-yellow-800 font-medium mb-3 flex items-center gap-1"
+                                  >
+                                    <Icon icon="fa-external-link" className="text-[10px]" />
+                                    Ver regras completas
+                                  </button>
+                                )}
+
                                 <div className="flex items-start gap-2.5 pt-2 border-t border-gray-100">
                                   <input
                                     type="checkbox"
@@ -1480,5 +1492,118 @@ export default function Checkout({
     </Template>
   ) : (
     <></>
+  );
+
+  return (
+    <>
+      {page}
+      {rulesModalStore && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+          <div
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: '#000', opacity: 0.6 }}
+            onClick={() => setRulesModalStore(null)}
+          />
+          <div className="relative flex min-h-full items-center justify-center p-4 overflow-y-auto" style={{ minHeight: '100vh' }}>
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={() => setRulesModalStore(null)}
+                  className="absolute right-4 top-4 text-zinc-400 hover:text-zinc-700 text-xl"
+                >
+                  <Icon icon="fa-times" />
+                </button>
+
+                <h3 className="text-lg font-bold text-zinc-900 mb-5">Regras de Locação</h3>
+
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
+                    {rulesModalStore.profile?.base_url && rulesModalStore.profile?.details?.sizes?.thumb ? (
+                      <Img
+                        src={rulesModalStore.profile.base_url + rulesModalStore.profile.details.sizes.thumb}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <Icon icon="fa-store" className="text-xl" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-bold text-base text-zinc-900">{rulesModalStore.title}</div>
+                    {rulesModalStore.segment && (
+                      <div className="text-sm text-zinc-500">{rulesModalStore.segment}</div>
+                    )}
+                  </div>
+                </div>
+
+                {(() => {
+                  const rules = rulesModalStore.rental_rules;
+                  const returnLabels: any = { same_day: "mesmo dia", next_day: "dia seguinte", "24h": "24 horas", "48h": "48 horas" };
+                  const returnText = rules.return_period === "custom" ? rules.return_period_custom : returnLabels[rules.return_period];
+
+                  return (
+                    <div className="space-y-3">
+                      {returnText && (
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Icon icon="fa-undo" className="text-yellow-600 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-sm text-zinc-900">Período de Devolução</div>
+                            <div className="text-sm text-zinc-600">{returnText}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {rules.deposit_enabled && (
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Icon icon="fa-shield" className="text-yellow-600 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-sm text-zinc-900">Caução</div>
+                            <div className="text-sm text-zinc-600">
+                              {rules.deposit_type === "fixed" ? `R$ ${rules.deposit_value}` : `${rules.deposit_value}% do valor total`}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {rules.cancellation_deadline && (
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Icon icon="fa-ban" className="text-yellow-600 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-sm text-zinc-900">Cancelamento</div>
+                            <div className="text-sm text-zinc-600">
+                              Até {rules.cancellation_deadline}h antes do evento
+                              {rules.cancellation_fee && ` (multa de ${rules.cancellation_fee}%)`}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {rules.late_fee_enabled && rules.late_fee_value && (
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Icon icon="fa-clock" className="text-yellow-600 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-sm text-zinc-900">Multa por Atraso</div>
+                            <div className="text-sm text-zinc-600">R$ {rules.late_fee_value} por dia</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {rules.additional_rules && (
+                        <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                          <Icon icon="fa-info-circle" className="text-amber-600 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-sm text-zinc-900">Observações</div>
+                            <div className="text-sm text-zinc-600 whitespace-pre-line">{rules.additional_rules}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+      )}
+    </>
   );
 }
