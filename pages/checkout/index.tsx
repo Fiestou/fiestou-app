@@ -1268,7 +1268,7 @@ export default function Checkout({
                                 <Icon icon="fa-truck" className="text-sm flex-shrink-0" />
                                 <div className="text-xs sm:text-sm">
                                   <div className="font-semibold">{store?.title}</div>
-                                  <div className="font-medium">Manhã - {sched}</div>
+                                  <div className="font-medium">{sched}</div>
                                 </div>
                               </div>
                             </div>
@@ -1282,7 +1282,7 @@ export default function Checkout({
                                 <Icon icon="fa-store" className="text-sm flex-shrink-0" />
                                 <div className="text-xs sm:text-sm">
                                   <div className="font-semibold">{store?.title}</div>
-                                  <div className="font-medium">Manhã - {sched}</div>
+                                  <div className="font-medium">{sched}</div>
                                 </div>
                               </div>
                             </div>

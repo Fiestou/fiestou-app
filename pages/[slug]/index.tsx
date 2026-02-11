@@ -1,4 +1,4 @@
-import { StoreType } from "@/src/models/store";
+import { StoreType, DayType } from "@/src/models/store";
 import Api from "@/src/services/api";
 import Product from "@/src/components/common/Product";
 import { Button } from "@/src/components/ui/form";
@@ -17,6 +17,7 @@ import { useRouter } from "next/router";
 import { FilterQueryType } from "@/src/types/filtros";
 import Filter from "@/src/components/common/filters/Filter";
 import { getStoreUrl } from "@/src/urlHelpers";
+import { MapPin, Truck, Instagram, Facebook, Phone, Globe, Clock, ExternalLink } from "lucide-react";
 
 
 export interface Store {
@@ -114,6 +115,30 @@ export default function Store({
   const [loading, setLoading] = useState(false as boolean);
   const [handleParams, setHandleParams] = useState({} as FilterQueryType);
   const [mounted, setMounted] = useState(false);
+
+  const socialLinks = (() => {
+    const meta = typeof store?.metadata === "string" ? (() => { try { return JSON.parse(store.metadata); } catch { return {}; } })() : (store?.metadata ?? {});
+    return meta?.social_links ?? {};
+  })();
+
+  const openClose: DayType[] = (() => {
+    if (Array.isArray(store?.openClose)) return store.openClose;
+    if (typeof store?.openClose === "string") { try { return JSON.parse(store.openClose); } catch { return []; } }
+    return [];
+  })();
+
+  const isStoreOpen = () => {
+    if (!openClose.length) return null;
+    const now = new Date();
+    const dayIndex = now.getDay();
+    const currentDay = openClose[dayIndex];
+    if (!currentDay || currentDay.working !== "on") return false;
+    const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    return currentTime >= (currentDay.open || "00:00") && currentTime <= (currentDay.close || "23:59");
+  };
+
+  const storeOpen = mounted ? isStoreOpen() : null;
+  const hasSocial = socialLinks.instagram || socialLinks.facebook || socialLinks.whatsapp || socialLinks.website;
 
   // Função para buscar produtos com filtros e paginação
   const fetchProducts = async (params: any) => {
@@ -288,19 +313,25 @@ export default function Store({
                     <h1 className="font-title font-bold text-2xl md:text-4xl md:mb-1">
                       {store?.title}
                     </h1>
-                    <div>
-                      <Badge style="success" className="text-xs md:text-sm">
-                        Aberto agora
+                    {storeOpen !== null && (
+                      <Badge style={storeOpen ? "success" : "default"} className="text-xs md:text-sm">
+                        {storeOpen ? "Aberto agora" : "Fechado"}
                       </Badge>
-                    </div>
+                    )}
                   </div>
-                  <div className="flex justify-center md:justify-start items-center gap-1">
-                    <Icon
-                      icon="fa-star"
-                      type="fa"
-                      className="text-yellow-500"
-                    />
-                    <strong>5.0</strong>
+                  <div className="flex justify-center md:justify-start items-center gap-3 mt-1 flex-wrap">
+                    {store?.city && (
+                      <span className="flex items-center gap-1 text-sm text-zinc-500">
+                        <MapPin size={14} />
+                        {store.city}, {store.state}
+                      </span>
+                    )}
+                    {store?.hasDelivery && (
+                      <span className="flex items-center gap-1 text-sm text-zinc-500">
+                        <Truck size={14} />
+                        Entrega disponivel
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -337,55 +368,81 @@ export default function Store({
                     <span className="hidden md:block">Salvar</span>
                   </Button>
                 </div>
-                <div className="hidden">
-                  <Button
-                    style="btn-white"
-                    className="py-2 md:py-3 px-5 flex h-full border-0"
+                {socialLinks.whatsapp && (
+                  <a
+                    href={`https://wa.me/55${socialLinks.whatsapp.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2 md:py-3 px-5 flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
                   >
-                    <Icon icon="fa-comment-alt-lines"></Icon>
-                    <span className="hidden md:block">Mensagem</span>
-                  </Button>
-                </div>
+                    <Phone size={16} />
+                    <span className="hidden md:block">WhatsApp</span>
+                  </a>
+                )}
               </div>
             </div>
           </div>
 
           {!!store?.description && (
-            <div className="lg:w-1/2 mt-4 md:mt-6">
+            <div className="lg:w-1/2 mt-4 md:mt-6 text-zinc-700">
               {store?.description}
             </div>
           )}
 
-          {/* Info da Loja */}
+          {hasSocial && (
+            <div className="flex items-center gap-3 mt-4">
+              {socialLinks.instagram && (
+                <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-pink-500 transition-colors">
+                  <Instagram size={18} />
+                  <span className="hidden md:inline">Instagram</span>
+                </a>
+              )}
+              {socialLinks.facebook && (
+                <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-blue-600 transition-colors">
+                  <Facebook size={18} />
+                  <span className="hidden md:inline">Facebook</span>
+                </a>
+              )}
+              {socialLinks.website && (
+                <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-800 transition-colors">
+                  <Globe size={18} />
+                  <span className="hidden md:inline">Site</span>
+                </a>
+              )}
+            </div>
+          )}
+
           <div className="mt-6 md:mt-8">
-            {/* Endereço */}
             {(store?.street || store?.city) && (
-              <div className="bg-zinc-50 rounded-xl p-4 md:p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Icon icon="fa-map-marker-alt" className="text-primary" />
-                  <h3 className="font-semibold text-zinc-900">Endereço</h3>
+              <div className="bg-zinc-50 rounded-xl p-4 md:p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <MapPin size={16} className="text-zinc-400" />
+                      <span className="font-medium text-sm text-zinc-900">Endereco</span>
+                    </div>
+                    <p className="text-sm text-zinc-600">
+                      {store?.street}{store?.number ? `, ${store.number}` : ''}
+                      {store?.complement ? ` - ${store.complement}` : ''}
+                      {' - '}
+                      {store?.neighborhood}{store?.city ? `, ${store.city}` : ''}
+                      {store?.state ? ` - ${store.state}` : ''}
+                    </p>
+                  </div>
+                  {store?.city && store?.state && (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        `${store.street || ''} ${store.number || ''}, ${store.neighborhood || ''}, ${store.city} - ${store.state}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 whitespace-nowrap"
+                    >
+                      <ExternalLink size={14} />
+                      Ver no mapa
+                    </a>
+                  )}
                 </div>
-                <p className="text-zinc-700 leading-relaxed">
-                  {store?.street}{store?.number ? `, ${store.number}` : ''}
-                  {store?.complement ? ` - ${store.complement}` : ''}
-                  <br />
-                  {store?.neighborhood}{store?.city ? `, ${store.city}` : ''}
-                  {store?.state ? ` - ${store.state}` : ''}
-                  {store?.zipCode ? <><br />CEP: {store.zipCode}</> : ''}
-                </p>
-                {store?.city && store?.state && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                      `${store.street || ''} ${store.number || ''}, ${store.neighborhood || ''}, ${store.city} - ${store.state}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 mt-3 text-primary hover:underline text-sm"
-                  >
-                    <Icon icon="fa-external-link-alt" className="text-xs" />
-                    Ver no mapa
-                  </a>
-                )}
               </div>
             )}
 

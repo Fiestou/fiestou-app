@@ -45,19 +45,22 @@ export default function Product({ product }: { product: ProductType | any }) {
             </div>
             <div className="w-full pt-3 flex gap-2 md:gap-2 items-center">
               <div className="w-fit">
-                {capitalizedComercialType === "Venda" && (
-                  <div className="flex items-center gap-1 bg-red-100 text-red-900 whitespace-nowrap rounded text-xs px-2 py-1">
-                    <Icon icon="fa-tag" className="text-xs" type="far" />
-                    <span>Venda</span>
-                  </div>
-                )}
-
-                {capitalizedComercialType === "Aluguel" && (
-                  <div className="flex items-center gap-1 bg-blue-100 text-blue-900 whitespace-nowrap rounded text-xs px-2 py-1">
-                    <Icon icon="fa-clock" className="text-xs" type="far" />
-                    <span>Aluguel</span>
-                  </div>
-                )}
+                {(() => {
+                  const badgeMap: Record<string, { bg: string; text: string; icon: string; label: string }> = {
+                    venda: { bg: "bg-red-100", text: "text-red-900", icon: "fa-tag", label: "Venda" },
+                    aluguel: { bg: "bg-blue-100", text: "text-blue-900", icon: "fa-clock", label: "Aluguel" },
+                    comestivel: { bg: "bg-amber-100", text: "text-amber-900", icon: "fa-utensils", label: "Comestivel" },
+                    servicos: { bg: "bg-purple-100", text: "text-purple-900", icon: "fa-briefcase", label: "Servicos" },
+                  };
+                  const b = badgeMap[comercialType];
+                  if (!b) return null;
+                  return (
+                    <div className={`flex items-center gap-1 ${b.bg} ${b.text} whitespace-nowrap rounded text-xs px-2 py-1`}>
+                      <Icon icon={b.icon} className="text-xs" type="far" />
+                      <span>{b.label}</span>
+                    </div>
+                  );
+                })()}
               </div>
 
               {!!product.rate && (

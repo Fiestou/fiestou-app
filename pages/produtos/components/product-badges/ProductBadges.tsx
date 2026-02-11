@@ -9,15 +9,23 @@ interface ProductBadgesProps {
   comments: CommentType[];
 }
 
+const typeConfig: Record<string, { bg: string; icon: string; label: string }> = {
+  venda: { bg: "bg-red-200", icon: "fa-tag", label: "Venda" },
+  aluguel: { bg: "bg-blue-200", icon: "fa-clock", label: "Aluguel" },
+  comestivel: { bg: "bg-amber-200", icon: "fa-utensils", label: "Comestivel" },
+  servicos: { bg: "bg-purple-200", icon: "fa-briefcase", label: "Servicos" },
+};
+
 export default function ProductBadges({
   product,
   comments,
 }: ProductBadgesProps) {
   if (!product) return null;
 
+  const t = typeConfig[(product.comercialType as string)] || null;
+
   return (
     <div className="flex flex-col items-start py-2 md:pb-4 gap-1">
-      {/* Avaliações */}
       {!!product.rate && (
         <div className="flex gap-1 items-center">
           <Icon icon="fa-star" type="fa" className="text-xs text-yellow-500" />
@@ -29,7 +37,6 @@ export default function ProductBadges({
         </div>
       )}
 
-      {/* Produto frágil */}
       {product.fragility === "yes" && (
         <div className="bg-yellow-100 border border-yellow-300 px-2 py-1 rounded-md flex items-center gap-1.5">
           <Icon icon="fa-wine-glass-alt" type="fas" className="text-yellow-600" />
@@ -37,30 +44,18 @@ export default function ProductBadges({
         </div>
       )}
 
-      {/* Tipo comercial */}
-      <div className="flex gap-1">
-        <span>Disponível para:</span>
-
-        {(product.comercialType as string) === "venda" && (
+      {t && (
+        <div className="flex gap-1">
+          <span>Disponível para:</span>
           <Badge
             style="light"
-            className="bg-red-200 px-1 flex gap-1 items-center"
+            className={`${t.bg} px-1 flex gap-1 items-center`}
           >
-            <Icon icon="fa-tag" className="text-xs" type="far" />
-            <span>Venda</span>
+            <Icon icon={t.icon} className="text-xs" type="far" />
+            <span>{t.label}</span>
           </Badge>
-        )}
-
-        {(product.comercialType as string) === "aluguel" && (
-          <Badge
-            style="light"
-            className="bg-blue-200 px-1 flex gap-1 items-center"
-          >
-            <Icon icon="fa-clock" className="text-xs" type="far" />
-            <span>Aluguel</span>
-          </Badge>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
