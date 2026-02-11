@@ -155,10 +155,27 @@ export async function getOrdersByCustomer(customerId: number): Promise<Order[]> 
   return response.data;
 }
 
-export async function getMyOrders(): Promise<Order[]> {
+export interface OrderFilters {
+  status?: string;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+  price_min?: string;
+  price_max?: string;
+}
+
+export async function getMyOrders(filters?: OrderFilters): Promise<Order[]> {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v) params.append(k, v);
+    });
+  }
+  const qs = params.toString();
+
   const response = await api.bridge<any>({
     method: "get",
-    url: "orders/list",
+    url: `orders/list${qs ? `?${qs}` : ""}`,
   });
 
   if (response.data?.data) {
@@ -194,6 +211,41 @@ export async function getOrdersForChart(params: OrderChartParams): Promise<Order
   }
 
   return response.data.data ?? [];
+}
+
+export interface DashboardStatsResponse {
+  statusCounts: {
+    paid: number;
+    pending: number;
+    canceled: number;
+    other: number;
+  };
+  ordersCount: number;
+  totalRevenue: number;
+  avgTicket: number;
+  recentOrders: Array<{
+    id: number;
+    created_at: string;
+    total: number;
+    status: number;
+    statusText: string;
+    customer: { name: string; email: string } | null;
+    metadata: any;
+  }>;
+  period: string;
+}
+
+export async function getDashboardStats(period: string = '30'): Promise<DashboardStatsResponse | null> {
+  try {
+    const response = await api.bridge<any>({
+      method: "get",
+      url: `orders/dashboard-stats?period=${period}`,
+    });
+
+    return response.data?.data ?? response.data ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function registerOrder(payload: RegisterOrderPayload) {

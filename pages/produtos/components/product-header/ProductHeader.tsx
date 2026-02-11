@@ -28,11 +28,17 @@ export default function ProductHeader({ product, comments }: ProductHeaderProps)
         </div>
       )}
 
-      <Badge style="light">
-        {(product?.comercialType ?? "")
-          .charAt(0)
-          .toUpperCase() + (product?.comercialType ?? "").slice(1)}
-      </Badge>
+      {(() => {
+        const labels: Record<string, string> = {
+          venda: "Venda",
+          aluguel: "Aluguel",
+          comestivel: "Comestivel",
+          servicos: "Servicos",
+        };
+        const ct = product?.comercialType as string;
+        if (!ct) return null;
+        return <Badge style="light">{labels[ct] || ct}</Badge>;
+      })()}
     </div>
   );
 }

@@ -1,12 +1,53 @@
-import React, { useState, useEffect, useRef } from "react";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import { Label } from "@/src/components/ui/form";
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, X, CalendarDays, ShoppingBag } from "lucide-react";
+import Link from "next/link";
+import Api from "@/src/services/api";
+
+interface BookedDate {
+  date: string;
+  order_id: number;
+  status: number;
+}
 
 interface UnavailableDatesProps {
   initialDates?: string[];
   onChange: (dates: string[]) => void;
   minDate?: Date;
   schedulingPeriod?: number;
+  productId?: number | string;
+}
+
+const MONTH_NAMES = [
+  "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+const WEEK_DAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+function normalizeDate(d: any): string | null {
+  if (!d) return null;
+  if (d instanceof Date) {
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().split("T")[0];
+  }
+  const s = String(d).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
+    const [dd, mm, yyyy] = s.split("/");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) return parsed.toISOString().split("T")[0];
+  return null;
+}
+
+function normalizeDates(arr: any[]): string[] {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(normalizeDate).filter((d): d is string => d !== null);
+}
+
+function safeParseDate(d: string): Date {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return new Date(d + "T00:00:00");
+  return new Date(d);
 }
 
 const UnavailableDates: React.FC<UnavailableDatesProps> = ({
@@ -14,334 +55,291 @@ const UnavailableDates: React.FC<UnavailableDatesProps> = ({
   onChange,
   minDate = new Date(),
   schedulingPeriod = 0,
+  productId,
 }) => {
-  const [selectedDates, setSelectedDates] = useState<string[]>(
-    initialDates ?? [],
-  );
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDates, setSelectedDates] = useState<string[]>(() => normalizeDates(initialDates));
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const calendarRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
+  const [bookedDates, setBookedDates] = useState<Record<string, BookedDate>>({});
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        calendarRef.current &&
-        !calendarRef.current.contains(event.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
-      ) {
-        setIsCalendarOpen(false);
-      }
-
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
-        setIsModalOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    if (initialDates?.length) {
+      setSelectedDates(normalizeDates(initialDates));
+    }
   }, []);
 
-  const formatDate = (date: Date): string => {
-    return date.toISOString().split("T")[0];
+  useEffect(() => {
+    if (!productId) return;
+    const api = new Api();
+    (async () => {
+      try {
+        const res: any = await api.bridge({
+          method: "get",
+          url: `products/${productId}/booked-dates`,
+        });
+        if (res?.response && Array.isArray(res.data)) {
+          const map: Record<string, BookedDate> = {};
+          res.data.forEach((b: BookedDate) => {
+            if (b.date) map[b.date] = b;
+          });
+          setBookedDates(map);
+        }
+      } catch {}
+    })();
+  }, [productId]);
+
+  const fmt = (d: Date) => d.toISOString().split("T")[0];
+
+  const toggleDate = (dateStr: string) => {
+    if (bookedDates[dateStr]) return;
+    const next = selectedDates.includes(dateStr)
+      ? selectedDates.filter((d) => d !== dateStr)
+      : [...selectedDates, dateStr].sort();
+    setSelectedDates(next);
+    onChange(next);
   };
 
-  const formatDisplayDate = (dateString: string): string => {
-    const date = new Date(dateString + "T00:00:00");
-    return date.toLocaleDateString("pt-BR");
+  const removeDate = (dateStr: string) => {
+    if (bookedDates[dateStr]) return;
+    const next = selectedDates.filter((d) => d !== dateStr);
+    setSelectedDates(next);
+    onChange(next);
   };
 
-  const formatLongDate = (dateString: string): string => {
-    const date = new Date(dateString + "T00:00:00");
-    const day = date.getDate();
-    const monthNames = [
-      "janeiro",
-      "fevereiro",
-      "março",
-      "abril",
-      "maio",
-      "junho",
-      "julho",
-      "agosto",
-      "setembro",
-      "outubro",
-      "novembro",
-      "dezembro",
-    ];
-    const month = monthNames[date.getMonth()];
-    const year = date.getFullYear();
-    return `${day} de ${month} de ${year}`;
+  const clearAll = () => {
+    const booked = Object.keys(bookedDates);
+    const remaining = selectedDates.filter((d) => booked.includes(d));
+    setSelectedDates(remaining);
+    onChange(remaining);
   };
 
-  const toggleDate = (dateString: string) => {
-    const newDates = selectedDates.includes(dateString)
-      ? selectedDates.filter((d) => d !== dateString)
-      : [...selectedDates, dateString];
-
-    setSelectedDates(newDates);
-    onChange(newDates);
-  };
-
-  const isDateSelected = (dateString: string): boolean => {
-    return Array.isArray(selectedDates) && selectedDates.includes(dateString);
-  };
-
-  const isDateDisabled = (date: Date): boolean => {
-    return date < minDate;
-  };
-
-  // Verifica se a data está dentro do período mínimo de disponibilidade
-  const isDateInSchedulingPeriod = (date: Date): boolean => {
-    if (!schedulingPeriod || schedulingPeriod <= 0) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const limitDate = new Date(today);
-    limitDate.setDate(today.getDate() + schedulingPeriod);
-    return date >= today && date < limitDate;
-  };
-
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
-    const days = [];
-
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
+  const isBlocked = (date: Date) => {
+    if (date < minDate) return true;
+    if (schedulingPeriod > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const limit = new Date(today);
+      limit.setDate(today.getDate() + schedulingPeriod);
+      if (date >= today && date < limit) return true;
     }
+    return false;
+  };
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day));
-    }
-
+  const getDays = () => {
+    const y = currentMonth.getFullYear();
+    const m = currentMonth.getMonth();
+    const first = new Date(y, m, 1);
+    const last = new Date(y, m + 1, 0);
+    const days: (Date | null)[] = [];
+    for (let i = 0; i < first.getDay(); i++) days.push(null);
+    for (let d = 1; d <= last.getDate(); d++) days.push(new Date(y, m, d));
     return days;
   };
 
-  const navigateMonth = (direction: "prev" | "next") => {
-    setCurrentMonth((prev) => {
-      const newMonth = new Date(prev);
-      if (direction === "prev") {
-        newMonth.setMonth(prev.getMonth() - 1);
-      } else {
-        newMonth.setMonth(prev.getMonth() + 1);
-      }
-      return newMonth;
+  const nav = (dir: number) => {
+    setCurrentMonth((p) => {
+      const n = new Date(p);
+      n.setMonth(p.getMonth() + dir);
+      return n;
     });
   };
 
-  const monthNames = [
-    "Janeiro",
-    "Fevereiro",
-    "Março",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro",
-  ];
+  const today = fmt(new Date());
 
-  const weekDays = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+  const sortedSelected = [...selectedDates].sort();
+  const grouped: Record<string, string[]> = {};
+  sortedSelected.forEach((d) => {
+    const dt = safeParseDate(d);
+    if (isNaN(dt.getTime())) return;
+    const key = `${MONTH_NAMES[dt.getMonth()]} ${dt.getFullYear()}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(d);
+  });
 
-  const displayText =
-    (selectedDates?.length ?? 0) > 0
-      ? `${selectedDates.length} data${selectedDates.length > 1 ? "s" : ""} selecionada${selectedDates.length > 1 ? "s" : ""}`
-      : "Selecione as datas indisponíveis";
+  const manualCount = selectedDates.filter((d) => !bookedDates[d]).length;
+  const bookedCount = Object.keys(bookedDates).length;
 
   return (
-    <div className="relative">
-      <div
-        ref={inputRef}
-        className="form-control flex items-center justify-between cursor-pointer bg-white border border-gray-300 rounded-md px-3 py-2 hover:border-gray-400 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
-        onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-      >
-        <span
-          className={`${selectedDates?.length > 0 ? "text-gray-900" : "text-gray-500"}`}
-        >
-          {displayText}
-        </span>
-        <Icon
-          icon="fa-calendar-alt"
-          className={`text-gray-400 transition-colors ${isCalendarOpen ? "text-blue-500" : ""}`}
-        />
-      </div>
-
-      {selectedDates?.length > 0 && (
-        <div className="mt-2 mb-2">
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="inline-block px-3 py-1 bg-yellow-400 border border-yellow-500 rounded text-black text-xs font-medium hover:bg-yellow-500 transition-colors cursor-pointer"
-          >
-            Confira as datas selecionadas
-          </button>
-        </div>
-      )}
-
-      {isCalendarOpen && (
-        <div
-          ref={calendarRef}
-          className="absolute bottom-full right-0 z-50 mb-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 min-w-[320px]"
-        >
-          <div className="flex items-center justify-between mb-4">
+    <div className="grid lg:grid-cols-2 gap-4">
+      <div>
+        <div className="border border-zinc-200 rounded-lg">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
             <button
               type="button"
-              onClick={() => navigateMonth("prev")}
-              className="p-1 hover:bg-gray-100 rounded"
+              onClick={() => nav(-1)}
+              className="p-1.5 rounded-md hover:bg-zinc-100 text-zinc-500 transition-colors"
             >
-              <Icon icon="fa-chevron-left" className="text-gray-600" />
+              <ChevronLeft size={16} />
             </button>
-            <h3 className="font-medium text-gray-900">
-              {monthNames[currentMonth.getMonth()]} de{" "}
-              {currentMonth.getFullYear()}
-            </h3>
+            <span className="text-sm font-semibold text-zinc-800">
+              {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            </span>
             <button
               type="button"
-              onClick={() => navigateMonth("next")}
-              className="p-1 hover:bg-gray-100 rounded"
+              onClick={() => nav(1)}
+              className="p-1.5 rounded-md hover:bg-zinc-100 text-zinc-500 transition-colors"
             >
-              <Icon icon="fa-chevron-right" className="text-gray-600" />
+              <ChevronRight size={16} />
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {weekDays.map((day) => (
-              <div
-                key={day}
-                className="text-xs font-medium text-gray-500 text-center p-2"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {getDaysInMonth(currentMonth).map((day, index) => {
-              if (!day) {
-                return <div key={index} className="p-2"></div>;
-              }
-
-              const dateString = formatDate(day);
-              const isSelected = isDateSelected(dateString);
-              const isDisabled = isDateDisabled(day);
-              const isInSchedulingPeriod = isDateInSchedulingPeriod(day);
-              const isBlocked = isDisabled || isInSchedulingPeriod;
-              const isToday = formatDate(day) === formatDate(new Date());
-
-              return (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => !isBlocked && toggleDate(dateString)}
-                  disabled={isBlocked}
-                  title={isInSchedulingPeriod ? `Bloqueado: período mínimo de ${schedulingPeriod} dias` : undefined}
-                  className={`
-                    p-2 text-sm rounded transition-colors
-                    ${
-                      isInSchedulingPeriod
-                        ? "bg-red-100 text-red-400 cursor-not-allowed"
-                        : isDisabled
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "hover:bg-gray-100 cursor-pointer"
-                    }
-                    ${
-                      isSelected
-                        ? "bg-gray-300 text-white hover:bg-gray-300"
-                        : ""
-                    }
-                    ${
-                      isToday && !isSelected && !isInSchedulingPeriod
-                        ? "bg-yellow-400 text-gray-900 font-medium"
-                        : ""
-                    }
-                  `}
-                >
-                  {day.getDate()}
-                </button>
-              );
-            })}
-          </div>
-
-          {schedulingPeriod > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-red-500 flex items-center gap-1">
-              <span className="w-3 h-3 bg-red-100 rounded"></span>
-              Bloqueado: período mínimo de {schedulingPeriod} dias
-            </div>
-          )}
-
-          <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500">
-            Clique nas datas para marcar/desmarcar
-          </div>
-        </div>
-      )}
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div
-            ref={modalRef}
-            className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Datas selecionadas
-              </h2>
-              <span className="text-2xl font-bold text-gray-900">
-                {selectedDates.length}
-              </span>
-            </div>
-
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-              {selectedDates.map((date, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                >
-                  <span className="text-gray-900">{formatLongDate(date)}</span>
-                  <button
-                    type="button"
-                    onClick={() => toggleDate(date)}
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <Icon icon="fa-times" />
-                  </button>
+          <div className="p-3">
+            <div className="grid grid-cols-7 mb-1">
+              {WEEK_DAYS.map((d, i) => (
+                <div key={i} className="text-center text-xs font-medium text-zinc-400 py-1">
+                  {d}
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-black bg-white rounded border border-yellow-200 transition-colors"
-              >
-                Fechar
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-black bg-yellow-300 rounded hover:bg-yellow-600 transition-colors"
-              >
-                Salvar
-              </button>
+            <div className="grid grid-cols-7 gap-0.5">
+              {getDays().map((day, i) => {
+                if (!day) return <div key={i} />;
+                const ds = fmt(day);
+                const sel = selectedDates.includes(ds);
+                const booked = !!bookedDates[ds];
+                const blocked = isBlocked(day);
+                const isToday = ds === today;
+
+                let btnClass = "relative h-9 text-sm rounded-md transition-all ";
+
+                if (booked) {
+                  btnClass += "bg-amber-500 text-white font-medium cursor-default";
+                } else if (blocked) {
+                  btnClass += "text-zinc-300 cursor-not-allowed";
+                } else if (sel) {
+                  btnClass += "bg-red-500 text-white hover:bg-red-600 font-medium cursor-pointer";
+                } else if (isToday) {
+                  btnClass += "ring-2 ring-yellow-400 ring-inset font-medium hover:bg-zinc-100 cursor-pointer";
+                } else {
+                  btnClass += "hover:bg-zinc-100 cursor-pointer";
+                }
+
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    disabled={blocked || booked}
+                    onClick={() => toggleDate(ds)}
+                    title={booked ? `Pedido #${bookedDates[ds].order_id}` : undefined}
+                    className={btnClass}
+                  >
+                    {day.getDate()}
+                  </button>
+                );
+              })}
             </div>
           </div>
+
+          <div className="px-4 py-2 border-t border-zinc-100 text-xs text-zinc-400 flex flex-wrap items-center gap-3">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-red-500 rounded-sm" />
+              Bloqueado
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-amber-500 rounded-sm" />
+              Reservado
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm ring-2 ring-yellow-400" />
+              Hoje
+            </span>
+          </div>
         </div>
-      )}
+      </div>
+
+      <div>
+        <div className="border border-zinc-200 rounded-lg h-full flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={16} className="text-zinc-400" />
+              <span className="text-sm font-medium text-zinc-700">
+                {manualCount} bloqueada{manualCount !== 1 ? "s" : ""}
+                {bookedCount > 0 && (
+                  <span className="text-amber-600 ml-1">
+                    + {bookedCount} reservada{bookedCount !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </span>
+            </div>
+            {manualCount > 0 && (
+              <button
+                type="button"
+                onClick={clearAll}
+                className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+              >
+                Limpar bloqueios
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto max-h-[280px] p-3">
+            {Object.keys(bookedDates).length > 0 && (
+              <div className="mb-3">
+                <div className="text-xs font-medium text-amber-600 mb-1.5 flex items-center gap-1.5">
+                  <ShoppingBag size={12} />
+                  Reservas ativas
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.values(bookedDates).sort((a, b) => a.date.localeCompare(b.date)).map((b) => {
+                    const dt = safeParseDate(b.date);
+                    const dayNum = isNaN(dt.getTime()) ? "?" : dt.getDate().toString().padStart(2, "0");
+                    const mon = isNaN(dt.getTime()) ? "" : `/${(dt.getMonth() + 1).toString().padStart(2, "0")}`;
+                    return (
+                      <Link
+                        key={b.date}
+                        href={`/painel/pedidos/${b.order_id}`}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 text-xs rounded-md border border-amber-200 hover:bg-amber-100 transition-colors"
+                      >
+                        {dayNum}{mon}
+                        <span className="text-amber-400">#{b.order_id}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {selectedDates.length === 0 && Object.keys(bookedDates).length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-zinc-400">
+                <CalendarDays size={24} className="mb-2" />
+                <span className="text-sm">Nenhuma data bloqueada</span>
+                <span className="text-xs mt-1">Clique no calendario para bloquear datas</span>
+              </div>
+            ) : manualCount > 0 ? (
+              <div className="space-y-3">
+                {Object.entries(grouped)
+                  .filter(([, dates]) => dates.some((d) => !bookedDates[d]))
+                  .map(([month, dates]) => (
+                    <div key={month}>
+                      <div className="text-xs font-medium text-zinc-400 mb-1.5">{month}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {dates.filter((d) => !bookedDates[d]).map((d) => {
+                          const dt = safeParseDate(d);
+                          const day = isNaN(dt.getTime()) ? "?" : dt.getDate().toString().padStart(2, "0");
+                          return (
+                            <span
+                              key={d}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-700 text-xs rounded-md border border-red-100"
+                            >
+                              {day}
+                              <button
+                                type="button"
+                                onClick={() => removeDate(d)}
+                                className="hover:text-red-900 transition-colors"
+                              >
+                                <X size={12} />
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
