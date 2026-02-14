@@ -42,24 +42,17 @@ export default function ProductDimensions({ product }: ProductDimensionsProps) {
   if (!dimensions.length) return null;
 
   return (
-    <div className="border-t pt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-      {dimensions.map((dim) => (
-        <div
-          key={dim.key}
-          className="border flex flex-col rounded p-4 transition hover:shadow-sm hover:border-zinc-300"
-        >
-          <div className="text-xl text-zinc-900">
-            <Icon icon={dim.icon} />
-          </div>
-          <div className="pt-4">
-            {dim.label}:{" "}
-            <span className="font-bold text-zinc-900">
-              {dim.value}
-              {dim.unit}
+    <div className="border rounded-lg p-3">
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        {dimensions.map((dim) => (
+          <div key={dim.key} className="flex items-center gap-2">
+            <Icon icon={dim.icon} className="text-cyan-600 text-xs flex-shrink-0" />
+            <span className="text-zinc-600">
+              {dim.label}: <span className="font-medium text-zinc-900">{dim.value}{dim.unit}</span>
             </span>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

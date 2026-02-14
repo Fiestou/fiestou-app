@@ -24,10 +24,6 @@ import {
 } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
 import Newsletter from "@/src/components/common/Newsletter";
-import "swiper/css";
-import "swiper/css/zoom";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 
 import { toast } from "react-toastify";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
@@ -37,9 +33,7 @@ import LikeButton from "@/src/components/ui/LikeButton";
 import RelatedProducts from "../components/related-products/RelatedProducts";
 import { getProductUrl } from "@/src/urlHelpers";
 import ProductCombinations from "../components/product-combinations/ProductCombinations";
-import TrustedPartnerBadge from "../components/trusted-partner-badge/TrustedPartnerBadge";
-import EasyCancelBadge from "../components/easy-cancel-badge/EasyCancelBadge";
-import SafePaymentBadge from "../components/safe-payment-badge/SafePaymentBadge";
+
 import ProductDimensions from "../components/product-dimensions/ProductDimensions";
 import BottomCart from "../components/bottom-cart/BottomCart";
 import ProductDeliveryBadge from "../components/product-delivery-badge/ProductDeliveryBadge";
@@ -52,6 +46,8 @@ import ProductBadges from "../components/product-badges/ProductBadges";
 import ProductGallery from "../components/product-gallery/ProductGallery";
 import ProductDetails from "../components/product-details/ProductDetails";
 import ProductComments from "../components/product-comments/ProductComments";
+import ProductRentalRules from "../components/product-rental-rules/ProductRentalRules";
+import ProductGuarantees from "../components/product-guarantees/ProductGuarantees";
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -249,12 +245,10 @@ export default function Produto({
       const index = attributes.findIndex((a) => a.id === attr.id);
       let variations = [...attributes[index].variations];
 
-      // RADIO
       if (attr.selectType === "radio") {
         variations = [value];
       }
 
-      // CHECKBOX
       if (attr.selectType === "checkbox") {
         const exists = variations.find((v) => v.id === value.id);
         variations = exists
@@ -262,7 +256,6 @@ export default function Produto({
           : variations.concat(value);
       }
 
-      // QUANTITY
       if (attr.selectType === "quantity") {
         const existsIndex = variations.findIndex((v) => v.id === value.id);
 
@@ -281,7 +274,6 @@ export default function Produto({
         }
       }
 
-      // TEXT / IMAGE
       if (attr.selectType === "text" || attr.selectType === "image") {
         if (value.value) {
           variations = [value];
@@ -315,10 +307,10 @@ export default function Produto({
 
     if (success) {
       setInCart(true);
-      toast.success("Produto adicionado ao carrinho 🛒");
+      toast.success("Produto adicionado ao carrinho");
       router.push("/produtos?openCart=1");
     } else {
-      toast.error("Não foi possível adicionar ao carrinho 🛒");
+      toast.error("Não foi possível adicionar ao carrinho");
     }
 
     setLoadCart(false);
@@ -359,7 +351,6 @@ export default function Produto({
         );
       }
 
-      // ✅ Marca que a data foi escolhida
       setHasSelectedDate(!!mergedDetails?.dateStart);
 
       const detailsWithDates = {
@@ -375,7 +366,6 @@ export default function Produto({
         details: detailsWithDates,
       };
 
-      // 🔥 recalcula o total corretamente
       updateOrderTotal(updatedOrder);
 
       return updatedOrder;
@@ -473,7 +463,6 @@ export default function Produto({
     productToCart.details?.days,
   ]);
 
-  // versão mobile do detalhes
   const renderDetails = () => (
     <ProductDetails product={product} store={store} categories={categories} />
   );
@@ -488,15 +477,12 @@ export default function Produto({
       .replace(/(\d{5})(\d)/, "$1-$2")
       .slice(0, 9);
 
-  // 1️⃣ Normaliza os atributos do produto
   const productAttributes = Array.isArray(product?.attributes)
     ? product.attributes
     : [];
 
-  // 2️⃣ Produto tem atributos?
   const productHasAttributes = productAttributes.length > 0;
 
-  // 3️⃣ Se tem atributos, TODOS devem estar selecionados
   const hasAllAttributesSelected = !productHasAttributes
     ? true
     : productAttributes.every((attribute) => {
@@ -578,19 +564,17 @@ export default function Produto({
       }}
     >
       <section>
-        <div className="container-medium py-4 md:py-6">
+        <div className="container-medium py-2 md:py-3">
           <Breadcrumbs
             links={[{ url: getProductUrl(product, store), name: "Produtos" }]}
           />
         </div>
       </section>
 
-      <section>
+      <section className="py-2">
         <div className="container-medium">
-          <div className="w-full grid grid-cols-1 gap-1 md:grid-cols-2 md:gap-8">
-            {/* WRAPPER ÚNICO */}
-
-            <div className="w-full gap-4 ">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.85fr] lg:gap-6">
+            <div className="space-y-3">
               <ProductGallery
                 product={product}
                 store={store}
@@ -599,93 +583,34 @@ export default function Produto({
                 renderDetails={renderDetails}
               />
 
-              <div className="hidden md:block">
-                <ProductDetails
-                  product={product}
-                  store={store}
-                  categories={categories}
-                />
-              </div>
-              <div className="grid gap-4 mt-6">
-                <div className="hidden md:block">
-                  <ProductDimensions product={product} />
-                </div>
-
-                <div className="border gap-2 rounded-md p-3 text-[.85rem] leading-none pt-6 hidden md:block">
-                  <SafePaymentBadge />
-                  <EasyCancelBadge />
-                  <TrustedPartnerBadge />
-                </div>
-
-                <div className="w-full hidden md:block">
-                  <ProductComments comments={comments} />
-                </div>
-              </div>
-              <div className="flex items-center justify-center gap-6 border-t pt-6 ">
-                <div className="hidden md:block">
-                  <div className="flex gap-4">
-                    {/* FAVORITAR */}
-                    <div className="flex items-center gap-2">
-                      <span>Favoritar</span>
-                      <LikeButton id={product?.id} style="btn-outline-light" />
-                    </div>
-
-                    {/* COMPARTILHAR */}
-                    <div className="flex items-center gap-2">
-                      <span>Compartilhar:</span>
-
-                      <Button
-                        onClick={() => setShare(true)}
-                        type="button"
-                        style="btn-outline-light"
-                        className="p-4"
-                      >
-                        <Icon icon="fa-share-alt" type="far" className="mx-1" />
-                      </Button>
-                    </div>
-
-                    {/* MODAL (fora do fluxo visual) */}
-                    <Modal
-                      title="Compartilhe:"
-                      status={share}
-                      size="sm"
-                      close={() => setShare(false)}
-                    >
-                      <ShareModal
-                        url={baseUrl}
-                        title={`${store?.title} - Fiestou`}
-                      />
-                    </Modal>
-                  </div>
-                </div>
+              <div className="hidden lg:block space-y-3">
+                <ProductDetails product={product} store={store} categories={categories} />
+                <ProductDimensions product={product} />
+                <ProductRentalRules store={store} />
+                <ProductGuarantees />
+                <ProductComments comments={comments} />
               </div>
             </div>
 
             <div>
-              <div className="w-full">
-                <form onSubmit={sendToCart} method="POST">
-                  {/* Cabeçalho do produto */}
-                  <div className="grid md:flex gap-4 pb-4 lg:gap-10">
-                    <div className="w-full pt-2 md:pt-0">
-                      <div className="flex flex-col md:flex-row gap-2 justify-between md:items-center">
-                        <h1 className="font-title font-bold text-zinc-900 text-lg md:text-xl">
-                          {product?.title}
-                        </h1>
-
-                        <ProductPriceDisplay product={product} />
-                      </div>
-
-                      <ProductBadges product={product} comments={comments} />
-                      <ProductDescription product={product} />
-                    </div>
+              <form onSubmit={sendToCart} method="POST" className="space-y-3">
+                <div className="border-b pb-3">
+                  <div className="flex flex-col lg:flex-row gap-2 justify-between lg:items-start mb-2">
+                    <h1 className="font-title font-bold text-zinc-900 text-lg lg:text-xl flex-1">
+                      {product?.title}
+                    </h1>
+                    <ProductPriceDisplay product={product} />
                   </div>
+                  <ProductBadges product={product} comments={comments} />
+                  <ProductDescription product={product} />
+                </div>
 
-                  <div className="grid gap-6">
-                    {/* DETALHES DO PRODUTO - Esconder na versão desktop */}
-                    <div className="block md:hidden">
-                      <ProductDimensions product={product} />
-                    </div>
-                    {/* ATRIBUTOS */}
+                <div className="lg:hidden">
+                  <ProductDimensions product={product} />
+                </div>
+
+                {productAttributes.length > 0 && (
+                  <div>
                     <ProductAttributes
                       attributes={product?.attributes ?? []}
                       activeVariations={productToCart.attributes}
@@ -693,15 +618,11 @@ export default function Produto({
                       getImageAttr={getImage}
                       navegateImageCarousel={() => {}}
                     />
-                    {/* INPUTS HIDDEN — ATRIBUTOS OBRIGATÓRIOS */}
                     {productAttributes.map((attribute) => {
                       const selectedAttr = productToCart.attributes.find(
                         (attr: any) => attr.id === attribute.id
                       );
-
-                      const hasSelection =
-                        !!selectedAttr && selectedAttr.variations.length > 0;
-
+                      const hasSelection = !!selectedAttr && selectedAttr.variations.length > 0;
                       return (
                         <input
                           key={attribute.id}
@@ -713,131 +634,84 @@ export default function Produto({
                         />
                       );
                     })}
-                    {/* INPUT HIDDEN — DATA */}
-                    {product?.schedulingEnabled && (
-                      <input
-                        type="text"
-                        name="deliveryDate"
-                        value={productToCart?.details?.dateStart ?? ""}
-                        readOnly
-                      />
-                    )}
-                    {/* CALENDÁRIO (SEM FORM) */}
+                  </div>
+                )}
+
+                {product?.schedulingEnabled && (
+                  <>
+                    <input
+                      type="text"
+                      name="deliveryDate"
+                      value={productToCart?.details?.dateStart ?? ""}
+                      readOnly
+                      className="hidden"
+                    />
                     <ProductDeliveryCalendar
                       product={product}
                       productToCart={productToCart}
                       unavailable={unavailable}
                       blockdate={blockdate}
                       handleDetails={handleDetails}
-                      required={!!product?.schedulingEnabled}
+                      required={true}
                     />
-                    {/* Consulte o Frete */}
-                    {product?.delivery_type !== "pickup" && (
-                      <ProductShippingCalculator
-                        cep={cep}
-                        setCep={setCep}
-                        formatCep={formatCep}
-                        loadingCep={loadingCep}
-                        handleCheckCep={handleCheckCep}
-                        cepError={cepError}
-                        cepErrorMessage={cepErrorMessage}
-                        deliveryFee={deliveryFee}
-                      />
-                    )}
-                    <div className="block md:hidden">
-                      <ProductDeliveryBadge
-                        product={product}
-                        productToCart={productToCart}
-                      />
-                    </div>
+                  </>
+                )}
 
-                    {/* Categorias na versão mobile */}
-                    <div className="block md:hidden">
-                      <ProductDetails
-                        product={product}
-                        store={store}
-                        categories={categories}
-                      />
-                    </div>
+                {product?.delivery_type !== "pickup" && (
+                  <ProductShippingCalculator
+                    cep={cep}
+                    setCep={setCep}
+                    formatCep={formatCep}
+                    loadingCep={loadingCep}
+                    handleCheckCep={handleCheckCep}
+                    cepError={cepError}
+                    cepErrorMessage={cepErrorMessage}
+                    deliveryFee={deliveryFee}
+                  />
+                )}
 
-                    {/* Adicionar os comentário aqui */}
-                    <div className="block md:hidden">
-                      <ProductComments comments={comments} />
-                    </div>
+                <ProductDeliveryBadge product={product} productToCart={productToCart} />
 
-                    <div className="border gap-4 rounded-md p-3 text-[.85rem] block md:hidden">
-                      <SafePaymentBadge />
-                      <EasyCancelBadge />
-                      <TrustedPartnerBadge />
-                    </div>
-                    {/* Carrinho e total */}
-                    <BottomCart
-                      disabled={!canAddToCart}
-                      productToCart={productToCart}
-                      inCart={inCart}
-                      isMobile={layout.isMobile}
-                      canAddToCart={canAddToCart}
-                    />
-                    {/* Disponível para Entrega */}
-                    <div className="hidden md:block">
-                      <ProductDeliveryBadge
-                        product={product}
-                        productToCart={productToCart}
-                      />
-                    </div>
-                    {/* Favotirar e compartilhar */}
-                    <div className="flex items-center justify-center gap-6 border-t pt-6">
-                      <div className="block md:hidden">
-                        <div className="flex gap-4">
-                          {/* FAVORITAR */}
-                          <div className="flex items-center gap-2">
-                            <span>Favoritar</span>
-                            <LikeButton
-                              id={product?.id}
-                              style="btn-outline-light"
-                            />
-                          </div>
+                <div className="lg:hidden space-y-3">
+                  <ProductDetails product={product} store={store} categories={categories} />
+                  <ProductRentalRules store={store} />
+                  <ProductGuarantees />
+                  <ProductComments comments={comments} />
+                </div>
 
-                          {/* COMPARTILHAR */}
-                          <div className="flex items-center gap-2">
-                            <span>Compartilhar:</span>
+                <BottomCart
+                  disabled={!canAddToCart}
+                  productToCart={productToCart}
+                  inCart={inCart}
+                  isMobile={layout.isMobile}
+                  canAddToCart={canAddToCart}
+                />
 
-                            <Button
-                              onClick={() => setShare(true)}
-                              type="button"
-                              style="btn-outline-light"
-                              className="p-4"
-                            >
-                              <Icon
-                                icon="fa-share-alt"
-                                type="far"
-                                className="mx-1"
-                              />
-                            </Button>
-                          </div>
-
-                          {/* MODAL (fora do fluxo visual) */}
-                          <Modal
-                            title="Compartilhe:"
-                            status={share}
-                            size="sm"
-                            close={() => setShare(false)}
-                          >
-                            <ShareModal
-                              url={baseUrl}
-                              title={`${store?.title} - Fiestou`}
-                            />
-                          </Modal>
-                        </div>
-                      </div>
-                    </div>
+                <div className="flex items-center justify-center gap-4 border-t pt-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Icon icon="fa-heart" className="text-zinc-400" />
+                    <span className="text-zinc-600">Favoritar</span>
+                    <LikeButton id={product?.id} style="btn-outline-light" />
                   </div>
-                </form>
-              </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShare(true)}
+                    className="flex items-center gap-2 text-sm text-zinc-600 hover:text-cyan-600 transition"
+                  >
+                    <Icon icon="fa-share-alt" />
+                    <span>Compartilhar</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
       </section>
+
+      <Modal title="Compartilhe:" status={share} size="sm" close={() => setShare(false)}>
+        <ShareModal url={baseUrl} title={`${store?.title} - Fiestou`} />
+      </Modal>
 
       {!!product?.combinations?.length && (
         <ProductCombinations

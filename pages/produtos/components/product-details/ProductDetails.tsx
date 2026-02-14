@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Icon from "@/src/icons/fontAwesome/FIcon";
 import { ProductType } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
 import { RelationType } from "@/src/models/relation";
@@ -9,7 +10,6 @@ interface ProductDetailsProps {
   product: ProductType;
   store: StoreType;
   categories: any[];
-  mobileMode?: boolean;
 }
 
 export default function ProductDetails({
@@ -17,104 +17,107 @@ export default function ProductDetails({
   store,
   categories,
 }: ProductDetailsProps) {
+  const productCategories = categories
+    .filter((category: any) =>
+      category?.childs?.some((child: any) =>
+        (product?.category ?? []).some((cat: any) => cat.id === child.id)
+      )
+    )
+    .flatMap((category: any) =>
+      category.childs.filter((child: any) =>
+        (product?.category ?? []).some((cat: any) => cat.id === child.id)
+      )
+    );
+
+  const productTags = product?.tags
+    ? product.tags.split(",").filter(Boolean)
+    : [];
+
+  const productColors = product?.color
+    ? ColorsList.filter((color) => product.color?.includes(color.value))
+    : [];
+
   return (
-    <div>
-      <div className="text-sm grid gap-1">
-        {/* Loja */}
-        <div className="text-zinc-900">
-          Fornecido por:{" "}
-          <Link href={getStoreUrl(store)} className="font-bold hover:underline">
+    <div className="border rounded-lg p-3 space-y-2.5 text-sm">
+      <div className="flex items-start gap-2">
+        <Icon icon="fa-store" className="text-cyan-600 text-xs mt-0.5 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-zinc-600">Fornecido por </span>
+          <Link
+            href={getStoreUrl(store)}
+            className="font-semibold text-zinc-900 hover:text-cyan-600 transition"
+          >
             {store?.title}
           </Link>
         </div>
-
-        {/* Montagem */}
-        <div>
-          Este parceiro {product?.assembly === "on" ? "" : "não"} disponibiliza
-          montagem
-        </div>
-
-        <div className="py-2">
-          <div className="border-t border-dashed" />
-        </div>
-
-        <div className="grid gap-3">
-          {/* Cores */}
-          {!!product?.color && (
-            <div className="flex items-center gap-3 text-zinc-900">
-              <div className="w-fit whitespace-nowrap">Cores:</div>
-              <div className="w-full flex items-center flex-wrap gap-1">
-                {ColorsList.map(
-                  (color) =>
-                    product.color?.includes(color.value) && (
-                      <Link
-                        key={color.value}
-                        href={`/produtos/listagem/?cores=${color.value}`}
-                      >
-                        {ColorfulRender(color)}
-                      </Link>
-                    )
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Categorias */}
-          <div className="w-fit whitespace-nowrap">Categorias:</div>
-
-          {!!categories?.length &&
-            categories.map(
-              (category: any) =>
-                !!category?.childs &&
-                category.childs.some((child: any) =>
-                  (product?.category ?? []).some(
-                    (cat: any) => cat.id === child.id
-                  )
-                ) && (
-                  <div key={category.id} className="flex gap-2 text-zinc-950">
-                    <div className="w-full flex items-center flex-wrap gap-1">
-                      {category.childs
-                        .filter((child: any) =>
-                          (product?.category ?? []).some(
-                            (cat: any) => cat.id === child.id
-                          )
-                        )
-                        .map((child: RelationType) => (
-                          <Link
-                            key={child.id}
-                            href={`/produtos/listagem/?categoria=${child.slug}`}
-                            className="bg-zinc-100 hover:bg-zinc-200 py-1 px-2 rounded ease"
-                          >
-                            {child.title}
-                          </Link>
-                        ))}
-                    </div>
-                  </div>
-                )
-            )}
-
-          {/* Tags */}
-          {!!product?.tags && (
-            <div className="flex items-center gap-1 text-zinc-900">
-              <div className="w-fit whitespace-nowrap">Tags:</div>
-              <div className="w-full flex items-center flex-wrap gap-1">
-                {product.tags
-                  .split(",")
-                  .filter(Boolean)
-                  .map((tag) => (
-                    <Link
-                      key={tag}
-                      href={`/produtos/listagem/?busca=${tag}`}
-                      className="bg-zinc-100 hover:bg-zinc-200 py-1 px-2 rounded ease"
-                    >
-                      {tag}
-                    </Link>
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
       </div>
+
+      {product?.assembly === "on" && (
+        <div className="flex items-start gap-2">
+          <Icon icon="fa-tools" className="text-cyan-600 text-xs mt-0.5 flex-shrink-0" />
+          <span className="text-zinc-600">Montagem disponível</span>
+        </div>
+      )}
+
+      {productColors.length > 0 && (
+        <div className="flex items-start gap-2">
+          <Icon icon="fa-paint-brush" className="text-cyan-600 text-xs mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-zinc-600 mb-1.5">Cores disponíveis:</div>
+            <div className="flex flex-wrap gap-1.5">
+              {productColors.map((color) => (
+                <Link
+                  key={color.value}
+                  href={`/produtos/listagem/?cores=${color.value}`}
+                  className="hover:scale-110 transition-transform"
+                >
+                  {ColorfulRender(color)}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {productCategories.length > 0 && (
+        <div className="flex items-start gap-2">
+          <Icon icon="fa-tags" className="text-cyan-600 text-xs mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-zinc-600 mb-1.5">Categorias:</div>
+            <div className="flex flex-wrap gap-1.5">
+              {productCategories.map((child: RelationType) => (
+                <Link
+                  key={child.id}
+                  href={`/produtos/listagem/?categoria=${child.slug}`}
+                  className="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-xs py-1 px-2.5 rounded-full transition"
+                >
+                  {child.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {productTags.length > 0 && (
+        <div className="flex items-start gap-2">
+          <Icon icon="fa-bookmark" className="text-cyan-600 text-xs mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-zinc-600 mb-1.5">Tags:</div>
+            <div className="flex flex-wrap gap-1.5">
+              {productTags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={`/produtos/listagem/?busca=${tag}`}
+                  className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs py-1 px-2.5 rounded-full transition"
+                >
+                  {tag}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
