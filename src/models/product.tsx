@@ -30,6 +30,8 @@ export interface VariationType {
   selected?: boolean;
   data?: any;
   canAddToCart?: boolean;
+  minQuantity?: number;
+  quantity?: number;
 }
 
 export interface AttributeType {
@@ -122,7 +124,6 @@ export interface ProductOrderType {
   attributes: any;
   quantity: number;
   details?: Object | any;
-  /** preço unitário enviado ao backend para cálculo por item */
   unit_price?: number;
   total: number;
   deliveryFee?: number;

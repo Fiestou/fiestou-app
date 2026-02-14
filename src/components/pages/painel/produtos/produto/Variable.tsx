@@ -1,7 +1,7 @@
 import { AttributeType, ProductType } from "@/src/models/product";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { shortId, realMoneyNumber, getImage } from "@/src/helper";
-import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical, ImageIcon, X, Smile, Type, Upload, CircleDot, CheckSquare, Hash } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical, ImageIcon, X, Smile, Type, Upload, CircleDot, CheckSquare, Hash, Palette } from "lucide-react";
 import Api from "@/src/services/api";
 
 interface MediaItem {
@@ -29,8 +29,25 @@ const SELECT_TYPES = [
   { value: "radio", label: "Seleção única", desc: "Cliente escolhe 1 opção" },
   { value: "checkbox", label: "Múltipla escolha", desc: "Cliente pode marcar várias" },
   { value: "quantity", label: "Por quantidade", desc: "Cliente define a qtde" },
+  { value: "color", label: "Seleção de cor", desc: "Cliente escolhe uma cor" },
   { value: "text", label: "Texto personalizado", desc: "Cliente digita um texto" },
   { value: "image", label: "Envio de imagem", desc: "Cliente envia uma foto" },
+];
+
+const COLOR_OPTIONS = [
+  { name: "Vermelho", hex: "#ef4444" },
+  { name: "Laranja", hex: "#f97316" },
+  { name: "Amarelo", hex: "#eab308" },
+  { name: "Verde", hex: "#22c55e" },
+  { name: "Azul", hex: "#3b82f6" },
+  { name: "Roxo", hex: "#a855f7" },
+  { name: "Rosa", hex: "#ec4899" },
+  { name: "Preto", hex: "#000000" },
+  { name: "Branco", hex: "#ffffff" },
+  { name: "Cinza", hex: "#6b7280" },
+  { name: "Marrom", hex: "#92400e" },
+  { name: "Dourado", hex: "#fbbf24" },
+  { name: "Prata", hex: "#d1d5db" },
 ];
 
 function ImagePicker({
@@ -236,6 +253,60 @@ function EmojiPicker({
   );
 }
 
+function ColorPicker({
+  onSelect,
+}: {
+  onSelect: (colorName: string, colorHex: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
+          open ? "bg-yellow-100 text-yellow-600" : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600"
+        }`}
+        title="Selecionar cor"
+      >
+        <Palette size={15} />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 top-9 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl border border-zinc-200 w-64 p-3">
+          <div className="grid grid-cols-5 gap-2">
+            {COLOR_OPTIONS.map((color) => (
+              <button
+                key={color.hex}
+                type="button"
+                onClick={() => { onSelect(color.name, color.hex); setOpen(false); }}
+                className="group relative w-10 h-10 rounded-lg border-2 border-zinc-200 hover:border-zinc-400 transition-all hover:scale-110"
+                style={{ backgroundColor: color.hex }}
+                title={color.name}
+              >
+                {color.hex === "#ffffff" && (
+                  <div className="absolute inset-0 rounded-lg border border-zinc-300" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Variable({
   product,
   emitAttributes,
@@ -249,6 +320,8 @@ export default function Variable({
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [confirmDeleteVar, setConfirmDeleteVar] = useState<string | null>(null);
   const [galleryMedia, setGalleryMedia] = useState<MediaItem[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const fetchGallery = useCallback(async () => {
     if (!product?.id) return;
@@ -273,11 +346,18 @@ export default function Variable({
   }, [product?.attributes]);
 
   const emit = (attrs: AttributeType[]) => {
+    setHasChanges(false);
+    setSaving(true);
     try {
       emitAttributes(JSON.stringify(attrs));
     } catch {
       emitAttributes(attrs);
     }
+    setTimeout(() => setSaving(false), 500);
+  };
+
+  const handleSave = () => {
+    emit(attributes);
   };
 
   const addAttribute = () => {
@@ -291,14 +371,14 @@ export default function Variable({
     };
     const next = [...attributes, newAttr];
     setAttributes(next);
-    emit(next);
+    setHasChanges(true);
     setOpenId(newAttr.id);
   };
 
   const removeAttribute = (id: string) => {
     const next = attributes.filter((a) => a.id !== id);
     setAttributes(next);
-    emit(next);
+    setHasChanges(true);
     setConfirmDelete(null);
     if (openId === id) setOpenId(null);
   };
@@ -306,7 +386,7 @@ export default function Variable({
   const updateAttribute = (id: string, value: Partial<AttributeType>) => {
     const next = attributes.map((a) => (a.id === id ? { ...a, ...value } : a));
     setAttributes(next);
-    emit(next);
+    setHasChanges(true);
   };
 
   const addVariation = (attrId: string) => {
@@ -335,6 +415,39 @@ export default function Variable({
 
   return (
     <div className="space-y-3">
+      {hasChanges && (
+        <div className="sticky top-0 z-10 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+            <span className="text-sm font-medium text-amber-800">Você tem alterações não salvas</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              "Salvar Alterações"
+            )}
+          </button>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={addAttribute}
+        className="w-full py-3.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+      >
+        <Plus size={18} />
+        Adicionar Grupo de Variações
+      </button>
+
       {attributes.map((attr) => {
         const isOpen = openId === attr.id;
         const varCount = attr.variations?.length ?? 0;
@@ -444,6 +557,7 @@ export default function Variable({
                             {st.value === "radio" && <CircleDot size={13} className="text-zinc-400" />}
                             {st.value === "checkbox" && <CheckSquare size={13} className="text-zinc-400" />}
                             {st.value === "quantity" && <Hash size={13} className="text-zinc-400" />}
+                            {st.value === "color" && <Palette size={13} className="text-zinc-400" />}
                             {st.value === "text" && <Type size={13} className="text-zinc-400" />}
                             {st.value === "image" && <Upload size={13} className="text-zinc-400" />}
                             <div>
@@ -469,10 +583,42 @@ export default function Variable({
                     )}
                   </div>
 
-                  {attr.selectType !== "text" && attr.selectType !== "image" && (
+                  {attr.selectType !== "text" && attr.selectType !== "image" && attr.selectType !== "color" && (
                     <div>
                       <label className="block text-xs font-medium text-zinc-600 mb-1.5">
                         Preços nas opções
+                      </label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => updateAttribute(attr.id, { priceType: "on" })}
+                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                            attr.priceType === "on"
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                              : "border-zinc-200 text-zinc-500 bg-white hover:border-zinc-300"
+                          }`}
+                        >
+                          Com preços
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateAttribute(attr.id, { priceType: "off" })}
+                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                            attr.priceType === "off"
+                              ? "border-zinc-400 bg-zinc-100 text-zinc-700"
+                              : "border-zinc-200 text-zinc-500 bg-white hover:border-zinc-300"
+                          }`}
+                        >
+                          Sem preços
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {attr.selectType === "color" && (
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1.5">
+                        Preços nas cores
                       </label>
                       <div className="flex gap-2">
                         <button
@@ -551,7 +697,7 @@ export default function Variable({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-xs font-medium text-zinc-600">
-                      Opções ({varCount})
+                      {attr.selectType === "color" ? "Cores" : "Opções"} ({varCount})
                     </label>
                     <button
                       type="button"
@@ -559,7 +705,7 @@ export default function Variable({
                       className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
                     >
                       <Plus size={12} />
-                      Adicionar opção
+                      {attr.selectType === "color" ? "Adicionar cor" : "Adicionar opção"}
                     </button>
                   </div>
 
@@ -580,25 +726,60 @@ export default function Variable({
                     <div className="space-y-2">
                       {(attr.variations || []).map((v: any, vi: number) => (
                         <div key={v.id ?? vi} className="flex items-center gap-2 bg-white rounded-lg border border-zinc-200 px-3 py-2">
-                          <ImagePicker
-                            value={v.image}
-                            gallery={galleryMedia}
-                            productId={product?.id}
-                            onChange={(imgId, newMedia) => {
-                              updateVariation(attr.id, v.id, { image: imgId ?? "" });
-                              if (newMedia && !galleryMedia.find((m) => m.id === newMedia.id)) {
-                                setGalleryMedia((prev) => [...prev, newMedia]);
-                              }
-                            }}
-                          />
-                          <input
-                            type="text"
-                            value={v.title ?? ""}
-                            onChange={(e) => updateVariation(attr.id, v.id, { title: e.target.value })}
-                            placeholder="Nome da opção (ex: Sim, Não, P, M, G...)"
-                            className="flex-1 px-2 py-1 text-sm border-0 focus:ring-0 outline-none bg-transparent min-w-0"
-                          />
-                          <EmojiPicker onSelect={(emoji) => updateVariation(attr.id, v.id, { title: (v.title ?? "") + emoji })} />
+                          {attr.selectType === "color" ? (
+                            <>
+                              <div
+                                className="w-8 h-8 rounded-md border-2 border-zinc-300 shrink-0"
+                                style={{ backgroundColor: v.color || "#ffffff" }}
+                                title={v.color}
+                              />
+                              <input
+                                type="text"
+                                value={v.title ?? ""}
+                                onChange={(e) => updateVariation(attr.id, v.id, { title: e.target.value })}
+                                placeholder="Nome da cor (ex: Vermelho, Azul...)"
+                                className="flex-1 px-2 py-1 text-sm border-0 focus:ring-0 outline-none bg-transparent min-w-0"
+                              />
+                              <ColorPicker onSelect={(name, hex) => updateVariation(attr.id, v.id, { title: name, color: hex })} />
+                            </>
+                          ) : (
+                            <>
+                              <ImagePicker
+                                value={v.image}
+                                gallery={galleryMedia}
+                                productId={product?.id}
+                                onChange={(imgId, newMedia) => {
+                                  updateVariation(attr.id, v.id, { image: imgId ?? "" });
+                                  if (newMedia && !galleryMedia.find((m) => m.id === newMedia.id)) {
+                                    setGalleryMedia((prev) => [...prev, newMedia]);
+                                  }
+                                }}
+                              />
+                              <input
+                                type="text"
+                                value={v.title ?? ""}
+                                onChange={(e) => updateVariation(attr.id, v.id, { title: e.target.value })}
+                                placeholder="Nome da opção (ex: Sim, Não, P, M, G...)"
+                                className="flex-1 px-2 py-1 text-sm border-0 focus:ring-0 outline-none bg-transparent min-w-0"
+                              />
+                              <EmojiPicker onSelect={(emoji) => updateVariation(attr.id, v.id, { title: (v.title ?? "") + emoji })} />
+                            </>
+                          )}
+
+                          {(attr.selectType === "checkbox" || attr.selectType === "quantity") && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-xs text-zinc-400">Min:</span>
+                              <input
+                                type="number"
+                                value={v.minQuantity ?? 0}
+                                onChange={(e) => updateVariation(attr.id, v.id, { minQuantity: Number(e.target.value) || 0 })}
+                                placeholder="0"
+                                min={0}
+                                className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                              />
+                            </div>
+                          )}
+
                           {attr.priceType === "on" && (
                             <div className="flex items-center gap-1 shrink-0">
                               <span className="text-xs text-zinc-400">R$</span>
@@ -649,15 +830,6 @@ export default function Variable({
           </div>
         );
       })}
-
-      <button
-        type="button"
-        onClick={addAttribute}
-        className="w-full py-3 border-2 border-dashed border-zinc-200 hover:border-blue-300 hover:bg-blue-50/50 rounded-xl text-sm font-medium text-zinc-500 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
-      >
-        <Plus size={16} />
-        Adicionar grupo de variações
-      </button>
     </div>
   );
 }
