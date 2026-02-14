@@ -11,6 +11,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/filters/Filter";
 import { useRouter } from "next/router";
 import CartPreview from "@/src/components/common/CartPreview";
+import { Search, SlidersHorizontal } from "lucide-react";
 
 let limit = 15;
 
@@ -23,6 +24,7 @@ export default function Produtos() {
   const [DataSeo, setDataSeo] = useState<any>({});
   const [Scripts, setScripts] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(true);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const [showCartPreview, setShowCartPreview] = useState(false);
@@ -85,10 +87,8 @@ export default function Produtos() {
     }
 
     loadProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // Observer para scroll infinito
   useEffect(() => {
     if (!observerRef.current || !hasMore) return;
 
@@ -113,9 +113,6 @@ export default function Produtos() {
 
     if (router.query.openCart === "1") {
       setShowCartPreview(true);
-
-      // opcional: limpa a URL depois de abrir
-      // router.replace("/produtos", undefined, { shallow: true });
     }
   }, [router.isReady, router.query.openCart]);
 
@@ -140,56 +137,89 @@ export default function Produtos() {
         content: HeaderFooter,
       }}
     >
-      {/* Header da página de produtos */}
-      <section className="bg-cyan-500 pt-24 md:pt-32 relative">
-        <div className="container-medium relative pb-14 md:pb-16 text-white">
-          <div className="flex items-end">
-            <div className="w-full">
-              <div className="pb-4">
-                <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
-              </div>
-              <h1 className="font-title font-bold text-4xl md:text-5xl md:mb-4">
+      <section className="bg-gradient-to-br from-cyan-500 to-blue-600 pt-20 md:pt-28 pb-8 md:pb-12">
+        <div className="container-medium">
+          <div className="mb-4">
+            <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <h1 className="font-title font-bold text-3xl md:text-5xl text-white mb-2">
                 Produtos
               </h1>
-              <span className="text-lg md:text-2xl font-semibold">
-                Encontre as decorações da sua festa
-              </span>
+              <p className="text-white/90 text-base md:text-lg">
+                Encontre as decorações perfeitas para sua festa
+              </p>
             </div>
+
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="md:hidden flex items-center gap-2 px-4 py-2.5 bg-white text-cyan-600 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+            >
+              <SlidersHorizontal size={18} />
+              Filtros
+            </button>
           </div>
         </div>
       </section>
 
-      <div className="relative mt-[-1.85rem]">
-        <Filter />
-      </div>
+      <section className="container-medium py-6 md:py-8">
+        <div className="hidden md:block mb-6">
+          <Filter />
+        </div>
 
-      <section className="container-medium md:pt-6">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 py-6">
+        {showFilters && (
+          <div className="md:hidden mb-6 bg-white rounded-lg shadow-lg p-4 border border-zinc-200">
+            <Filter />
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {Array.isArray(products) &&
             products.map((item, key) => (
-              <div key={key}>
+              <div key={key} className="animate-fadeIn">
                 <Product product={item} />
               </div>
             ))}
         </div>
 
-        {/* Loader + sentinel para scroll infinito */}
         {loading && (
-          <div className="py-6 text-center text-gray-500">Carregando...</div>
+          <div className="py-12 flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-zinc-500 text-sm">Carregando produtos...</p>
+          </div>
         )}
+
         <div ref={observerRef} className="h-10"></div>
 
-        {!hasMore && (
-          <div className="py-6 text-center">
+        {!hasMore && products.length > 0 && (
+          <div className="py-8 text-center">
+            <p className="text-zinc-500 mb-4">Você viu todos os produtos disponíveis</p>
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="px-6 py-3 bg-yellow-300 text-black font-semibold rounded-lg shadow-md hover:bg-yellow-400 transition"
+              className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
             >
-              Voltar ao início
+              Voltar ao topo
             </button>
           </div>
         )}
+
+        {!loading && products.length === 0 && (
+          <div className="py-16 text-center">
+            <div className="w-20 h-20 mx-auto mb-4 bg-zinc-100 rounded-full flex items-center justify-center">
+              <Search size={32} className="text-zinc-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-zinc-700 mb-2">
+              Nenhum produto encontrado
+            </h3>
+            <p className="text-zinc-500">
+              Tente ajustar os filtros ou volte mais tarde
+            </p>
+          </div>
+        )}
       </section>
+
       {showCartPreview && (
         <CartPreview
           isMobile={isMobileDevice()}
