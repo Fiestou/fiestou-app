@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CalendarRCT from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Button from "./ButtonUI";
@@ -15,6 +15,12 @@ interface CalendarType {
 }
 
 export default function Calendar(attr: CalendarType) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const today = new Date();
 
   const availabilityDays = Number(attr?.availability) || 1;
@@ -29,9 +35,6 @@ export default function Calendar(attr: CalendarType) {
     dateStart ?? minDate
   );
 
-  /* ===============================
-   * EMITIR DATA
-   * =============================== */
   const emitData = (date: any) => {
     if (attr.onChange) attr.onChange(date);
   };
@@ -56,9 +59,6 @@ export default function Calendar(attr: CalendarType) {
     });
   };
 
-  /* ===============================
-   * DESABILITAR DATAS
-   * =============================== */
   const tileDisabled = ({ date }: { date: Date }) => {
     const formatted = dateFormat(date);
     return (
@@ -67,9 +67,6 @@ export default function Calendar(attr: CalendarType) {
     );
   };
 
-  /* ===============================
-   * CLASSES DOS DIAS
-   * =============================== */
   const tileClassName = ({
     date,
     view,
@@ -91,6 +88,26 @@ export default function Calendar(attr: CalendarType) {
 
     return "";
   };
+
+  if (!mounted) {
+    return (
+      <div className="border rounded-md relative z-[1]">
+        <div className="flex justify-between items-center p-2 border-b">
+          <div className="w-full">
+            <input
+              readOnly
+              className="text-sm md:text-base bg-transparent border-0 w-full px-2"
+              value="Carregando calendário..."
+              {...(attr?.required ? { required: true } : {})}
+            />
+          </div>
+        </div>
+        <div className="w-full bg-white rounded-md p-8 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border rounded-md relative z-[1]">

@@ -7,113 +7,121 @@ import LikeButton from "../ui/LikeButton";
 import { getImage } from "@/src/helper";
 import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
 import { formatMoney } from "@/src/components/utils/Currency";
+import { Heart } from "lucide-react";
 
 export default function Product({ product }: { product: ProductType | any }) {
   const imageCover = !!product?.gallery?.length ? product?.gallery[0] : {};
-
   let store: StoreType = product?.store ?? {};
-
   const comercialType = product?.comercialType || "";
-  const capitalizedComercialType = comercialType
-    ? comercialType.charAt(0).toUpperCase() + comercialType.slice(1)
-    : "";
+
+  const storeLogo = store.logo || store.image;
+
+  const badgeConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
+    venda: { bg: "bg-red-50", text: "text-red-700", icon: "fa-tag", label: "Venda" },
+    aluguel: { bg: "bg-blue-50", text: "text-blue-700", icon: "fa-clock", label: "Aluguel" },
+    comestivel: { bg: "bg-amber-50", text: "text-amber-700", icon: "fa-utensils", label: "Comestível" },
+    servicos: { bg: "bg-purple-50", text: "text-purple-700", icon: "fa-briefcase", label: "Serviços" },
+  };
+
+  const badge = badgeConfig[comercialType];
+  const priceInfo = getPrice(product);
 
   return (
-    <div className="group w-full h-full flex flex-col relative rounded-xl overflow-hidden">
-      <div>
-        <Link passHref href={getProductUrl(product)}>
-          <div className="aspect-[4.3/3] bg-zinc-100 relative overflow-hidden">
-            {!!getImage(imageCover) && (
-              <Img
-                src={getImage(imageCover, "sm")}
-                size="md"
-                className="absolute scale-[1.01] group-hover:scale-[1.05] ease object-cover h-full inset-0 w-full"
-              />
-            )}
-          </div>
-        </Link>
-      </div>
-      <div className="p-4 flex border border-t-0 rounded-b-xl h-full">
-        <div className="flex flex-col w-full h-full">
-          <div className="h-full">
-            <div className="">
-              <Link passHref href={getProductUrl(product)}>
-                <h4 className="font-title font-bold text-[1.1rem] text-zinc-900 leading-tight">
-                  {product?.title}
-                </h4>
-              </Link>
-            </div>
-            <div className="w-full pt-3 flex gap-2 md:gap-2 items-center">
-              <div className="w-fit">
-                {(() => {
-                  const badgeMap: Record<string, { bg: string; text: string; icon: string; label: string }> = {
-                    venda: { bg: "bg-red-100", text: "text-red-900", icon: "fa-tag", label: "Venda" },
-                    aluguel: { bg: "bg-blue-100", text: "text-blue-900", icon: "fa-clock", label: "Aluguel" },
-                    comestivel: { bg: "bg-amber-100", text: "text-amber-900", icon: "fa-utensils", label: "Comestivel" },
-                    servicos: { bg: "bg-purple-100", text: "text-purple-900", icon: "fa-briefcase", label: "Servicos" },
-                  };
-                  const b = badgeMap[comercialType];
-                  if (!b) return null;
-                  return (
-                    <div className={`flex items-center gap-1 ${b.bg} ${b.text} whitespace-nowrap rounded text-xs px-2 py-1`}>
-                      <Icon icon={b.icon} className="text-xs" type="far" />
-                      <span>{b.label}</span>
-                    </div>
-                  );
-                })()}
-              </div>
+    <div className="group w-full h-full flex flex-col bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-zinc-100">
+      <Link passHref href={getProductUrl(product)}>
+        <div className="relative aspect-[4/3] bg-zinc-50 overflow-hidden">
+          {!!getImage(imageCover) && (
+            <Img
+              src={getImage(imageCover, "sm")}
+              size="md"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          )}
 
-              {!!product.rate && (
-                <div className="relative h-[.5rem]">
-                  <div className="flex text-[.8rem] gap-1 text-zinc-200">
-                    {[1, 2, 3, 4, 5].map((key) => (
-                      <Icon key={key * 2000} icon="fa-star" type="fa" />
-                    ))}
-                  </div>
-                  <div
-                    style={{ width: `${(product.rate * 100) / 5}%` }}
-                    className="flex absolute top-0 left-0 text-[.8rem] gap-1 text-yellow-500 overflow-hidden"
-                  >
-                    {[1, 2, 3, 4, 5].map((key) => (
-                      <Icon key={key * 200} icon="fa-star" type="fa" />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="text-[.85rem] pt-2 text-zinc-900">
-              <span className="inline-block">Fornecido por:</span>
-              <Link
-                passHref
-                href={getStoreUrl(store)}
-                className="underline hover:text-yellow-500 ease inline-block pl-1"
-              >
-                <b> {store.title}</b>
-              </Link>
+          <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+            {badge && (
+              <div className={`flex items-center gap-1.5 ${badge.bg} ${badge.text} backdrop-blur-sm rounded-full text-xs font-medium px-3 py-1.5 shadow-sm`}>
+                <Icon icon={badge.icon} className="text-xs" type="far" />
+                <span>{badge.label}</span>
+              </div>
+            )}
+
+            <div className="ml-auto">
+              <LikeButton id={parseInt(product.id)} />
             </div>
           </div>
-          <div className="whitespace-nowrap pt-4">
-            <div className="text-[.8rem] h-[1rem]">
-              {getPrice(product).priceFromFor &&
-              !!getPrice(product).priceLow ? (
-                <>
-                  de
-                  <span className="line-through mx-1">
-                    R$ {formatMoney(getPrice(product).priceHigh)}
-                  </span>
-                  por
-                </>
-              ) : (
-                "a partir de:"
-              )}
+
+          {priceInfo.priceFromFor && !!priceInfo.priceLow && (
+            <div className="absolute bottom-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md">
+              PROMOÇÃO
             </div>
-            <h3 className="font-bold text-2xl text-zinc-800">
-              R$ {formatMoney(getPrice(product).price)}
+          )}
+        </div>
+      </Link>
+
+      <div className="p-4 flex flex-col flex-1">
+        <Link passHref href={getProductUrl(product)}>
+          <h4 className="font-title font-bold text-base md:text-lg text-zinc-900 leading-tight mb-2 line-clamp-2 group-hover:text-cyan-600 transition-colors">
+            {product?.title}
+          </h4>
+        </Link>
+
+        {!!product.rate && (
+          <div className="flex items-center gap-1 mb-2">
+            <div className="relative flex">
+              <div className="flex text-xs gap-0.5 text-zinc-200">
+                {[1, 2, 3, 4, 5].map((key) => (
+                  <Icon key={key} icon="fa-star" type="fa" />
+                ))}
+              </div>
+              <div
+                style={{ width: `${(product.rate * 100) / 5}%` }}
+                className="flex absolute top-0 left-0 text-xs gap-0.5 text-yellow-400 overflow-hidden"
+              >
+                {[1, 2, 3, 4, 5].map((key) => (
+                  <Icon key={key} icon="fa-star" type="fa" />
+                ))}
+              </div>
+            </div>
+            <span className="text-xs text-zinc-500 ml-1">
+              {product.rate.toFixed(1)}
+            </span>
+          </div>
+        )}
+
+        <Link
+          passHref
+          href={getStoreUrl(store)}
+          className="text-xs text-zinc-600 hover:text-cyan-600 transition-colors mb-3 flex items-center gap-2"
+        >
+          {!!getImage(storeLogo) ? (
+            <div className="w-5 h-5 rounded-full overflow-hidden bg-zinc-100 flex-shrink-0">
+              <Img
+                src={getImage(storeLogo, "thumb")}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <Icon icon="fa-store" type="far" className="text-xs" />
+          )}
+          <span className="truncate">{store.title}</span>
+        </Link>
+
+        <div className="mt-auto pt-3 border-t border-zinc-100">
+          {priceInfo.priceFromFor && !!priceInfo.priceLow && (
+            <div className="text-xs text-zinc-500 mb-1">
+              de{" "}
+              <span className="line-through">
+                R$ {formatMoney(priceInfo.priceHigh)}
+              </span>
+            </div>
+          )}
+          <div className="flex items-baseline gap-1">
+            <span className="text-xs text-zinc-500">a partir de</span>
+            <h3 className="font-bold text-xl md:text-2xl text-zinc-900">
+              R$ {formatMoney(priceInfo.price)}
             </h3>
           </div>
-        </div>
-        <div className="w-fit">
-          <LikeButton id={parseInt(product.id)} />
         </div>
       </div>
     </div>

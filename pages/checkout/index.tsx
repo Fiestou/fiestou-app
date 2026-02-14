@@ -225,7 +225,6 @@ export default function Checkout({
   const [pickupSchedules, setPickupSchedules] = useState<Record<number, string>>({});
   const [deliveryTo, setDeliveryTo] = useState("reception" as string);
   const [rulesModalStore, setRulesModalStore] = useState<any>(null);
-
   const [customLocation, setCustomLocation] = useState(false as boolean);
   const [locations, setLocations] = useState([] as Array<AddressType>);
   const [phone, setPhone] = useState(user?.phone ?? "");
@@ -277,7 +276,6 @@ export default function Checkout({
   const lastFetchedZipRef = useRef<string | null>(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const updated = cart.map((item: any) => {
       if (!item.details?.deliverySelection) {
@@ -675,8 +673,6 @@ export default function Checkout({
   const submitOrder = async (e: any) => {
     e.preventDefault();
 
-
-      
     if (!formattedAddressZip) {
       toast.error("Informe um CEP válido para calcular o frete.");
       return;
@@ -693,8 +689,6 @@ export default function Checkout({
       toast.error("Ainda falta calcular o frete para todos os fornecedores.");
       return;
     }
-
- 
 
     setForm({ ...form, loading: true });
 
@@ -916,9 +910,7 @@ export default function Checkout({
         <form autoComplete="off" onSubmit={(e: any) => submitOrder(e)}>
           <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-6xl">
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 xr:gap-12">
-              {/* Coluna Principal - Formulário */}
               <div className="w-full lg:w-2/3 xl:w-[68%] space-y-6 lg:space-y-8">
-                {/* Header com Breadcrumbs */}
                 <div className="pb-4 lg:pb-6 border-b border-gray-200">
                   <div className="mb-3 lg:mb-4">
                     <Breadcrumbs
@@ -941,13 +933,11 @@ export default function Checkout({
                   </div>
                 </div>
 
-                {/* Endereço de Entrega */}
                 <div className="space-y-4 lg:space-y-6">
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
                     Endereço de entrega
                   </h2>
 
-                  {/* Alertas */}
                   {!!address?.zipCode && !isCEPInRegion(address?.zipCode) && (
                     <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm leading-relaxed">
                       <Icon
@@ -983,7 +973,6 @@ export default function Checkout({
                     </div>
                   )}
 
-                  {/* Lista de Endereços */}
                   {!!locations.length && !customLocation && (
                     <div className="space-y-3">
                       {locations.map((addr: AddressType, key: any) => (
@@ -1052,7 +1041,6 @@ export default function Checkout({
                   )}
                 </div>
 
-                {/* Verificação de Telefone */}
                 <div className="space-y-4">
                   <div>
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
@@ -1098,7 +1086,6 @@ export default function Checkout({
                   <ToastContainer position="top-right" />
                 </div>
 
-                {/* Produtos para ENTREGA */}
                 {deliveryProducts.length > 0 && (
                   <div className="space-y-4 bg-blue-50 border border-blue-200 rounded-xl p-5">
                     <div className="flex items-center gap-2">
@@ -1126,20 +1113,39 @@ export default function Checkout({
                       return (
                         <div key={store.id} className="bg-white rounded-lg p-4 border border-blue-100 space-y-3">
                           <div className="font-medium text-zinc-800">{store.title}</div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="space-y-2">
                             {storeProducts.map((item, idx) => (
-                              <div key={idx} className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2">
-                                {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
-                                  <img
-                                    src={getImage(item.product.gallery[0], "thumb")}
-                                    alt={item.product?.title}
-                                    className="w-10 h-10 rounded object-cover"
-                                  />
-                                )}
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
-                                  <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
+                              <div key={idx} className="bg-blue-50 rounded-lg p-3">
+                                <div className="flex items-center gap-2">
+                                  {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
+                                    <img
+                                      src={getImage(item.product.gallery[0], "thumb")}
+                                      alt={item.product?.title}
+                                      className="w-10 h-10 rounded object-cover"
+                                    />
+                                  )}
+                                  <div className="flex flex-col flex-1">
+                                    <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
+                                    <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
+                                  </div>
                                 </div>
+                                {item.attributes && item.attributes.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-blue-100 space-y-1">
+                                    {item.attributes.map((attr: any, attrIdx: number) => (
+                                      <div key={attrIdx}>
+                                        <p className="text-xs font-semibold text-zinc-700">{attr.title}</p>
+                                        {attr.variations?.map((v: any, vIdx: number) => (
+                                          <div key={vIdx} className="ml-2 flex items-center gap-2 text-xs text-zinc-600">
+                                            <span>• {v.title || v.value}</span>
+                                            {v.value && typeof v.value === "string" && (v.value.startsWith("http") || v.value.startsWith("/") || v.value.startsWith("data:image")) && (
+                                              <img src={v.value} alt="" className="h-8 rounded border border-zinc-200 object-contain" />
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1190,20 +1196,39 @@ export default function Checkout({
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="space-y-2">
                             {storeProducts.map((item, idx) => (
-                              <div key={idx} className="flex items-center gap-2 bg-amber-50 rounded-lg px-3 py-2">
-                                {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
-                                  <img
-                                    src={getImage(item.product.gallery[0], "thumb")}
-                                    alt={item.product?.title}
-                                    className="w-10 h-10 rounded object-cover"
-                                  />
-                                )}
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
-                                  <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
+                              <div key={idx} className="bg-amber-50 rounded-lg p-3">
+                                <div className="flex items-center gap-2">
+                                  {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
+                                    <img
+                                      src={getImage(item.product.gallery[0], "thumb")}
+                                      alt={item.product?.title}
+                                      className="w-10 h-10 rounded object-cover"
+                                    />
+                                  )}
+                                  <div className="flex flex-col flex-1">
+                                    <span className="text-sm font-medium text-zinc-800">{item.product?.title}</span>
+                                    <span className="text-xs text-zinc-500">x{(item as any).quantity || 1}</span>
+                                  </div>
                                 </div>
+                                {item.attributes && item.attributes.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-amber-100 space-y-1">
+                                    {item.attributes.map((attr: any, attrIdx: number) => (
+                                      <div key={attrIdx}>
+                                        <p className="text-xs font-semibold text-zinc-700">{attr.title}</p>
+                                        {attr.variations?.map((v: any, vIdx: number) => (
+                                          <div key={vIdx} className="ml-2 flex items-center gap-2 text-xs text-zinc-600">
+                                            <span>• {v.title || v.value}</span>
+                                            {v.value && typeof v.value === "string" && (v.value.startsWith("http") || v.value.startsWith("/") || v.value.startsWith("data:image")) && (
+                                              <img src={v.value} alt="" className="h-8 rounded border border-zinc-200 object-contain" />
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1220,7 +1245,6 @@ export default function Checkout({
                   </div>
                 )}
 
-                {/* Fornecedores */}
                 <div className="space-y-4 lg:space-y-6">
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
                     Fornecedores
@@ -1235,7 +1259,6 @@ export default function Checkout({
                 </div>
               </div>
 
-              {/* Sidebar - Resumo */}
               <div className="w-full lg:w-1/3 xl:w-[55%] lg:max-w-md">
                 <div className="sticky top-4">
                   <div className="rounded-2xl bg-gray-50 border border-gray-200 p-4 sm:p-6 lg:p-8">
@@ -1244,7 +1267,6 @@ export default function Checkout({
                     </div>
 
                     <div className="space-y-4">
-                      {/* Data da Locação */}
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-4">
                           <div className="font-semibold text-sm text-zinc-900 flex items-center">
@@ -1293,7 +1315,6 @@ export default function Checkout({
 
                       <div className="border-t border-gray-200 my-1"></div>
 
-                      {/* Subtotal */}
                       <div className="flex justify-between items-center py-1">
                         <div className="text-sm text-zinc-600">
                           Subtotal ({listCart.length}{" "}
@@ -1306,7 +1327,6 @@ export default function Checkout({
 
                       <div className="border-t border-gray-200 my-1"></div>
 
-                      {/* Frete */}
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-4">
                           <div className="font-semibold text-sm text-zinc-900 flex items-center">
@@ -1335,7 +1355,6 @@ export default function Checkout({
 
                       <div className="border-t border-gray-200 my-1"></div>
 
-                      {/* Total */}
                       <div className="flex justify-between items-center pt-3 pb-1">
                         <div className="text-base lg:text-lg font-bold text-zinc-900">
                           TOTAL
@@ -1345,7 +1364,6 @@ export default function Checkout({
                         </div>
                       </div>
 
-                      {/* Regras de locacao por loja */}
                       {storesList.some((s: any) => s.rental_rules?.enabled) && (
                         <div className="space-y-3">
                           {storesList.filter((s: any) => s.rental_rules?.enabled).map((s: any) => {
@@ -1426,7 +1444,6 @@ export default function Checkout({
                         </div>
                       )}
 
-                      {/* Botão de Confirmar */}
                       <div className="pt-4">
                         {(() => {
                           const missingItems = [];
