@@ -26,14 +26,19 @@ export default function ProductForm({ product, store }: ProductFormProps) {
   const [cepError, setCepError] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
 
-  const getImageAttr = (imageID: number) => {
-    return product.medias?.find((media: any) => media.id === imageID);
+  const getImageAttr = (imageID: number | string) => {
+    const normalizedId = Number(imageID);
+    if (!Number.isFinite(normalizedId)) return null;
+    return (
+      product.medias?.find((media: any) => Number(media.id) === normalizedId) ??
+      null
+    );
   };
 
   const navegateImageCarousel = (imageID: number) => {
   };
 
-  /** 🔍 Consulta de CEP (mockada, depois integrar API real) */
+  /** Consulta de CEP (mockada, depois integrar API real) */
   const handleCheckCep = async () => {
     if (!cep || cep.length < 8) return;
 

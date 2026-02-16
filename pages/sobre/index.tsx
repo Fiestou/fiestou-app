@@ -232,7 +232,7 @@ export default function Sobre({ About, HeaderFooter, DataSeo, Scripts }: SobrePr
                   Segurança
                 </h3>
                 <p className="text-gray-600">
-                  O pagamento está seguro, e com garantia. Para parceiros a divisão é feito automaticamente.
+                  O pagamento está seguro e com garantia. Para parceiros, a divisão é feita automaticamente.
                 </p>
               </div>
             </div>

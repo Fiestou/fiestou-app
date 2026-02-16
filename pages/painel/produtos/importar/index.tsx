@@ -29,8 +29,8 @@ const FIELD_OPTIONS = [
 const COMERCIAL_TYPES = [
   { value: "aluguel", label: "Aluguel" },
   { value: "venda", label: "Venda" },
-  { value: "comestivel", label: "Comestivel" },
-  { value: "servico", label: "Servico" },
+  { value: "comestivel", label: "Comestível" },
+  { value: "servico", label: "Serviço" },
 ];
 
 type Step = "upload" | "preview" | "result";
@@ -69,11 +69,11 @@ export default function ImportarProdutos() {
     const validExts = [".csv", ".xlsx", ".xls", ".txt"];
     const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
     if (!validExts.includes(ext)) {
-      setError("Formato invalido. Use CSV, XLSX ou XLS.");
+      setError("Formato inválido. Use CSV, XLSX ou XLS.");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setError("Arquivo muito grande. Maximo 10MB.");
+      setError("Arquivo muito grande. Máximo 10MB.");
       return;
     }
 
@@ -333,7 +333,7 @@ export default function ImportarProdutos() {
               </span>
             </div>
             <p className="text-sm text-zinc-500 mb-6">
-              Verifique se as colunas foram mapeadas corretamente. Ajuste se necessario.
+              Verifique se as colunas foram mapeadas corretamente. Ajuste se necessário.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -361,7 +361,7 @@ export default function ImportarProdutos() {
 
             <div className="mt-6 pt-4 border-t border-zinc-100">
               <label className="block text-xs font-medium text-zinc-600 mb-1">
-                Tipo comercial padrao (para produtos sem coluna mapeada)
+                Tipo comercial padrão (para produtos sem coluna mapeada)
               </label>
               <select
                 value={comercialType}

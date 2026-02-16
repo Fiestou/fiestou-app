@@ -182,7 +182,7 @@ export default function Form({
               <Breadcrumbs
                 links={[
                   { url: "/admin", name: "Admin" },
-                  { url: "/admin/conteudo", name: "Conteudo" },
+                  { url: "/admin/conteudo", name: "Conteúdo" },
                   { url: `/admin/conteudo/${slug}`, name: formFields?.title || "Editando" },
                 ]}
               />
@@ -235,7 +235,7 @@ export default function Form({
                             handleContent("status", e.target.value)
                           }
                           options={[
-                            { name: "Publico", value: 1 },
+                            { name: "Público", value: 1 },
                             { name: "Privado", value: 0 },
                           ]}
                         />

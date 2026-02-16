@@ -505,15 +505,28 @@ export default function Produto({
     <ProductDetails product={product} store={store} categories={categories} />
   );
 
-  if (isFallback) {
-    return null;
-  }
-
   const formatCep = (v: string) =>
     v
       .replace(/\D/g, "")
       .replace(/(\d{5})(\d)/, "$1-$2")
       .slice(0, 9);
+
+  const productMediaPool = [
+    ...(Array.isArray(product?.gallery) ? product.gallery : []),
+    ...(Array.isArray((product as any)?.medias)
+      ? (product as any).medias
+      : []),
+  ];
+
+  const getImageAttr = (imageID: number | string) => {
+    const normalizedId = Number(imageID);
+    if (!Number.isFinite(normalizedId)) return null;
+
+    return (
+      productMediaPool.find((media: any) => Number(media?.id) === normalizedId) ??
+      null
+    );
+  };
 
   const productAttributes = Array.isArray(product?.attributes)
     ? product.attributes
@@ -562,6 +575,10 @@ export default function Produto({
       raw === "yes"
     );
   }, [product]);
+
+  if (isFallback) {
+    return null;
+  }
 
   const productUrl = getProductUrl(product, store);
   const productImage = getImage(imageCover) || "";
@@ -666,7 +683,7 @@ export default function Produto({
                       attributes={product?.attributes ?? []}
                       activeVariations={productToCart.attributes}
                       updateOrder={updateOrder}
-                      getImageAttr={getImage}
+                      getImageAttr={getImageAttr}
                       navegateImageCarousel={() => {}}
                     />
                     {productAttributes.map((attribute) => {
@@ -781,7 +798,11 @@ export default function Produto({
       </section>
 
       <Modal title="Compartilhe:" status={share} size="sm" close={() => setShare(false)}>
-        <ShareModal url={baseUrl} title={`${store?.title} - Fiestou`} />
+        <ShareModal
+          url={baseUrl}
+          title={`${store?.title} - Fiestou`}
+          mode="minimal"
+        />
       </Modal>
 
       {!!product?.combinations?.length && (

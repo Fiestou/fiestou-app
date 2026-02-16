@@ -16,7 +16,7 @@ const commercialTypes = [
   {
     value: "aluguel",
     label: "Aluguel",
-    desc: "Produto alugado por periodo",
+    desc: "Produto alugado por período",
     icon: Clock,
     color: "blue",
   },
@@ -29,15 +29,15 @@ const commercialTypes = [
   },
   {
     value: "comestivel",
-    label: "Comestivel",
+    label: "Comestível",
     desc: "Alimentos e bebidas",
     icon: UtensilsCrossed,
     color: "amber",
   },
   {
     value: "servicos",
-    label: "Servicos",
-    desc: "Prestacao de servico",
+    label: "Serviços",
+    desc: "Prestação de serviço",
     icon: Briefcase,
     color: "purple",
   },

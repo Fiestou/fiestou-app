@@ -535,7 +535,7 @@ export default function SejaParceiro({
                                             </div>
                                             <span className="w-full">
                                                 10% em cada venda realizada na plataforma do Fiestou Customização da página Sem limites em números de produtos cadastrados.
-                                                Transferencia automático nos pagamentos. Ou seja, recebe o dinheiro da venda, na hora.
+                                                Transferência automática nos pagamentos. Ou seja, recebe o dinheiro da venda na hora.
                                             </span>
                                         </div>
                                     </div>

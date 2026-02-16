@@ -133,7 +133,7 @@ export default function Templates() {
 
   const resetToDefault = async () => {
     if (!selected) return;
-    if (!confirm("Restaurar este template ao padrao original? As alteracoes atuais serao perdidas.")) return;
+    if (!confirm("Restaurar este template ao padrão original? As alterações atuais serão perdidas.")) return;
     setResetting(true);
     setMessage(null);
     try {
@@ -147,7 +147,7 @@ export default function Templates() {
         setEmailBody(data.email_body || "");
         setEmailEnabled(data.email_enabled);
         setSelected(data);
-        setMessage({ type: "success", text: "Template restaurado ao padrao" });
+        setMessage({ type: "success", text: "Template restaurado ao padrão" });
         loadTemplates();
       } else {
         setMessage({ type: "error", text: response.message || "Erro ao restaurar" });
@@ -264,7 +264,7 @@ export default function Templates() {
               </a>
               {" > "}
               <a href="/admin/configuracoes" className="hover:text-zinc-700">
-                Configuracoes
+                Configurações
               </a>
               {" > "}
               Templates
@@ -353,16 +353,16 @@ export default function Templates() {
                           <h2 className="font-semibold text-lg">{selected.name}</h2>
                           <p className="text-sm text-zinc-500">{selected.description}</p>
                         </div>
-                        {/* Restaurar padrao */}
+                        {/* Restaurar padrão */}
                         {selected.has_default && (
                           <button
                             onClick={resetToDefault}
                             disabled={resetting}
                             className="text-xs text-zinc-400 hover:text-orange-600 border border-zinc-200 hover:border-orange-300 rounded-lg px-3 py-2 transition-colors flex items-center gap-1.5"
-                            title="Restaurar template ao padrao original"
+                            title="Restaurar template ao padrão original"
                           >
                             <Icon icon="fa-undo" />
-                            {resetting ? "Restaurando..." : "Restaurar padrao"}
+                            {resetting ? "Restaurando..." : "Restaurar padrão"}
                           </button>
                         )}
                       </div>
@@ -425,7 +425,7 @@ export default function Templates() {
                             />
                           </div>
 
-                          {/* Toggle Visual / Codigo / Preview */}
+                          {/* Toggle Visual / Código / Preview */}
                           <div className="flex items-center justify-between">
                             <label className="block text-sm font-medium">Corpo do email</label>
                             <div className="flex bg-zinc-100 rounded-lg p-0.5">
@@ -469,7 +469,7 @@ export default function Templates() {
                           {editorMode === "visual" ? (
                             <div>
                               <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: "#f1f1f1" }}>
-                                {/* Header visual do email (nao editavel) */}
+                                {/* Header visual do email (não editável) */}
                                 <div style={{
                                   backgroundColor: "#00a7eb",
                                   padding: "28px 36px",
@@ -484,18 +484,18 @@ export default function Templates() {
                                   />
                                 </div>
 
-                                {/* Area editavel - corpo do email */}
+                                {/* Area editável - corpo do email */}
                                 <div style={{ backgroundColor: "#fff" }} className="visual-editor-centered">
                                   <style>{`.visual-editor-centered .ql-editor { text-align: center; font-family: 'Helvetica Neue',Helvetica,Roboto,Arial,sans-serif; color: #222; font-size: 16px; } .visual-editor-centered .ql-editor p { margin-bottom: 1rem; }`}</style>
                                   <Editor
                                     value={hasBodyMarkers(emailBody) ? extractBodyContent(emailBody) : emailBody}
                                     onChange={handleVisualChange}
-                                    placeholder="Escreva o conteudo do email..."
+                                    placeholder="Escreva o conteúdo do email..."
                                     minHeight={200}
                                   />
                                 </div>
 
-                                {/* Footer visual do email (nao editavel) */}
+                                {/* Footer visual do email (não editável) */}
                                 <div style={{
                                   textAlign: "center",
                                   padding: "20px 10px",
@@ -519,7 +519,7 @@ export default function Templates() {
                               </div>
                               <p className="text-xs text-zinc-400 mt-2">
                                 <Icon icon="fa-info-circle" className="mr-1" />
-                                Edite o conteudo do corpo acima. Header e footer sao editaveis no modo <strong>HTML</strong>.
+                                Edite o conteúdo do corpo acima. Header e footer são editáveis no modo <strong>HTML</strong>.
                               </p>
                             </div>
                           ) : editorMode === "code" ? (
@@ -534,7 +534,7 @@ export default function Templates() {
                               />
                               <p className="text-xs text-zinc-400 mt-2">
                                 <Icon icon="fa-info-circle" className="mr-1" />
-                                HTML completo do email: header, corpo, footer, estilos. Tudo editavel.
+                                HTML completo do email: header, corpo, footer, estilos. Tudo editável.
                               </p>
                             </div>
                           ) : (
@@ -559,7 +559,7 @@ export default function Templates() {
                               </div>
                               <p className="text-xs text-zinc-400 mt-2">
                                 <Icon icon="fa-info-circle" className="mr-1" />
-                                Variaveis aparecem como texto (ex: {"{nome_cliente}"}). No envio real serao substituidas.
+                                Variáveis aparecem como texto (ex: {"{nome_cliente}"}). No envio real serão substituídas.
                               </p>
                             </div>
                           )}
@@ -598,7 +598,7 @@ export default function Templates() {
                                 <code className="bg-zinc-100 px-1 rounded">*texto*</code> = negrito
                               </span>
                               <span>
-                                <code className="bg-zinc-100 px-1 rounded">_texto_</code> = italico
+                                <code className="bg-zinc-100 px-1 rounded">_texto_</code> = itálico
                               </span>
                               <span>
                                 <code className="bg-zinc-100 px-1 rounded">~texto~</code> = riscado
@@ -621,7 +621,7 @@ export default function Templates() {
                         </div>
                       )}
 
-                      {/* Acoes */}
+                      {/* Ações */}
                       <div className="flex gap-3 mt-6">
                         <Button onClick={saveTemplate} loading={saving}>
                           Salvar
@@ -662,11 +662,11 @@ export default function Templates() {
 
                 {/* Sidebar */}
                 <div className="w-full lg:w-80 space-y-4">
-                  {/* Variaveis disponiveis */}
+                  {/* Variáveis disponíveis */}
                   <div className="bg-white border rounded-lg p-5">
                     <h3 className="font-semibold text-sm mb-3">
                       <Icon icon="fa-code" className="mr-2 text-zinc-400" />
-                      Variaveis disponiveis
+                      Variáveis disponíveis
                     </h3>
                     <div className="space-y-1">
                       {getFilteredVariables().map((v: TemplateVariable) => (
@@ -692,14 +692,14 @@ export default function Templates() {
                     <p className="text-xs text-zinc-500">
                       {channelTab === "email" ? (
                         <>
-                          O template contem o HTML <strong>completo</strong> do email: header, corpo, footer e estilos.
-                          Use <strong>Visual</strong> para editar o conteudo, <strong>HTML</strong> para personalizar o
+                          O template contém o HTML <strong>completo</strong> do email: header, corpo, footer e estilos.
+                          Use <strong>Visual</strong> para editar o conteúdo, <strong>HTML</strong> para personalizar o
                           layout inteiro, ou <strong>Preview</strong> para visualizar o resultado final.
                         </>
                       ) : (
                         <>
-                          Mensagens WhatsApp suportam formatacao basica: *negrito*, _italico_, ~riscado~.
-                          Links sao reconhecidos automaticamente.
+                          Mensagens WhatsApp suportam formatação básica: *negrito*, _itálico_, ~riscado~.
+                          Links são reconhecidos automaticamente.
                         </>
                       )}
                     </p>

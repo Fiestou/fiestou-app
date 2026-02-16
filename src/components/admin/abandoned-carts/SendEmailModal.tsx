@@ -158,7 +158,7 @@ function generateEmailHtml(cart: AbandonedCart, items: CartItem[], content: Emai
 }
 
 export default function SendEmailModal({ cart, cartDetail, onClose, onSend }: Props) {
-  const [subject, setSubject] = useState("Seus itens estao esperando no carrinho!");
+  const [subject, setSubject] = useState("Seus itens estão esperando no carrinho!");
   const [editorMode, setEditorMode] = useState<EditorMode>("visual");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,8 +166,8 @@ export default function SendEmailModal({ cart, cartDetail, onClose, onSend }: Pr
 
   const [content, setContent] = useState<EmailContent>({
     titulo: "Esqueceu algo no carrinho?",
-    saudacao: "Ola {nome},",
-    mensagem: "Notamos que voce deixou alguns itens esperando no seu carrinho. Eles ainda estao disponiveis e prontos para fazer a sua festa ser incrivel!",
+    saudacao: "Olá {nome},",
+    mensagem: "Notamos que você deixou alguns itens esperando no seu carrinho. Eles ainda estão disponíveis e prontos para fazer a sua festa ser incrível!",
     textoBotao: "Finalizar minha compra",
     mensagemAjuda: "Precisa de ajuda? Responda este email ou entre em contato pelo WhatsApp.",
   });
@@ -444,7 +444,7 @@ export default function SendEmailModal({ cart, cartDetail, onClose, onSend }: Pr
               {cart.notified_at && (
                 <p className="mt-3 text-xs text-amber-600">
                   <Icon icon="fa-exclamation-triangle" className="mr-1" />
-                  Cliente ja notificado em: {cart.notified_at}
+                  Cliente já notificado em: {cart.notified_at}
                 </p>
               )}
             </div>

@@ -67,7 +67,7 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
               <EmptyState
                 icon={<ShoppingBag size={28} />}
                 title="Nenhuma compra"
-                description="Este cliente ainda nao realizou compras"
+                description="Este cliente ainda não realizou compras"
               />
             ) : (
               <div className="space-y-3">
@@ -140,7 +140,7 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
             <div className="bg-white rounded-xl border border-zinc-200 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <MapPin size={16} className="text-zinc-400" />
-                <h3 className="font-semibold text-zinc-900">Endereco</h3>
+                <h3 className="font-semibold text-zinc-900">Endereço</h3>
               </div>
               {(user as any).address.map((item: any, key: any) => (
                 <div key={key} className="text-sm text-zinc-600 space-y-0.5">

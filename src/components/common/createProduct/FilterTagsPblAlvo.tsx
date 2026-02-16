@@ -167,7 +167,7 @@ export default function FilterTagsPblAlvo({
             type="button"
             onClick={() => onFilter?.(selectedElementsFull)}
           >
-            Adicionar Publico alvo
+            Adicionar público-alvo
           </Button>
         </div>
       </div>

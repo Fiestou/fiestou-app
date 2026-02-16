@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, FileUp, Pencil, Trash2, Package } from "lucide-react";
+import { Plus, FileUp, Pencil, Trash2, Package, SlidersHorizontal } from "lucide-react";
 import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
 import { moneyFormat } from "@/src/helper";
@@ -31,8 +31,8 @@ const STATUS_OPTIONS = [
 const TYPE_OPTIONS = [
   { label: "Aluguel", value: "aluguel" },
   { label: "Venda", value: "venda" },
-  { label: "Comestivel", value: "comestivel" },
-  { label: "Servicos", value: "servicos" },
+  { label: "Comestível", value: "comestivel" },
+  { label: "Serviços", value: "servicos" },
 ];
 
 const PAGE_SIZE = 15;
@@ -142,6 +142,25 @@ export default function Produtos({ store }: { store: any }) {
     );
   };
 
+  const parseAttributes = (raw: any): any[] => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const hasSelectableVariations = (row: ProductType) => {
+    const attrs = parseAttributes((row as any)?.attributes);
+    return attrs.some((attr: any) => Array.isArray(attr?.variations) && attr.variations.length > 0);
+  };
+
   const columns: Column<ProductType>[] = [
     {
       key: "gallery",
@@ -178,6 +197,32 @@ export default function Produtos({ store }: { store: any }) {
       ),
     },
     {
+      key: "variations",
+      label: "Variações",
+      className: "w-44",
+      render: (row) => {
+        const hasVariations = hasSelectableVariations(row);
+        return (
+          <Link
+            href={`/painel/produtos/${row.id}#variacoes-section`}
+            className={`inline-flex items-center gap-2 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+              hasVariations
+                ? "bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+                : "bg-zinc-50 border-zinc-200 text-zinc-500 hover:bg-zinc-100"
+            }`}
+            title={
+              hasVariations
+                ? "Editar variações deste produto"
+                : "Produto sem variações cadastradas"
+            }
+          >
+            <SlidersHorizontal size={13} />
+            {hasVariations ? "Editável" : "Sem opções"}
+          </Link>
+        );
+      },
+    },
+    {
       key: "price",
       label: "Preço",
       sortable: true,
@@ -203,8 +248,8 @@ export default function Produtos({ store }: { store: any }) {
         const typeMap: Record<string, { label: string; variant: string }> = {
           aluguel: { label: "Aluguel", variant: "info" },
           venda: { label: "Venda", variant: "success" },
-          comestivel: { label: "Comestivel", variant: "warning" },
-          servicos: { label: "Servicos", variant: "neutral" },
+          comestivel: { label: "Comestível", variant: "warning" },
+          servicos: { label: "Serviços", variant: "neutral" },
         };
         const t = typeMap[row.comercialType] || { label: row.comercialType, variant: "neutral" };
         return <Badge variant={t.variant as any}>{t.label}</Badge>;
@@ -222,7 +267,7 @@ export default function Produtos({ store }: { store: any }) {
     },
     {
       key: "actions",
-      label: "Acoes",
+      label: "Ações",
       className: "w-28",
       render: (row) => (
         <div className="flex items-center gap-1">
@@ -247,7 +292,7 @@ export default function Produtos({ store }: { store: any }) {
     <PainelLayout>
       <PageHeader
         title="Produtos"
-        description="Gerencie seu catalogo de produtos"
+        description="Gerencie seu catálogo de produtos"
         actions={
           <>
             <Link href="/painel/produtos/importar" className="bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2">

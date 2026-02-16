@@ -44,7 +44,7 @@ import { PainelLayout, PageHeader } from "@/src/components/painel";
 function SectionCard({
   icon,
   title,
-  iconColor = "bg-zinc-100 text-zinc-600",
+  iconColor = "bg-amber-50 text-amber-600",
   children,
   className = "",
 }: {
@@ -57,7 +57,7 @@ function SectionCard({
   return (
     <div className={`bg-white rounded-xl border border-zinc-200 shadow-sm ${className}`}>
       <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconColor}`}>
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconColor}`}>
           {icon}
         </div>
         <h3 className="text-base font-semibold text-zinc-900">{title}</h3>
@@ -88,6 +88,49 @@ export default function CreateProduct() {
     suggestions: true,
     status: 1,
   } as ProductType);
+
+  const toPositiveNumber = (value: unknown): number | null => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  };
+
+  const getPublicProductLink = (slug?: string, productId?: number | null) => {
+    const safeSlug = (slug || "").toString().trim();
+    const safeId = toPositiveNumber(productId);
+
+    if (safeSlug && safeId) return `/produtos/${safeSlug}-${safeId}`;
+    if (safeId) return `/produtos/${safeId}`;
+    if (safeSlug) return `/produtos/${safeSlug}`;
+    return "/produtos";
+  };
+
+  const revalidateProductCache = async (slug?: string, productId?: number | null) => {
+    if (process.env.NODE_ENV !== "production") {
+      return;
+    }
+
+    const safeSlug = (slug || "").toString().trim();
+    const safeId = toPositiveNumber(productId);
+
+    const routes = new Set<string>(["/", "/produtos", "/produtos/pagina/1"]);
+
+    if (safeSlug) {
+      routes.add(`/produtos/${safeSlug}`);
+    }
+
+    if (safeId) {
+      routes.add(`/produtos/${safeId}`);
+      routes.add(`/produtos/${safeSlug ? `${safeSlug}-${safeId}` : safeId}`);
+    }
+
+    await Promise.allSettled(
+      Array.from(routes).map((route) =>
+        axios.get("/api/cache/", {
+          params: { route },
+        })
+      )
+    );
+  };
 
   const parseRealMoneyNumber = (value: string): number => {
     if (!value) return 0;
@@ -290,9 +333,18 @@ export default function CreateProduct() {
       setFormValue({ sended: request.response });
       setSubimitStatus("clean_cache");
 
-      await axios.get(
-        `/api/cache?route=/products/${request?.data?.slug ?? payload.slug}`
-      );
+      const savedProduct = request?.product ?? request?.data ?? {};
+      const productId = toPositiveNumber(savedProduct?.id ?? payload?.id ?? data?.id);
+      const productSlug = (
+        savedProduct?.slug ??
+        payload?.slug ??
+        data?.slug ??
+        ""
+      )
+        .toString()
+        .trim();
+
+      await revalidateProductCache(productSlug, productId);
 
       setSubimitStatus("register_complete");
       setLoadingContent(false);
@@ -325,9 +377,9 @@ export default function CreateProduct() {
         description={isEditing ? "Altere as informações do seu produto" : "Preencha os dados para criar um novo produto"}
         actions={
           <div className="flex items-center gap-3">
-            {isEditing && data?.slug && (
+            {isEditing && (data?.slug || data?.id) && (
               <Link
-                href={`/produtos/${data.slug}`}
+                href={getPublicProductLink(data?.slug, data?.id)}
                 target="_blank"
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-600 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
               >
@@ -359,9 +411,9 @@ export default function CreateProduct() {
         ) : (
           <div className="grid gap-5">
             <SectionCard
-              icon={<FileText size={18} />}
+              icon={<FileText size={20} />}
               title="Informações Básicas"
-              iconColor="bg-cyan-50 text-cyan-600"
+              iconColor="bg-amber-50 text-amber-600"
             >
               <NameAndDescription
                 data={data}
@@ -394,18 +446,18 @@ export default function CreateProduct() {
             </SectionCard>
 
             <SectionCard
-              icon={<Image size={18} />}
+              icon={<Image size={20} />}
               title="Imagens do Produto"
-              iconColor="bg-yellow-50 text-yellow-600"
+              iconColor="bg-amber-50 text-amber-600"
             >
               <ProductGallery data={data} handleData={handleData} />
             </SectionCard>
 
             <div className="grid lg:grid-cols-2 gap-5">
               <SectionCard
-                icon={<DollarSign size={18} />}
+                icon={<DollarSign size={20} />}
                 title="Preço"
-                iconColor="bg-emerald-50 text-emerald-600"
+                iconColor="bg-amber-50 text-amber-600"
               >
                 <ProductPrice data={data} handleData={handleData} />
                 <div className="mt-4">
@@ -414,9 +466,9 @@ export default function CreateProduct() {
               </SectionCard>
 
               <SectionCard
-                icon={<Package size={18} />}
+                icon={<Package size={20} />}
                 title="Estoque"
-                iconColor="bg-purple-50 text-purple-600"
+                iconColor="bg-amber-50 text-amber-600"
               >
                 <ProductStock
                   data={data}
@@ -427,23 +479,25 @@ export default function CreateProduct() {
               </SectionCard>
             </div>
 
-            <SectionCard
-              icon={<Layers size={18} />}
-              title="Variações e Adicionais"
-              iconColor="bg-blue-50 text-blue-600"
-            >
-              <Variable
-                product={data}
-                emitAttributes={(param) =>
-                  handleData({ attributes: param })
-                }
-              />
-            </SectionCard>
+            <div id="variacoes-section">
+              <SectionCard
+                icon={<Layers size={20} />}
+                title="Variações e Adicionais"
+                iconColor="bg-amber-50 text-amber-600"
+              >
+                <Variable
+                  product={data}
+                  emitAttributes={(param) =>
+                    handleData({ attributes: param })
+                  }
+                />
+              </SectionCard>
+            </div>
 
             <SectionCard
-              icon={<Palette size={18} />}
+              icon={<Palette size={20} />}
               title="Características"
-              iconColor="bg-orange-50 text-orange-600"
+              iconColor="bg-amber-50 text-amber-600"
             >
               <ProductFeatures data={data} handleData={handleData} />
 
@@ -485,9 +539,9 @@ export default function CreateProduct() {
             </SectionCard>
 
             <SectionCard
-              icon={<Truck size={18} />}
+              icon={<Truck size={20} />}
               title="Logística e Transporte"
-              iconColor="bg-slate-100 text-slate-600"
+              iconColor="bg-amber-50 text-amber-600"
             >
               <ProductDimensions data={data} handleData={handleData} />
               <div className="mt-4">
@@ -500,17 +554,17 @@ export default function CreateProduct() {
             </SectionCard>
 
             <SectionCard
-              icon={<Layers size={18} />}
+              icon={<Layers size={20} />}
               title="Períodos de Indisponibilidade"
-              iconColor="bg-red-50 text-red-600"
+              iconColor="bg-amber-50 text-amber-600"
             >
               <UnavailablePeriods data={data} handleData={handleData} productId={data.id} />
             </SectionCard>
 
             <SectionCard
-              icon={<Link2 size={18} />}
+              icon={<Link2 size={20} />}
               title="Venda Combinada"
-              iconColor="bg-teal-50 text-teal-600"
+              iconColor="bg-amber-50 text-amber-600"
             >
               <ProductBundle
                 data={data}
@@ -530,12 +584,12 @@ export default function CreateProduct() {
               <button
                 type="submit"
                 disabled={form.loading}
-                className="inline-flex items-center gap-2 px-8 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-sm rounded-lg transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-8 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-semibold text-sm rounded-lg transition-colors disabled:opacity-50"
               >
                 {form.loading ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 size={18} className="animate-spin" />
                 ) : (
-                  <Save size={16} />
+                  <Save size={18} />
                 )}
                 {form.loading ? "Salvando..." : "Salvar Produto"}
               </button>

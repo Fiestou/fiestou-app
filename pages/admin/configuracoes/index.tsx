@@ -260,7 +260,7 @@ export default function Configuracoes() {
             setMessage({ type: "error", text: response.error || "Erro" });
           }
         } catch (err) {
-          setMessage({ type: "error", text: "Erro na autorizacao" });
+          setMessage({ type: "error", text: "Erro na autorização" });
         } finally {
           setLoading(false);
           router.replace("/admin/configuracoes", undefined, { shallow: true });
@@ -279,12 +279,12 @@ export default function Configuracoes() {
       <section>
         <div className="container-medium pt-12 pb-8 md:py-12">
           <div className="flex">
-            <div className="w-full">Admin {">"} Configuracoes</div>
+            <div className="w-full">Admin {">"} Configurações</div>
           </div>
           <div className="flex items-center mt-10">
             <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
               <Icon icon="fa-cog" />
-              Configuracoes do Sistema
+              Configurações do Sistema
             </div>
           </div>
         </div>

@@ -13,7 +13,7 @@ import Api from "@/src/services/api";
 interface ProductAttributesProps {
   attributes: AttributeType[];
   activeVariations: any;
-  getImageAttr: (imageID: number) => any;
+  getImageAttr?: (imageID: number | string) => any;
   navegateImageCarousel: (imageID: number) => void;
   updateOrder: (
     item: VariationProductOrderType,
@@ -21,9 +21,53 @@ interface ProductAttributesProps {
   ) => void;
 }
 
+function resolveVariationImageSrc(
+  rawImage: any,
+  getImageAttr?: (imageID: number | string) => any
+): string {
+  if (!rawImage) return "";
+
+  if (typeof rawImage === "number") {
+    const resolved = getImageAttr?.(rawImage);
+    return getImage(resolved ?? rawImage, "thumb") || "";
+  }
+
+  if (typeof rawImage === "string") {
+    const value = rawImage.trim();
+    if (!value) return "";
+
+    if (/^\d+$/.test(value)) {
+      const numericId = Number(value);
+      const resolved = getImageAttr?.(numericId);
+      return getImage(resolved ?? value, "thumb") || value;
+    }
+
+    return getImage(value, "thumb") || value;
+  }
+
+  if (typeof rawImage === "object") {
+    const imageId = (rawImage as any)?.id ?? (rawImage as any)?.imageId;
+    const hasMediaShape =
+      !!(rawImage as any)?.base_url ||
+      !!(rawImage as any)?.url ||
+      !!(rawImage as any)?.permanent_url ||
+      !!(rawImage as any)?.details?.sizes;
+
+    if (!hasMediaShape && imageId !== undefined && imageId !== null) {
+      const resolved = getImageAttr?.(imageId);
+      return getImage(resolved ?? rawImage, "thumb") || "";
+    }
+
+    return getImage(rawImage, "thumb") || "";
+  }
+
+  return "";
+}
+
 export default function ProductAttributes({
   attributes,
   activeVariations,
+  getImageAttr,
   updateOrder,
 }: ProductAttributesProps) {
   if (!Array.isArray(attributes)) return null;
@@ -76,6 +120,10 @@ export default function ProductAttributes({
                   activeVariations
                     ?.find((attr: any) => attr.id === attribute.id)
                     ?.variations?.some((v: any) => v.id === item.id) ?? false;
+                const variationImageSrc = resolveVariationImageSrc(
+                  item?.image,
+                  getImageAttr
+                );
 
                 return (
                   <label
@@ -111,10 +159,10 @@ export default function ProductAttributes({
                       </div>
                     )}
 
-                    {!!item?.image && (
+                    {!!variationImageSrc && (
                       <div className="w-12 h-12 bg-zinc-100 relative rounded-md shrink-0">
                         <Img
-                          src={getImage(item.image, "thumb")}
+                          src={variationImageSrc}
                           className="absolute inset-0 w-full h-full object-contain rounded-md"
                         />
                       </div>

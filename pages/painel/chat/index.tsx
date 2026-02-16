@@ -28,7 +28,7 @@ export default function Chat() {
     if (!message.trim()) return;
     setMessages((prev) => [
       ...prev,
-      { user: "Voce", from: "me", date: new Date().toISOString(), text: message },
+      { user: "Você", from: "me", date: new Date().toISOString(), text: message },
     ]);
     setMessage("");
   };
