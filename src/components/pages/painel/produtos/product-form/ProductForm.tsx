@@ -38,7 +38,6 @@ export default function ProductForm({ product, store }: ProductFormProps) {
   const navegateImageCarousel = (imageID: number) => {
   };
 
-  /** Consulta de CEP (mockada, depois integrar API real) */
   const handleCheckCep = async () => {
     if (!cep || cep.length < 8) return;
 

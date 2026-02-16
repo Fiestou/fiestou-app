@@ -121,7 +121,6 @@ function toNumber(value: any): number {
     } else if (hasComma) {
       normalized = normalized.replace(/\./g, "").replace(",", ".");
     } else if (hasDot) {
-      // Handle values like "1.500" (thousands separator without decimals).
       if (/^\d{1,3}(\.\d{3})+$/.test(normalized)) {
         normalized = normalized.replace(/\./g, "");
       }
