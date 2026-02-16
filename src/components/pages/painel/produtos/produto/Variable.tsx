@@ -84,8 +84,6 @@ function ImagePicker({
     try {
       const api = new Api();
 
-      // Quando há productId, prioriza upload para a galeria do produto.
-      // Assim a mídia fica vinculada ao produto e aparece na página pública.
       if (productId) {
         try {
           const galleryUpload: any = await api.bridge({
@@ -119,12 +117,9 @@ function ImagePicker({
             setOpen(false);
             return;
           }
-        } catch {
-          // fallback logo abaixo para upload-base64
-        }
+        } catch {}
       }
 
-      // Fallback para fluxo antigo (útil em produto ainda sem ID).
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = reader.result as string;
@@ -416,8 +411,6 @@ export default function Variable({
     emit(attributes);
   };
 
-  // Mantém o formulário pai sincronizado com as alterações locais de variações.
-  // Isso evita perder alterações ao clicar apenas em "Salvar Produto".
   useEffect(() => {
     if (!hasChanges) return;
 

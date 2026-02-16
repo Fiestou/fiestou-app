@@ -360,7 +360,6 @@ export function getImage(image: any, size?: string) {
     return baseUrl ? `${baseUrl}${selected}` : img.url;
   }
 
-  // Novo formato reduzido: { url: 'http://...' }
   if (img?.url && !img?.sizes) {
     return img.url;
   }
@@ -389,7 +388,6 @@ export function getImage(image: any, size?: string) {
     return "";
   }
 
-  // fallback para objeto de mídia sem sizes
   if (img?.base_url && img?.permanent_url) {
     return `${img.base_url}${img.permanent_url}`;
   }

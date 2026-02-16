@@ -468,7 +468,6 @@ export default function Parceiro({ content }: { content: any }) {
       getStoreData();
       fetchOperationsOverview();
     }
-    // Fluxo executado apenas no mount para evitar refetch agressivo no dashboard.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
