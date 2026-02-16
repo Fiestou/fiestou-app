@@ -93,7 +93,7 @@ export default function Template({
         <meta property="og:title" content={meta.title} />
         <meta property="og:description" content={meta.description} />
         <meta property="og:locale" content="pt_BR" />
-        <meta property="og:type" content="website" />
+        <meta property="og:type" content={meta.type} />
         <meta property="og:site_name" content={meta.title} />
         <meta property="og:image" content={meta.image} />
         <meta property="og:image:secure_url" content={meta.image} />

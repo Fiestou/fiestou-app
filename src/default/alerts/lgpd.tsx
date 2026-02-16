@@ -258,7 +258,7 @@ export default function Lgpd({ content, status }: any) {
             id="allowed"
             className={`${
               warning ? "" : "hidden"
-            } fixed w-fit overflow-hidden bottom-0 p-1 md:p-3 md:left-1/2 md:-translate-x-1/2 z-20`}
+            } fixed w-fit overflow-hidden bottom-24 md:bottom-0 p-1 md:p-3 left-1/2 -translate-x-1/2 z-20`}
           >
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-between text-center md:text-left shadow-lg bg-white text-sm rounded p-2 md:p-3 gap-2 md:gap-4">
               <div className="grid gap-2">

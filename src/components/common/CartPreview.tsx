@@ -1,8 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { Button } from "../ui/form";
-import { GetCart, RemoveToCart } from "../pages/carrinho";
 import Api from "@/src/services/api";
 import CartItem from "./cart-preview/CartItem";
 import CartSummary from "./cart-preview/CartSummary";
@@ -10,7 +17,9 @@ import { moneyFormat } from "@/src/helper";
 import {
   buildMinimumOrderSummary,
   extractCartProductIds,
+  getCartFromCookies,
   hydrateCartProducts,
+  removeCartAt,
 } from "@/src/services/cart";
 
 interface CartPreviewProps {
@@ -18,36 +27,112 @@ interface CartPreviewProps {
   onClose?: () => void;
 }
 
-export default function CartPreview({
-  isMobile = false,
-  onClose,
-}: CartPreviewProps) {
+export interface CartPreviewHandle {
+  requestClose: () => void;
+}
+
+const ANIMATION_MS = 320;
+const ANIMATION_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
+
+const CartPreview = forwardRef<CartPreviewHandle, CartPreviewProps>(
+  function CartPreview({ isMobile = false, onClose }: CartPreviewProps, ref) {
+  const [open, setOpen] = useState(false);
   const [cart, setCart] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const loadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasRequestedLoad = useRef(false);
+
+  const requestClose = useCallback(() => {
+    if (!onClose) return;
+
+    setOpen(false);
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => {
+      onClose();
+    }, ANIMATION_MS);
+  }, [onClose]);
 
   useEffect(() => {
-    loadCart();
-  }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "auto";
+      if (loadTimer.current) clearTimeout(loadTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isMobile]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && onClose) onClose();
+      if (e.key === "Escape") requestClose();
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+  }, [requestClose]);
+
+  useEffect(() => {
+    // anima entrada (depois do mount)
+    let raf1 = 0;
+    let raf2 = 0;
+
+    raf1 = requestAnimationFrame(() => {
+      // Double raf to make sure the "closed" classes paint before we transition in.
+      raf2 = requestAnimationFrame(() => setOpen(true));
+    });
+
+    return () => {
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Defer cart hydration/fetch until after the open animation starts.
+    // This avoids jank on mobile devices during the first frames.
+    if (!open) return;
+    if (hasRequestedLoad.current) return;
+    hasRequestedLoad.current = true;
+
+    setLoading(true);
+    loadTimer.current = setTimeout(() => {
+      loadTimer.current = null;
+      loadCart();
+    }, ANIMATION_MS);
+  }, [open]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
+
+  useImperativeHandle(ref, () => ({ requestClose }), [requestClose]);
+
+  useEffect(() => {
+    if (isMobile) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!target || !panelRef.current) return;
+      if (panelRef.current.contains(target)) return;
+      requestClose();
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [isMobile, requestClose]);
 
   const loadCart = async () => {
     setLoading(true);
 
-    const cartData = GetCart();
+    const cartData = getCartFromCookies();
 
     if (!cartData.length) {
       setCart([]);
@@ -75,8 +160,8 @@ export default function CartPreview({
   };
 
   const handleRemove = (index: number) => {
-    RemoveToCart(index);
-    loadCart();
+    removeCartAt(index);
+    setCart((prev) => prev.filter((_, key) => key !== index));
   };
 
   const totalItems = cart.reduce((acc, item) => acc + (item.quantity || 1), 0);
@@ -99,10 +184,43 @@ export default function CartPreview({
     (s) => s.enabled && s.minimumValue > 0 && s.missing > 0,
   );
 
+  const transitionStyle = {
+    transitionDuration: `${ANIMATION_MS}ms`,
+    transitionTimingFunction: ANIMATION_EASE,
+    transitionProperty: isMobile ? "transform" : "transform, opacity",
+  } as const;
+
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
-      <div className="fixed top-16 right-0 pt-2 w-96 h-[80vh] bg-white flex flex-col shadow-lg z-50 rounded-bl-2xl">
+      {isMobile && (
+        <div
+          style={transitionStyle}
+          className={`fixed inset-0 bg-black/40 z-40 transition-opacity ${
+            open ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+          onClick={requestClose}
+        />
+      )}
+
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        style={transitionStyle}
+        className={`fixed bg-white flex flex-col z-50 transform-gpu transition-[transform,opacity] will-change-[transform,opacity] ${
+          isMobile
+            ? "inset-x-0 bottom-0 w-full max-h-[85svh] rounded-t-2xl shadow-xl"
+            : "top-16 right-0 pt-2 w-96 h-[80vh] rounded-bl-2xl shadow-2xl"
+        } ${
+          open
+            ? isMobile
+              ? "translate-y-0"
+              : "translate-x-0 opacity-100"
+            : isMobile
+              ? "translate-y-[100svh] pointer-events-none"
+              : "translate-x-full opacity-0 pointer-events-none"
+        }`}
+      >
         <div className="flex items-center justify-between p-4 border-b border-zinc-200">
           <h4 className="font-bold text-zinc-900 text-lg">
             {loading
@@ -117,7 +235,7 @@ export default function CartPreview({
           </h4>
 
           <button
-            onClick={onClose}
+            onClick={requestClose}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-100"
           >
             <Icon icon="fa-times" className="text-zinc-600" />
@@ -125,8 +243,11 @@ export default function CartPreview({
         </div>
 
         {loading ? (
-          <div>
-            <p className="text-zinc-500 text-center py-8">Carregando...</p>
+          <div className="p-4 space-y-3 animate-pulse">
+            <div className="h-4 w-3/5 bg-zinc-200 rounded-md mx-auto" />
+            <div className="h-16 bg-zinc-100 rounded-lg" />
+            <div className="h-16 bg-zinc-100 rounded-lg" />
+            <div className="h-20 bg-zinc-100 rounded-lg" />
           </div>
         ) : cart.length === 0 ? (
           <div>
@@ -238,4 +359,6 @@ export default function CartPreview({
       </div>
     </>
   );
-}
+});
+
+export default CartPreview;

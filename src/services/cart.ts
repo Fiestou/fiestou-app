@@ -6,6 +6,81 @@ import Api from "@/src/services/api";
 const CART_COOKIE_KEY = "fiestou.cart";
 const CART_COOKIE_EXPIRY = 7;
 const AUTH_TOKEN_KEY = "fiestou.authtoken";
+const CART_CHANGE_EVENT = "fiestou:cart:change";
+const CART_BROADCAST_KEY = "fiestou:cart:broadcast";
+
+export type CartChangeReason =
+  | "save"
+  | "clear"
+  | "add"
+  | "remove"
+  | "quantity"
+  | "external";
+
+export type CartChangeDetail = {
+  cart: CartType[];
+  reason: CartChangeReason;
+  updatedAt: number;
+};
+
+function emitCartChange(cart: CartType[], reason: CartChangeReason): void {
+  if (typeof window === "undefined") return;
+
+  const detail: CartChangeDetail = {
+    cart,
+    reason,
+    updatedAt: Date.now(),
+  };
+
+  window.dispatchEvent(
+    new CustomEvent<CartChangeDetail>(CART_CHANGE_EVENT, { detail }),
+  );
+
+  try {
+    window.localStorage.setItem(
+      CART_BROADCAST_KEY,
+      JSON.stringify({ updatedAt: detail.updatedAt, reason }),
+    );
+  } catch {
+    // Ignora falhas de storage (private mode, quota, etc).
+  }
+}
+
+export function subscribeToCartChanges(
+  callback: (cart: CartType[], detail: CartChangeDetail) => void,
+): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  const handleEvent = (event: Event) => {
+    const customEvent = event as CustomEvent<CartChangeDetail>;
+    const detail = customEvent.detail;
+    const nextCart = Array.isArray(detail?.cart) ? detail.cart : getCartFromCookies();
+
+    callback(nextCart, {
+      cart: nextCart,
+      reason: detail?.reason ?? "external",
+      updatedAt: detail?.updatedAt ?? Date.now(),
+    });
+  };
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key !== CART_BROADCAST_KEY) return;
+    const nextCart = getCartFromCookies();
+    callback(nextCart, {
+      cart: nextCart,
+      reason: "external",
+      updatedAt: Date.now(),
+    });
+  };
+
+  window.addEventListener(CART_CHANGE_EVENT, handleEvent as EventListener);
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    window.removeEventListener(CART_CHANGE_EVENT, handleEvent as EventListener);
+    window.removeEventListener("storage", handleStorage);
+  };
+}
 
 function isUserLoggedIn(): boolean {
   if (typeof window === "undefined") return false;
@@ -58,17 +133,25 @@ export function getCartFromCookies(): CartType[] {
   try {
     const cookie = Cookies.get(CART_COOKIE_KEY);
     const parsed = cookie ? JSON.parse(cookie) : [];
-    return parsed;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
-export function saveCartToCookies(cart: CartType[]): void {
+export function getCartCookieRaw(): string {
+  if (typeof window === "undefined") return "";
+  return Cookies.get(CART_COOKIE_KEY) ?? "";
+}
+
+export function saveCartToCookies(
+  cart: CartType[],
+  reason: CartChangeReason = "save",
+): void {
   if (typeof window === "undefined") return;
 
   const optimizedCart = cart.map((item) => {
-    const productId = typeof item.product === 'object' ? item.product?.id : item.product;
+    const productId = typeof item.product === "object" ? item.product?.id : item.product;
 
     return {
       product: productId,
@@ -79,17 +162,78 @@ export function saveCartToCookies(cart: CartType[]): void {
     };
   });
 
+  if (!optimizedCart.length) {
+    clearCartCookies();
+    return;
+  }
+
   const serialized = JSON.stringify(optimizedCart);
   Cookies.set(CART_COOKIE_KEY, serialized, { expires: CART_COOKIE_EXPIRY });
 
   syncCartToApi(optimizedCart);
+  emitCartChange(optimizedCart, reason);
 }
 
-export function clearCartCookies(): void {
+export function clearCartCookies(
+  options: { syncApi?: boolean; reason?: CartChangeReason } = {},
+): void {
   if (typeof window === "undefined") return;
+  const { syncApi = true, reason = "clear" } = options;
+
   Cookies.remove(CART_COOKIE_KEY);
 
-  clearCartFromApi();
+  if (syncApi) {
+    clearCartFromApi();
+  }
+
+  emitCartChange([], reason);
+}
+
+export function setCart(cart: CartType[]): CartType[] {
+  if (!Array.isArray(cart) || cart.length === 0) {
+    clearCartCookies();
+    return [];
+  }
+
+  saveCartToCookies(cart);
+  return getCartFromCookies();
+}
+
+export function addToCart(item: CartType): boolean {
+  try {
+    const current = getCartFromCookies();
+    const next = current.concat(item);
+    saveCartToCookies(next, "add");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function removeCartAt(index: number): CartType[] {
+  const current = getCartFromCookies();
+  const next = removeCartItem(current, index);
+
+  if (!next.length) {
+    clearCartCookies();
+    return [];
+  }
+
+  saveCartToCookies(next, "remove");
+  return next;
+}
+
+export function setCartItemQuantity(index: number, quantity: number): CartType[] {
+  const current = getCartFromCookies();
+  const next = updateCartItemQuantity(current, index, quantity);
+
+  if (!next.length) {
+    clearCartCookies();
+    return [];
+  }
+
+  saveCartToCookies(next, "quantity");
+  return next;
 }
 
 export function collectDeliverySummary(items: CartType[]): DeliverySummary {

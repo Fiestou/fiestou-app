@@ -45,6 +45,35 @@ export default function CartSummary({
   const hasMinimumOrderBlock = minimumOrderSummary.some(
     (s) => s.enabled && s.minimumValue > 0 && s.missing > 0,
   );
+  const hasPendingDeliverySelection = listCart.some((item) => {
+    const type = item?.product?.delivery_type;
+    return type === "both" && !item?.details?.deliverySelection;
+  });
+  const hasDeliveryRequiredItems = listCart.some((item) => {
+    const selection = item?.details?.deliverySelection;
+    if (selection === "pickup") return false;
+    if (selection === "delivery") return true;
+
+    const type = item?.product?.delivery_type;
+    if (type === "pickup") return false;
+    if (type === "both") return false;
+    return true;
+  });
+  const allItemsPickup =
+    !!listCart.length &&
+    listCart.every((item) => {
+      const selection = item?.details?.deliverySelection;
+      if (selection) {
+        return selection === "pickup";
+      }
+
+      return item?.product?.delivery_type === "pickup";
+    });
+  const requiresCalculatedDelivery =
+    hasDeliveryRequiredItems && !resume.deliveryEntries.length;
+  const checkoutBlocked =
+    hasMinimumOrderBlock || hasPendingDeliverySelection || requiresCalculatedDelivery;
+  const deliveryControlsDisabled = deliveryLoading || !hasDeliveryRequiredItems;
 
   return (
     <div className="w-full md:max-w-[28rem] md:mb-[2rem] relative">
@@ -110,14 +139,15 @@ export default function CartSummary({
                 maxLength={9}
                 onChange={(e) => onZipChange(formatCep(e.target.value))}
                 onKeyDown={handleKeyDown}
-                disabled={deliveryLoading}
+                disabled={deliveryControlsDisabled}
               />
               <Button
+                id="btn-calc-frete"
                 type="button"
                 style="btn-light"
                 className="sm:w-auto w-full"
                 loading={deliveryLoading}
-                disable={deliveryLoading}
+                disable={deliveryControlsDisabled}
                 onClick={onCalculateDelivery}
               >
                 Calcular
@@ -125,10 +155,18 @@ export default function CartSummary({
             </div>
             {deliveryError ? (
               <span className="text-sm text-red-500">{deliveryError}</span>
-            ) : !resume.deliveryEntries.length ? (
+            ) : allItemsPickup ? (
+              <span className="text-xs text-zinc-500">
+                Todos os itens estão em retirada. Frete não é necessário.
+              </span>
+            ) : !resume.deliveryEntries.length && hasDeliveryRequiredItems ? (
               <span className="text-xs text-zinc-500">
                 Informe o CEP para calcular o frete antes de continuar para o
                 checkout.
+              </span>
+            ) : hasPendingDeliverySelection ? (
+              <span className="text-xs text-zinc-500">
+                Selecione entrega ou retirada dos itens com opção dupla.
               </span>
             ) : null}
           </div>
@@ -209,7 +247,7 @@ export default function CartSummary({
                 style="btn-success"
                 href={checkoutHref}
                 className="py-6 mb-2 md:mb-0"
-                disable={!resume.deliveryEntries.length || hasMinimumOrderBlock}
+                disable={checkoutBlocked}
               >
                 {checkoutButtonText}
               </Button>
@@ -217,7 +255,11 @@ export default function CartSummary({
                 <span className="text-xs text-red-500 text-center md:text-left">
                   Pedido mínimo não atingido.
                 </span>
-              ) : !resume.deliveryEntries.length ? (
+              ) : hasPendingDeliverySelection ? (
+                <span className="text-xs text-red-500 text-center md:text-left">
+                  Selecione entrega ou retirada para todos os itens.
+                </span>
+              ) : requiresCalculatedDelivery ? (
                 <span className="text-xs text-red-500 text-center md:text-left">
                   Calcule o frete para prosseguir.
                 </span>

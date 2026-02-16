@@ -3,6 +3,7 @@ import Router from "next/router";
 import Cookies from "js-cookie";
 import { useEffect } from "react";
 import { signOut } from "next-auth/react";
+import { clearCartCookies } from "@/src/services/cart";
 
 export async function getServerSideProps(ctx: any) {
   const response = new Api();
@@ -24,11 +25,11 @@ export async function getServerSideProps(ctx: any) {
 export default function Logout() {
 
   const handleLogout = async () => {
+    clearCartCookies();
     Cookies.remove("fiestou.authtoken", { path: "/" });
     Cookies.remove("fiestou.user", { path: "/" });
     Cookies.remove("fiestou.store", { path: "/" });
     Cookies.remove("fiestou.region", { path: "/" });
-    Cookies.remove("fiestou.cart", { path: "/" });
 
     api.defaults.headers["Authorization"] = ``;
 

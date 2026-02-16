@@ -6,6 +6,7 @@ import { UserType } from "@/src/models/user";
 import { signOut } from "next-auth/react";
 import { isCEPInRegion } from "../helper";
 import { CheckMail } from "../models/CheckEmail";
+import { clearCartCookies, getCartFromCookies } from "@/src/services/cart";
 
 // Helper para determinar tipo do usuário com fallback para campo person (legado)
 export function getUserType(user: UserType | any): string {
@@ -143,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         Router.push("/painel");
       } else if (userType === "delivery") {
         Router.push("/entregador");
-      } else if (!Cookies.get("fiestou.cart")) {
+      } else if (getCartFromCookies().length === 0) {
         Router.push("/dashboard");
       } else {
         Router.push('/checkout')
@@ -162,12 +163,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
 async function UserLogout() {
+  clearCartCookies();
   // Remova todos os cookies de autenticação
   Cookies.remove("fiestou.authtoken");
   Cookies.remove("fiestou.user");
   Cookies.remove("fiestou.store");
   Cookies.remove("fiestou.region");
-  Cookies.remove("fiestou.cart");
   // Adicione outros cookies que você usa, se necessário
 
   // Redirecione para a página de logout ou home
