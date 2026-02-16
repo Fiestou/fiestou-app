@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   User, Mail, Phone, Hash, Building2, MapPin, Landmark,
   ChevronDown, ChevronUp, Pencil, X, Check,
-  ArrowRightLeft, Info,
 } from "lucide-react";
 import Api from "@/src/services/api";
 import { UserType } from "@/src/models/user";
@@ -41,7 +40,7 @@ function FieldRow({ field, editMode, onChange }: {
         />
       ) : (
         <span className={`text-sm font-medium ${displayVal && displayVal !== "" ? "text-zinc-900" : "text-zinc-300 italic"}`}>
-          {displayVal || "Nao preenchido"}
+          {displayVal || "Não preenchido"}
         </span>
       )}
     </div>
@@ -149,14 +148,6 @@ export default function UserEdit({ user }: { user: UserType }) {
   const [content, setContent] = useState<RecipientType | null>(null);
   const [storeId, setStoreId] = useState<any>();
   const [bankData, setBankData] = useState<BankAccountTypeRecipient>({} as BankAccountTypeRecipient);
-  const [transferSettings, setTransferSettings] = useState({
-    transfer_enabled: true,
-    transfer_interval: "weekly" as "daily" | "weekly" | "monthly",
-    transfer_day: 5,
-  });
-  const [transferLoaded, setTransferLoaded] = useState(false);
-  const [editTransfer, setEditTransfer] = useState(false);
-  const [savingTransfer, setSavingTransfer] = useState(false);
 
   const buildFromUser = (): RecipientType => {
     const userAddr = (user as any)?.address?.[0];
@@ -210,19 +201,9 @@ export default function UserEdit({ user }: { user: UserType }) {
     } catch {}
   };
 
-  const fetchTransferSettings = async () => {
-    try {
-      const res: any = await api.bridge({ method: "GET", url: "info/transfer-settings" });
-      if (res?.response && res?.data) {
-        setTransferSettings({ transfer_enabled: res.data.transfer_enabled ?? true, transfer_interval: (res.data.transfer_interval ?? "weekly").toLowerCase(), transfer_day: Number(res.data.transfer_day) || 5 });
-      }
-      setTransferLoaded(true);
-    } catch { setTransferLoaded(true); }
-  };
-
   useEffect(() => { if (typeof window !== "undefined") setStoreId(getStore()); }, []);
   useEffect(() => { if (storeId) getRecipientCode(storeId); }, [storeId]);
-  useEffect(() => { if (content) { fetchBankData(); fetchTransferSettings(); } }, [content]);
+  useEffect(() => { if (content) { fetchBankData(); } }, [content]);
 
   const phone = content?.phones?.[0];
   const phoneDisplay = phone ? `(${phone.area_code}) ${phone.number}` : "";
@@ -264,37 +245,14 @@ export default function UserEdit({ user }: { user: UserType }) {
     const wd = check?.[0] ?? check?.data?.[0] ?? null;
     if (wd?.id) {
       const res: any = await api.bridge({ method: "post", url: "/withdraw/update", data: { id: wd.id, store: sid, ...payload } });
-      if (res?.response) toast.success("Dados bancarios atualizados!"); else toast.error("Erro ao atualizar.");
+      if (res?.response) toast.success("Dados bancários atualizados!"); else toast.error("Erro ao atualizar.");
     } else {
       const res: any = await api.bridge({ method: "post", url: "/withdraw/register", data: { store: sid, recipient_id: content.id, ...payload, split_payment: 1, is_split: 1 } });
-      if (res?.response) toast.success("Dados bancarios salvos!"); else toast.error("Erro ao salvar.");
+      if (res?.response) toast.success("Dados bancários salvos!"); else toast.error("Erro ao salvar.");
     }
-  };
-
-  const saveTransfer = async () => {
-    setSavingTransfer(true);
-    try {
-      const res: any = await api.bridge({ method: "PATCH", url: "info/transfer-settings", data: transferSettings });
-      if (res?.response) { toast.success("Configuracoes atualizadas!"); setEditTransfer(false); }
-      else toast.error("Erro ao salvar.");
-    } catch { toast.error("Erro inesperado."); }
-    setSavingTransfer(false);
   };
 
   if (!content) return <div className="text-zinc-400 text-sm py-8 text-center">Carregando dados do recebedor...</div>;
-
-  const formatIntervalLabel = (i: string) => {
-    const map: Record<string, string> = { daily: "Diario", weekly: "Semanal", monthly: "Mensal" };
-    return map[i] || i;
-  };
-  const formatDayLabel = (i: string, d: number) => {
-    if (i === "daily") return "-";
-    if (i === "weekly") {
-      const days = ["", "Segunda", "Terca", "Quarta", "Quinta", "Sexta"];
-      return days[d] || "Dia " + d;
-    }
-    return "Dia " + d;
-  };
 
   return (
     <div className="space-y-4">
@@ -314,13 +272,13 @@ export default function UserEdit({ user }: { user: UserType }) {
               {content.code && <span className="text-xs text-zinc-400 flex items-center gap-1"><Hash size={12} />{content.code}</span>}
               <span className="text-xs text-zinc-400 flex items-center gap-1"><Mail size={12} />{content.email}</span>
               {phoneDisplay && <span className="text-xs text-zinc-400 flex items-center gap-1"><Phone size={12} />{phoneDisplay}</span>}
-              <span className="text-xs text-zinc-400 flex items-center gap-1"><Building2 size={12} />{content.type_enum === "PJ" ? "Pessoa Juridica" : "Pessoa Fisica"}</span>
+              <span className="text-xs text-zinc-400 flex items-center gap-1"><Building2 size={12} />{content.type_enum === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <SectionCard icon={<Mail size={18} />} iconColor="bg-cyan-50 text-cyan-600" title="Informacoes de contato" defaultOpen={true}
+      <SectionCard icon={<Mail size={18} />} iconColor="bg-cyan-50 text-cyan-600" title="Informações de contato" defaultOpen={true}
         fields={[
           { key: "email", label: "E-mail", value: content.email ?? "", editable: true },
           { key: "phone", label: "Telefone", value: phoneDisplay, editable: true },
@@ -329,102 +287,42 @@ export default function UserEdit({ user }: { user: UserType }) {
         onSave={saveBasicInfo}
       />
 
-      <SectionCard icon={<User size={18} />} iconColor="bg-yellow-50 text-yellow-600" title={content.type_enum === "PJ" ? "Pessoa Juridica" : "Pessoa Fisica"} defaultOpen={false}
+      <SectionCard icon={<User size={18} />} iconColor="bg-yellow-50 text-yellow-600" title={content.type_enum === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"} defaultOpen={false}
         fields={[
           { key: "name", label: "Nome do recebedor", value: content.name ?? "", editable: true },
           { key: "birth_date", label: "Data de nascimento", value: content.birth_date ?? "", editable: true, type: "date", format: (v: string) => v ? formatDate(v) : "" },
           { key: "monthly_income", label: "Renda mensal", value: content.monthly_income ? String(content.monthly_income) : "", editable: true, format: (v: string) => v ? "R$ " + v : "" },
-          { key: "professional_occupation", label: "Ocupacao profissional", value: content.professional_occupation ?? "", editable: true },
+          { key: "professional_occupation", label: "Ocupação profissional", value: content.professional_occupation ?? "", editable: true },
         ]}
         onSave={savePersonalData}
       />
 
-      <SectionCard icon={<MapPin size={18} />} iconColor="bg-emerald-50 text-emerald-600" title="Endereco" defaultOpen={false}
+      <SectionCard icon={<MapPin size={18} />} iconColor="bg-emerald-50 text-emerald-600" title="Endereço" defaultOpen={false}
         fields={[
           { key: "street", label: "Rua", value: addr?.street ?? "", editable: true },
-          { key: "street_number", label: "Numero", value: addr?.street_number ?? "", editable: true },
+          { key: "street_number", label: "Número", value: addr?.street_number ?? "", editable: true },
           { key: "neighborhood", label: "Bairro", value: addr?.neighborhood ?? "", editable: true },
           { key: "complementary", label: "Complemento", value: addr?.complementary ?? "", editable: true },
           { key: "city", label: "Cidade", value: addr?.city ?? "", editable: true },
           { key: "state", label: "Estado", value: addr?.state ?? "", editable: true },
           { key: "zip_code", label: "CEP", value: addr?.zip_code ?? "", editable: true },
-          { key: "reference_point", label: "Ponto de referencia", value: addr?.reference_point ?? "", editable: true },
+          { key: "reference_point", label: "Ponto de referência", value: addr?.reference_point ?? "", editable: true },
         ]}
         onSave={savePersonalData}
       />
 
-      <SectionCard icon={<Landmark size={18} />} iconColor="bg-purple-50 text-purple-600" title="Conta bancaria" defaultOpen={false}
+      <SectionCard icon={<Landmark size={18} />} iconColor="bg-purple-50 text-purple-600" title="Conta bancária" defaultOpen={false}
         fields={[
           { key: "title", label: "Nome do titular", value: bankData.title ?? "", editable: true },
-          { key: "bank", label: "Codigo do banco", value: bankData.bank ?? "", editable: true },
-          { key: "branch_number", label: "Numero da agencia", value: bankData.branch_number ?? "", editable: true },
-          { key: "branch_check_digit", label: "Digito da agencia", value: bankData.branch_check_digit ?? "", editable: true },
-          { key: "account_number", label: "Numero da conta", value: bankData.account_number ?? "", editable: true },
-          { key: "account_check_digit", label: "Digito da conta", value: bankData.account_check_digit ?? "", editable: true },
+          { key: "bank", label: "Código do banco", value: bankData.bank ?? "", editable: true },
+          { key: "branch_number", label: "Número da agência", value: bankData.branch_number ?? "", editable: true },
+          { key: "branch_check_digit", label: "Dígito da agência", value: bankData.branch_check_digit ?? "", editable: true },
+          { key: "account_number", label: "Número da conta", value: bankData.account_number ?? "", editable: true },
+          { key: "account_check_digit", label: "Dígito da conta", value: bankData.account_check_digit ?? "", editable: true },
         ]}
         onSave={saveBankData}
       />
 
-      <SectionCard icon={<ArrowRightLeft size={18} />} iconColor="bg-blue-50 text-blue-600" title="Configuracoes de transferencia" defaultOpen={false}>
-        <div className="pt-3 space-y-3">
-          <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-zinc-500">Transferencia habilitada</span>
-            {editTransfer ? (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={transferSettings.transfer_enabled} onChange={(e) => setTransferSettings({ ...transferSettings, transfer_enabled: e.target.checked })} className="w-4 h-4 accent-yellow-500" />
-                <span className="text-sm font-medium">{transferSettings.transfer_enabled ? "Sim" : "Nao"}</span>
-              </label>
-            ) : (
-              <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${transferSettings.transfer_enabled ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>{transferSettings.transfer_enabled ? "Sim" : "Nao"}</span>
-            )}
-          </div>
-          <div className="flex items-center justify-between py-2 border-t border-zinc-100">
-            <span className="text-sm text-zinc-500">Frequencia</span>
-            {editTransfer ? (
-              <select value={transferSettings.transfer_interval} onChange={(e) => setTransferSettings({ ...transferSettings, transfer_interval: e.target.value as any, transfer_day: e.target.value === "weekly" ? 5 : 1 })} className="border border-zinc-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-yellow-400">
-                <option value="daily">Diario</option>
-                <option value="weekly">Semanal</option>
-                <option value="monthly">Mensal</option>
-              </select>
-            ) : (
-              <span className="text-sm font-medium text-zinc-900">{formatIntervalLabel(transferSettings.transfer_interval)}</span>
-            )}
-          </div>
-          {transferSettings.transfer_interval !== "daily" && (
-            <div className="flex items-center justify-between py-2 border-t border-zinc-100">
-              <span className="text-sm text-zinc-500">{transferSettings.transfer_interval === "weekly" ? "Dia da semana" : "Dia do mes"}</span>
-              {editTransfer ? (
-                <select value={String(transferSettings.transfer_day)} onChange={(e) => setTransferSettings({ ...transferSettings, transfer_day: Number(e.target.value) })} className="border border-zinc-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-yellow-400">
-                  {transferSettings.transfer_interval === "weekly"
-                    ? [1, 2, 3, 4, 5].map((d) => <option key={d} value={d}>{["", "Segunda", "Terca", "Quarta", "Quinta", "Sexta"][d]}</option>)
-                    : Array.from({ length: 28 }, (_, i) => <option key={i + 1} value={i + 1}>{"Dia " + (i + 1)}</option>)
-                  }
-                </select>
-              ) : (
-                <span className="text-sm font-medium text-zinc-900">{formatDayLabel(transferSettings.transfer_interval, transferSettings.transfer_day)}</span>
-              )}
-            </div>
-          )}
-          <div className="flex items-center justify-end gap-2 pt-2">
-            {!editTransfer ? (
-              <button onClick={() => { fetchTransferSettings(); setEditTransfer(true); }} className="text-sm text-cyan-600 hover:text-cyan-700 font-medium flex items-center gap-1 px-2 py-1 rounded-md hover:bg-cyan-50 transition-colors">
-                <Pencil size={14} /> Editar
-              </button>
-            ) : (
-              <>
-                <button onClick={() => setEditTransfer(false)} className="text-sm text-zinc-500 hover:text-zinc-700 font-medium px-2 py-1 rounded-md hover:bg-zinc-100 transition-colors">Cancelar</button>
-                <button onClick={saveTransfer} disabled={savingTransfer} className="text-sm text-white bg-yellow-500 hover:bg-yellow-600 font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
-                  <Check size={14} /> {savingTransfer ? "Salvando..." : "Salvar"}
-                </button>
-              </>
-            )}
-          </div>
-          <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 text-xs text-cyan-800 flex items-start gap-2">
-            <Info size={14} className="shrink-0 mt-0.5" />
-            O saldo disponivel sera transferido automaticamente para sua conta bancaria conforme a frequencia configurada. Transferencias ocorrem apenas em dias uteis.
-          </div>
-        </div>
-      </SectionCard>
     </div>
   );
 }

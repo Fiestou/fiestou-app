@@ -13,14 +13,16 @@ const BREADCRUMB_MAP: Record<string, string> = {
   clientes: "Clientes",
   loja: "Minha Loja",
   conta: "Minha Conta",
-  saques: "Saques",
+  financeiro: "Financeiro",
+  saques: "Financeiro",
   dados_do_recebedor: "Dados do Recebedor",
   chat: "Chat",
 };
 
 function Breadcrumbs() {
   const router = useRouter();
-  const segments = router.asPath.split("/").filter(Boolean);
+  const cleanPath = router.asPath.split("#")[0]?.split("?")[0] || "/";
+  const segments = cleanPath.split("/").filter(Boolean);
 
   return (
     <div className="flex items-center gap-1.5 text-sm">
