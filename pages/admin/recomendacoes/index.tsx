@@ -19,6 +19,27 @@ const formatDateTime = (value?: string | null) => {
 
 const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
+const formatLocation = (
+  location?:
+    | {
+        label?: string | null;
+        city_name?: string | null;
+        region_name?: string | null;
+        country_code?: string | null;
+      }
+    | null,
+) => {
+  if (!location) return "Local não informado";
+  if (location.label && location.label.trim() !== "") return location.label;
+
+  const parts = [location.city_name, location.region_name, location.country_code]
+    .map((value) => (value || "").trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) return "Local não informado";
+  return parts.join(", ");
+};
+
 const toCsvValue = (value: unknown) => {
   const raw = `${value ?? ""}`.replace(/\r?\n/g, " ").trim();
   const escaped = raw.replace(/"/g, '""');
@@ -186,6 +207,10 @@ export default function AdminRecomendacoes() {
       "cart_count",
       "favorite_count",
       "total_score",
+      "unique_ip_count",
+      "countries",
+      "regions",
+      "last_location",
       "first_event_at",
       "last_event_at",
     ]
@@ -205,6 +230,10 @@ export default function AdminRecomendacoes() {
         actor.cart_count,
         actor.favorite_count,
         actor.total_score,
+        actor.unique_ip_count,
+        (actor.countries || []).join(" | "),
+        (actor.regions || []).join(" | "),
+        formatLocation(actor.last_location),
         actor.first_event_at || "",
         actor.last_event_at || "",
       ]
@@ -285,7 +314,7 @@ export default function AdminRecomendacoes() {
           </div>
 
           {stats && (
-            <div className="grid grid-cols-2 lg:grid-cols-8 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-10 gap-4">
               <div className="bg-white border rounded-xl p-4">
                 <p className="text-xs text-zinc-500">Atores totais</p>
                 <p className="text-2xl font-bold text-zinc-900">{stats.total_actors}</p>
@@ -305,6 +334,22 @@ export default function AdminRecomendacoes() {
               <div className="bg-white border rounded-xl p-4">
                 <p className="text-xs text-zinc-500">Produtos</p>
                 <p className="text-2xl font-bold text-zinc-900">{stats.products_tracked}</p>
+              </div>
+              <div className="bg-white border rounded-xl p-4">
+                <p className="text-xs text-zinc-500">IPs únicas</p>
+                <p className="text-2xl font-bold text-zinc-900">{stats.unique_ips || 0}</p>
+              </div>
+              <div className="bg-white border rounded-xl p-4">
+                <p className="text-xs text-zinc-500">Países</p>
+                <p className="text-2xl font-bold text-zinc-900">
+                  {stats.countries_tracked || 0}
+                </p>
+              </div>
+              <div className="bg-white border rounded-xl p-4">
+                <p className="text-xs text-zinc-500">Regiões</p>
+                <p className="text-2xl font-bold text-zinc-900">
+                  {stats.regions_tracked || 0}
+                </p>
               </div>
               <div className="bg-white border rounded-xl p-4">
                 <p className="text-xs text-zinc-500">Última interação</p>
@@ -327,8 +372,11 @@ export default function AdminRecomendacoes() {
             </div>
           )}
 
-          {stats && (stats.top_products?.length > 0 || stats.top_stores?.length > 0) && (
-            <div className="grid lg:grid-cols-2 gap-4">
+          {stats &&
+            (stats.top_products?.length > 0 ||
+              stats.top_stores?.length > 0 ||
+              stats.top_regions?.length > 0) && (
+            <div className="grid lg:grid-cols-3 gap-4">
               <div className="bg-white border rounded-xl p-4">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <h2 className="font-semibold text-zinc-900">Top produtos</h2>
@@ -409,6 +457,39 @@ export default function AdminRecomendacoes() {
                   )}
                 </div>
               </div>
+
+              <div className="bg-white border rounded-xl p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h2 className="font-semibold text-zinc-900">Top regiões</h2>
+                  <span className="text-xs text-zinc-500">IPs e atores por localidade</span>
+                </div>
+                <div className="grid gap-2">
+                  {(stats.top_regions || []).slice(0, 8).map((row: any, index: number) => (
+                    <div
+                      key={`top-region-${index}-${row?.label || "unknown"}`}
+                      className="border rounded-lg p-2.5 flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-zinc-900 truncate">
+                          {row?.label || "Local não informado"}
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          {Number(row?.actors_count || 0)} atores •{" "}
+                          {Number(row?.unique_ip_count || 0)} IPs
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold text-zinc-900 whitespace-nowrap">
+                        {Number(row?.events_count || 0)} eventos
+                      </span>
+                    </div>
+                  ))}
+                  {(stats.top_regions || []).length === 0 && (
+                    <p className="text-sm text-zinc-500">
+                      Ainda sem dados de regiões em destaque.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -434,7 +515,7 @@ export default function AdminRecomendacoes() {
                 <input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Nome, e-mail, visitor id ou actor key"
+                  placeholder="Nome, e-mail, visitor id, actor key, país ou cidade"
                   className="w-full px-3 py-2 border rounded-lg text-sm outline-none"
                 />
               </div>
@@ -466,6 +547,7 @@ export default function AdminRecomendacoes() {
                       <th className="text-left px-4 py-3 font-semibold">Eventos</th>
                       <th className="text-left px-4 py-3 font-semibold">Score</th>
                       <th className="text-left px-4 py-3 font-semibold">Última interação</th>
+                      <th className="text-left px-4 py-3 font-semibold">Rede</th>
                       <th className="text-left px-4 py-3 font-semibold">Ações</th>
                     </tr>
                   </thead>
@@ -495,6 +577,14 @@ export default function AdminRecomendacoes() {
                           {formatDateTime(actor.last_event_at)}
                         </td>
                         <td className="px-4 py-3 align-top">
+                          <p className="text-xs text-zinc-900 font-semibold">
+                            {actor.unique_ip_count || 0} IPs
+                          </p>
+                          <p className="text-xs text-zinc-500 mt-1">
+                            {formatLocation(actor.last_location)}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 align-top">
                           <button
                             type="button"
                             onClick={() => openProfile(actor.actor_key)}
@@ -507,7 +597,7 @@ export default function AdminRecomendacoes() {
                     ))}
                     {actors.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-zinc-500">
+                        <td colSpan={8} className="px-4 py-8 text-center text-zinc-500">
                           Nenhum perfil encontrado com os filtros atuais.
                         </td>
                       </tr>
@@ -582,7 +672,7 @@ export default function AdminRecomendacoes() {
 
             {!loadingProfile && selectedProfile && (
               <div className="grid gap-6">
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-4 gap-4">
                   <div className="bg-zinc-50 rounded-lg p-3">
                     <p className="text-xs text-zinc-500">Ator</p>
                     <p className="font-semibold text-zinc-900">
@@ -612,6 +702,15 @@ export default function AdminRecomendacoes() {
                       {formatDateTime(selectedProfile.totals.last_event_at)}
                     </p>
                   </div>
+                  <div className="bg-zinc-50 rounded-lg p-3">
+                    <p className="text-xs text-zinc-500">Rede</p>
+                    <p className="font-semibold text-zinc-900">
+                      {selectedProfile.network?.unique_ip_count || 0} IPs únicas
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
+                      {formatLocation(selectedProfile.network?.last_location)}
+                    </p>
+                  </div>
                 </div>
 
                 {selectedProfile.top_stores?.length > 0 && (
@@ -623,6 +722,27 @@ export default function AdminRecomendacoes() {
                           <p className="font-semibold text-zinc-900 text-sm">{store.store_name}</p>
                           <p className="text-xs text-zinc-500 mt-1">
                             Score {store.total_score} • {store.events_count} eventos
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedProfile.network?.recent_locations?.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-zinc-900 mb-2">Localizações recentes</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {selectedProfile.network.recent_locations.map((location: any, index: number) => (
+                        <div
+                          key={`network-location-${index}-${location?.label || "unknown"}`}
+                          className="border rounded-lg p-3"
+                        >
+                          <p className="font-semibold text-zinc-900 text-sm">
+                            {formatLocation(location)}
+                          </p>
+                          <p className="text-xs text-zinc-500 mt-1">
+                            Última atividade: {formatDateTime(location?.last_seen_at)}
                           </p>
                         </div>
                       ))}
