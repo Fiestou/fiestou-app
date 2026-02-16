@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../ui/form";
-import Cookies from "js-cookie";
 import Api from "@/src/services/api";
 import { dateBRFormat, getImage } from "@/src/helper";
 import Img from "../utils/ImgBase";
 import Icon from "@/src/icons/fontAwesome/FIcon";
+import {
+  extractCartProductIds,
+  getCartFromCookies,
+  hydrateCartProducts,
+  subscribeToCartChanges,
+} from "@/src/services/cart";
 
 export interface SidebarCartType {
   status: boolean;
@@ -33,45 +38,47 @@ export default function SidebarCart(attr: SidebarCartType) {
     }, 200);
   };
 
-  const onOpen = async () => {
+  const onOpen = useCallback(async () => {
     const api = new Api();
 
     setEffect(true);
     setStatus(true);
     setPlaceholder(true);
 
-    const parse = Cookies.get("fiestou.cart") ?? "";
-    const cart = !!parse ? JSON.parse(parse) : [];
+    const cart = getCartFromCookies();
+    const productIds = extractCartProductIds(cart);
+
+    if (!productIds.length) {
+      setProducts([]);
+      setPlaceholder(false);
+      return;
+    }
 
     let request: any = await api.request({
       method: "get",
       url: "request/products",
       data: {
-        whereIn: cart.map((item: any) => item.product),
+        whereIn: productIds,
       },
     });
 
     const products = request?.data ?? [];
-
-    cart.map((item: any, key: any) => {
-      let handle = products.find(
-        (prod: any, index: any) => prod.id == item.product
-      );
-
-      if (!!handle) {
-        cart[key]["product"] = handle;
-      }
-    });
-
-    setProducts(cart);
+    setProducts(hydrateCartProducts(cart, products));
     setPlaceholder(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (!!window && !!attr.status) {
       onOpen();
     }
-  }, [attr.status]);
+  }, [attr.status, onOpen]);
+
+  useEffect(() => {
+    if (!status) return;
+    return subscribeToCartChanges(() => {
+      onOpen();
+    });
+  }, [onOpen, status]);
 
   return (
     <>

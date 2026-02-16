@@ -5,7 +5,6 @@ import Api from "@/src/services/api";
 import React, { useEffect, useMemo, useState } from "react";
 import { dateBRFormat, getImage, moneyFormat } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
-import { RemoveToCart } from "@/src/components/pages/carrinho";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Img from "@/src/components/utils/ImgBase";
 import { formatCep } from "@/src/components/utils/FormMasks";
@@ -15,6 +14,8 @@ import { CartSummary } from "@/src/components/cart";
 
 import {
   calculateCartResume,
+  getCartFromCookies,
+  removeCartAt,
   saveCartToCookies,
   buildMinimumOrderSummary,
   extractCartProductIds,
@@ -72,7 +73,7 @@ export default function Carrinho() {
     setListCart(listHandle);
     recalcSummary(listHandle);
 
-    RemoveToCart(key);
+    removeCartAt(key);
   };
 
   const handleDeliveryChange = (index: number, type: 'delivery' | 'pickup') => {
@@ -113,7 +114,8 @@ export default function Carrinho() {
       const pType = item.product?.delivery_type ?? 'delivery';
       // Se for 'both', não define padrão - usuário precisa escolher
       if (pType === 'both') return item;
-      const def = pType === 'pickup' ? 'pickup' : 'delivery';
+      const def: "pickup" | "delivery" =
+        pType === "pickup" ? "pickup" : "delivery";
       return { ...item, details: { ...item.details, deliverySelection: def } };
     });
 
@@ -207,13 +209,7 @@ export default function Carrinho() {
   useEffect(() => {
     const load = async () => {
       try {
-        const cookieStr =
-          typeof document !== "undefined" ? document.cookie ?? "" : "";
-        const match = cookieStr.match(
-          /(?:^|;\s*)fiestou\.cart=([^;]*)/,
-        );
-        const raw = match?.[1] ? decodeURIComponent(match[1]) : "";
-        const parsedCart = raw ? JSON.parse(raw) : [];
+        const parsedCart = getCartFromCookies();
 
         const api = new Api();
 

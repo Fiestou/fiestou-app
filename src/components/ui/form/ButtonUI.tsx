@@ -1,7 +1,6 @@
 import { clean } from "@/src/helper";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import * as React from "react";
 
 type Variant =
@@ -39,8 +38,6 @@ interface ButtonType {
 }
 
 export default function Button(attr: ButtonType) {
-  const router = useRouter();
-
   const alt = attr?.alt ?? clean(String(attr?.children ?? ""));
   const title = attr?.title ?? clean(String(attr?.children ?? ""));
 

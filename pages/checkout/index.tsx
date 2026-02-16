@@ -40,8 +40,12 @@ import {
   extractDeliveryFees,
   normalizeDeliveryItems,
   extractCartDeliveryZip,
+  getCartFromCookies,
+  hydrateCartProducts,
   saveCartToCookies,
+  clearCartCookies,
   markCartConverted,
+  buildMinimumOrderSummary,
 } from "@/src/services/cart";
 import {
   calculateDeliveryFees,
@@ -248,10 +252,6 @@ export default function Checkout({
     return phone !== initialPhone;
   }, [phone, initialPhone]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPhone(formatPhone(e.target.value));
-  };
-
   const handleSavePhone = async () => {
     if (!isPhoneValid(phone)) {
       toast.error("Telefone inválido!");
@@ -274,7 +274,55 @@ export default function Checkout({
     normalizeDeliveryItems(extractDeliveryFees(cart))
   );
   const lastFetchedZipRef = useRef<string | null>(null);
+  const lastFetchedDeliverySignatureRef = useRef<string>("");
+  const isSubmittingRef = useRef(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  const getDeliveryProductIdsFromItems = useCallback((items: CartType[]) => {
+    return items
+      .filter((item: any) => {
+        const selection = item?.details?.deliverySelection;
+        if (selection === "pickup") {
+          return false;
+        }
+
+        if (selection === "delivery") {
+          return true;
+        }
+
+        const deliveryType = item?.product?.delivery_type;
+        if (deliveryType === "pickup" || deliveryType === "both") {
+          return false;
+        }
+
+        return true;
+      })
+      .map((item: any) => {
+        const productId =
+          typeof item?.product === "object" ? item?.product?.id : item?.product;
+        return Number(productId);
+      })
+      .filter((id: number) => Number.isFinite(id) && id > 0);
+  }, []);
+
+  const deliveryProductIds = useMemo(
+    () => getDeliveryProductIdsFromItems(cartItems),
+    [cartItems, getDeliveryProductIdsFromItems]
+  );
+
+  const deliverySignature = useMemo(
+    () => deliveryProductIds.slice().sort((a, b) => a - b).join(","),
+    [deliveryProductIds]
+  );
+
+  const hasPendingDeliverySelection = useMemo(() => {
+    return cartItems.some((item: any) => {
+      return (
+        item?.product?.delivery_type === "both" &&
+        !item?.details?.deliverySelection
+      );
+    });
+  }, [cartItems]);
 
   useEffect(() => {
     const updated = cart.map((item: any) => {
@@ -318,10 +366,15 @@ export default function Checkout({
 
       if (cartZip.length === 8) {
         lastFetchedZipRef.current = cartZip;
+        const initialSignature = getDeliveryProductIdsFromItems(cart)
+          .slice()
+          .sort((a, b) => a - b)
+          .join(",");
+        lastFetchedDeliverySignatureRef.current = initialSignature;
       }
     }
     setInitialLoadDone(true);
-  }, [cart, initialLoadDone]);
+  }, [cart, initialLoadDone, getDeliveryProductIdsFromItems]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -329,30 +382,12 @@ export default function Checkout({
     }
 
     try {
-      const cookieCartRaw = Cookies.get("fiestou.cart");
-      if (!cookieCartRaw) {
+      const parsedCart = getCartFromCookies();
+      if (!parsedCart.length) {
         return;
       }
 
-      const parsedCart = JSON.parse(cookieCartRaw);
-      if (!Array.isArray(parsedCart)) {
-        return;
-      }
-
-      const hydratedCart = parsedCart.map((item: any) => {
-        if (item?.product && typeof item.product === "object") {
-          return item;
-        }
-
-        const productId =
-          typeof item?.product === "object" ? item?.product?.id : item?.product;
-
-        const productData = products.find(
-          (prod: any) => prod.id === Number(productId)
-        );
-
-        return productData ? { ...item, product: productData } : item;
-      });
+      const hydratedCart = hydrateCartProducts(parsedCart, products);
 
       setCartItems(hydratedCart);
 
@@ -377,12 +412,17 @@ export default function Checkout({
 
         if (cookieZip.length === 8) {
           lastFetchedZipRef.current = cookieZip;
+          const hydratedSignature = getDeliveryProductIdsFromItems(hydratedCart)
+            .slice()
+            .sort((a, b) => a - b)
+            .join(",");
+          lastFetchedDeliverySignatureRef.current = hydratedSignature;
         }
       }
     } catch (error) {
       console.error("checkout: falha ao sincronizar carrinho do cookie", error);
     }
-  }, [products]);
+  }, [products, getDeliveryProductIdsFromItems]);
 
   const applyDeliveryFeesLocal = (
     fees: DeliveryItem[],
@@ -538,76 +578,69 @@ export default function Checkout({
   useEffect(() => {
     const sanitizedZip = justNumber(address?.zipCode ?? "");
 
-  
-
-    if (sanitizedZip.length < 8) {
-      if (lastFetchedZipRef.current && lastFetchedZipRef.current.length === 8) {
-        return;
-      }
+    if (!deliveryProductIds.length) {
       setDeliveryPrice([]);
       lastFetchedZipRef.current = null;
+      lastFetchedDeliverySignatureRef.current = "";
       return;
     }
 
-    if (lastFetchedZipRef.current === sanitizedZip) {
+    if (sanitizedZip.length !== 8) {
+      setDeliveryPrice([]);
+      lastFetchedZipRef.current = null;
+      lastFetchedDeliverySignatureRef.current = "";
+      return;
+    }
+
+    if (
+      lastFetchedZipRef.current === sanitizedZip &&
+      lastFetchedDeliverySignatureRef.current === deliverySignature
+    ) {
       return;
     }
 
     lastFetchedZipRef.current = sanitizedZip;
+    lastFetchedDeliverySignatureRef.current = deliverySignature;
+
+    let cancelled = false;
 
     const getShippingPrice = async () => {
       setLoadingDeliveryPrice(true);
 
       try {
-        const cartProductIds = cartItems
-          .filter((item: any) => item.details?.deliverySelection !== 'pickup')
-          .map((item: any) => {
-            const productId = typeof item?.product === 'object'
-              ? item?.product?.id
-              : item?.product;
-            return Number(productId);
-          })
-          .filter((id) => Number.isFinite(id) && id > 0);
+        const calculation = await calculateDeliveryFees(
+          api,
+          sanitizedZip,
+          deliveryProductIds
+        );
 
-        if (!cartProductIds.length) {
-          setDeliveryPrice([]);
-          setLoadingDeliveryPrice(false);
+        if (!calculation.success) {
+          if (!cancelled) {
+            setDeliveryPrice([]);
+            toast.error(
+              calculation.error ??
+                "Não conseguimos calcular o frete para este CEP."
+            );
+            lastFetchedZipRef.current = null;
+            lastFetchedDeliverySignatureRef.current = "";
+          }
           return;
         }
 
-        const data: any = await api.request({
-          method: "get",
-          url: `delivery-zipcodes/${sanitizedZip}`,
-          data: {
-            ids: cartProductIds,
-          },
-        });
-
-        const rawList: DeliveryItem[] = Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data)
-          ? data
-          : [];
-
-        const mappedFees = rawList
-          .map(
-            (x: any): DeliveryItem => ({
-              price: Number(x?.price) || 0,
-              store_id:
-                Number(x?.store_id ?? x?.storeId ?? x?.store ?? 0) || 0,
-            })
-          )
-          .filter(
-            (item: DeliveryItem) =>
-              Number.isFinite(item.price) && Number.isFinite(item.store_id)
-          );
-
-        const normalizedFees = normalizeDeliveryItems(mappedFees);
+        const normalizedFees = normalizeDeliveryItems(calculation.fees);
 
         if (!normalizedFees.length) {
+          if (cancelled) {
+            return;
+          }
           setDeliveryPrice([]);
           toast.error("Não conseguimos calcular o frete para este CEP.");
           lastFetchedZipRef.current = null;
+          lastFetchedDeliverySignatureRef.current = "";
+          return;
+        }
+
+        if (cancelled) {
           return;
         }
 
@@ -620,8 +653,12 @@ export default function Checkout({
         if (!success) {
           setDeliveryPrice([]);
           lastFetchedZipRef.current = null;
+          lastFetchedDeliverySignatureRef.current = "";
         }
       } catch (error: any) {
+        if (cancelled) {
+          return;
+        }
         setDeliveryPrice([]);
         const message =
           error?.response?.data?.message ??
@@ -630,13 +667,20 @@ export default function Checkout({
           "Não conseguimos calcular o frete agora. Tente novamente.";
         toast.error(message);
         lastFetchedZipRef.current = null;
+        lastFetchedDeliverySignatureRef.current = "";
       } finally {
-        setLoadingDeliveryPrice(false);
+        if (!cancelled) {
+          setLoadingDeliveryPrice(false);
+        }
       }
     };
 
     getShippingPrice();
-  }, [address?.zipCode, cartItems, products, api]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address?.zipCode, api, cartItems, deliveryProductIds, deliverySignature]);
 
   const [listCart, setListCart] = useState([] as Array<CartType>);
   const [resume, setResume] = useState({} as any);
@@ -667,18 +711,89 @@ export default function Checkout({
   }, [user, token]);
 
   const deliveryTotal = deliverySummary.total;
+  const minimumOrderSummary = useMemo(
+    () => buildMinimumOrderSummary(cartItems),
+    [cartItems]
+  );
+  const hasMinimumOrderBlock = minimumOrderSummary.some(
+    (store) => store.enabled && store.minimumValue > 0 && store.missing > 0
+  );
 
 
 
   const submitOrder = async (e: any) => {
     e.preventDefault();
 
-    if (!formattedAddressZip) {
-      toast.error("Informe um CEP válido para calcular o frete.");
+    if (form.loading || isSubmittingRef.current) {
       return;
     }
 
-    const hasDeliveryItems = cartItems.some((item: any) => item.details?.deliverySelection !== 'pickup');
+    if (!cartItems.length) {
+      toast.error("Seu carrinho está vazio.");
+      return;
+    }
+
+    if (hasPendingDeliverySelection) {
+      toast.error(
+        "Selecione entrega ou retirada para todos os itens antes de finalizar."
+      );
+      return;
+    }
+
+    if (hasMinimumOrderBlock) {
+      toast.error(
+        "O pedido mínimo por loja ainda não foi atingido para finalizar."
+      );
+      return;
+    }
+
+    if (!isPhoneValid(phone)) {
+      toast.error("Informe um telefone válido para finalizar o pedido.");
+      return;
+    }
+
+    const hasDeliveryItems = deliveryProductIds.length > 0;
+
+    if (hasDeliveryItems) {
+      if (!formattedAddressZip || !isCEPInRegion(address?.zipCode ?? "")) {
+        toast.error("Informe um CEP válido para calcular o frete.");
+        return;
+      }
+
+      const missingAddressFields: string[] = [];
+      if (!address?.street) missingAddressFields.push("rua");
+      if (!address?.number) missingAddressFields.push("número");
+      if (!address?.complement) missingAddressFields.push("complemento");
+      if (!address?.city) missingAddressFields.push("cidade");
+      if (!address?.state) missingAddressFields.push("estado");
+
+      if (missingAddressFields.length) {
+        toast.error(
+          `Preencha o endereço para entrega: ${missingAddressFields.join(", ")}.`
+        );
+        return;
+      }
+    }
+
+    const missingDeliverySchedules = deliveryStores
+      .filter((store) => !deliverySchedules[Number(store.id)])
+      .map((store) => store.title ?? "Loja");
+    if (missingDeliverySchedules.length) {
+      toast.error(
+        `Selecione horário de entrega para: ${missingDeliverySchedules.join(", ")}.`
+      );
+      return;
+    }
+
+    const missingPickupSchedules = pickupStores
+      .filter((store) => !pickupSchedules[Number(store.id)])
+      .map((store) => store.title ?? "Loja");
+    if (missingPickupSchedules.length) {
+      toast.error(
+        `Selecione horário de retirada para: ${missingPickupSchedules.join(", ")}.`
+      );
+      return;
+    }
 
     if (hasDeliveryItems && !deliverySummary.entries.length) {
       toast.error("Calcule o frete antes de finalizar o pedido.");
@@ -690,16 +805,17 @@ export default function Checkout({
       return;
     }
 
-    setForm({ ...form, loading: true });
-
-    let total = deliverySummary.total;
     let listItems: Array<ProductOrderType> = [];
 
-    cartItems.map((item: any, key: any) => {
+    cartItems.forEach((item: any) => {
       const cartItem = Object.assign({}, item);
+      const cartProductId =
+        typeof cartItem?.product === "object"
+          ? cartItem?.product?.id
+          : cartItem?.product;
 
       let product: any =
-        products.find((prod: any) => prod.id == cartItem.product.id) ?? {};
+        products.find((prod: any) => prod.id == cartProductId) ?? {};
 
       if (!!product.id) {
         let store: StoreType = product.store ?? {};
@@ -741,19 +857,30 @@ export default function Checkout({
           unit_price: unitPrice,
           total: cartItem.total,
         });
-
-        total += cartItem.total;
       }
     });
+
+    if (!listItems.length) {
+      toast.error(
+        "Não encontramos itens válidos no carrinho para criar o pedido."
+      );
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, loading: true }));
+    isSubmittingRef.current = true;
 
     const payload = {
       deliveryAddress: address,
       listItems,
       freights: {
-        zipcode: justNumber(address?.zipCode ?? ""),
-        productsIds: listItems
-          .filter((item: any) => item.details?.deliverySelection !== 'pickup')
-          .map((item: any) => item.product.id),
+        zipcode: hasDeliveryItems ? justNumber(address?.zipCode ?? "") : "",
+        productsIds: hasDeliveryItems
+          ? listItems
+              .filter((item: any) => item.details?.deliverySelection !== "pickup")
+              .map((item: any) => Number(item?.product?.id))
+              .filter((id: number) => Number.isFinite(id) && id > 0)
+          : [],
       },
       platformCommission,
       deliverySchedules: deliverySchedules,
@@ -768,7 +895,7 @@ export default function Checkout({
 
       if (firstId) {
         markCartConverted();
-        Cookies.remove("fiestou.cart");
+        clearCartCookies({ syncApi: false });
         window.location.href = `/dashboard/pedidos/pagamento/${firstId}`;
         return;
       }
@@ -778,7 +905,8 @@ export default function Checkout({
       console.error("Erro ao registrar pedido:", err);
       toast.error("Erro ao registrar o pedido.");
     } finally {
-      setForm({ ...form, loading: false });
+      isSubmittingRef.current = false;
+      setForm((prev) => ({ ...prev, loading: false }));
     }
   };
 
@@ -815,6 +943,13 @@ export default function Checkout({
   }, [address?.zipCode]);
 
   const renderDeliveryPrice = () => {
+    if (!deliveryProductIds.length) {
+      return (
+        <span className="text-sm text-zinc-500">
+          Itens configurados para retirada. Frete não é necessário.
+        </span>
+      );
+    }
 
     if (!formattedAddressZip && deliverySummary.entries.length === 0) {
       return (
@@ -1345,6 +1480,8 @@ export default function Checkout({
                               ? "Calculando..."
                               : deliverySummary.entries.length
                               ? `R$ ${moneyFormat(deliveryTotal)}`
+                              : !deliveryProductIds.length
+                              ? "Sem frete"
                               : formattedAddressZip
                               ? "—"
                               : "Informe o CEP"}
@@ -1363,6 +1500,34 @@ export default function Checkout({
                           R$ {moneyFormat(resume.total)}
                         </div>
                       </div>
+
+                      {hasMinimumOrderBlock && (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                          <div className="text-sm font-semibold text-amber-900">
+                            Pedido mínimo pendente
+                          </div>
+                          <div className="mt-2 grid gap-2">
+                            {minimumOrderSummary
+                              .filter(
+                                (store) =>
+                                  store.enabled &&
+                                  store.minimumValue > 0 &&
+                                  store.missing > 0
+                              )
+                              .map((store) => (
+                                <div
+                                  key={store.storeId}
+                                  className="text-xs text-amber-800 flex items-center justify-between gap-3"
+                                >
+                                  <span className="truncate">{store.storeTitle}</span>
+                                  <span className="whitespace-nowrap font-semibold">
+                                    Falta R$ {moneyFormat(store.missing)}
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
 
                       {storesList.some((s: any) => s.rental_rules?.enabled) && (
                         <div className="space-y-3">
@@ -1446,13 +1611,23 @@ export default function Checkout({
 
                       <div className="pt-4">
                         {(() => {
-                          const missingItems = [];
+                          const missingItems: string[] = [];
+
+                          if (hasPendingDeliverySelection) {
+                            missingItems.push("entrega/retirada de todos os itens");
+                          }
+
+                          if (hasMinimumOrderBlock) {
+                            missingItems.push("pedido mínimo por loja");
+                          }
 
                           if (deliveryProducts.length > 0) {
                             if (!address?.zipCode || !isCEPInRegion(address?.zipCode)) missingItems.push("CEP válido");
                             if (!address?.street) missingItems.push("rua");
                             if (!address?.number) missingItems.push("número");
                             if (!address?.complement) missingItems.push("complemento");
+                            if (!deliverySummary.entries.length) missingItems.push("frete calculado");
+                            if (deliverySummary.missingStoreIds.length) missingItems.push("frete de todas as lojas");
                             const missingDeliverySchedules = deliveryStores.filter(s => !deliverySchedules[Number(s.id)]);
                             if (missingDeliverySchedules.length > 0) {
                               missingItems.push(`horário de entrega (${missingDeliverySchedules.map(s => s.title).join(", ")})`);

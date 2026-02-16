@@ -1,17 +1,19 @@
 import Img from "@/src/components/utils/ImgBase";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HeaderType } from "@/src/default/header/index";
 import { UserType } from "@/src/models/user";
 import { Button } from "@/src/components/ui/form";
 import User from "./utils/User";
 import Login from "./utils/Login";
 import BIcon from "@/src/icons/bootstrapIcons/BIcon";
-import FIcon from "@/src/icons/fontAwesome/FIcon";
-import { GetCart } from "@/src/components/pages/carrinho";
-import CartPreview from "@/src/components/common/CartPreview";
+import CartPreview, { CartPreviewHandle } from "@/src/components/common/CartPreview";
 import { usePathname } from "next/navigation";
+import {
+  getCartFromCookies,
+  subscribeToCartChanges,
+} from "@/src/services/cart";
 
 export default function Default({
   params,
@@ -27,20 +29,72 @@ export default function Default({
   const [cart, setCart] = useState<any[]>([]);
   const [showCartPreview, setShowCartPreview] = useState(false);
   const [menuModal, setMenuModal] = useState(false);
+  const [menuModalOpen, setMenuModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const pathname = usePathname(); // 👈 pega a rota atual
+  const cartPreviewRef = useRef<CartPreviewHandle | null>(null);
+  const menuOpenTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuCloseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const pathname = usePathname();
   const isActive = (route: string) => pathname?.startsWith(route) ?? false;
 
+  const openMenu = useCallback(() => {
+    if (menuCloseTimeout.current) {
+      clearTimeout(menuCloseTimeout.current);
+      menuCloseTimeout.current = null;
+    }
+    if (menuOpenTimeout.current) {
+      clearTimeout(menuOpenTimeout.current);
+      menuOpenTimeout.current = null;
+    }
+
+    setMenuModal(true);
+    // Give the DOM one paint before transitioning in.
+    menuOpenTimeout.current = setTimeout(() => {
+      setMenuModalOpen(true);
+      menuOpenTimeout.current = null;
+    }, 10);
+  }, []);
+
+  const closeMenu = useCallback(() => {
+    if (menuOpenTimeout.current) {
+      clearTimeout(menuOpenTimeout.current);
+      menuOpenTimeout.current = null;
+    }
+
+    setMenuModalOpen(false);
+    if (menuCloseTimeout.current) clearTimeout(menuCloseTimeout.current);
+    menuCloseTimeout.current = setTimeout(() => {
+      setMenuModal(false);
+      menuCloseTimeout.current = null;
+    }, 200);
+  }, []);
+
   useEffect(() => {
-    const loadCart = () => {
-      const cartData = GetCart();
-      setCart(cartData);
+    return () => {
+      if (menuOpenTimeout.current) clearTimeout(menuOpenTimeout.current);
+      if (menuCloseTimeout.current) clearTimeout(menuCloseTimeout.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncCart = () => {
+      setCart(getCartFromCookies());
     };
 
-    loadCart();
-    const interval = setInterval(loadCart, 1000);
-    return () => clearInterval(interval);
+    syncCart();
+    const unsubscribe = subscribeToCartChanges((nextCart) => {
+      setCart(Array.isArray(nextCart) ? nextCart : []);
+    });
+
+    return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (showCartPreview && cart.length === 0) {
+      setShowCartPreview(false);
+    }
+  }, [cart.length, showCartPreview]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -54,7 +108,7 @@ export default function Default({
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuModal(false);
+      if (event.key === "Escape") closeMenu();
     };
     if (menuModal) {
       document.addEventListener("keydown", handleEsc);
@@ -63,7 +117,7 @@ export default function Default({
       document.body.style.overflow = "auto";
     }
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [menuModal]);
+  }, [closeMenu, menuModal]);
 
   return (
     <>
@@ -171,7 +225,17 @@ export default function Default({
                 {...(isMobile
                   ? {
                       type: "button",
-                      onClick: () => setShowCartPreview(!showCartPreview),
+                      onClick: () => {
+                        if (showCartPreview) {
+                          if (cartPreviewRef.current) {
+                            cartPreviewRef.current.requestClose();
+                          } else {
+                            setShowCartPreview(false);
+                          }
+                          return;
+                        }
+                        setShowCartPreview(true);
+                      },
                     }
                   : { href: "/carrinho" })}
                 style="btn-transparent"
@@ -188,6 +252,7 @@ export default function Default({
               </Button>
               {showCartPreview && cart.length > 0 && (
                 <CartPreview
+                  ref={cartPreviewRef}
                   isMobile={isMobile}
                   onClose={() => setShowCartPreview(false)}
                 />
@@ -199,7 +264,7 @@ export default function Default({
               <Button
                 style="btn-transparent"
                 type="button"
-                onClick={() => setMenuModal(!menuModal)}
+                onClick={() => (menuModal ? closeMenu() : openMenu())}
                 className="py-2 px-1 text-white"
               >
                 <Icon
@@ -214,65 +279,76 @@ export default function Default({
 
       {/* Menu Mobile */}
       {menuModal && (
-        <div className="fixed z-[60] inset-0 bg-cyan-500 text-white flex flex-col">
+        <div
+          className={`fixed z-[60] inset-0 bg-cyan-500 text-white flex flex-col transition-[opacity,transform] duration-200 ease-out will-change-[opacity,transform] ${
+            menuModalOpen
+              ? "opacity-100 translate-y-0"
+              : "pointer-events-none opacity-0 -translate-y-2"
+          }`}
+        >
           <div className="flex flex-col items-start text-2xl pt-20">
             <Link
               href="/"
+              onClick={closeMenu}
               className={`w-full py-3 px-6 flex items-center gap-3 ${
                 params.pathname === "/"
                   ? "text-yellow-300 font-bold"
                   : "hover:text-yellow-300"
               }`}
             >
-              <FIcon icon="fa-home" />
+              <Icon icon="fa-home" />
               Início
             </Link>
 
             <Link
               href="/produtos"
+              onClick={closeMenu}
               className={`w-full py-3 px-6 flex items-center gap-3 ${
                 isActive("/produtos")
                   ? "text-yellow-300 font-bold"
                   : "hover:text-yellow-300"
               }`}
             >
-              <FIcon icon="fa-box" />
+              <Icon icon="fa-box" />
               Produtos
             </Link>
 
             <Link
               href="/parceiros"
+              onClick={closeMenu}
               className={`w-full py-3 px-6 flex items-center gap-3 ${
                 isActive("/parceiros")
                   ? "text-yellow-300 font-bold"
                   : "hover:text-yellow-300"
               }`}
             >
-              <FIcon icon="fa-handshake" />
+              <Icon icon="fa-handshake" />
               Parceiros
             </Link>
 
             <Link
               href="/faq"
+              onClick={closeMenu}
               className={`w-full py-3 px-6 flex items-center gap-3 ${
                 isActive("/faq")
                   ? "text-yellow-300 font-bold"
                   : "hover:text-yellow-300"
               }`}
             >
-              <FIcon icon="fa-question-circle" />
+              <Icon icon="fa-question-circle" />
               Ajuda
             </Link>
 
             <Link
               href="/sobre"
+              onClick={closeMenu}
               className={`w-full py-3 px-6 flex items-center gap-3 ${
                 isActive("/sobre")
                   ? "text-yellow-300 font-bold"
                   : "hover:text-yellow-300"
               }`}
             >
-              <FIcon icon="fa-file-alt" />
+              <Icon icon="fa-file-alt" />
               Sobre nós
             </Link>
           </div>
@@ -283,25 +359,25 @@ export default function Default({
               href="https://www.facebook.com/Fiestou.com.br#"
               className="hover:text-yellow-300"
             >
-              <FIcon icon="fa-facebook" type="fab" />
+              <Icon icon="fa-facebook" type="fab" />
             </Link>
             <Link
               href="https://www.instagram.com/fiestou.com.br/"
               className="hover:text-yellow-300"
             >
-              <FIcon icon="fa-instagram" type="fab" />
+              <Icon icon="fa-instagram" type="fab" />
             </Link>
             <Link
               href="https://pin.it/1zZ5jI3PS"
               className="hover:text-yellow-300"
             >
-              <FIcon icon="fa-pinterest" type="fab" />
+              <Icon icon="fa-pinterest" type="fab" />
             </Link>
             <Link
               href="https://www.youtube.com/channel/UCOs0m-bltMn5n3ewKBLWVaQ"
               className="hover:text-yellow-300 gap-4"
             >
-              <FIcon icon="fa-youtube" type="fab" />
+              <Icon icon="fa-youtube" type="fab" />
             </Link>
             <Link
               href="https://www.tiktok.com/@fiestou.com"
