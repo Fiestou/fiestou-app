@@ -12,12 +12,16 @@ import Img from "@/src/components/utils/ImgBase";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import ShareModal from "@/src/components/utils/ShareModal";
 import Modal from "@/src/components/utils/Modal";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { FilterQueryType } from "@/src/types/filtros";
 import Filter from "@/src/components/common/filters/Filter";
 import { getStoreUrl } from "@/src/urlHelpers";
 import { MapPin, Truck, Instagram, Facebook, Phone, Globe, Clock, ExternalLink } from "lucide-react";
+import {
+  hasMoreByResult,
+  mergeUniqueProducts,
+} from "@/src/services/productsPagination";
 
 
 export interface Store {
@@ -33,6 +37,33 @@ export interface Product {
   store: Store;
   slug?: string;
 }
+
+const PAGE_SIZE = 16;
+
+const toNullable = (value: any) => (value === undefined ? null : value);
+
+const slimImagePayload = (image: any) => {
+  if (!image) return null;
+  if (typeof image === "string") return image;
+
+  if (Array.isArray(image?.medias)) {
+    const medias = image.medias.map(slimImagePayload).filter(Boolean);
+    return medias.length ? { medias } : null;
+  }
+
+  const detailsSizes = image?.details?.sizes;
+  const simpleSizes = image?.sizes;
+  const next: Record<string, any> = {};
+
+  if (image?.base_url) next.base_url = image.base_url;
+  if (image?.permanent_url) next.permanent_url = image.permanent_url;
+  if (image?.extension) next.extension = image.extension;
+  if (detailsSizes) next.details = { sizes: detailsSizes };
+  if (image?.url) next.url = image.url;
+  if (simpleSizes) next.sizes = simpleSizes;
+
+  return Object.keys(next).length ? next : null;
+};
 
 export const getStaticPaths = async (req: NextApiRequest) => {
   return {
@@ -69,22 +100,86 @@ export async function getStaticProps(ctx: any) {
       },
     };
   } else {
-    store = store.data;
+    const storeRaw = store.data ?? {};
+    const storeMetadata =
+      typeof storeRaw?.metadata === "string"
+        ? (() => {
+            try {
+              return JSON.parse(storeRaw.metadata);
+            } catch {
+              return null;
+            }
+          })()
+        : storeRaw?.metadata;
+
+    // Reduce SSG payload: this page was exceeding Next's large page data threshold.
+    // Keep only what is used by the Store page rendering + subsequent product fetching.
+    const storeSlim = {
+      id: toNullable(storeRaw?.id),
+      user: toNullable(storeRaw?.user),
+      title: toNullable(storeRaw?.title),
+      slug: toNullable(storeRaw?.slug),
+      cover: slimImagePayload(storeRaw?.cover),
+      profile: slimImagePayload(storeRaw?.profile),
+      description: toNullable(storeRaw?.description),
+      city: toNullable(storeRaw?.city),
+      state: toNullable(storeRaw?.state),
+      hasDelivery: toNullable(storeRaw?.hasDelivery),
+      street: toNullable(storeRaw?.street),
+      number: toNullable(storeRaw?.number),
+      complement: toNullable(storeRaw?.complement),
+      neighborhood: toNullable(storeRaw?.neighborhood),
+      zipCode: toNullable(storeRaw?.zipCode),
+      metadata: storeMetadata?.social_links
+        ? { social_links: storeMetadata.social_links }
+        : null,
+      openClose: toNullable(storeRaw?.openClose),
+    };
 
     let products: any = await api.request({
       method: "get",
       url: "request/products",
       data: {
-        store: store.id,
-        user: store.user,
+        store: storeRaw?.id,
+        user: storeRaw?.user,
         limit: 16,
-      },
+        },
     });
 
     return {
       props: {
-        products: products.data ?? [],
-        store: store,
+        products: Array.isArray(products?.data)
+          ? products.data.map((p: any) => {
+              const storeData = typeof p?.store === "object" ? p.store : storeSlim;
+              const firstGallery =
+                Array.isArray(p?.gallery) && p.gallery.length ? p.gallery[0] : null;
+              const slimGallery = slimImagePayload(firstGallery);
+              const gallery = slimGallery ? [slimGallery] : [];
+              const hasAttrs =
+                Array.isArray(p?.attributes) ? p.attributes.length > 0 : !!p?.attributes;
+
+              return {
+                id: toNullable(p?.id),
+                title: toNullable(p?.title),
+                slug: toNullable(p?.slug),
+                comercialType: toNullable(p?.comercialType),
+                rate: toNullable(p?.rate),
+                price: toNullable(p?.price),
+                priceSale: toNullable(p?.priceSale),
+                gallery,
+                // Used by getPrice() (truthiness check only).
+                ...(hasAttrs ? { attributes: [] } : {}),
+                store: {
+                  id: toNullable(storeData?.id),
+                  title: toNullable(storeData?.title),
+                  slug: toNullable(storeData?.slug),
+                  logo: slimImagePayload(storeData?.logo),
+                  image: slimImagePayload(storeData?.image),
+                },
+              };
+            })
+          : [],
+        store: storeSlim,
         HeaderFooter: HeaderFooter,
         Scripts: Scripts,
         DataSeo: DataSeo,
@@ -112,9 +207,52 @@ export default function Store({
   const [listProducts, setListProducts] = useState(products as Array<any>);
   const [share, setShare] = useState(false as boolean);
   const [page, setPage] = useState(0 as number);
+  const [hasMore, setHasMore] = useState(
+    (products?.length ?? 0) >= PAGE_SIZE,
+  );
   const [loading, setLoading] = useState(false as boolean);
   const [handleParams, setHandleParams] = useState({} as FilterQueryType);
   const [mounted, setMounted] = useState(false);
+
+  const mapToProductCard = (item: any) => {
+    if (!item) return null;
+
+    const storeData = typeof item?.store === "object" ? item.store : store;
+    const firstGallery =
+      Array.isArray(item?.gallery) && item.gallery.length ? item.gallery[0] : null;
+    const galleryItem = slimImagePayload(firstGallery);
+    const gallery = galleryItem ? [galleryItem] : [];
+    const hasAttrs =
+      Array.isArray(item?.attributes) ? item.attributes.length > 0 : !!item?.attributes;
+
+    return {
+      id: item?.id,
+      title: item?.title,
+      slug: item?.slug,
+      comercialType: item?.comercialType,
+      rate: item?.rate,
+      price: item?.price,
+      priceSale: item?.priceSale,
+      gallery,
+      ...(hasAttrs ? { attributes: [] } : {}),
+      store: {
+        id: storeData?.id,
+        title: storeData?.title,
+        slug: storeData?.slug,
+        logo: slimImagePayload(storeData?.logo),
+        image: slimImagePayload(storeData?.image),
+      },
+    };
+  };
+
+  const sanitizeParams = (params: any) => {
+    if (!params || typeof params !== "object") return {};
+    const next = { ...(params as Record<string, any>) };
+    delete next.page;
+    delete next.limit;
+    delete next.offset;
+    return next;
+  };
 
   const socialLinks = (() => {
     const meta = typeof store?.metadata === "string" ? (() => { try { return JSON.parse(store.metadata); } catch { return {}; } })() : (store?.metadata ?? {});
@@ -144,86 +282,91 @@ export default function Store({
   const fetchProducts = async (params: any) => {
     setLoading(true);
     const api = new Api();
-    const limit = 16;
     const offset = 0; // sempre começa do início ao filtrar
 
     const request: any = await api.request({
       method: "get",
       url: "request/products",
       data: {
-        ...params,
+        ...sanitizeParams(params),
         store: store?.id,
         user: store?.user,
-        limit,
+        limit: PAGE_SIZE,
         offset,
       },
     });
 
-    const items = request.data ?? [];
+    const items = Array.isArray(request?.data)
+      ? request.data.map(mapToProductCard).filter(Boolean)
+      : [];
+    const total = Number(request?.metadata?.count ?? items.length);
+    const nextHasMore = hasMoreByResult(total, offset, PAGE_SIZE, items.length);
     setLoading(false);
 
     return {
       items,
-      total: items.length,
+      total,
       page: 0,
-      pageSize: limit,
-      pages: Math.ceil((items.length || 1) / limit),
+      pageSize: PAGE_SIZE,
+      pages: Math.ceil((total || 1) / PAGE_SIZE),
+      hasMore: nextHasMore,
     };
   };
 
   // Função para atualizar a lista de produtos ao filtrar
-  const handleFilterResults = (data: any) => {
-    setListProducts(data.items);
-    setPage(data.page);
+  const handleFilterResults = (data: any, params: Record<string, any>) => {
+    setHandleParams(sanitizeParams(params) as any);
+    setListProducts(Array.isArray(data?.items) ? data.items : []);
+    setPage(typeof data?.page === "number" ? data.page : 0);
+    setHasMore(Boolean(data?.hasMore));
   };
 
   const getProducts = async (reset = false, params = handleParams, pageNumber = page) => {
+    if (!reset && !hasMore) return;
+
     setLoading(true);
 
-    let number = reset ? 0 : pageNumber + 1;
+    const number = reset ? 0 : pageNumber + 1;
     if (reset) {
       setPage(0);
       setListProducts([]); 
-    } else {
-      setPage(number);
     }
 
     const api = new Api();
-    let limit = 16;
-    let offset = number * 16;
+    const offset = number * PAGE_SIZE;
 
-   
-
+    const requestParams = sanitizeParams(params);
     let request: any = await api.request({
       method: "get",
       url: "request/products",
       data: {
-        ...params,
+        ...requestParams,
         store: store?.id,
         user: store?.user,
-        limit: limit,
+        limit: PAGE_SIZE,
         offset: offset,
       },
     });
 
-    const handle = request?.data;
+    const handle = Array.isArray(request?.data)
+      ? request.data.map(mapToProductCard).filter(Boolean)
+      : [];
+    const total = Number(request?.metadata?.count ?? 0);
+    const nextHasMore = hasMoreByResult(total, offset, PAGE_SIZE, handle.length);
 
-    if (!handle?.length) {
-      setPage(-1);
+    if (reset) {
+      setListProducts(handle);
     } else {
-      // Se reset, substitui. Se não, adiciona.
-      setListProducts(reset ? handle : [...listProducts, ...handle]);
+      setListProducts((prev) => mergeUniqueProducts(prev, handle));
     }
+    setHasMore(nextHasMore);
+    setPage(number);
 
     setLoading(false);
   };
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    getProducts();
   }, []);
 
   const baseUrl = `${process.env.APP_URL}${getStoreUrl(store)}`;
@@ -477,7 +620,7 @@ export default function Store({
                 />
               ))}
           </div>
-          {page != -1 && (
+          {hasMore && (
             <div className="text-center">
               <Button
                 onClick={() => {

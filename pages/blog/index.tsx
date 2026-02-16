@@ -14,7 +14,16 @@ export async function getStaticProps(ctx: any) {
   const HeaderFooter = request?.data?.HeaderFooter ?? {};
   const DataSeo = request?.data?.DataSeo ?? {};
   const Scripts = request?.data?.Scripts ?? {};
-  const Posts = request?.data?.Posts ?? [];
+  const PostsRaw = request?.data?.Posts ?? [];
+  const Posts = Array.isArray(PostsRaw)
+    ? PostsRaw.map((post: any) => ({
+        id: post?.id,
+        slug: post?.slug,
+        title: post?.title,
+        image: post?.image,
+        created_at: post?.created_at,
+      }))
+    : [];
 
   return {
     props: {

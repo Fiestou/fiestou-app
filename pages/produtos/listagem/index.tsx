@@ -10,8 +10,14 @@ import Template from "@/src/template";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/src/icons/fontAwesome/FIcon";
+import {
+  buildProductsQuery,
+  hasMoreByResult,
+  mergeUniqueProducts,
+  normalizeProductsFilters,
+} from "@/src/services/productsPagination";
 
-let limit = 15;
+const PAGE_SIZE = 15;
 
 export async function getStaticProps(ctx: any) {
   const api = new Api();
@@ -70,70 +76,11 @@ export default function Listagem({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const activeRequest = useRef(0);
   const observerRef = useRef<HTMLDivElement | null>(null);
-
-  function toQuery(params: Record<string, any>) {
-    const qs = new URLSearchParams();
-    Object.entries(params).forEach(([k, v]) => {
-      if (v === undefined || v === null || v === "") return;
-      if (Array.isArray(v)) {
-        v.forEach((item) => qs.append(`${k}[]`, String(item)));
-      } else {
-        qs.append(k, String(v));
-      }
-    });
-    return qs.toString();
-  }
+  const loadMoreLock = useRef(false);
 
   const normalizeFilters = useCallback(() => {
     const params = getQueryUrlParams();
-    const normalized: Record<string, any> = {};
-
-    const passthroughKeys = ["busca", "range", "tags", "store", "whereIn", "order"];
-    passthroughKeys.forEach((key) => {
-      const value = (params as any)[key];
-      if (value !== undefined && value !== "") {
-        normalized[key] = value;
-      }
-    });
-
-    if (normalized.order === undefined && (params as any).ordem) {
-      normalized.order = (params as any).ordem;
-    }
-
-    const ensureSingleValue = (value: any) =>
-      Array.isArray(value) ? value[value.length - 1] : value;
-
-    ["busca", "range", "store", "order"].forEach((key) => {
-      if (normalized[key] !== undefined) {
-        normalized[key] = ensureSingleValue(normalized[key]);
-      }
-    });
-
-    const resolveArray = (value: unknown) => {
-      if (Array.isArray(value)) return value.filter(Boolean).map((item) => String(item));
-      if (value === undefined || value === null || value === "") return undefined;
-      return [String(value)];
-    };
-
-    const colorKeys = ["colors", "color", "cores", "cor"];
-    const colorsValue = colorKeys
-      .map((key) => (params as any)[key])
-      .find((value) => value !== undefined && value !== "");
-    const colors = resolveArray(colorsValue);
-    if (colors?.length) normalized.colors = colors;
-
-    const categoryKeys = ["category", "categories", "categoria", "categorias"];
-    const categoriesValue = categoryKeys
-      .map((key) => (params as any)[key])
-      .find((value) => value !== undefined && value !== "");
-    const categories = resolveArray(categoriesValue);
-    if (categories?.length) normalized.category = categories;
-
-    if (normalized.order && Array.isArray(normalized.order)) {
-      normalized.order = normalized.order[0];
-    }
-
-    return normalized;
+    return normalizeProductsFilters(params as Record<string, any>);
   }, []);
 
   const fetchProducts = useCallback(
@@ -142,8 +89,12 @@ export default function Listagem({
       setLoading(true);
 
       try {
-        const offset = nextPage * limit;
-        const qs = toQuery({ ...activeFilters, limit, offset });
+        const offset = nextPage * PAGE_SIZE;
+        const qs = buildProductsQuery({
+          ...activeFilters,
+          limit: PAGE_SIZE,
+          offset,
+        });
 
         const response: any = await api.request({
           method: "get",
@@ -160,7 +111,9 @@ export default function Listagem({
         const categoriesFromApi = (response?.categories ?? []) as { name: string; icon?: string }[];
         const tagsFromApi = (response?.tags ?? []) as string[];
 
-        setProducts((prev) => (replace ? items : [...prev, ...items]));
+        setProducts((prev) =>
+          replace ? items : mergeUniqueProducts(prev, items),
+        );
 
         if (replace) {
           setSuggestions(suggestedItems);
@@ -171,7 +124,15 @@ export default function Listagem({
           });
         }
 
-        if (items.length >= limit) {
+        const total = Number(response?.metadata?.count ?? response?.total ?? 0);
+        const nextHasMore = hasMoreByResult(
+          total,
+          offset,
+          PAGE_SIZE,
+          items.length,
+        );
+
+        if (nextHasMore) {
           setPage(nextPage + 1);
           setHasMore(true);
         } else {
@@ -180,6 +141,7 @@ export default function Listagem({
         }
       } finally {
         if (requestId === activeRequest.current) {
+          loadMoreLock.current = false;
           setLoading(false);
           setPlaceholder(false);
         }
@@ -190,6 +152,7 @@ export default function Listagem({
 
   useEffect(() => {
     const normalized = normalizeFilters();
+    loadMoreLock.current = false;
     setFilters(normalized);
     setProducts([]);
     setPage(0);
@@ -199,7 +162,8 @@ export default function Listagem({
   }, [router.asPath, normalizeFilters, fetchProducts]);
 
   const handleLoadMore = useCallback(() => {
-    if (!hasMore || loading) return;
+    if (!hasMore || loading || loadMoreLock.current) return;
+    loadMoreLock.current = true;
     fetchProducts(filters, page);
   }, [fetchProducts, filters, hasMore, loading, page]);
 
@@ -209,14 +173,16 @@ export default function Listagem({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        if (!loadMoreLock.current) {
           handleLoadMore();
         }
       },
       {
         root: null,
-        rootMargin: "200px",
-        threshold: 0.1,
+        rootMargin: "280px 0px",
+        threshold: 0.01,
       }
     );
 
@@ -224,7 +190,7 @@ export default function Listagem({
     if (currentRef) observer.observe(currentRef);
 
     return () => {
-      if (currentRef) observer.unobserve(currentRef);
+      observer.disconnect();
     };
   }, [hasMore, loading, handleLoadMore]);
 
@@ -232,11 +198,27 @@ export default function Listagem({
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   useEffect(() => {
-    const onScroll = () => {
+    let rafId = 0;
+    let ticking = false;
+
+    const update = () => {
+      ticking = false;
       setShowScrollTop(window.scrollY > 300);
     };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      rafId = window.requestAnimationFrame(update);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    update();
+
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   return (
@@ -298,7 +280,7 @@ export default function Listagem({
             {!!products.length ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
                 {products.map((item, key) => (
-                  <div key={key}>
+                  <div key={item?.id ?? key}>
                     <Product product={item} />
                   </div>
                 ))}

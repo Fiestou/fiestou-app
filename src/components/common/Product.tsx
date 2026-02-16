@@ -7,9 +7,9 @@ import LikeButton from "../ui/LikeButton";
 import { getImage } from "@/src/helper";
 import { getProductUrl, getStoreUrl } from "@/src/urlHelpers";
 import { formatMoney } from "@/src/components/utils/Currency";
-import { Heart } from "lucide-react";
+import { memo } from "react";
 
-export default function Product({ product }: { product: ProductType | any }) {
+function ProductCard({ product }: { product: ProductType | any }) {
   const imageCover = !!product?.gallery?.length ? product?.gallery[0] : {};
   let store: StoreType = product?.store ?? {};
   const comercialType = product?.comercialType || "";
@@ -34,6 +34,10 @@ export default function Product({ product }: { product: ProductType | any }) {
             <Img
               src={getImage(imageCover, "sm")}
               size="md"
+              alt={product?.title ?? "Produto"}
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           )}
@@ -47,7 +51,7 @@ export default function Product({ product }: { product: ProductType | any }) {
             )}
 
             <div className="ml-auto">
-              <LikeButton id={parseInt(product.id)} />
+              <LikeButton id={Number(product?.id ?? 0)} />
             </div>
           </div>
 
@@ -98,6 +102,10 @@ export default function Product({ product }: { product: ProductType | any }) {
             <div className="w-5 h-5 rounded-full overflow-hidden bg-zinc-100 flex-shrink-0">
               <Img
                 src={getImage(storeLogo, "thumb")}
+                alt={store?.title ?? "Loja"}
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -127,3 +135,8 @@ export default function Product({ product }: { product: ProductType | any }) {
     </div>
   );
 }
+
+const Product = memo(ProductCard);
+Product.displayName = "ProductCard";
+
+export default Product;

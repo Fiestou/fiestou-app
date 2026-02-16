@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 interface ImageType {
   src: string;
   alt?: string;
@@ -8,6 +6,9 @@ interface ImageType {
   className?: string;
   id?: string;
   style?: React.CSSProperties;
+  loading?: "lazy" | "eager";
+  decoding?: "sync" | "async" | "auto";
+  fetchPriority?: "high" | "low" | "auto";
 }
 
 export default function Img(props: ImageType) {
@@ -33,6 +34,12 @@ export default function Img(props: ImageType) {
       {...(!!props?.title ? { title: props?.title } : {})}
       alt={props?.alt ?? "Imagem"}
       width={size(props?.size)}
+      height={size(props?.size)}
+      loading={props?.loading}
+      decoding={props?.decoding ?? "async"}
+      {...(props?.fetchPriority
+        ? ({ fetchpriority: props.fetchPriority } as any)
+        : {})}
       // onError={(e: any) => e.target.remove()}
       className={props?.className ?? ""}
     />
