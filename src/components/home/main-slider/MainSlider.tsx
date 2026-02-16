@@ -7,7 +7,6 @@ import Link from "next/link";
 import Img from "@/src/components/utils/ImgBase";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { getImage } from "@/src/helper";
-import { useMemo } from "react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -17,17 +16,10 @@ interface MainSliderProps {
 }
 
 export default function MainSlider({ slides = [] }: MainSliderProps) {
-  const imgLinks = useMemo(
-    () =>
-      Array.isArray(slides)
-        ? slides.map((s: any) => s?.main_slide_redirect?.url)
-        : [],
-    [slides]
-  );
-
-  const renderImageSlider = (slide: any) => {
+  const renderImageSlider = (slide: any, key: number) => {
     const desktopImage = getImage(slide?.main_slide_cover, "default");
     const mobileImage = getImage(slide?.main_slide_cover_mobile, "default");
+    const firstSlide = key === 0;
 
     if (!desktopImage && !mobileImage) return null;
 
@@ -37,6 +29,8 @@ export default function MainSlider({ slides = [] }: MainSliderProps) {
           <Img
             size="7xl"
             src={desktopImage}
+            loading={firstSlide ? "eager" : "lazy"}
+            fetchPriority={firstSlide ? "high" : "auto"}
             className="hidden md:block absolute w-full bottom-0 left-0"
           />
         )}
@@ -44,6 +38,8 @@ export default function MainSlider({ slides = [] }: MainSliderProps) {
           <Img
             size="7xl"
             src={mobileImage}
+            loading={firstSlide ? "eager" : "lazy"}
+            fetchPriority={firstSlide ? "high" : "auto"}
             className="md:hidden absolute w-full bottom-0 left-0"
           />
         )}
@@ -60,8 +56,12 @@ export default function MainSlider({ slides = [] }: MainSliderProps) {
           nextEl: ".swiper-main-next",
           prevEl: ".swiper-main-prev",
         }}
-        autoplay={{ delay: 3000, disableOnInteraction: false }}
-        loop={true}
+        autoplay={
+          slides.length > 1
+            ? { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true }
+            : false
+        }
+        loop={slides.length > 1}
         breakpoints={{ 0: { slidesPerView: 1 } }}
       >
         {slides?.map((slide: any, key: number) => (
@@ -72,10 +72,10 @@ export default function MainSlider({ slides = [] }: MainSliderProps) {
             >
               {key > 0 && !!slide?.main_slide_redirect?.url ? (
                 <Link href={slide?.main_slide_redirect?.url}>
-                  {renderImageSlider(slide)}
+                  {renderImageSlider(slide, key)}
                 </Link>
               ) : (
-                renderImageSlider(slide)
+                renderImageSlider(slide, key)
               )}
 
               <div className="min-h-[70vh] md:min-h-[80vh]">
@@ -103,7 +103,7 @@ export default function MainSlider({ slides = [] }: MainSliderProps) {
                       !!slide?.main_slide_redirect?.label && (
                         <div className="pt-4 md:pt-6">
                           <Button
-                            href={`${process.env.APP_URL}/acesso`}
+                            href={slide?.main_slide_redirect?.url}
                             className="md:text-lg px-4 py-2 md:py-4 md:px-8"
                           >
                             {slide?.main_slide_redirect?.label}

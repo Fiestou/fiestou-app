@@ -12,8 +12,12 @@ import Filter from "@/src/components/common/filters/Filter";
 import { useRouter } from "next/router";
 import CartPreview from "@/src/components/common/CartPreview";
 import { Search, SlidersHorizontal } from "lucide-react";
+import {
+  hasMoreByResult,
+  mergeUniqueProducts,
+} from "@/src/services/productsPagination";
 
-let limit = 15;
+const PAGE_SIZE = 15;
 
 export default function Produtos() {
   const [products, setProducts] = useState<ProductType[]>([]);
@@ -26,6 +30,8 @@ export default function Produtos() {
   const [loading, setLoading] = useState<boolean>(true);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
+  const activeRequest = useRef(0);
+  const loadMoreLock = useRef(false);
   const router = useRouter();
   const [showCartPreview, setShowCartPreview] = useState(false);
 
@@ -53,58 +59,77 @@ export default function Produtos() {
 
   useEffect(() => {
     const api = new Api();
+    const requestId = ++activeRequest.current;
+    let cancelled = false;
 
     async function loadProducts() {
+      if (!hasMore) return;
+
       setLoading(true);
       try {
-        let offset = (page - 1) * limit;
+        const offset = (page - 1) * PAGE_SIZE;
 
         const request = (await api.request({
           method: "get",
           url: "request/products",
           data: {
-            limit,
+            limit: PAGE_SIZE,
             offset,
             ordem: "desc",
           },
         })) as { data: ProductType[]; metadata?: { count?: number } };
 
+        if (cancelled || requestId !== activeRequest.current) return;
+
         const newProducts = Array.isArray(request.data) ? request.data : [];
 
-        setProducts((prev) => [...prev, ...newProducts]);
+        setProducts((prev) => mergeUniqueProducts(prev, newProducts));
 
         const metadata = request.metadata ?? {};
-        const total = metadata.count ?? 0;
-
-        if (products.length + newProducts.length >= total) {
-          setHasMore(false);
-        }
+        const total = Number(metadata.count ?? 0);
+        setHasMore(
+          hasMoreByResult(total, offset, PAGE_SIZE, newProducts.length),
+        );
       } catch (err) {
         console.error("Erro ao carregar produtos:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled && requestId === activeRequest.current) {
+          loadMoreLock.current = false;
+          setLoading(false);
+        }
       }
     }
 
     loadProducts();
-  }, [page]);
+    return () => {
+      cancelled = true;
+    };
+  }, [hasMore, page]);
 
   useEffect(() => {
     if (!observerRef.current || !hasMore) return;
 
+    const target = observerRef.current;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loading) {
-          setPage((prev) => prev + 1);
-        }
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        if (loading || loadMoreLock.current) return;
+
+        loadMoreLock.current = true;
+        setPage((prev) => prev + 1);
       },
-      { threshold: 1 }
+      {
+        root: null,
+        rootMargin: "320px 0px",
+        threshold: 0.01,
+      }
     );
 
-    observer.observe(observerRef.current);
+    observer.observe(target);
 
     return () => {
-      if (observerRef.current) observer.unobserve(observerRef.current);
+      observer.disconnect();
     };
   }, [loading, hasMore]);
 
@@ -115,6 +140,8 @@ export default function Produtos() {
       setShowCartPreview(true);
     }
   }, [router.isReady, router.query.openCart]);
+
+  const isInitialLoading = loading && products.length === 0;
 
   return (
     <Template
@@ -175,19 +202,30 @@ export default function Produtos() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {Array.isArray(products) &&
-            products.map((item, key) => (
-              <div key={key} className="animate-fadeIn">
-                <Product product={item} />
-              </div>
+        {isInitialLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={`product-skeleton-${index}`}
+                className="animate-pulse rounded-xl border border-zinc-200 bg-zinc-100 aspect-[4/5]"
+              />
             ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {Array.isArray(products) &&
+              products.map((item, key) => (
+                <div key={item?.id ?? key} className="animate-fadeIn">
+                  <Product product={item} />
+                </div>
+              ))}
+          </div>
+        )}
 
-        {loading && (
-          <div className="py-12 flex flex-col items-center gap-3">
-            <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-zinc-500 text-sm">Carregando produtos...</p>
+        {!isInitialLoading && loading && (
+          <div className="py-6 flex items-center justify-center gap-2 text-zinc-500 text-sm">
+            <div className="w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+            Carregando mais produtos...
           </div>
         )}
 

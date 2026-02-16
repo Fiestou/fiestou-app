@@ -1,4 +1,4 @@
-import type { AppProps } from "next/app";
+import type { AppProps, NextWebVitalsMetric } from "next/app";
 import { SessionProvider } from "next-auth/react";
 import "/public/scss/_shared.scss";
 import "/styles/globals.css";
@@ -15,9 +15,14 @@ export default function App({
   const router = useRouter();
 
   useEffect(() => {
-    router.events.on("routeChangeComplete", () =>
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" })
-    );
+    const handleRouteChange = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    };
+
+    router.events.on("routeChangeComplete", handleRouteChange);
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
   }, [router]);
 
   return (
@@ -39,4 +44,32 @@ export default function App({
       />
     </SessionProvider>
   );
+}
+
+export function reportWebVitals(metric: NextWebVitalsMetric) {
+  if (typeof window === "undefined") return;
+
+  const payload = JSON.stringify({
+    id: metric.id,
+    name: metric.name,
+    value: metric.value,
+    label: metric.label,
+    page: window.location.pathname,
+    href: window.location.href,
+    ts: Date.now(),
+  });
+
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon("/api/telemetry/web-vitals", payload);
+    return;
+  }
+
+  fetch("/api/telemetry/web-vitals", {
+    method: "POST",
+    body: payload,
+    headers: {
+      "content-type": "application/json",
+    },
+    keepalive: true,
+  }).catch(() => {});
 }

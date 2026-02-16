@@ -6,19 +6,20 @@ import { getExtenseData, getImage } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import PostItem from "@/src/components/common/PostItem";
 import Newsletter from "@/src/components/common/Newsletter";
+import { useEffect, useMemo, useState } from "react";
 
 export const getStaticPaths = async () => {
   const api = new Api();
 
   try {
     const request: any = await api.content({ url: "post" });
-    const posts = request?.data ?? [];
+    const slugs = Array.isArray(request?.data)
+      ? request.data
+          .map((item: any) => (typeof item === "string" ? item : item?.slug))
+          .filter(Boolean)
+      : [];
 
-  const slugs = Array.isArray(request?.data) ? request.data : [];
-
-  const paths = slugs
-    .filter((slug: any) => !!slug)
-    .map((slug: any) => ({ params: { slug } }));
+    const paths = slugs.map((slug: string) => ({ params: { slug } }));
 
     return {
       paths,
@@ -40,8 +41,28 @@ export async function getStaticProps(ctx: any) {
   try {
     const request: any = await api.content({ method: "get", url: `post/${slug}` });
 
-    const Post = request?.data?.Post ?? {};
-    const Related = request?.data?.Related ?? [];
+    const postRaw = request?.data?.Post ?? {};
+    const Post = {
+      id: postRaw?.id ?? null,
+      slug: postRaw?.slug ?? "",
+      title: postRaw?.title ?? "",
+      image: postRaw?.image ?? null,
+      created_at: postRaw?.created_at ?? null,
+      blocks: [],
+    };
+    const PostBlocksCount = Array.isArray(postRaw?.blocks)
+      ? postRaw.blocks.length
+      : 0;
+    const relatedRaw = request?.data?.Related ?? [];
+    const Related = Array.isArray(relatedRaw)
+      ? relatedRaw.map((post: any) => ({
+          id: post?.id,
+          slug: post?.slug,
+          title: post?.title,
+          image: post?.image,
+          created_at: post?.created_at,
+        }))
+      : [];
     const HeaderFooter = request?.data?.HeaderFooter ?? {};
     const DataSeo = request?.data?.DataSeo ?? {};
     const Scripts = request?.data?.Scripts ?? {};
@@ -54,6 +75,7 @@ export async function getStaticProps(ctx: any) {
     return {
       props: {
         Post,
+        PostBlocksCount,
         Related,
         HeaderFooter,
         DataSeo,
@@ -69,17 +91,70 @@ export async function getStaticProps(ctx: any) {
 
 export default function Post({
   Post,
+  PostBlocksCount,
   Related,
   HeaderFooter,
   DataSeo,
   Scripts,
 }: {
   Post: any;
+  PostBlocksCount: number;
   Related: Array<any>;
   HeaderFooter: any;
   DataSeo: any;
   Scripts: any;
 }) {
+  const api = useMemo(() => new Api(), []);
+  const [blocks, setBlocks] = useState<any[]>(
+    Array.isArray(Post?.blocks) ? Post.blocks : [],
+  );
+  const [loadingBlocks, setLoadingBlocks] = useState(
+    PostBlocksCount > 0 && blocks.length === 0,
+  );
+
+  useEffect(() => {
+    if (!Post?.slug) return;
+    if (PostBlocksCount === 0) {
+      setLoadingBlocks(false);
+      return;
+    }
+    if (blocks.length > 0) {
+      setLoadingBlocks(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadBlocks = async () => {
+      try {
+        const request: any = await api.content({
+          method: "get",
+          url: `post/${Post.slug}`,
+        });
+
+        if (cancelled) return;
+        const loadedBlocks = Array.isArray(request?.data?.Post?.blocks)
+          ? request.data.Post.blocks
+          : [];
+        setBlocks(loadedBlocks);
+      } catch {
+        if (!cancelled) {
+          setBlocks([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingBlocks(false);
+        }
+      }
+    };
+
+    loadBlocks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [Post?.slug, PostBlocksCount, api, blocks.length]);
+
   return (
     <Template
       scripts={Scripts}
@@ -135,8 +210,23 @@ export default function Post({
       <section className="my-10 pb-20">
         <div className="container-medium">
           <div className="content-editor mx-auto max-w-[40rem] grid gap-4">
-            {!!Post?.blocks?.length &&
-              Post.blocks
+            {loadingBlocks && (
+              <div className="grid gap-3 animate-pulse">
+                <div className="h-4 w-4/5 rounded bg-zinc-200" />
+                <div className="h-4 w-full rounded bg-zinc-200" />
+                <div className="h-4 w-5/6 rounded bg-zinc-200" />
+                <div className="h-4 w-3/4 rounded bg-zinc-200" />
+              </div>
+            )}
+
+            {!loadingBlocks && !blocks.length && PostBlocksCount > 0 && (
+              <p className="text-zinc-500 text-center">
+                Não foi possível carregar o conteúdo deste post agora.
+              </p>
+            )}
+
+            {!!blocks?.length &&
+              blocks
                 .slice()
                 .reverse()
                 .map((item: any, key: number) => (

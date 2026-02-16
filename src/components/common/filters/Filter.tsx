@@ -7,6 +7,7 @@ import InputSearchStore, {
 } from "./components/InputserachStore";
 import Inputsearchhome from "./components/Inputsearchhome";
 import Api from "@/src/services/api";
+import { buildProductsQuery } from "@/src/services/productsPagination";
 
 export type ProductPage<T = any> = {
   items: T[];
@@ -121,7 +122,7 @@ export default function Filter<T = any>({
       ...(busca ? { busca } : {}),
       order: query.order,
       range: String(query.range),
-      page: 10,
+      page: 1,
       ...overrides,
     };
 
@@ -173,7 +174,7 @@ export default function Filter<T = any>({
     try {
       setLoading(true);
       const params = buildParams({ page });
-      const queryString = new URLSearchParams(params).toString();
+      const queryString = buildProductsQuery(params);
       const res: any = await api.request({
         method: "get",
         url:
@@ -200,10 +201,10 @@ export default function Filter<T = any>({
   };
 
   useEffect(() => {
-    if (context === "panel" || context === "store") {
+    if (context === "panel" && !fetchProducts) {
       loadPanelProducts(1);
     }
-  }, []);
+  }, [context, fetchProducts]);
 
   return (
     <div className="w-full">

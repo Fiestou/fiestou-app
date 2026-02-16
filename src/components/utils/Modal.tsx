@@ -94,7 +94,7 @@ export default function Modal(attr: ModalProps) {
         ) : attr.storeView ? (
           <div
             className={`fixed right-0 top-0 h-[100svh] flex flex-col bg-white z-10 ${drawerSize[attr.size ?? "xl"]} 
-              shadow-xl transition-transform duration-200 ease-in-out
+              shadow-xl transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
               ${status ? "translate-x-0" : "translate-x-full"}
               ${attr.className ?? ""}`}
             role="dialog"
@@ -128,13 +128,16 @@ export default function Modal(attr: ModalProps) {
             <div className="absolute flex min-h-[100svh] w-full py-10 lg:py-20">
               <div
                 onClick={() => onClose()}
-                className={`${status ? "opacity-75" : "opacity-0"
-                  } ease w-full absolute inset-0 min-h-[100svh] bg-zinc-900`}
+                className={`${status ? "opacity-75" : "opacity-0 pointer-events-none"
+                  } transition-opacity duration-300 w-full absolute inset-0 min-h-[100svh] bg-zinc-900`}
               ></div>
 
               <div
-                className={`${status ? "" : "-mb-10 opacity-0"} ${drawerSize[attr.size ?? "xl"]
-                  } relative ease w-full mx-auto px-4`}
+                className={`${
+                  status
+                    ? "translate-y-0 scale-100 opacity-100"
+                    : "translate-y-6 scale-[0.985] opacity-0 pointer-events-none"
+                } ${dialogSize[attr.size ?? "xl"]} relative w-full mx-auto px-4 transform-gpu transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`}
               >
                 <div className="relative rounded-xl bg-white text-zinc-950 p-4 md:p-6">
                   <div
