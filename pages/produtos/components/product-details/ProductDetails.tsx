@@ -7,9 +7,9 @@ import { getStoreUrl } from "@/src/urlHelpers";
 import { ColorfulRender, ColorsList } from "@/src/components/ui/form/ColorsUI";
 
 interface ProductDetailsProps {
-  product: ProductType;
-  store: StoreType;
-  categories: any[];
+  product?: ProductType | null;
+  store?: StoreType | null;
+  categories?: any[] | null;
 }
 
 export default function ProductDetails({
@@ -17,7 +17,11 @@ export default function ProductDetails({
   store,
   categories,
 }: ProductDetailsProps) {
-  const productCategories = categories
+  if (!product || !store) return null;
+
+  const safeCategories = Array.isArray(categories) ? categories : [];
+
+  const productCategories = safeCategories
     .filter((category: any) =>
       category?.childs?.some((child: any) =>
         (product?.category ?? []).some((cat: any) => cat.id === child.id)
