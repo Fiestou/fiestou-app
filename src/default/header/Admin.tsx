@@ -41,6 +41,10 @@ const menu = [
     endpoint: "/admin/carrinhos-abandonados",
   },
   {
+    title: "Recomendações",
+    endpoint: "/admin/recomendacoes",
+  },
+  {
     title: "Entregadores",
     endpoint: "/admin/entregadores",
   },

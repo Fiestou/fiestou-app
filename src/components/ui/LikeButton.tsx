@@ -6,22 +6,43 @@ import { Button } from "./form";
 export default function LikeButton({
   id,
   style,
+  onToggle,
 }: {
   id: number;
   style?: string;
+  onToggle?: (liked: boolean) => void;
 }) {
   const [likes, setLikes] = useState([] as Array<number>);
 
-  const handleLikes = (like: number) => {
-    let handleLikes: Array<number> = !!Cookies.get("fiestou.likes")
-      ? Object.values(JSON.parse(Cookies.get("fiestou.likes") ?? "[]"))
-      : [];
+  const readLikesFromCookie = (): number[] => {
+    const raw = Cookies.get("fiestou.likes");
+    if (!raw) return [];
 
-    handleLikes = !!handleLikes.includes(like)
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+
+      return parsed
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0);
+    } catch {
+      return [];
+    }
+  };
+
+  const handleLikes = (like: number) => {
+    if (!Number.isInteger(like) || like <= 0) return;
+
+    let handleLikes: Array<number> = readLikesFromCookie();
+
+    const isLiked = !!handleLikes.includes(like);
+
+    handleLikes = isLiked
       ? (handleLikes ?? []).filter((value) => value !== like)
       : [...handleLikes, like];
 
     setLikes(handleLikes);
+    onToggle?.(!isLiked);
 
     Cookies.set("fiestou.likes", JSON.stringify(handleLikes), {
       expires: 14,
@@ -29,10 +50,7 @@ export default function LikeButton({
   };
 
   useEffect(() => {
-    if (!!window && !!Cookies.get("fiestou.likes")) {
-      let cookieLikes = Cookies.get("fiestou.likes") ?? JSON.stringify([]);
-      setLikes(Object.values(JSON.parse(cookieLikes)));
-    }
+    setLikes(readLikesFromCookie());
   }, []);
 
   return (

@@ -369,6 +369,11 @@ export default function Admin() {
                         href="/admin/carrinhos-abandonados"
                       />
                       <QuickLink
+                        title="Recomendações"
+                        icon="fa-chart-line"
+                        href="/admin/recomendacoes"
+                      />
+                      <QuickLink
                         title="Conteúdo"
                         icon="fa-file-alt"
                         href="/admin/conteudo"

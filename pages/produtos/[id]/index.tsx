@@ -15,24 +15,24 @@ import {
   isMobileDevice,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
-import { AddToCart } from "@/src/components/pages/carrinho";
+import { addToCart } from "@/src/services/cart";
+import dynamic from "next/dynamic";
 import {
   ProductOrderType,
   VariationProductOrderType,
 } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
-import Newsletter from "@/src/components/common/Newsletter";
 
 import { toast } from "react-toastify";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Modal from "@/src/components/utils/Modal";
 import ShareModal from "@/src/components/utils/ShareModal";
 import LikeButton from "@/src/components/ui/LikeButton";
-import RelatedProducts from "../components/related-products/RelatedProducts";
 import { getProductUrl } from "@/src/urlHelpers";
-import ProductCombinations from "../components/product-combinations/ProductCombinations";
+import LazyRender from "@/src/components/common/LazyRender";
+import { trackProductInterest } from "@/src/services/recommendations";
 
 import ProductDimensions from "../components/product-dimensions/ProductDimensions";
 import BottomCart from "../components/bottom-cart/BottomCart";
@@ -48,6 +48,19 @@ import ProductDetails from "../components/product-details/ProductDetails";
 import ProductComments from "../components/product-comments/ProductComments";
 import ProductRentalRules from "../components/product-rental-rules/ProductRentalRules";
 import ProductGuarantees from "../components/product-guarantees/ProductGuarantees";
+
+const ProductCombinations = dynamic(
+  () => import("../components/product-combinations/ProductCombinations"),
+  { ssr: false },
+);
+const RelatedProducts = dynamic(
+  () => import("../components/related-products/RelatedProducts"),
+  { ssr: false },
+);
+const Newsletter = dynamic(
+  () => import("@/src/components/common/Newsletter"),
+  { ssr: false },
+);
 
 export const getStaticPaths = async (ctx: any) => {
   return {
@@ -139,6 +152,7 @@ export default function Produto({
   const [inCart, setInCart] = useState(false as boolean);
   const [unavailable, setUnavailable] = useState([] as Array<string>);
   const [isMobile, setIsMobile] = useState(false);
+  const trackedViewRef = useRef<number | null>(null);
   const layout = { isMobile };
   const router = useRouter();
   const imageCover =
@@ -303,9 +317,19 @@ export default function Produto({
 
     setLoadCart(true);
 
-    const success = AddToCart(productToCart);
+    const success = addToCart(productToCart as any);
 
     if (success) {
+      trackProductInterest({
+        productId: Number(product?.id),
+        storeId: Number(store?.id ?? 0) || null,
+        event: "cart_add",
+        source: "product_page",
+        metadata: {
+          product_slug: product?.slug ?? "",
+        },
+      });
+
       setInCart(true);
       toast.success("Produto adicionado ao carrinho");
       router.push("/produtos?openCart=1");
@@ -448,12 +472,26 @@ export default function Produto({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const fetchUpdated = async () => {
-      setIsMobile((prev: any) => ({ ...prev, isMobile: isMobileDevice() }));
-    };
-
-    fetchUpdated();
+    setIsMobile(isMobileDevice());
   }, [store, product?.id, router.query?.slug]);
+
+  useEffect(() => {
+    const productId = Number(product?.id ?? 0);
+    if (!productId || trackedViewRef.current === productId) return;
+
+    trackedViewRef.current = productId;
+
+    trackProductInterest({
+      productId,
+      storeId: Number(store?.id ?? 0) || null,
+      event: "view",
+      source: "product_page",
+      metadata: {
+        product_slug: product?.slug ?? "",
+        route: router.asPath,
+      },
+    });
+  }, [product?.id, product?.slug, router.asPath, store?.id]);
 
   useEffect(() => {
     updateOrderTotal(productToCart);
@@ -511,6 +549,19 @@ export default function Produto({
   const canAddToCart = useMemo(() => {
     return hasAllAttributesSelected && hasRequiredDate;
   }, [hasAllAttributesSelected, hasRequiredDate]);
+
+  const suggestionsEnabled = useMemo(() => {
+    const raw = (product as any)?.suggestions;
+    if (raw === null || raw === undefined || raw === "") return true;
+
+    return (
+      raw === 1 ||
+      raw === "1" ||
+      raw === true ||
+      raw === "true" ||
+      raw === "yes"
+    );
+  }, [product]);
 
   const productUrl = getProductUrl(product, store);
   const productImage = getImage(imageCover) || "";
@@ -637,7 +688,13 @@ export default function Produto({
                   </div>
                 )}
 
-                {product?.schedulingEnabled && (
+                {(
+                  // Date selection is required for checkout/delivery flow.
+                  // API may not always send schedulingEnabled, so default to showing the calendar.
+                  typeof (product as any)?.requiresDate !== "undefined"
+                    ? Boolean((product as any)?.requiresDate)
+                    : true
+                ) && (
                   <>
                     <input
                       type="text"
@@ -691,7 +748,21 @@ export default function Produto({
                   <div className="flex items-center gap-2 text-sm">
                     <Icon icon="fa-heart" className="text-zinc-400" />
                     <span className="text-zinc-600">Favoritar</span>
-                    <LikeButton id={product?.id} style="btn-outline-light" />
+                    <LikeButton
+                      id={product?.id}
+                      style="btn-outline-light"
+                      onToggle={(liked) =>
+                        trackProductInterest({
+                          productId: Number(product?.id),
+                          storeId: Number(store?.id ?? 0) || null,
+                          event: liked ? "favorite_add" : "favorite_remove",
+                          source: "product_page",
+                          metadata: {
+                            product_slug: product?.slug ?? "",
+                          },
+                        })
+                      }
+                    />
                   </div>
 
                   <button
@@ -714,17 +785,32 @@ export default function Produto({
       </Modal>
 
       {!!product?.combinations?.length && (
-        <ProductCombinations
-          product={product}
-          combinations={product.combinations}
-        />
+        <LazyRender
+          minHeight={260}
+          placeholder={<div className="h-[260px] w-full animate-pulse bg-zinc-50" />}
+        >
+          <ProductCombinations
+            product={product}
+            combinations={product.combinations}
+          />
+        </LazyRender>
       )}
 
-      {(product?.suggestions ?? "1") === "1" && (
-        <RelatedProducts product={product} store={store} />
+      {suggestionsEnabled && (
+        <LazyRender
+          minHeight={320}
+          placeholder={<div className="h-[320px] w-full animate-pulse bg-zinc-50" />}
+        >
+          <RelatedProducts product={product} store={store} />
+        </LazyRender>
       )}
 
-      <Newsletter />
+      <LazyRender
+        minHeight={240}
+        placeholder={<div className="h-[240px] w-full animate-pulse bg-zinc-50" />}
+      >
+        <Newsletter />
+      </LazyRender>
 
       {layout.isMobile && (
         <div
