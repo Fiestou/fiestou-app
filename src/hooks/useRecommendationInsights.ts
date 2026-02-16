@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Api from "@/src/services/api";
 
+export interface RecommendationNetworkLocation {
+  country_code: string | null;
+  region_code?: string | null;
+  region_name: string | null;
+  city_name: string | null;
+  label: string;
+  last_seen_at: string | null;
+}
+
 export interface RecommendationActorRow {
   actor_key: string;
   actor_type: "user" | "guest";
@@ -16,6 +25,11 @@ export interface RecommendationActorRow {
   products_count: number;
   first_event_at: string | null;
   last_event_at: string | null;
+  unique_ip_count: number;
+  countries: string[];
+  regions: string[];
+  last_location: RecommendationNetworkLocation | null;
+  last_network_event_at: string | null;
 }
 
 export interface RecommendationStats {
@@ -25,9 +39,23 @@ export interface RecommendationStats {
   interactions_total: number;
   products_tracked: number;
   stores_tracked: number;
+  unique_ips: number;
+  countries_tracked: number;
+  regions_tracked: number;
   last_event_at: string | null;
   top_products: Array<any>;
   top_stores: Array<any>;
+  top_regions: Array<{
+    country_code: string | null;
+    region_code: string | null;
+    region_name: string | null;
+    city_name: string | null;
+    label: string;
+    actors_count: number;
+    unique_ip_count: number;
+    events_count: number;
+    last_seen_at: string | null;
+  }>;
 }
 
 export interface RecommendationActorProfile {
@@ -48,6 +76,14 @@ export interface RecommendationActorProfile {
     total_score: number;
     first_event_at: string | null;
     last_event_at: string | null;
+  };
+  network: {
+    unique_ip_count: number;
+    countries: string[];
+    regions: string[];
+    last_seen_at: string | null;
+    last_location: RecommendationNetworkLocation | null;
+    recent_locations: RecommendationNetworkLocation[];
   };
   top_stores: Array<any>;
   products: Array<any>;
