@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   ShoppingBag,
   DollarSign,
@@ -10,6 +10,10 @@ import {
   Download,
   Settings,
   FileSpreadsheet,
+  AlertTriangle,
+  CalendarClock,
+  ShieldAlert,
+  ArrowRight,
 } from "lucide-react";
 import { getUser } from "@/src/contexts/AuthContext";
 import { UserType } from "@/src/models/user";
@@ -93,6 +97,124 @@ function formatCurrency(value: number) {
   return `R$ ${(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function getOrderPaymentLabel(order: any) {
+  if (order?.metadata?.payment_method_display) {
+    return order.metadata.payment_method_display;
+  }
+
+  const method = String(
+    order?.metadata?.payment_method ||
+    order?.metadata?.transaction_type ||
+    order?.payment?.method ||
+    ""
+  ).toLowerCase();
+
+  if (method === "credit_card") {
+    const installments = Number(order?.metadata?.installments || order?.payment?.installments || 0);
+    return installments > 1 ? `Cartão (${installments}x)` : "Cartão";
+  }
+  if (method === "pix") return "PIX";
+  if (method === "boleto") return "Boleto";
+  return "Não informado";
+}
+
+type OperationsSummary = {
+  pendingConfirmation: number;
+  deliveriesToday: number;
+  delayedDeliveries: number;
+  urgentOrders: Array<{
+    id: number | string;
+    createdAt?: string;
+    total: number;
+    customerName: string;
+    reason: "delayed" | "today" | "pending";
+  }>;
+};
+
+function toYmd(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function normalizeDateToYmd(value: any): string | null {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return null;
+
+    const brMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (brMatch) {
+      const [, day, month, year] = brMatch;
+      return `${year}-${month}-${day}`;
+    }
+
+    const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+      return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+    }
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return toYmd(parsed);
+}
+
+function getOrderDeliveryDateYmd(order: any): string | null {
+  return (
+    normalizeDateToYmd(order?.delivery?.schedule?.date) ||
+    normalizeDateToYmd(order?.deliverySchedule?.date) ||
+    normalizeDateToYmd(order?.metadata?.scheduleStart) ||
+    normalizeDateToYmd(order?.metadata?.scheduleEnd) ||
+    null
+  );
+}
+
+function getOrderDeliveryStatus(order: any): string {
+  return String(order?.deliveryStatus || order?.delivery_status || order?.delivery?.status || "").toLowerCase();
+}
+
+function isOrderCanceled(order: any): boolean {
+  const paymentStatus = String(order?.metadata?.payment_status || "").toLowerCase();
+  const metadataStatus = String(order?.metadata?.status || "").toLowerCase();
+  return (
+    Number(order?.status) === -2 ||
+    metadataStatus === "expired" ||
+    paymentStatus === "expired" ||
+    paymentStatus === "canceled" ||
+    paymentStatus === "failed"
+  );
+}
+
+function isOrderPaid(order: any): boolean {
+  const paymentStatus = String(order?.metadata?.payment_status || "").toLowerCase();
+  return (
+    Number(order?.status) === 1 ||
+    !!order?.metadata?.paid_at ||
+    paymentStatus === "paid" ||
+    paymentStatus === "approved"
+  );
+}
+
+function isOrderDelivered(order: any): boolean {
+  const deliveryStatus = getOrderDeliveryStatus(order);
+  return [
+    "delivered",
+    "delivered_to_customer",
+    "completed",
+    "concluded",
+    "entregue",
+    "concluido",
+    "concluído",
+  ].includes(deliveryStatus);
+}
+
+function getOrderNavigationId(order: any): number | string {
+  return order?.mainOrderId || order?.orderIds?.[0] || order?.id;
+}
+
 function exportOrdersCsv(orders: any[]) {
   if (!orders.length) return;
 
@@ -168,6 +290,13 @@ export default function Parceiro({ content }: { content: any }) {
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
   const [recipientStatus, setRecipientStatus] = useState<RecipientStatusResponse | null>(null);
   const [productCount, setProductCount] = useState(0);
+  const [loadingOperations, setLoadingOperations] = useState(true);
+  const [operations, setOperations] = useState<OperationsSummary>({
+    pendingConfirmation: 0,
+    deliveriesToday: 0,
+    delayedDeliveries: 0,
+    urgentOrders: [],
+  });
 
   const getBalance = async () => {
     try {
@@ -185,12 +314,94 @@ export default function Parceiro({ content }: { content: any }) {
     } catch (err) {}
   };
 
-  const fetchStats = async (p: string) => {
-    setLoadingStats(true);
+  const fetchStats = useCallback(async (p: string, opts?: { silent?: boolean }) => {
+    const silent = !!opts?.silent;
+    if (!silent) {
+      setLoadingStats(true);
+    }
     const data = await getDashboardStats(p);
     setStats(data);
-    setLoadingStats(false);
-  };
+    if (!silent) {
+      setLoadingStats(false);
+    }
+  }, []);
+
+  const fetchOperationsOverview = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = !!opts?.silent;
+    if (!silent) {
+      setLoadingOperations(true);
+    }
+    try {
+      const orders = await getMyOrders();
+      const list = Array.isArray(orders) ? orders : [];
+
+      const todayYmd = toYmd(new Date());
+
+      const pendingConfirmation: any[] = [];
+      const deliveriesToday: any[] = [];
+      const delayedDeliveries: any[] = [];
+
+      list.forEach((order: any) => {
+        if (isOrderCanceled(order)) {
+          return;
+        }
+
+        const deliveryDateYmd = getOrderDeliveryDateYmd(order);
+        const paid = isOrderPaid(order);
+        const delivered = isOrderDelivered(order);
+
+        if (!paid) {
+          pendingConfirmation.push(order);
+        }
+
+        if (deliveryDateYmd === todayYmd && !delivered) {
+          deliveriesToday.push(order);
+        }
+
+        if (deliveryDateYmd && deliveryDateYmd < todayYmd && !delivered) {
+          delayedDeliveries.push(order);
+        }
+      });
+
+      const urgentOrders = [
+        ...delayedDeliveries.map((order: any) => ({ ...order, reason: "delayed" as const })),
+        ...deliveriesToday.map((order: any) => ({ ...order, reason: "today" as const })),
+        ...pendingConfirmation.map((order: any) => ({ ...order, reason: "pending" as const })),
+      ]
+        .reduce((acc: any[], current: any) => {
+          if (acc.some((item) => getOrderNavigationId(item) === getOrderNavigationId(current))) {
+            return acc;
+          }
+          return [...acc, current];
+        }, [])
+        .slice(0, 6)
+        .map((order: any) => ({
+          id: getOrderNavigationId(order),
+          createdAt: order?.createdAt || order?.created_at,
+          total: Number(order?.total || 0),
+          customerName: order?.customer?.name || order?.user?.name || "Cliente",
+          reason: order.reason,
+        }));
+
+      setOperations({
+        pendingConfirmation: pendingConfirmation.length,
+        deliveriesToday: deliveriesToday.length,
+        delayedDeliveries: delayedDeliveries.length,
+        urgentOrders,
+      });
+    } catch {
+      setOperations({
+        pendingConfirmation: 0,
+        deliveriesToday: 0,
+        delayedDeliveries: 0,
+        urgentOrders: [],
+      });
+    } finally {
+      if (!silent) {
+        setLoadingOperations(false);
+      }
+    }
+  }, []);
 
   const getProducts = async () => {
     try {
@@ -255,12 +466,43 @@ export default function Parceiro({ content }: { content: any }) {
       getProducts();
       checkPagarmeStatus();
       getStoreData();
+      fetchOperationsOverview();
     }
+    // Fluxo executado apenas no mount para evitar refetch agressivo no dashboard.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchStats(period);
-  }, [period]);
+  }, [period, fetchStats]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const refreshData = () => {
+      fetchStats(period, { silent: true });
+      fetchOperationsOverview({ silent: true });
+    };
+
+    const intervalId = window.setInterval(refreshData, 60_000);
+    const handleFocus = () => refreshData();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        refreshData();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [period, fetchStats, fetchOperationsOverview]);
 
   const recentOrders = stats?.recentOrders || [];
 
@@ -307,7 +549,7 @@ export default function Parceiro({ content }: { content: any }) {
       sortable: true,
       className: "w-16",
       render: (row: any) => (
-        <span className="font-medium text-zinc-900">#{row.id}</span>
+        <span className="font-medium text-zinc-900">#{row.mainOrderId || row.id}</span>
       ),
     },
     {
@@ -316,18 +558,25 @@ export default function Parceiro({ content }: { content: any }) {
       sortable: true,
       render: (row: any) => (
         <span className="text-zinc-600 text-sm whitespace-nowrap">
-          {getExtenseData(row.created_at)}
+          {getExtenseData(row.createdAt || row.created_at)}
         </span>
       ),
     },
     {
       key: "customer",
       label: "Cliente",
-      render: (row: any) => (
-        <span className="font-medium text-zinc-800">
-          {row.customer?.name || "---"}
-        </span>
-      ),
+      render: (row: any) => {
+        const customerName = row.customer?.name || row.user?.name || "---";
+        const customerEmail = row.customer?.email || row.user?.email || "";
+        return (
+          <div>
+            <span className="font-medium text-zinc-800 block">{customerName}</span>
+            {!!customerEmail && (
+              <span className="text-xs text-zinc-500">{customerEmail}</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "total",
@@ -336,6 +585,16 @@ export default function Parceiro({ content }: { content: any }) {
       render: (row: any) => (
         <span className="font-semibold text-zinc-900">
           {formatCurrency(row.total)}
+        </span>
+      ),
+    },
+    {
+      key: "payment_method",
+      label: "Pagamento",
+      className: "w-32",
+      render: (row: any) => (
+        <span className="text-sm text-zinc-700">
+          {getOrderPaymentLabel(row)}
         </span>
       ),
     },
@@ -350,7 +609,7 @@ export default function Parceiro({ content }: { content: any }) {
       className: "w-24",
       render: (row: any) => (
         <Link
-          href={`/painel/pedidos/${row.id}`}
+          href={`/painel/pedidos/${row.mainOrderId || row.id}`}
           className="text-sm text-yellow-600 hover:text-yellow-700 font-medium transition-colors"
         >
           Detalhes
@@ -393,7 +652,7 @@ export default function Parceiro({ content }: { content: any }) {
           icon={<ShoppingBag size={20} />}
           iconColor="bg-cyan-50 text-cyan-600"
           value={loadingStats ? "..." : (stats?.ordersCount ?? balance.orders ?? 0)}
-          label="Pedidos no periodo"
+          label="Pedidos no período"
           trend={{ value: 0, label: periodLabel }}
         />
         <StatsCard
@@ -406,7 +665,7 @@ export default function Parceiro({ content }: { content: any }) {
           icon={<Package size={20} />}
           iconColor="bg-yellow-50 text-yellow-600"
           value={loadingStats ? "..." : formatCurrency(stats?.avgTicket ?? 0)}
-          label="Ticket medio"
+          label="Ticket médio"
         />
         <StatsCard
           icon={<Users size={20} />}
@@ -416,11 +675,116 @@ export default function Parceiro({ content }: { content: any }) {
         />
       </div>
 
+      <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm p-5 mb-8">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-zinc-900 font-display">Central de Operação</h2>
+            <p className="text-sm text-zinc-500">Priorize os pedidos críticos e agilize o atendimento.</p>
+          </div>
+          <Link
+            href="/painel/pedidos"
+            className="text-sm text-yellow-600 hover:text-yellow-700 font-medium transition-colors whitespace-nowrap"
+          >
+            Ver pedidos
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <Link
+            href="/painel/pedidos?quick=pending-confirmation"
+            className="rounded-lg border border-zinc-200 p-4 hover:border-yellow-300 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wide text-zinc-500">A confirmar</span>
+              <ShieldAlert size={15} className="text-amber-500" />
+            </div>
+            <div className="text-2xl font-bold text-zinc-900 mt-1">
+              {loadingOperations ? "..." : operations.pendingConfirmation}
+            </div>
+            <p className="text-xs text-zinc-500 mt-1">Pedidos aguardando confirmação.</p>
+          </Link>
+
+          <Link
+            href="/painel/pedidos?quick=deliveries-today"
+            className="rounded-lg border border-zinc-200 p-4 hover:border-yellow-300 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wide text-zinc-500">Entrega de hoje</span>
+              <CalendarClock size={15} className="text-cyan-500" />
+            </div>
+            <div className="text-2xl font-bold text-zinc-900 mt-1">
+              {loadingOperations ? "..." : operations.deliveriesToday}
+            </div>
+            <p className="text-xs text-zinc-500 mt-1">Pedidos com agenda para hoje.</p>
+          </Link>
+
+          <Link
+            href="/painel/pedidos?quick=delayed"
+            className="rounded-lg border border-zinc-200 p-4 hover:border-red-300 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wide text-zinc-500">Atrasados</span>
+              <AlertTriangle size={15} className="text-red-500" />
+            </div>
+            <div className="text-2xl font-bold text-zinc-900 mt-1">
+              {loadingOperations ? "..." : operations.delayedDeliveries}
+            </div>
+            <p className="text-xs text-zinc-500 mt-1">Exigem ação imediata.</p>
+          </Link>
+        </div>
+
+        {!loadingOperations && operations.urgentOrders.length > 0 && (
+          <div className="rounded-lg border border-zinc-200 overflow-hidden">
+            {operations.urgentOrders.map((order) => (
+              <div
+                key={`urgent-${order.id}`}
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-zinc-100 last:border-b-0"
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-zinc-900">
+                    Pedido #{order.id}
+                  </div>
+                  <div className="text-xs text-zinc-500 truncate">
+                    {order.customerName} • {order.createdAt ? getExtenseData(order.createdAt) : "Data não informada"}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge
+                    variant={
+                      order.reason === "delayed"
+                        ? "danger"
+                        : order.reason === "today"
+                          ? "info"
+                          : "warning"
+                    }
+                  >
+                    {order.reason === "delayed"
+                      ? "Atrasado"
+                      : order.reason === "today"
+                        ? "Entrega hoje"
+                        : "A confirmar"}
+                  </Badge>
+                  <div className="text-sm font-semibold text-zinc-800">
+                    {formatCurrency(order.total)}
+                  </div>
+                  <Link
+                    href={`/painel/pedidos/${order.id}`}
+                    className="inline-flex items-center gap-1 text-sm text-yellow-700 hover:text-yellow-800 font-medium"
+                  >
+                    Ver <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-zinc-900 font-display">Ultimos pedidos</h2>
+              <h2 className="text-lg font-bold text-zinc-900 font-display">Últimos pedidos</h2>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -445,7 +809,7 @@ export default function Parceiro({ content }: { content: any }) {
                 <EmptyState
                   icon={<ShoppingBag size={28} />}
                   title="Nenhum pedido ainda"
-                  description="Quando seus clientes fizerem pedidos, eles vao aparecer aqui."
+                  description="Quando seus clientes fizerem pedidos, eles vão aparecer aqui."
                 />
               </div>
             ) : (
@@ -485,7 +849,7 @@ export default function Parceiro({ content }: { content: any }) {
           )}
 
           <div>
-            <h2 className="text-lg font-bold text-zinc-900 font-display mb-4">Acoes rapidas</h2>
+            <h2 className="text-lg font-bold text-zinc-900 font-display mb-4">Ações rápidas</h2>
             <div className="grid gap-3">
               {QUICK_ACTIONS.map((action) => (
                 <Link

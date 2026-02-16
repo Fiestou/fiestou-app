@@ -94,6 +94,8 @@ interface ApiRequestType {
 
 const trimSlashes = (s: string) => s.replace(/\/+$/, '');
 const trimLeftSlashes = (s: string) => s.replace(/^\/+/, '');
+const shouldIncludeQueryValue = (value: any) =>
+  value !== undefined && value !== null;
 
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
@@ -120,9 +122,12 @@ class Api {
 
       if (method === "get" && !!data && Object.keys(data).length > 0) {
         const queryString = Object.keys(data)
+          .filter((key) => shouldIncludeQueryValue(data[key]))
           .map((key) => serializeParam(key, data[key]))
           .join("&");
-        url = `${url}?${queryString}`;
+        if (queryString) {
+          url = `${url}?${queryString}`;
+        }
         data = {};
       }
 
@@ -191,8 +196,16 @@ class Api {
     opts?: any;
   }) {
     if (method === "get" && !!data && Object.keys(data).length > 0) {
-      const queryString = new URLSearchParams(data).toString();
-      url = `${url}?${queryString}`;
+      const filtered = Object.entries(data).reduce((acc: Record<string, any>, [key, value]) => {
+        if (shouldIncludeQueryValue(value)) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
+      const queryString = new URLSearchParams(filtered).toString();
+      if (queryString) {
+        url = `${url}?${queryString}`;
+      }
       data = {};
     }
 

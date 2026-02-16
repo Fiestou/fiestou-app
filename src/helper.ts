@@ -301,7 +301,34 @@ export function getImage(image: any, size?: string) {
     image = image?.medias;
   }
 
-  const img = !!image?.base_url ? image : image[0] ?? {};
+  const isMediaObject = (value: any) =>
+    !!value &&
+    typeof value === "object" &&
+    (!!value?.base_url ||
+      !!value?.url ||
+      !!value?.permanent_url ||
+      !!value?.details?.sizes ||
+      !!value?.sizes);
+
+  const mediaList = Array.isArray(image)
+    ? image
+    : typeof image === "object" && image !== null
+    ? Object.values(image)
+    : [];
+
+  const firstString = mediaList.find(
+    (item) => typeof item === "string" && item.trim().length > 0
+  ) as string | undefined;
+
+  const looksLikeSingleMedia = isMediaObject(image);
+
+  const img = looksLikeSingleMedia
+    ? image
+    : (mediaList.find((item) => isMediaObject(item)) as any) ?? {};
+
+  if (!looksLikeSingleMedia && !img?.url && !img?.base_url && firstString) {
+    return firstString;
+  }
 
   if (img?.extension === ".gif") {
     return !!img?.base_url ? img.base_url + img.permanent_url : "";
@@ -309,19 +336,62 @@ export function getImage(image: any, size?: string) {
 
   // Novo formato: { url: 'http://...', sizes: { thumb: '/path/...', ... } }
   if (img?.url && img?.sizes) {
-    const baseUrl = img.url.split('/storage/')[0] + '/storage';
-    const sizeKey = size || 'lg';
-    const relativePath = img.sizes[sizeKey] || img.sizes.default;
-    return relativePath ? baseUrl + relativePath : img.url;
+    const sizes = img.sizes || {};
+    const keyOrder = size
+      ? [size, "thumb", "sm", "md", "lg", "default"]
+      : ["lg", "md", "sm", "thumb", "default"];
+
+    const selected = keyOrder
+      .map((key) => sizes?.[key])
+      .find((value) => typeof value === "string" && value.trim().length > 0);
+
+    if (!selected) {
+      return img.url;
+    }
+
+    if (String(selected).startsWith("http")) {
+      return selected;
+    }
+
+    const baseUrl = String(img.url).includes("/storage/")
+      ? String(img.url).split("/storage/")[0] + "/storage"
+      : img?.base_url || "";
+
+    return baseUrl ? `${baseUrl}${selected}` : img.url;
+  }
+
+  // Novo formato reduzido: { url: 'http://...' }
+  if (img?.url && !img?.sizes) {
+    return img.url;
   }
 
   // Formato antigo: { base_url: '...', details: { sizes: {...} } }
   if (!!img?.base_url && !!img?.details?.sizes) {
-    const url =
-      img.base_url +
-      (!!size ? img?.details?.sizes[size] : img?.details?.sizes["lg"]);
+    const sizes = img?.details?.sizes || {};
+    const keyOrder = size
+      ? [size, "thumb", "sm", "md", "lg", "default"]
+      : ["lg", "md", "sm", "thumb", "default"];
 
-    return img.base_url != url.trim() ? url : "";
+    const selected = keyOrder
+      .map((key) => sizes?.[key])
+      .find((value) => typeof value === "string" && value.trim().length > 0);
+
+    if (selected) {
+      return String(selected).startsWith("http")
+        ? selected
+        : `${img.base_url}${selected}`;
+    }
+
+    if (img?.permanent_url) {
+      return `${img.base_url}${img.permanent_url}`;
+    }
+
+    return "";
+  }
+
+  // fallback para objeto de mídia sem sizes
+  if (img?.base_url && img?.permanent_url) {
+    return `${img.base_url}${img.permanent_url}`;
   }
 
   return "";

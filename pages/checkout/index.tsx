@@ -57,6 +57,53 @@ const FormInitialType = {
   loading: false,
 };
 
+const CHECKOUT_DRAFT_STORAGE_PREFIX = "fiestou.checkout.draft.v1";
+
+type CheckoutDraft = {
+  phone?: string;
+  deliveryTo?: string;
+  customLocation?: boolean;
+  address?: Partial<AddressType>;
+  deliverySchedules?: Record<number, string>;
+  pickupSchedules?: Record<number, string>;
+};
+
+function sanitizeAddressForDraft(address: any): Partial<AddressType> {
+  if (!address || typeof address !== "object") {
+    return {};
+  }
+
+  return {
+    zipCode: String(address?.zipCode ?? ""),
+    street: String(address?.street ?? ""),
+    number: String(address?.number ?? ""),
+    neighborhood: String(address?.neighborhood ?? ""),
+    city: String(address?.city ?? ""),
+    state: String(address?.state ?? ""),
+    complement: String(address?.complement ?? ""),
+    reference: String(address?.reference ?? ""),
+    country: String(address?.country ?? "Brasil"),
+  };
+}
+
+function normalizeSchedulesMap(value: any): Record<number, string> {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  const parsedEntries = Object.entries(value)
+    .map(([storeId, schedule]) => ({
+      storeId: Number(storeId),
+      schedule: String(schedule ?? ""),
+    }))
+    .filter((entry) => Number.isFinite(entry.storeId) && entry.storeId > 0 && !!entry.schedule);
+
+  return parsedEntries.reduce<Record<number, string>>((acc, entry) => {
+    acc[entry.storeId] = entry.schedule;
+    return acc;
+  }, {});
+}
+
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
 
@@ -236,6 +283,9 @@ export default function Checkout({
   const [address, setAddress] = useState({
     country: "Brasil",
   } as AddressType);
+  const checkoutDraftStorageKey = `${CHECKOUT_DRAFT_STORAGE_PREFIX}:${user?.id || "guest"}`;
+  const draftRestoredRef = useRef(false);
+  const [draftInitialized, setDraftInitialized] = useState(false);
   const handleAddress = (value: any) => {
     setAddress((prevAddress) => ({
       ...prevAddress,
@@ -563,7 +613,7 @@ export default function Checkout({
     };
 
     fetchAddressFromCartZip();
-  }, [cartDeliveryZip]);
+  }, [cartDeliveryZip, address?.zipCode]);
 
   const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(
     false as boolean
@@ -709,6 +759,93 @@ export default function Checkout({
       window.location.href = "/acesso";
     }
   }, [user, token]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (draftRestoredRef.current) {
+      return;
+    }
+
+    draftRestoredRef.current = true;
+
+    const rawDraft = window.localStorage.getItem(checkoutDraftStorageKey);
+    if (!rawDraft) {
+      setDraftInitialized(true);
+      return;
+    }
+
+    try {
+      const draft: CheckoutDraft = JSON.parse(rawDraft);
+
+      if (typeof draft.phone === "string" && draft.phone) {
+        setPhone(draft.phone);
+      }
+
+      if (typeof draft.deliveryTo === "string" && draft.deliveryTo) {
+        setDeliveryTo(draft.deliveryTo);
+      }
+
+      if (typeof draft.customLocation === "boolean") {
+        setCustomLocation(draft.customLocation);
+      }
+
+      if (draft.address) {
+        setAddress((prevAddress) => ({
+          ...(prevAddress || { country: "Brasil" }),
+          ...sanitizeAddressForDraft(draft.address),
+        }));
+      }
+
+      if (draft.deliverySchedules) {
+        setDeliverySchedules(normalizeSchedulesMap(draft.deliverySchedules));
+      }
+
+      if (draft.pickupSchedules) {
+        setPickupSchedules(normalizeSchedulesMap(draft.pickupSchedules));
+      }
+    } catch (error) {
+      console.error("checkout: não foi possível restaurar rascunho local", error);
+    } finally {
+      setDraftInitialized(true);
+    }
+  }, [checkoutDraftStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!draftInitialized) {
+      return;
+    }
+
+    const draft: CheckoutDraft = {
+      phone,
+      deliveryTo,
+      customLocation,
+      address: sanitizeAddressForDraft(address),
+      deliverySchedules,
+      pickupSchedules,
+    };
+
+    try {
+      window.localStorage.setItem(checkoutDraftStorageKey, JSON.stringify(draft));
+    } catch (error) {
+      console.error("checkout: não foi possível salvar rascunho local", error);
+    }
+  }, [
+    checkoutDraftStorageKey,
+    draftInitialized,
+    phone,
+    deliveryTo,
+    customLocation,
+    address,
+    deliverySchedules,
+    pickupSchedules,
+  ]);
 
   const deliveryTotal = deliverySummary.total;
   const minimumOrderSummary = useMemo(
@@ -894,6 +1031,11 @@ export default function Checkout({
       const firstId = created?.orders?.[0]?.id;
 
       if (firstId) {
+        try {
+          window.localStorage.removeItem(checkoutDraftStorageKey);
+        } catch (error) {
+          console.error("checkout: não foi possível limpar rascunho local", error);
+        }
         markCartConverted();
         clearCartCookies({ syncApi: false });
         window.location.href = `/dashboard/pedidos/pagamento/${firstId}`;
