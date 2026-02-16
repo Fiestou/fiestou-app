@@ -78,6 +78,42 @@ export async function fetchOrderById(api?: Api, orderId?: number | string): Prom
 
 const api = new Api();
 
+function parseObject(value: any): Record<string, any> {
+  if (!value) return {};
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  return typeof value === "object" ? value : {};
+}
+
+function normalizeOrderEntity(raw: any): Order {
+  const metadata = parseObject(raw?.metadata);
+  const payment = parseObject(raw?.payment);
+  const delivery = parseObject(raw?.delivery);
+  const customer = raw?.customer ?? raw?.user ?? null;
+  const user = raw?.user ?? raw?.customer ?? null;
+
+  return {
+    ...(raw ?? {}),
+    customer,
+    user,
+    delivery,
+    deliverySchedule:
+      raw?.deliverySchedule ?? delivery?.schedule ?? raw?.delivery_schedule,
+    createdAt: raw?.createdAt ?? raw?.created_at,
+    created_at: raw?.created_at ?? raw?.createdAt,
+    metadata: {
+      ...metadata,
+      ...payment,
+    },
+  } as Order;
+}
+
 export interface OrderCustomer {
   id: number;
   name: string;
@@ -149,10 +185,14 @@ export async function getOrdersByCustomer(customerId: number): Promise<Order[]> 
   });
 
   if (response.data?.data) {
-    return response.data.data;
+    return (Array.isArray(response.data.data) ? response.data.data : []).map(
+      normalizeOrderEntity
+    );
   }
 
-  return response.data;
+  return (Array.isArray(response.data) ? response.data : []).map(
+    normalizeOrderEntity
+  );
 }
 
 export interface OrderFilters {
@@ -178,11 +218,9 @@ export async function getMyOrders(filters?: OrderFilters): Promise<Order[]> {
     url: `orders/list${qs ? `?${qs}` : ""}`,
   });
 
-  if (response.data?.data) {
-    return response.data.data;
-  }
-
-  return response.data;
+  const source = response.data?.data ?? response.data;
+  const list = Array.isArray(source) ? source : [];
+  return list.map(normalizeOrderEntity);
 }
 
 export async function getOrderById(id: number): Promise<Order> {
@@ -192,11 +230,8 @@ export async function getOrderById(id: number): Promise<Order> {
     data: { id },
   });
 
-  if (response.data?.data) {
-    return response.data.data;
-  }
-
-  return response.data;
+  const source = response.data?.data ?? response.data;
+  return normalizeOrderEntity(source);
 }
 
 export async function getOrdersForChart(params: OrderChartParams): Promise<Order[]> {
@@ -241,8 +276,19 @@ export async function getDashboardStats(period: string = '30'): Promise<Dashboar
       method: "get",
       url: `orders/dashboard-stats?period=${period}`,
     });
+    const data = response.data?.data ?? response.data ?? null;
+    if (!data) {
+      return null;
+    }
 
-    return response.data?.data ?? response.data ?? null;
+    const recentOrders = Array.isArray(data?.recentOrders)
+      ? data.recentOrders.map(normalizeOrderEntity)
+      : [];
+
+    return {
+      ...data,
+      recentOrders,
+    } as DashboardStatsResponse;
   } catch {
     return null;
   }

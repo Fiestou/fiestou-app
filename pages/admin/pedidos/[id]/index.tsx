@@ -1,232 +1,417 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import Icon from "@/src/icons/fontAwesome/FIcon";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import {
+  ArrowLeft,
+  CreditCard,
+  MapPin,
+  Package,
+  Store,
+  User,
+  CalendarClock,
+  Receipt,
+  ExternalLink,
+} from "lucide-react";
 import Template from "@/src/template";
 import Api from "@/src/services/api";
-import { moneyFormat } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { getImage } from "@/src/helper";
+import { getImage, moneyFormat } from "@/src/helper";
 
 interface DeliveryAddress {
-  street: string;
-  number: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  complement: string;
-}
-
-interface GalleryItem {
-  base_url: string;
-  details: {
-    sizes: {
-      sm: string;
-      md?: string;
-    };
-  };
+  street?: string;
+  number?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  complement?: string;
 }
 
 interface ProductData {
   id: number;
   title: string;
-  gallery: GalleryItem[] | null;
+  gallery?: any[];
+  store?: {
+    id: number;
+    title?: string;
+    companyName?: string;
+  };
 }
 
-interface Order {
-  order: any;
+interface OrderItemAddon {
   id: number;
-  created_at: string;
-  status: string;
-  listItems: string;
-  deliveryAddress: string | DeliveryAddress;
-  deliveryTo: string;
-  deliverySchedule: string;
-  deliveryStatus: string;
-  deliveryPrice: number | string;
-  delivery?: {
-    status?: string;
-    schedule?: {
-      date: string;
-      period: string;
-      time: string;
-    };
-    to?: string;
-    price?: number;
-    priceLabel?: string;
-    address?: DeliveryAddress;
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+interface OrderItemData {
+  id: number;
+  orderId: number;
+  productId: number;
+  name: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  metadata?: any;
+  addons?: OrderItemAddon[];
+  store?: {
+    id: number;
+    slug?: string;
+    title?: string;
+    companyName?: string;
   };
-  user: {
-    name: string;
-    email: string;
-    details: string;
-  };
+}
+
+interface StoreData {
+  id: number;
+  slug?: string;
+  title?: string;
+  companyName?: string;
+  cover?: any;
+  profile?: any;
+  orderTotal?: number;
+  orderId?: number;
   partnerName?: string;
   partnerEmail?: string;
+  partnerPhone?: string;
+}
+
+interface OrderBreakdown {
+  id: number;
+  status: number;
+  deliveryStatus?: string;
+  subtotal: number;
+  deliveryPrice: number;
+  total: number;
+  createdAt?: string;
+  store?: StoreData;
+  metadata?: any;
   payment?: {
     method?: string;
+    methodCode?: string;
+    methodLabel?: string;
+    status?: string;
+    transactionType?: string;
+    installments?: number;
+    amountTotal?: number;
+    url?: string;
+    pdf?: string;
+    line?: string;
+    paidAt?: string;
+  };
+}
+
+interface OrderData {
+  id: number;
+  groupHash?: string;
+  status: number;
+  subtotal: number;
+  deliveryTotal: number;
+  total: number;
+  createdAt: string;
+  customer?: {
+    id: number;
+    name: string;
+    email: string;
+    phone?: string;
+    createdAt?: string;
+  };
+  partner?: {
+    name: string;
+    email: string;
+  };
+  store?: StoreData | null;
+  stores?: StoreData[];
+  metadata?: any;
+  payment?: {
+    method?: string;
+    methodCode?: string;
+    methodLabel?: string;
     installments?: number;
     amountTotal?: number;
     status?: string;
     transactionType?: string;
     pdf?: string;
     url?: string;
+    line?: string;
   };
-  metadata?: {
-    payment_method: string;
-    payment_status: string;
-    installments: number;
-    amount_total: number;
-    paid_at?: string;
-    split?: any[];
-    splits?: any[];
-    transaction_type?: string;
-    items?: { name: string; quantity: number; price: number }[];
+  delivery?: {
+    status?: string;
+    schedule?: {
+      date?: string;
+      period?: string;
+      time?: string;
+    } | null;
+    to?: string;
+    price?: number;
+    priceLabel?: string;
+    address?: DeliveryAddress | string | null;
   };
-  total: number;
-  productsData?: ProductData[];
+  items?: OrderItemData[];
+  products?: ProductData[];
+  orders?: OrderBreakdown[];
+  ordersCount?: number;
 }
 
 interface ApiResponse {
-  order: any;
-  data: Order;
+  order?: OrderData;
+  data?: {
+    order?: OrderData;
+  } | OrderData;
 }
 
-export default function OrderDetails() {
+function normalizeAddress(value: any): DeliveryAddress {
+  if (!value) return {};
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return typeof parsed === "object" && parsed ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  if (typeof value === "object") {
+    return value;
+  }
+
+  return {};
+}
+
+function normalizeMetadata(value: any): any {
+  if (!value) return {};
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+  return value;
+}
+
+function getPaymentMethodLabel(method?: string | null): string {
+  if (!method) return "Não informado";
+  if (method === "credit_card") return "Cartão de crédito";
+  if (method === "pix") return "PIX";
+  if (method === "boleto") return "Boleto bancário";
+  return method;
+}
+
+function getPaymentStatusLabel(status?: string | null): string {
+  if (!status) return "Pendente";
+  if (status === "paid" || status === "approved") return "Pago";
+  if (status === "processing") return "Processando";
+  if (status === "canceled" || status === "expired") return "Cancelado";
+  if (status === "failed") return "Falhou";
+  if (status === "pending") return "Pendente";
+  return status;
+}
+
+function getPaymentStatusClass(status?: string | null): string {
+  if (status === "paid" || status === "approved") return "bg-green-100 text-green-700";
+  if (status === "processing") return "bg-blue-100 text-blue-700";
+  if (status === "canceled" || status === "expired" || status === "failed") {
+    return "bg-red-100 text-red-700";
+  }
+  return "bg-amber-100 text-amber-700";
+}
+
+function getOrderStatusLabel(status?: number): string {
+  if (status === 1) return "Pago";
+  if (status === -2) return "Cancelado";
+  if (status === -1) return "Processando";
+  return "Pendente";
+}
+
+export default function AdminOrderDetailsPage() {
   const router = useRouter();
   const { id } = router.query;
-  const api = new Api();
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<OrderData | null>(null);
+  const [resolvedGalleryByProductId, setResolvedGalleryByProductId] = useState<Record<number, any[]>>({});
   const [loading, setLoading] = useState(true);
 
-  const getOrderDetails = async () => {
+  const fetchOrder = async () => {
     if (!id) return;
 
+    setLoading(true);
+    setResolvedGalleryByProductId({});
+
     try {
-      const request = (await api.bridge({
+      const api = new Api();
+      const response = (await api.bridge({
         method: "get",
         url: `order/${id}`,
       })) as ApiResponse;
 
-      const orderData = request?.data?.order ?? request?.order ?? request?.data ?? request;
+      const payload = (response?.order ||
+        (response?.data as any)?.order ||
+        response?.data) as OrderData | undefined;
 
-      if (orderData) {
-        let listItems = [];
-        if (Array.isArray(orderData.items)) {
-          listItems = orderData.items;
-        } else if (typeof orderData.listItems === "string") {
-          listItems = JSON.parse(orderData.listItems || "[]");
-        } else if (Array.isArray(orderData.listItems)) {
-          listItems = orderData.listItems;
-        }
-
-        let deliveryAddress: DeliveryAddress;
-        const rawAddress = orderData.delivery?.address ?? orderData.deliveryAddress;
-
-        if (typeof rawAddress === "string") {
-          try {
-            deliveryAddress = JSON.parse(rawAddress);
-          } catch (error) {
-            deliveryAddress = { street: "", number: "", neighborhood: "", city: "", state: "", zipCode: "", complement: "" };
-          }
-        } else {
-          deliveryAddress = (rawAddress as DeliveryAddress) || { street: "", number: "", neighborhood: "", city: "", state: "", zipCode: "", complement: "" };
-        }
-
-        const user = orderData.customer ?? orderData.user ?? {};
-
-        setOrder({
-          ...orderData,
-          id: orderData.id ?? orderData.mainOrderId,
-          listItems,
-          deliveryAddress,
-          user,
-          deliveryTo: orderData.delivery?.to ?? orderData.deliveryTo,
-          deliverySchedule: orderData.delivery?.schedule ?? orderData.deliverySchedule,
-          deliveryStatus: orderData.delivery?.status ?? orderData.deliveryStatus,
-          deliveryPrice: orderData.deliveryTotal ?? orderData.delivery?.price ?? orderData.deliveryPrice,
-          productsData: orderData.products ?? orderData.productsData,
-        });
+      if (!payload) {
+        setOrder(null);
+        return;
       }
+
+      const normalizedOrder: OrderData = {
+        ...payload,
+        metadata: normalizeMetadata(payload.metadata),
+        delivery: {
+          ...payload.delivery,
+          address: normalizeAddress(payload.delivery?.address),
+        },
+        items: Array.isArray(payload.items) ? payload.items : [],
+        products: Array.isArray(payload.products) ? payload.products : [],
+        stores: Array.isArray(payload.stores) ? payload.stores : [],
+        orders: Array.isArray(payload.orders) ? payload.orders : [],
+      };
+
+      setOrder(normalizedOrder);
     } catch (error) {
-      console.error("Erro ao buscar detalhes do pedido", error);
+      console.error("Erro ao buscar pedido do admin", error);
+      setOrder(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const getDeliveryPriceLabel = () => {
-    if (!order?.deliveryPrice && order?.deliveryPrice !== 0) return "N/A";
-    if (order?.deliveryPrice === "Não informado" || order?.deliveryPrice === "Gratuita")
-      return order?.deliveryPrice;
-    return "R$ " + order?.deliveryPrice;
-  };
-
-  const formatPhoneNumber = (phone: string) => {
-    if (!phone) return "N/A";
-    const cleaned = phone.replace(/\D/g, "");
-    if (cleaned.length === 10) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
-    if (cleaned.length === 11) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 3)} ${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
-    return phone;
-  };
-
   useEffect(() => {
-    getOrderDetails();
+    fetchOrder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const formatCEP = (cep: string) => {
-    if (!cep) return "N/A";
-    const cleaned = cep.replace(/\D/g, "");
-    return cleaned.length === 8 ? `${cleaned.slice(0, 5)}-${cleaned.slice(5)}` : cep;
-  };
+  useEffect(() => {
+    let active = true;
 
-  function getExtenseData(data_informada = "") {
-    if (!!data_informada) {
-      let monthes = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-      var day_informado = data_informada.split("-")[2];
-      var month_informado = data_informada.split("-")[1];
-      var year_informado = data_informada.split("-")[0];
-      return day_informado.split("T")[0] + " de " + monthes[parseInt(month_informado)] + " de " + year_informado;
+    const resolveMissingGalleries = async () => {
+      if (!order?.id) return;
+
+      const productIds = new Set<number>();
+
+      for (const product of order.products || []) {
+        const productId = Number(product?.id || 0);
+        if (!productId) continue;
+        if (resolvedGalleryByProductId[productId]?.length) continue;
+        if (getImage(product?.gallery, "thumb")) continue;
+        productIds.add(productId);
+      }
+
+      for (const item of order.items || []) {
+        const productId = Number(item?.productId || 0);
+        if (!productId) continue;
+        if (resolvedGalleryByProductId[productId]?.length) continue;
+        productIds.add(productId);
+      }
+
+      if (!productIds.size) return;
+
+      const api = new Api();
+      const responses = await Promise.allSettled(
+        Array.from(productIds).map(async (productId) => {
+          const response: any = await api.request({
+            method: "get",
+            url: "request/product",
+            data: { id: productId },
+          });
+
+          return {
+            productId,
+            gallery: Array.isArray(response?.data?.gallery)
+              ? response.data.gallery
+              : [],
+          };
+        })
+      );
+
+      if (!active) return;
+
+      setResolvedGalleryByProductId((prev) => {
+        const next = { ...prev };
+        let changed = false;
+
+        for (const result of responses) {
+          if (result.status !== "fulfilled") continue;
+          if (!result.value.gallery.length) continue;
+          if (next[result.value.productId]?.length) continue;
+
+          next[result.value.productId] = result.value.gallery;
+          changed = true;
+        }
+
+        return changed ? next : prev;
+      });
+    };
+
+    resolveMissingGalleries();
+
+    return () => {
+      active = false;
+    };
+  }, [order?.id, order?.products]);
+
+  const productsById = useMemo(() => {
+    const map = new Map<number, ProductData>();
+    for (const product of order?.products || []) {
+      map.set(product.id, product);
     }
-    return "";
-  }
+    return map;
+  }, [order?.products]);
 
-  const deliveryStatusMap: Record<string, string> = {
-    paid: "Em separação", pending: "Pendente", processing: "Em separação", sent: "Enviado",
-    transiting: "Em trânsito", received: "Entregue", returned: "Retornado", canceled: "Cancelado",
-    waitingWithdrawl: "Aguardando retirada", collect: "Chegando para recolher", complete: "Concluído",
-    failed: "Pagamento não aprovado", refunded: "Reembolsado", preparing: "Preparando pedido",
-  };
+  const groupedItemsByStore = useMemo(() => {
+    const grouped = new Map<string, { store: StoreData | null; items: OrderItemData[] }>();
 
-  const paymentMethodMap: Record<string, string> = {
-    credit_card: "Cartão de Crédito", pix: "PIX", boleto: "Boleto Bancário",
-  };
+    for (const item of order?.items || []) {
+      const storeId = item?.store?.id;
+      const key = String(storeId || "no-store");
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          store: (item.store as StoreData) || null,
+          items: [],
+        });
+      }
+      grouped.get(key)!.items.push(item);
+    }
 
-  const paymentStatusMap: Record<string, string> = {
-    paid: "Pago", approved: "Pago", pending: "Pendente", processing: "Processando",
-    failed: "Falhou", canceled: "Cancelado", refunded: "Reembolsado",
-  };
+    return Array.from(grouped.values());
+  }, [order?.items]);
 
-  const deliveryToMap: Record<string, string> = {
-    reception: "Entregar na portaria", door: "Deixar na porta",
-    inperson: "Estarei para receber", for_me: "Estarei para receber",
-  };
+  const paymentMethod =
+    order?.payment?.method ||
+    order?.payment?.methodCode ||
+    order?.metadata?.payment_method ||
+    order?.metadata?.transaction_type ||
+    null;
 
-  const getPaymentInfo = () => {
-    const paymentMethod = order?.payment?.method || order?.metadata?.payment_method || order?.metadata?.transaction_type;
-    const methodLabel = paymentMethodMap[paymentMethod || ""] || paymentMethod || "Não Informado";
-    const isPaid = !!order?.metadata?.paid_at || order?.payment?.status === "paid" || order?.metadata?.payment_status === "paid" || order?.metadata?.payment_status === "approved" || order?.status === 1;
-    const statusLabel = isPaid ? "Pago" : (paymentStatusMap[order?.payment?.status || ""] || paymentStatusMap[order?.metadata?.payment_status || ""] || "Pendente");
-    const isCreditCard = paymentMethod === "credit_card";
-    const installments = order?.payment?.installments || order?.metadata?.installments;
-    const splits = order?.metadata?.split || order?.metadata?.splits || [];
-    return { methodLabel, isPaid, statusLabel, isCreditCard, installments, splits };
-  };
+  const paymentStatus =
+    order?.payment?.status ||
+    order?.metadata?.payment_status ||
+    (order?.status === 1 ? "paid" : "pending");
+
+  const paidAt = order?.metadata?.paid_at || null;
+  const paymentUrl = order?.payment?.url || order?.metadata?.url || null;
+  const paymentPdf = order?.payment?.pdf || order?.metadata?.pdf || null;
+  const paymentLine = order?.payment?.line || order?.metadata?.line || null;
+
+  const deliveryAddress = normalizeAddress(order?.delivery?.address);
+  const deliveryZipCode = deliveryAddress.zipCode || (deliveryAddress as any).zip_code || "";
+  const deliveryState = deliveryAddress.state || (deliveryAddress as any).uf || "";
+  const deliveryStreet = deliveryAddress.street || (deliveryAddress as any).line_1 || "";
+  const deliveryCity = deliveryAddress.city || "";
 
   return (
-    <Template header={{ template: "admin", position: "solid" }}>
+    <Template
+      header={{
+        template: "admin",
+        position: "solid",
+      }}
+    >
       <section>
-        <div className="container-medium pt-8">
+        <div className="container-medium pt-8" style={{ maxWidth: "110rem" }}>
           <Breadcrumbs
             links={[
               { url: "/admin", name: "Admin" },
@@ -238,200 +423,394 @@ export default function OrderDetails() {
       </section>
 
       <section>
-        <div className="container-medium py-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="font-title font-bold text-3xl text-zinc-900">
-              Pedido #{id}
-            </h1>
-            {order && (
-              <span className="text-2xl font-bold text-zinc-900">
-                {order?.total ? "R$ " + moneyFormat(order?.total) : ""}
-              </span>
+        <div className="container-medium py-6" style={{ maxWidth: "110rem" }}>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/admin/pedidos"
+                className="w-10 h-10 rounded-lg border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-100 transition-colors"
+              >
+                <ArrowLeft size={18} />
+              </Link>
+              <div>
+                <h1 className="font-title font-bold text-3xl text-zinc-900">
+                  Pedido #{id}
+                </h1>
+                {!!order?.groupHash && (
+                  <p className="text-xs text-zinc-500 mt-1">Grupo: {order.groupHash}</p>
+                )}
+              </div>
+            </div>
+
+            {!!order && (
+              <div className="text-right">
+                <p className="text-sm text-zinc-500">Total do pedido</p>
+                <p className="text-3xl font-bold text-zinc-900">R$ {moneyFormat(order.total || 0)}</p>
+              </div>
             )}
           </div>
 
           {loading ? (
-            <div className="flex justify-center items-center py-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-zinc-400"></div>
-              <span className="ml-3 text-zinc-500">Carregando...</span>
+            <div className="bg-white border border-zinc-200 rounded-xl p-10 flex items-center justify-center gap-3 text-zinc-500">
+              <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-500 rounded-full animate-spin" />
+              Carregando pedido...
             </div>
-          ) : order ? (
-            <div className="grid gap-6">
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div className="bg-white border rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-zinc-900 mb-4">
-                    Dados do Cliente
-                  </h3>
-                  <div className="grid gap-0 text-sm">
-                    <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
-                      <span className="text-zinc-500">Nome</span>
-                      <span className="text-zinc-900">{order.user?.name || "N/A"}</span>
-                    </div>
-                    <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3">
-                      <span className="text-zinc-500">E-mail</span>
-                      <span className="text-zinc-900">{order.user?.email || "N/A"}</span>
-                    </div>
-                    <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
-                      <span className="text-zinc-500">Telefone</span>
-                      <span className="text-zinc-900">
-                        {formatPhoneNumber(order.user?.details ? JSON.parse(order.user?.details).phone || "" : "")}
-                      </span>
-                    </div>
+          ) : !order ? (
+            <div className="bg-white border border-zinc-200 rounded-xl p-10 text-center text-zinc-500">
+              Pedido não encontrado.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid lg:grid-cols-3 gap-4">
+                <div className="bg-white border border-zinc-200 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <User size={16} className="text-zinc-400" />
+                    <h3 className="font-semibold text-zinc-900">Cliente</h3>
+                  </div>
+                  <div className="space-y-1 text-sm text-zinc-700">
+                    <p className="font-medium text-zinc-900">{order.customer?.name || "N/A"}</p>
+                    <p>{order.customer?.email || "N/A"}</p>
+                    <p>{order.customer?.phone || "Telefone não informado"}</p>
+                    {order.customer?.createdAt && (
+                      <p className="text-xs text-zinc-500 pt-1">
+                        Cliente desde {new Date(order.customer.createdAt).toLocaleDateString("pt-BR")}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                <div className="bg-white border rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-zinc-900 mb-4">
-                    Pagamento
-                  </h3>
-                  {(() => {
-                    const { methodLabel, isPaid, statusLabel, isCreditCard, installments, splits } = getPaymentInfo();
-                    return (
-                      <div className="grid gap-0 text-sm">
-                        <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
-                          <span className="text-zinc-500">Método</span>
-                          <span className="text-zinc-900">
-                            {methodLabel}{isCreditCard && installments ? ` em ${installments}x` : ""}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3">
-                          <span className="text-zinc-500">Status</span>
-                          <span className={isPaid ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
-                            {statusLabel}
-                          </span>
-                        </div>
-                        {splits.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-dashed px-3">
-                            <p className="text-zinc-500 mb-2">Divisão do pagamento:</p>
-                            {splits.map((s: any, idx: number) => (
-                              <p key={idx} className="py-1">
-                                <span className={s.recipient?.type === "company" ? "text-blue-600" : "text-green-600"}>
-                                  {s.recipient?.name || "N/A"}
-                                </span>
-                                : R$ {((s.amount || 0) / 100).toFixed(2)}
-                              </p>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
+                <div className="bg-white border border-zinc-200 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CreditCard size={16} className="text-zinc-400" />
+                    <h3 className="font-semibold text-zinc-900">Pagamento</h3>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <p className="font-medium text-zinc-900">
+                      {order?.payment?.methodLabel || getPaymentMethodLabel(paymentMethod)}
+                      {paymentMethod === "credit_card" && order?.payment?.installments ? ` em ${order.payment.installments}x` : ""}
+                    </p>
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getPaymentStatusClass(paymentStatus)}`}>
+                      {getPaymentStatusLabel(paymentStatus)}
+                    </span>
+                    {!!order?.payment?.transactionType && (
+                      <p className="text-zinc-600">Transação: {order.payment.transactionType}</p>
+                    )}
+                    {!!paidAt && (
+                      <p className="text-zinc-600">
+                        Pago em {new Date(paidAt).toLocaleString("pt-BR")}
+                      </p>
+                    )}
+                    <p className="text-zinc-600">Status do pedido: {getOrderStatusLabel(order.status)}</p>
 
-              {order.partnerName && (
-                <div className="bg-white border rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-zinc-900 mb-4">
-                    Parceiro
-                  </h3>
-                  <div className="grid gap-0 text-sm">
-                    <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
-                      <span className="text-zinc-500">Nome</span>
-                      <span className="text-zinc-900">{order.partnerName}</span>
-                    </div>
-                    {order.partnerEmail && (
-                      <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3">
-                        <span className="text-zinc-500">E-mail</span>
-                        <span className="text-zinc-900">{order.partnerEmail}</span>
+                    {(paymentUrl || paymentPdf) && (
+                      <div className="pt-2 space-y-1">
+                        {!!paymentUrl && (
+                          <a
+                            href={paymentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                          >
+                            Abrir link de pagamento <ExternalLink size={12} />
+                          </a>
+                        )}
+                        {!!paymentPdf && (
+                          <a
+                            href={paymentPdf}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                          >
+                            Abrir boleto PDF <ExternalLink size={12} />
+                          </a>
+                        )}
+                        {!!paymentLine && (
+                          <p className="text-xs text-zinc-500 break-all">Linha digitável: {paymentLine}</p>
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
-              )}
 
-              <div className="bg-white border rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-zinc-900 mb-4">
-                  Entrega ({getDeliveryPriceLabel()})
-                </h3>
-                <div className="grid gap-0 text-sm">
-                  <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
-                    <span className="text-zinc-500">Tipo</span>
-                    <span className="text-zinc-900">
-                      {deliveryToMap[order.deliveryTo] || deliveryToMap[order.delivery?.to || ""] || order.deliveryTo || order.delivery?.to || "N/A"}
-                    </span>
+                <div className="bg-white border border-zinc-200 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin size={16} className="text-zinc-400" />
+                    <h3 className="font-semibold text-zinc-900">Entrega</h3>
                   </div>
-                  <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3">
-                    <span className="text-zinc-500">Agendamento</span>
-                    <span className="text-zinc-900">
-                      {order.delivery?.schedule?.date
-                        ? `${order.delivery.schedule.date} - ${order.delivery.schedule.period} (${order.delivery.schedule.time})`
-                        : order.deliverySchedule || "N/A"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
-                    <span className="text-zinc-500">Endereço</span>
-                    <span className="text-zinc-900">
-                      {typeof order.deliveryAddress !== "string" && order.deliveryAddress?.street
-                        ? `${order.deliveryAddress.street}, ${order.deliveryAddress.number} - ${order.deliveryAddress.neighborhood}`
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3">
-                    <span className="text-zinc-500">CEP</span>
-                    <span className="text-zinc-900">
-                      {typeof order.deliveryAddress !== "string" && order.deliveryAddress?.zipCode
-                        ? formatCEP(order.deliveryAddress.zipCode)
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3 bg-zinc-50 rounded">
-                    <span className="text-zinc-500">Cidade/UF</span>
-                    <span className="text-zinc-900">
-                      {typeof order.deliveryAddress !== "string"
-                        ? `${order.deliveryAddress?.city || "N/A"} / ${order.deliveryAddress?.state || "N/A"}`
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-[8rem_1fr] py-2.5 px-3">
-                    <span className="text-zinc-500">Status</span>
-                    <span className="text-zinc-900 font-medium">
-                      {deliveryStatusMap[order.deliveryStatus as keyof typeof deliveryStatusMap] || order.deliveryStatus || "N/A"}
-                    </span>
+                  <div className="space-y-1 text-sm text-zinc-700">
+                    <p>
+                      <span className="text-zinc-500">Tipo:</span> {order.delivery?.to || "Não informado"}
+                    </p>
+                    <p>
+                      <span className="text-zinc-500">Status:</span> {order.delivery?.status || "Não informado"}
+                    </p>
+                    <p>
+                      <span className="text-zinc-500">Frete:</span>{" "}
+                      {typeof order.delivery?.price === "number"
+                        ? `R$ ${moneyFormat(order.delivery.price)}`
+                        : order.delivery?.priceLabel || "Não informado"}
+                    </p>
+                    {!!order.delivery?.schedule?.date && (
+                      <p>
+                        <span className="text-zinc-500">Data:</span> {order.delivery.schedule.date}
+                      </p>
+                    )}
+                    {!!order.delivery?.schedule?.period && (
+                      <p>
+                        <span className="text-zinc-500">Período:</span> {order.delivery.schedule.period}
+                      </p>
+                    )}
+                    {!!order.delivery?.schedule?.time && (
+                      <p>
+                        <span className="text-zinc-500">Horário:</span> {order.delivery.schedule.time}
+                      </p>
+                    )}
+                    {(deliveryStreet || deliveryCity) && (
+                      <div className="pt-2 text-xs text-zinc-600">
+                        <p>
+                          {deliveryStreet}
+                          {deliveryAddress.number ? `, ${deliveryAddress.number}` : ""}
+                          {deliveryAddress.neighborhood ? ` - ${deliveryAddress.neighborhood}` : ""}
+                        </p>
+                        <p>
+                          {deliveryCity}
+                          {deliveryState ? `/${deliveryState}` : ""}
+                          {deliveryZipCode ? ` - CEP ${deliveryZipCode}` : ""}
+                        </p>
+                        {!!deliveryAddress.complement && <p>Complemento: {deliveryAddress.complement}</p>}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {order.productsData && order.productsData.length > 0 && (
-                <div className="bg-white border rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-zinc-900 mb-4">
-                    Produtos
-                  </h3>
-                  <div className="grid gap-4">
-                    {order.productsData.map((product) => (
-                      <div key={product.id}>
-                        <p className="font-medium text-zinc-900 mb-2">{product.title}</p>
-                        <div className="grid gap-3 grid-cols-6">
-                          {Array.isArray(product.gallery) && product.gallery.length > 0 ? (
-                            product.gallery
-                              .filter((item: GalleryItem) => !!item.base_url)
-                              .map((item: GalleryItem, key: number) => (
-                                <div key={key} className="rounded-lg bg-zinc-100 overflow-hidden aspect-square">
-                                  <img
-                                    src={getImage(item, "thumb")}
-                                    className="object-contain h-full w-full"
-                                    alt={`${product.title} - ${key + 1}`}
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = "/placeholder.jpg";
-                                    }}
-                                    width={150}
-                                    height={150}
-                                  />
-                                </div>
-                              ))
-                          ) : (
-                            <p className="text-sm text-zinc-400">Imagens não disponíveis</p>
-                          )}
+              {(order.stores || []).length > 0 && (
+                <div className="bg-white border border-zinc-200 rounded-xl p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Store size={17} className="text-zinc-400" />
+                    <h3 className="text-lg font-semibold text-zinc-900">Lojas envolvidas</h3>
+                  </div>
+                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {(order.stores || []).map((store) => {
+                      const logo = getImage(store.profile || store.cover, "thumb");
+                      const storeName = store.companyName || store.title || "Loja";
+
+                      return (
+                        <div key={`store-${store.id}`} className="border border-zinc-200 rounded-xl p-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            {logo ? (
+                              <Image
+                                src={logo}
+                                alt={storeName}
+                                width={48}
+                                height={48}
+                                unoptimized
+                                className="w-12 h-12 rounded-full object-cover border border-zinc-200"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center text-sm font-bold text-zinc-500">
+                                {storeName.slice(0, 1).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="font-semibold text-zinc-900 truncate">{storeName}</p>
+                              {!!store.slug && <p className="text-xs text-zinc-500 truncate">/{store.slug}</p>}
+                            </div>
+                          </div>
+
+                          <div className="space-y-1 text-sm text-zinc-600">
+                            <p>
+                              <span className="text-zinc-500">Parceiro:</span> {store.partnerName || "Não informado"}
+                            </p>
+                            <p>
+                              <span className="text-zinc-500">E-mail:</span> {store.partnerEmail || "Não informado"}
+                            </p>
+                            {!!store.partnerPhone && (
+                              <p>
+                                <span className="text-zinc-500">Telefone:</span> {store.partnerPhone}
+                              </p>
+                            )}
+                            {!!store.orderTotal && (
+                              <p>
+                                <span className="text-zinc-500">Total da loja:</span> R$ {moneyFormat(store.orderTotal)}
+                              </p>
+                            )}
+                            {!!store.orderId && (
+                              <p>
+                                <span className="text-zinc-500">Pedido da loja:</span> #{store.orderId}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="bg-white border rounded-xl p-12 text-center">
-              <Icon icon="fa-inbox" type="far" className="text-3xl text-zinc-300 mb-2" />
-              <p className="text-zinc-500">Pedido não encontrado</p>
+
+              {(order.orders || []).length > 0 && (
+                <div className="bg-white border border-zinc-200 rounded-xl p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Receipt size={17} className="text-zinc-400" />
+                    <h3 className="text-lg font-semibold text-zinc-900">Resumo por pedido da loja</h3>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left border-b border-zinc-200">
+                          <th className="py-2 pr-3 text-zinc-500 font-semibold">Pedido</th>
+                          <th className="py-2 pr-3 text-zinc-500 font-semibold">Loja</th>
+                          <th className="py-2 pr-3 text-zinc-500 font-semibold">Pagamento</th>
+                          <th className="py-2 pr-3 text-zinc-500 font-semibold">Status</th>
+                          <th className="py-2 pr-3 text-zinc-500 font-semibold">Total</th>
+                          <th className="py-2 pr-0 text-zinc-500 font-semibold">Data</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(order.orders || []).map((o) => (
+                          <tr key={`order-breakdown-${o.id}`} className="border-b border-zinc-100">
+                            <td className="py-3 pr-3 font-medium text-zinc-800">#{o.id}</td>
+                            <td className="py-3 pr-3 text-zinc-700">{o.store?.companyName || o.store?.title || "N/A"}</td>
+                            <td className="py-3 pr-3 text-zinc-700">
+                              {o.payment?.methodLabel || getPaymentMethodLabel(o.payment?.method || o.metadata?.payment_method)}
+                              {!!o.payment?.installments &&
+                                (o.payment?.method === "credit_card" ||
+                                  o.payment?.methodCode === "credit_card") &&
+                                ` (${o.payment.installments}x)`}
+                            </td>
+                            <td className="py-3 pr-3">
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getPaymentStatusClass(o.payment?.status || o.metadata?.payment_status)}`}>
+                                {getPaymentStatusLabel(o.payment?.status || o.metadata?.payment_status)}
+                              </span>
+                            </td>
+                            <td className="py-3 pr-3 font-medium text-zinc-800">R$ {moneyFormat(o.total || 0)}</td>
+                            <td className="py-3 pr-0 text-zinc-600">
+                              {o.createdAt ? new Date(o.createdAt).toLocaleString("pt-BR") : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white border border-zinc-200 rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Package size={17} className="text-zinc-400" />
+                  <h3 className="text-lg font-semibold text-zinc-900">Itens do pedido</h3>
+                </div>
+
+                {groupedItemsByStore.length === 0 ? (
+                  <p className="text-sm text-zinc-500">Nenhum item encontrado para este pedido.</p>
+                ) : (
+                  <div className="space-y-6">
+                    {groupedItemsByStore.map((group, groupIndex) => {
+                      const storeLabel =
+                        group.store?.companyName || group.store?.title || `Loja ${groupIndex + 1}`;
+
+                      return (
+                        <div key={`store-items-${groupIndex}`} className="border border-zinc-200 rounded-xl p-4">
+                          <div className="flex items-center justify-between gap-3 pb-3 border-b border-zinc-100 mb-4">
+                            <div>
+                              <p className="font-semibold text-zinc-900">{storeLabel}</p>
+                              {!!group.store?.id && (
+                                <p className="text-xs text-zinc-500">Store ID: {group.store.id}</p>
+                              )}
+                            </div>
+                            <span className="text-xs text-zinc-500">{group.items.length} item(ns)</span>
+                          </div>
+
+                          <div className="space-y-4">
+                            {group.items.map((item) => {
+                              const product = productsById.get(Number(item.productId));
+                              const productTitle = product?.title || item.name || "Produto";
+                              let productGallery = product?.gallery;
+
+                              if (
+                                !getImage(productGallery, "thumb") &&
+                                product?.id &&
+                                Array.isArray(resolvedGalleryByProductId[product.id]) &&
+                                resolvedGalleryByProductId[product.id].length > 0
+                              ) {
+                                productGallery = resolvedGalleryByProductId[product.id];
+                              }
+
+                              const imageUrl = getImage(productGallery, "thumb");
+
+                              const details = item.metadata?.details || item.metadata?.raw_item?.details || {};
+
+                              return (
+                                <div key={`item-${item.id}`} className="border border-zinc-100 rounded-lg p-3">
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-zinc-200 bg-zinc-100 flex-shrink-0 flex items-center justify-center">
+                                      {imageUrl ? (
+                                        <Image
+                                          src={imageUrl}
+                                          alt={productTitle}
+                                          width={64}
+                                          height={64}
+                                          unoptimized
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <span className="text-[10px] text-zinc-500">SEM IMG</span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                          <p className="font-medium text-zinc-900 truncate">{productTitle}</p>
+                                          <p className="text-xs text-zinc-500 mt-0.5">Pedido da loja #{item.orderId}</p>
+                                        </div>
+                                        <div className="text-right text-sm">
+                                          <p className="font-semibold text-zinc-900">R$ {moneyFormat(item.total || 0)}</p>
+                                          <p className="text-xs text-zinc-500">{item.quantity} x R$ {moneyFormat(item.unitPrice || 0)}</p>
+                                        </div>
+                                      </div>
+
+                                      {(details?.dateStart || details?.dateEnd || details?.days) && (
+                                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+                                          <CalendarClock size={12} />
+                                          {details?.dateStart && <span>Início: {details.dateStart}</span>}
+                                          {details?.dateEnd && <span>Fim: {details.dateEnd}</span>}
+                                          {!!details?.days && <span>{details.days} dia(s)</span>}
+                                        </div>
+                                      )}
+
+                                      {!!item.description && (
+                                        <p className="text-xs text-zinc-600 mt-2">{item.description}</p>
+                                      )}
+
+                                      {!!item.addons?.length && (
+                                        <div className="mt-3 pt-3 border-t border-dashed border-zinc-200">
+                                          <p className="text-xs font-semibold text-zinc-600 mb-1">Adicionais</p>
+                                          <div className="space-y-1">
+                                            {item.addons.map((addon) => (
+                                              <div key={`addon-${addon.id}`} className="flex justify-between text-xs text-zinc-600">
+                                                <span>
+                                                  {addon.quantity} x {addon.name}
+                                                </span>
+                                                <span>R$ {moneyFormat(addon.total || addon.price || 0)}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
