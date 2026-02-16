@@ -49,7 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: "GESTAO",
+    title: "GESTÃO",
     items: [
       {
         label: "Clientes",
@@ -57,8 +57,8 @@ const NAV_GROUPS: NavGroup[] = [
         icon: <Users size={iconSize} />,
       },
       {
-        label: "Saques",
-        href: "/painel/saques",
+        label: "Financeiro",
+        href: "/painel/financeiro",
         icon: <Wallet size={iconSize} />,
       },
       {
@@ -69,7 +69,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: "CONFIGURACOES",
+    title: "CONFIGURAÇÕES",
     items: [
       {
         label: "Minha Loja",

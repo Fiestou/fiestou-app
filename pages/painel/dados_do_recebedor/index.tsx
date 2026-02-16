@@ -2,6 +2,7 @@ import Api from "@/src/services/api";
 import { UserType } from "@/src/models/user";
 import UserEdit from "@/src/components/shared/UserEdit";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
 import { RecipientStatusResponse, RecipientType } from "@/src/models/Recipient";
 import { getRecipientStatus } from "@/src/services/recipients";
@@ -52,7 +53,7 @@ export default function MeusDados() {
       {shouldShowBanner && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
           <p className="text-base font-semibold text-red-800">
-            Seu cadastro na Pagar.me ainda nao foi finalizado
+            Seu cadastro na Pagar.me ainda não foi finalizado
           </p>
           <p className="text-sm mt-1 text-red-600/90">
             Conclua o passo a passo para receber pagamentos, antecipar valores e liberar o painel completo.
@@ -66,6 +67,16 @@ export default function MeusDados() {
           </button>
         </div>
       )}
+
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <p className="text-sm text-blue-800">
+          Ajustes de recebimento e antecipação agora ficam centralizados em{" "}
+          <Link href="/painel/financeiro" className="font-semibold underline">
+            Financeiro
+          </Link>
+          .
+        </p>
+      </div>
 
       {!!user?.id && (
         <UserEdit user={user} />

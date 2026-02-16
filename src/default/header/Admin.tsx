@@ -21,8 +21,8 @@ const menu = [
   //   endpoint: "/admin/produtos",
   // },
   {
-    title: "Solicitações de Saque",
-    endpoint: "/admin/saques",
+    title: "Antecipações de Lojistas",
+    endpoint: "/admin/antecipacoes",
   },
   {
     title: "Filtro",

@@ -260,15 +260,15 @@ export default function Admin() {
                   color="zinc"
                 />
                 <StatCard
-                  title="Saques pendentes"
+                  title="Antecipações pendentes"
                   value={stats.withdrawals.pending}
                   subtitle={
                     stats.withdrawals.pending > 0
                       ? `R$ ${moneyFormat(stats.withdrawals.pending_value)} em análise`
-                      : "Nenhum saque pendente"
+                      : "Nenhuma antecipação pendente"
                   }
                   icon="fa-money-bill-wave"
-                  href="/admin/saques"
+                  href="/admin/antecipacoes"
                   color={stats.withdrawals.pending > 0 ? "red" : "zinc"}
                 />
                 <StatCard
@@ -359,9 +359,9 @@ export default function Admin() {
                         href="/admin/parceiros"
                       />
                       <QuickLink
-                        title="Saques"
+                        title="Antecipações"
                         icon="fa-money-bill-wave"
-                        href="/admin/saques"
+                        href="/admin/antecipacoes"
                       />
                       <QuickLink
                         title="Carrinhos abandonados"
