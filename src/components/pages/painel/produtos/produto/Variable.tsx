@@ -82,10 +82,52 @@ function ImagePicker({
     if (!file) return;
     setUploading(true);
     try {
+      const api = new Api();
+
+      // Quando há productId, prioriza upload para a galeria do produto.
+      // Assim a mídia fica vinculada ao produto e aparece na página pública.
+      if (productId) {
+        try {
+          const galleryUpload: any = await api.bridge({
+            method: "post",
+            url: "products/upload-gallery",
+            data: {
+              product: productId,
+              medias: [file],
+            },
+            opts: {
+              headers: { "Content-Type": "multipart/form-data" },
+            },
+          });
+
+          const uploadedCandidate =
+            galleryUpload?.data?.medias?.[0] ??
+            galleryUpload?.data?.data?.medias?.[0] ??
+            galleryUpload?.medias?.[0] ??
+            null;
+
+          const uploadedMedia =
+            uploadedCandidate?.media ??
+            uploadedCandidate ??
+            null;
+
+          const uploadedMediaId = Number(uploadedMedia?.id);
+
+          if (Number.isFinite(uploadedMediaId) && uploadedMediaId > 0) {
+            onChange(uploadedMediaId, uploadedMedia);
+            setUploading(false);
+            setOpen(false);
+            return;
+          }
+        } catch {
+          // fallback logo abaixo para upload-base64
+        }
+      }
+
+      // Fallback para fluxo antigo (útil em produto ainda sem ID).
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = reader.result as string;
-        const api = new Api();
         const res: any = await api.bridge({
           method: "post",
           url: "files/upload-base64",
@@ -255,8 +297,16 @@ function EmojiPicker({
 
 function ColorPicker({
   onSelect,
+  trigger,
+  buttonClassName,
+  iconSize = 16,
+  title = "Selecionar cor",
 }: {
   onSelect: (colorName: string, colorHex: string) => void;
+  trigger?: React.ReactNode;
+  buttonClassName?: string;
+  iconSize?: number;
+  title?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -275,12 +325,18 @@ function ColorPicker({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
-          open ? "bg-yellow-100 text-yellow-600" : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600"
-        }`}
-        title="Selecionar cor"
+        className={
+          buttonClassName
+            ? `${buttonClassName} ${open ? "ring-2 ring-yellow-300" : ""}`
+            : `w-8 h-8 rounded-md flex items-center justify-center transition-colors ${
+                open
+                  ? "bg-yellow-100 text-amber-600"
+                  : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600"
+              }`
+        }
+        title={title}
       >
-        <Palette size={15} />
+        {trigger ?? <Palette size={iconSize} />}
       </button>
 
       {open && (
@@ -360,6 +416,22 @@ export default function Variable({
     emit(attributes);
   };
 
+  // Mantém o formulário pai sincronizado com as alterações locais de variações.
+  // Isso evita perder alterações ao clicar apenas em "Salvar Produto".
+  useEffect(() => {
+    if (!hasChanges) return;
+
+    const timer = setTimeout(() => {
+      try {
+        emitAttributes(JSON.stringify(attributes));
+      } catch {
+        emitAttributes(attributes);
+      }
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [attributes, hasChanges, emitAttributes]);
+
   const addAttribute = () => {
     const newAttr: AttributeType = {
       id: shortId(),
@@ -425,11 +497,11 @@ export default function Variable({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {saving ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-zinc-700 border-t-transparent rounded-full animate-spin" />
                 Salvando...
               </>
             ) : (
@@ -442,9 +514,9 @@ export default function Variable({
       <button
         type="button"
         onClick={addAttribute}
-        className="w-full py-3.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+        className="w-full py-3.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
       >
-        <Plus size={18} />
+        <Plus size={20} />
         Adicionar Grupo de Variações
       </button>
 
@@ -456,7 +528,7 @@ export default function Variable({
           <div
             key={attr.id}
             className={`border rounded-xl transition-all ${
-              isOpen ? "border-blue-200 bg-blue-50/30" : "border-zinc-200 bg-white"
+              isOpen ? "border-yellow-300 bg-yellow-50/40" : "border-zinc-200 bg-white"
             }`}
           >
             <div
@@ -549,17 +621,17 @@ export default function Variable({
                           onClick={() => updateAttribute(attr.id, { selectType: st.value })}
                           className={`w-full px-3 py-2 rounded-lg border text-left text-sm transition-all ${
                             attr.selectType === st.value
-                              ? "border-blue-300 bg-blue-50 text-zinc-900"
+                              ? "border-yellow-300 bg-yellow-50 text-zinc-900"
                               : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white"
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            {st.value === "radio" && <CircleDot size={13} className="text-zinc-400" />}
-                            {st.value === "checkbox" && <CheckSquare size={13} className="text-zinc-400" />}
-                            {st.value === "quantity" && <Hash size={13} className="text-zinc-400" />}
-                            {st.value === "color" && <Palette size={13} className="text-zinc-400" />}
-                            {st.value === "text" && <Type size={13} className="text-zinc-400" />}
-                            {st.value === "image" && <Upload size={13} className="text-zinc-400" />}
+                            {st.value === "radio" && <CircleDot size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
+                            {st.value === "checkbox" && <CheckSquare size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
+                            {st.value === "quantity" && <Hash size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
+                            {st.value === "color" && <Palette size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
+                            {st.value === "text" && <Type size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
+                            {st.value === "image" && <Upload size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
                             <div>
                               <div className="font-medium text-xs">{st.label}</div>
                               <div className="text-[10px] text-zinc-400">{st.desc}</div>
@@ -680,12 +752,12 @@ export default function Variable({
                         {attr.selectType === "text" ? (
                           <div className="flex items-start gap-2">
                             <Type size={14} className="mt-0.5 shrink-0" />
-                            <span>O cliente vai ver um campo de texto na página do produto. Exemplo: "Qual o nome do aniversariante?"</span>
+                            <span>O cliente vai ver um campo de texto na página do produto. Exemplo: &quot;Qual o nome do aniversariante?&quot;</span>
                           </div>
                         ) : (
                           <div className="flex items-start gap-2">
                             <Upload size={14} className="mt-0.5 shrink-0" />
-                            <span>O cliente vai poder enviar uma imagem na página do produto. Exemplo: "Envie a foto para o topo do bolo"</span>
+                            <span>O cliente vai poder enviar uma imagem na página do produto. Exemplo: &quot;Envie a foto para o topo do bolo&quot;</span>
                           </div>
                         )}
                       </div>
@@ -702,9 +774,9 @@ export default function Variable({
                     <button
                       type="button"
                       onClick={() => addVariation(attr.id)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors"
                     >
-                      <Plus size={12} />
+                      <Plus size={14} />
                       {attr.selectType === "color" ? "Adicionar cor" : "Adicionar opção"}
                     </button>
                   </div>
@@ -715,7 +787,7 @@ export default function Variable({
                       <button
                         type="button"
                         onClick={() => addVariation(attr.id)}
-                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        className="text-xs text-amber-700 hover:text-amber-800 font-medium"
                       >
                         Adicionar primeira opção
                       </button>
@@ -728,10 +800,22 @@ export default function Variable({
                         <div key={v.id ?? vi} className="flex items-center gap-2 bg-white rounded-lg border border-zinc-200 px-3 py-2">
                           {attr.selectType === "color" ? (
                             <>
-                              <div
-                                className="w-8 h-8 rounded-md border-2 border-zinc-300 shrink-0"
-                                style={{ backgroundColor: v.color || "#ffffff" }}
-                                title={v.color}
+                              <ColorPicker
+                                onSelect={(name, hex) =>
+                                  updateVariation(attr.id, v.id, { title: name, color: hex })
+                                }
+                                buttonClassName="w-9 h-9 rounded-md border-2 border-zinc-300 shrink-0 overflow-hidden transition-colors hover:border-yellow-400"
+                                title="Selecionar cor"
+                                trigger={
+                                  <span
+                                    className="relative block w-full h-full"
+                                    style={{ backgroundColor: v.color || "#ffffff" }}
+                                  >
+                                    {String(v.color || "#ffffff").toLowerCase() === "#ffffff" && (
+                                      <span className="absolute inset-0 border border-zinc-300" />
+                                    )}
+                                  </span>
+                                }
                               />
                               <input
                                 type="text"
@@ -740,7 +824,6 @@ export default function Variable({
                                 placeholder="Nome da cor (ex: Vermelho, Azul...)"
                                 className="flex-1 px-2 py-1 text-sm border-0 focus:ring-0 outline-none bg-transparent min-w-0"
                               />
-                              <ColorPicker onSelect={(name, hex) => updateVariation(attr.id, v.id, { title: name, color: hex })} />
                             </>
                           ) : (
                             <>
@@ -800,7 +883,7 @@ export default function Variable({
                                 onClick={() => setConfirmDeleteVar(null)}
                                 className="px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 bg-zinc-100 rounded"
                               >
-                                Nao
+                                Não
                               </button>
                               <button
                                 type="button"

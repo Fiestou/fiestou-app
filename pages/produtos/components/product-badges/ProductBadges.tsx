@@ -12,8 +12,8 @@ interface ProductBadgesProps {
 const typeConfig: Record<string, { bg: string; icon: string; label: string }> = {
   venda: { bg: "bg-red-200", icon: "fa-tag", label: "Venda" },
   aluguel: { bg: "bg-blue-200", icon: "fa-clock", label: "Aluguel" },
-  comestivel: { bg: "bg-amber-200", icon: "fa-utensils", label: "Comestivel" },
-  servicos: { bg: "bg-purple-200", icon: "fa-briefcase", label: "Servicos" },
+  comestivel: { bg: "bg-amber-200", icon: "fa-utensils", label: "Comestível" },
+  servicos: { bg: "bg-purple-200", icon: "fa-briefcase", label: "Serviços" },
 };
 
 export default function ProductBadges({

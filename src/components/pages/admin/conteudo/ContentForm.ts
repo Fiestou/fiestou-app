@@ -146,7 +146,7 @@ const painel: Array<FormType> = [
     origin: "painel",
   },
   {
-    title: "Saques",
+    title: "Financeiro",
     slug: "withdraw",
     publicUrl: "",
     form: WithdrawForm,

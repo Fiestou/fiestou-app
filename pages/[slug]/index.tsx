@@ -562,7 +562,7 @@ export default function Store({
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <MapPin size={16} className="text-zinc-400" />
-                      <span className="font-medium text-sm text-zinc-900">Endereco</span>
+                      <span className="font-medium text-sm text-zinc-900">Endereço</span>
                     </div>
                     <p className="text-sm text-zinc-600">
                       {store?.street}{store?.number ? `, ${store.number}` : ''}

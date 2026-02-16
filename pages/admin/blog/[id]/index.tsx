@@ -157,7 +157,7 @@ export default function Form() {
                     <Input
                       value={content.title}
                       onChange={(e: any) => handleContent({ title: e.target.value })}
-                      placeholder="Titulo do post"
+                      placeholder="Título do post"
                     />
                     {!!content?.slug && (
                       <div className="mt-2">
@@ -173,7 +173,7 @@ export default function Form() {
                   </div>
 
                   <div className="bg-white border rounded-xl p-6">
-                    <label className="block text-sm text-zinc-500 mb-2">Conteudo</label>
+                    <label className="block text-sm text-zinc-500 mb-2">Conteúdo</label>
                     <Editor
                       value={content?.blocks?.[0]?.content ?? ""}
                       onChange={(val: any) =>
@@ -199,7 +199,7 @@ export default function Form() {
                         }
                         className="w-full px-3 py-2.5 border rounded-lg text-sm outline-none"
                       >
-                        <option value="1">Publico</option>
+                        <option value="1">Público</option>
                         <option value="0">Privado</option>
                       </select>
                     </div>

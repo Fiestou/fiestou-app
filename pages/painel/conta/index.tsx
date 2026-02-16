@@ -148,13 +148,13 @@ export default function Conta({ page }: { page: any }) {
                           onChange={(e: any) => handleBankAccounts({ agence: e.target.value }, key)}
                           required
                           value={bank.agence}
-                          placeholder="Agencia"
+                          placeholder="Agência"
                         />
                         <Input
                           onChange={(e: any) => handleBankAccounts({ accountNumber: e.target.value }, key)}
                           required
                           value={bank.accountNumber}
-                          placeholder="Numero da conta"
+                          placeholder="Número da conta"
                         />
                       </div>
                       <div className="grid sm:grid-cols-[1fr_2fr] gap-3">
@@ -165,7 +165,7 @@ export default function Conta({ page }: { page: any }) {
                           value={bank.operation ?? "conta-corrente"}
                           options={[
                             { name: "Conta Corrente", value: "conta-corrente" },
-                            { name: "Conta Poupanca", value: "conta-poupanca" },
+                            { name: "Conta Poupança", value: "conta-poupanca" },
                           ]}
                         />
                         <Input
@@ -193,7 +193,7 @@ export default function Conta({ page }: { page: any }) {
               <EmptyState
                 icon={<CreditCard size={32} />}
                 title="Sem contas cadastradas"
-                description="Adicione uma conta bancaria para receber seus pagamentos"
+                description="Adicione uma conta bancária para receber seus pagamentos"
                 action={
                   <button
                     type="button"

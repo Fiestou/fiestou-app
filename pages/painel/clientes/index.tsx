@@ -67,7 +67,7 @@ export default function Clientes({ store }: { store: any }) {
     },
     {
       key: "actions",
-      label: "Acoes",
+      label: "Ações",
       className: "w-28",
       render: (row) => (
         <Link
@@ -102,7 +102,7 @@ export default function Clientes({ store }: { store: any }) {
             description={
               search
                 ? "Tente ajustar a busca"
-                : "Quando clientes comprarem na sua loja, eles vao aparecer aqui"
+                : "Quando clientes comprarem na sua loja, eles vão aparecer aqui"
             }
           />
         </div>

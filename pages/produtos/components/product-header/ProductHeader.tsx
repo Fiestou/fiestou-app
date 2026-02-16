@@ -32,8 +32,8 @@ export default function ProductHeader({ product, comments }: ProductHeaderProps)
         const labels: Record<string, string> = {
           venda: "Venda",
           aluguel: "Aluguel",
-          comestivel: "Comestivel",
-          servicos: "Servicos",
+          comestivel: "Comestível",
+          servicos: "Serviços",
         };
         const ct = product?.comercialType as string;
         if (!ct) return null;

@@ -12,14 +12,14 @@ export default function Ajuda() {
     {
       question: "Como funciona?",
       answer:
-        "Procure o que precise para sua festa, reserve, faça o pagamento. E entregamos no dia marcado.",
+        "Procure o que precisa para sua festa, reserve e faça o pagamento. Entregamos no dia marcado.",
     },
     {
       question: "Que produtos a Fiestou oferece?",
       answer: "Oferecemos decorações, buffet e bolo para a festa.",
     },
     {
-      question: "Onde pode ser feito a entrega?",
+      question: "Onde pode ser feita a entrega?",
       answer: "Na cidade de João Pessoa.",
     },
     {
@@ -34,12 +34,12 @@ export default function Ajuda() {
     {
       question: "A Fiestou faz a montagem da decoração?",
       answer:
-        "Na descrição dos produtos, diz se está incluído a montagem ou não.",
+        "Na descrição dos produtos, diz se a montagem está incluída ou não.",
     },
     {
       question: "Onde posso baixar o aplicativo?",
       answer:
-        "No momento não temos aplicativo. Somos um website que pode acessar em qualquer navegador.",
+        "No momento não temos aplicativo. Somos um website que você pode acessar em qualquer navegador.",
     },
   ];
 

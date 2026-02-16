@@ -178,7 +178,7 @@ export default function Form({ slug }: { slug: string }) {
                   </div>
 
                   <div className="bg-white border rounded-xl p-6">
-                    <label className="block text-sm text-zinc-500 mb-2">Conteudo</label>
+                    <label className="block text-sm text-zinc-500 mb-2">Conteúdo</label>
                     <Editor
                       value={
                         content?.blocks && content?.blocks[0]
@@ -196,7 +196,7 @@ export default function Form({ slug }: { slug: string }) {
                           ],
                         })
                       }
-                      placeholder="Escreva seu conteudo..."
+                      placeholder="Escreva seu conteúdo..."
                     />
                   </div>
                 </div>
@@ -212,7 +212,7 @@ export default function Form({ slug }: { slug: string }) {
                           handleContent({ status: e.target.value })
                         }
                         options={[
-                          { name: "Publico", value: 1 },
+                          { name: "Público", value: 1 },
                           { name: "Privado", value: 0 },
                         ]}
                       />

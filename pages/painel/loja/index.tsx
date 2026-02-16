@@ -65,7 +65,7 @@ function TimePick({ value, onChange }: { value?: string; onChange: (v: string) =
 const days: Record<string, string[]> = [
   { value: "Domingo", name: "Domingo" },
   { value: "Segunda", name: "Segunda" },
-  { value: "Terça", name: "Terca" },
+  { value: "Terça", name: "Terça" },
   { value: "Quarta", name: "Quarta" },
   { value: "Quinta", name: "Quinta" },
   { value: "Sexta", name: "Sexta" },
@@ -360,7 +360,7 @@ export default function Loja({ page }: { page: any }) {
                     preview={handleProfile.preview}
                   />
                 </div>
-                <p className="text-sm text-zinc-500">Imagem quadrada, minimo 200x200px</p>
+                <p className="text-sm text-zinc-500">Imagem quadrada, mínimo 200x200px</p>
               </div>
               <div className="flex justify-end mt-4">
                 <button
@@ -392,7 +392,7 @@ export default function Loja({ page }: { page: any }) {
                   className="px-5 py-2 text-sm bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   <Save size={14} />
-                  Salvar alteracoes
+                  Salvar alterações
                 </button>
               </div>
             </form>
@@ -409,18 +409,18 @@ export default function Loja({ page }: { page: any }) {
                   <Input name="cnpj" onChange={(e) => handleStore({ document: justNumber(e.target.value) })} value={store?.document} placeholder="00.000.000/0000-00" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1.5">Nome juridico</label>
-                  <Input name="nome" onChange={(e) => handleStore({ companyName: e.target.value })} value={store?.companyName} placeholder="Razao social" />
+                  <label className="block text-sm font-medium text-zinc-700 mb-1.5">Nome jurídico</label>
+                  <Input name="nome" onChange={(e) => handleStore({ companyName: e.target.value })} value={store?.companyName} placeholder="Razão social" />
                 </div>
               </div>
 
               <div className="border-t border-zinc-100 pt-5">
-                <h4 className="text-sm font-semibold text-zinc-900 mb-4">Endereco</h4>
+                <h4 className="text-sm font-semibold text-zinc-900 mb-4">Endereço</h4>
                 <div className="grid gap-3">
                   <Input name="cep" onChange={(e) => handleZipCode(e.target.value)} value={store?.zipCode} placeholder="CEP" />
                   <div className="grid sm:grid-cols-[1fr_100px] gap-3">
                     <Input name="rua" readonly value={store?.street} placeholder="Rua" />
-                    <Input name="numero" onChange={(e) => handleStore({ number: e.target.value })} value={store?.number} placeholder="Numero" />
+                    <Input name="numero" onChange={(e) => handleStore({ number: e.target.value })} value={store?.number} placeholder="Número" />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-3">
                     <Input name="bairro" readonly value={store?.neighborhood} placeholder="Bairro" />
@@ -448,7 +448,7 @@ export default function Loja({ page }: { page: any }) {
                 className="px-5 py-2 text-sm bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 <Save size={14} />
-                Salvar alteracoes
+                Salvar alterações
               </button>
             </div>
           </form>
@@ -457,7 +457,7 @@ export default function Loja({ page }: { page: any }) {
       case "horarios":
         return (
           <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-zinc-200 p-6">
-            <h3 className="text-base font-semibold text-zinc-900 mb-5">Horario de funcionamento</h3>
+            <h3 className="text-base font-semibold text-zinc-900 mb-5">Horário de funcionamento</h3>
             <div className="grid gap-2">
               {days.map((day, key) => {
                 const isOpen = week[key]?.working === "on";
@@ -474,7 +474,7 @@ export default function Loja({ page }: { page: any }) {
                     {isOpen ? (
                     <div className="flex items-center gap-3">
                         <TimePick value={week[key]?.open} onChange={(v) => handleWeek({ open: v }, day.value)} />
-                        <span className="text-xs text-zinc-400">ate</span>
+                        <span className="text-xs text-zinc-400">até</span>
                         <TimePick value={week[key]?.close} onChange={(v) => handleWeek({ close: v }, day.value)} />
                       </div>
                     ) : (
@@ -491,7 +491,7 @@ export default function Loja({ page }: { page: any }) {
                 className="px-5 py-2 text-sm bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 <Save size={14} />
-                Salvar horarios
+                Salvar horários
               </button>
             </div>
           </form>
@@ -502,7 +502,7 @@ export default function Loja({ page }: { page: any }) {
           <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-zinc-200 p-6">
             <div className="grid gap-5">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">Voce possui servico de entrega?</label>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Você possui serviço de entrega?</label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 text-sm">
                     <input type="radio" name="is_delivery_fee_active" value="1" checked={!!store?.is_delivery_fee_active} onChange={(e) => handleStore({ is_delivery_fee_active: Number(e.target.value) })} className="text-yellow-500" />
@@ -510,7 +510,7 @@ export default function Loja({ page }: { page: any }) {
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="radio" name="is_delivery_fee_active" value="0" checked={!store?.is_delivery_fee_active} onChange={(e) => handleStore({ is_delivery_fee_active: Number(e.target.value) })} className="text-yellow-500" />
-                    Nao
+                    Não
                   </label>
                 </div>
               </div>
@@ -522,14 +522,14 @@ export default function Loja({ page }: { page: any }) {
                     <Input type="text" value={store?.default_delivery_fee} onChange={(e) => handleStore({ default_delivery_fee: maskMoneyBR(e.target.value) })} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1.5">Regiao de atendimento</label>
-                    <MultiSelect name="deliveryRegions" placeholder="Selecione as regioes" value={store?.deliveryRegions} onChange={(values) => handleStore({ deliveryRegions: values })} options={deliveryRegionsOptions} className="min-h-[46px] relative" isMulti={true} />
+                    <label className="block text-sm font-medium text-zinc-700 mb-1.5">Região de atendimento</label>
+                    <MultiSelect name="deliveryRegions" placeholder="Selecione as regiões" value={store?.deliveryRegions} onChange={(values) => handleStore({ deliveryRegions: values })} options={deliveryRegionsOptions} className="min-h-[46px] relative" isMulti={true} />
                   </div>
                 </>
               )}
 
               <div className="border-t border-zinc-100 pt-5">
-                <label className="block text-sm font-medium text-zinc-700 mb-2">Pedido minimo</label>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Pedido mínimo</label>
                 <div className="flex gap-4 mb-3">
                   <label className="flex items-center gap-2 text-sm">
                     <input type="radio" name="minimum_order_enabled" value="1" checked={!!store?.minimum_order?.enabled} onChange={() => handleStore({ minimum_order: { ...store.minimum_order, enabled: 1 } })} className="text-yellow-500" />
@@ -537,12 +537,12 @@ export default function Loja({ page }: { page: any }) {
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="radio" name="minimum_order_enabled" value="0" checked={!store?.minimum_order?.enabled} onChange={() => handleStore({ minimum_order: { ...store.minimum_order, enabled: 0, value: 0 } })} className="text-yellow-500" />
-                    Nao
+                    Não
                   </label>
                 </div>
                 {!!store?.minimum_order?.enabled && (
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1.5">Valor minimo</label>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1.5">Valor mínimo</label>
                     <Input type="text" value={store?.minimum_order?.value ?? ""} onChange={(e) => handleStore({ minimum_order: { ...store.minimum_order, value: maskMoneyBR(e.target.value) } })} placeholder="Ex: R$ 50,00" />
                   </div>
                 )}
@@ -555,7 +555,7 @@ export default function Loja({ page }: { page: any }) {
                 className="px-5 py-2 text-sm bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 <Save size={14} />
-                Salvar alteracoes
+                Salvar alterações
               </button>
             </div>
           </form>
@@ -566,12 +566,12 @@ export default function Loja({ page }: { page: any }) {
           <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-zinc-200 p-6">
             <div className="flex items-center gap-2 mb-5">
               <FileText size={18} className="text-zinc-400" />
-              <h3 className="text-base font-semibold text-zinc-900">Regras de locacao</h3>
+              <h3 className="text-base font-semibold text-zinc-900">Regras de locação</h3>
             </div>
 
             <div className="grid gap-5">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">Ativar regras de locacao?</label>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Ativar regras de locação?</label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 text-sm">
                     <input type="radio" name="rental_enabled" checked={!!store?.rental_rules?.enabled} onChange={() => handleStore({ rental_rules: { ...store.rental_rules, enabled: true } })} className="text-yellow-500" />
@@ -579,7 +579,7 @@ export default function Loja({ page }: { page: any }) {
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="radio" name="rental_enabled" checked={!store?.rental_rules?.enabled} onChange={() => handleStore({ rental_rules: { ...store.rental_rules, enabled: false } })} className="text-yellow-500" />
-                    Nao
+                    Não
                   </label>
                 </div>
               </div>
@@ -588,7 +588,7 @@ export default function Loja({ page }: { page: any }) {
                 <>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-zinc-700 mb-1.5">Prazo de devolucao</label>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1.5">Prazo de devolução</label>
                       <select
                         value={store?.rental_rules?.return_period ?? "next_day"}
                         onChange={(e) => handleStore({ rental_rules: { ...store.rental_rules, return_period: e.target.value } })}
@@ -604,14 +604,14 @@ export default function Loja({ page }: { page: any }) {
                         <Input
                           value={store?.rental_rules?.return_period_custom ?? ""}
                           onChange={(e) => handleStore({ rental_rules: { ...store.rental_rules, return_period_custom: e.target.value } })}
-                          placeholder="Ex: 3 dias uteis"
+                          placeholder="Ex: 3 dias úteis"
                           className="mt-2"
                         />
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-zinc-700 mb-1.5">Caucao / Deposito</label>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1.5">Caução / Depósito</label>
                       <div className="flex gap-4 mb-2">
                         <label className="flex items-center gap-2 text-sm">
                           <input type="radio" name="deposit_enabled" checked={!!store?.rental_rules?.deposit_enabled} onChange={() => handleStore({ rental_rules: { ...store.rental_rules, deposit_enabled: true } })} className="text-yellow-500" />
@@ -619,7 +619,7 @@ export default function Loja({ page }: { page: any }) {
                         </label>
                         <label className="flex items-center gap-2 text-sm">
                           <input type="radio" name="deposit_enabled" checked={!store?.rental_rules?.deposit_enabled} onChange={() => handleStore({ rental_rules: { ...store.rental_rules, deposit_enabled: false } })} className="text-yellow-500" />
-                          Nao
+                          Não
                         </label>
                       </div>
                       {!!store?.rental_rules?.deposit_enabled && (
@@ -656,7 +656,7 @@ export default function Loja({ page }: { page: any }) {
                         />
                         <span className="text-sm text-zinc-500 whitespace-nowrap">horas antes</span>
                       </div>
-                      <p className="text-xs text-zinc-400 mt-1">Ate quantas horas antes do evento o cliente pode cancelar sem multa</p>
+                      <p className="text-xs text-zinc-400 mt-1">Até quantas horas antes do evento o cliente pode cancelar sem multa</p>
                     </div>
 
                     <div>
@@ -677,7 +677,7 @@ export default function Loja({ page }: { page: any }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1.5">Multa por atraso na devolucao</label>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1.5">Multa por atraso na devolução</label>
                     <div className="flex gap-4 mb-2">
                       <label className="flex items-center gap-2 text-sm">
                         <input type="radio" name="late_fee_enabled" checked={!!store?.rental_rules?.late_fee_enabled} onChange={() => handleStore({ rental_rules: { ...store.rental_rules, late_fee_enabled: true } })} className="text-yellow-500" />
@@ -685,7 +685,7 @@ export default function Loja({ page }: { page: any }) {
                       </label>
                       <label className="flex items-center gap-2 text-sm">
                         <input type="radio" name="late_fee_enabled" checked={!store?.rental_rules?.late_fee_enabled} onChange={() => handleStore({ rental_rules: { ...store.rental_rules, late_fee_enabled: false } })} className="text-yellow-500" />
-                        Nao
+                        Não
                       </label>
                     </div>
                     {!!store?.rental_rules?.late_fee_enabled && (
@@ -707,10 +707,10 @@ export default function Loja({ page }: { page: any }) {
                     <TextArea
                       value={store?.rental_rules?.additional_rules ?? ""}
                       onChange={(e) => handleStore({ rental_rules: { ...store.rental_rules, additional_rules: e.target.value } })}
-                      placeholder="Escreva aqui regras e termos adicionais da sua loja. Ex: itens devem ser devolvidos limpos, montagem nao inclusa, etc."
+                      placeholder="Escreva aqui regras e termos adicionais da sua loja. Ex: itens devem ser devolvidos limpos, montagem não inclusa, etc."
                       rows={4}
                     />
-                    <p className="text-xs text-zinc-400 mt-1">Estas regras serao exibidas para o cliente no momento da compra</p>
+                    <p className="text-xs text-zinc-400 mt-1">Estas regras serão exibidas para o cliente no momento da compra</p>
                   </div>
                 </>
               )}
