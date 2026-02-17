@@ -350,7 +350,7 @@ function ImageInput({
       </div>
       {displayPreview ? (
         <div className="relative inline-block">
-          <img
+          <Img
             src={displayPreview}
             alt="Preview"
             className="max-h-32 rounded-lg object-contain border border-zinc-200"

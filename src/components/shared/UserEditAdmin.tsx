@@ -295,7 +295,7 @@ export default function UserEditAdmin({
             <p className="text-sm text-zinc-400 py-4">Nenhum pedido encontrado</p>
           ) : (
             <p className="text-sm text-zinc-400 py-4">
-              Clique em "Carregar pedidos" para ver o histórico
+              Clique em &quot;Carregar pedidos&quot; para ver o histórico
             </p>
           )}
         </div>

@@ -2,6 +2,7 @@ import { Button, Input } from "@/src/components/ui/form";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Api from "@/src/services/api";
 import Template from "@/src/template";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
@@ -311,13 +312,13 @@ export default function Configuracoes() {
               <Icon icon="fa-whatsapp" type="fab" className="mr-2" />
               WhatsApp (Z-API)
             </button>
-            <a
+            <Link
               href="/admin/templates"
               className="pb-3 px-4 font-semibold text-zinc-500 hover:text-zinc-700 transition-colors ml-auto"
             >
               <Icon icon="fa-file-alt" className="mr-2" />
               Templates
-            </a>
+            </Link>
           </div>
 
           {message && (

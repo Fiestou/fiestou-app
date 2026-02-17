@@ -13,6 +13,7 @@ const apiBaseURL =
 
 export const api = axios.create({
   baseURL: apiBaseURL,
+  timeout: 15000,
   headers: {
     "Access-Control-Allow-Origin": "*",
     "Content-Type": "application/json",
@@ -76,7 +77,6 @@ api.interceptors.response.use(
        errorMessage === "");
 
     if (isTokenError) {
-      console.warn("[Auth] Token expirado ou inválido. Verificando redirecionamento...");
       handleSessionExpired();
     }
 
@@ -109,79 +109,76 @@ class Api {
     { method = "get", url, data, opts }: ApiRequestType,
     ctx?: any
   ) {
-    return await new Promise((resolve, reject) => {
-      if (!!ctx?.req) {
-        const authtoken = !!ctx?.req.cookies
-          ? ctx.req.cookies["fiestou.authtoken"]
-          : getAuthToken();
+    const requestHeaders: Record<string, any> = { ...((opts as any)?.headers ?? {}) };
+    if (!!ctx?.req) {
+      const authtoken = !!ctx?.req.cookies
+        ? ctx.req.cookies["fiestou.authtoken"]
+        : getAuthToken();
+      if (!!authtoken) {
+        requestHeaders["Authorization"] = `Bearer ${authtoken}`;
+      }
+    }
 
-        if (!!authtoken) {
-          api.defaults.headers["Authorization"] = `Bearer ${authtoken}`;
-        }
+    if (method === "get" && !!data && Object.keys(data).length > 0) {
+      const queryString = Object.keys(data)
+        .filter((key) => shouldIncludeQueryValue(data[key]))
+        .map((key) => serializeParam(key, data[key]))
+        .join("&");
+      if (queryString) {
+        url = `${url}?${queryString}`;
+      }
+      data = {};
+    }
+
+    const validMethods: HttpMethod[] = ["get", "post", "put", "patch", "delete"];
+    const requestMethod = validMethods.includes(method.toLowerCase() as HttpMethod)
+      ? (method.toLowerCase() as HttpMethod)
+      : "get";
+
+    const requestConfig: any = {
+      ...(opts ?? {}),
+      url,
+      method: requestMethod,
+      headers: requestHeaders,
+    };
+
+    if (requestMethod !== "get" && requestMethod !== "delete") {
+      requestConfig.data = data ?? {};
+    } else if (requestMethod === "delete" && data && Object.keys(data).length > 0) {
+      requestConfig.data = data;
+    }
+
+    try {
+      const response: AxiosResponse = await api.request(requestConfig);
+      return response.data;
+    } catch (error: any) {
+      if (error?.response) {
+        const { status, data: responseData, headers } = error.response;
+        return {
+          status,
+          data: responseData,
+          headers,
+          error: true,
+          message: error.message ?? null,
+        };
       }
 
-      if (method === "get" && !!data && Object.keys(data).length > 0) {
-        const queryString = Object.keys(data)
-          .filter((key) => shouldIncludeQueryValue(data[key]))
-          .map((key) => serializeParam(key, data[key]))
-          .join("&");
-        if (queryString) {
-          url = `${url}?${queryString}`;
-        }
-        data = {};
+      if (error?.request) {
+        return {
+          status: 503,
+          data: null,
+          error: true,
+          message: error.message ?? "Request failed",
+        };
       }
 
-      const validMethods: HttpMethod[] = [
-        "get",
-        "post",
-        "put",
-        "patch",
-        "delete",
-      ];
-      const requestMethod = validMethods.includes(
-        method.toLowerCase() as HttpMethod
-      )
-        ? (method.toLowerCase() as HttpMethod)
-        : "get";
-
-
-      api[requestMethod](url, data ?? {}, opts ?? {})
-        .then((response: AxiosResponse) => {
-          resolve(response.data);
-        })
-        .catch((error: any) => {
-          const normalizedError = () => {
-            if (error?.response) {
-              const { status, data, headers } = error.response;
-              return {
-                status,
-                data,
-                headers,
-                error: true,
-                message: error.message ?? null,
-              };
-            }
-
-            if (error?.request) {
-              return {
-                status: 503,
-                data: null,
-                error: true,
-                message: error.message ?? "Request failed",
-              };
-            }
-
-            return {
-              status: 500,
-              data: null,
-              error: true,
-              message: error?.message ?? "Unknown error",
-            };
-          };
-
-          resolve(normalizedError());
-        });
-    });
+      return {
+        status: 500,
+        data: null,
+        error: true,
+        message: error?.message ?? "Unknown error",
+      };
+    }
   }
 
   async internal({

@@ -3,6 +3,7 @@ import Editor from "@/src/components/ui/form/EditorUI";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Api from "@/src/services/api";
 import Template from "@/src/template";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type ChannelTab = "email" | "whatsapp";
@@ -259,13 +260,13 @@ export default function Templates() {
         <div className="container-medium pt-12 pb-8 md:py-12">
           <div className="flex">
             <div className="w-full text-sm text-zinc-500">
-              <a href="/admin" className="hover:text-zinc-700">
+              <Link href="/admin" className="hover:text-zinc-700">
                 Admin
-              </a>
+              </Link>
               {" > "}
-              <a href="/admin/configuracoes" className="hover:text-zinc-700">
+              <Link href="/admin/configuracoes" className="hover:text-zinc-700">
                 Configurações
-              </a>
+              </Link>
               {" > "}
               Templates
             </div>

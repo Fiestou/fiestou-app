@@ -15,17 +15,12 @@ const nextConfig = {
       ],
     },
     {
-      source: "/:path*",
+      source: "/api/:path*",
       headers: [
         {
           key: "Cache-Control",
-          value: "no-store",
+          value: "private, no-store, max-age=0, must-revalidate",
         },
-      ],
-    },
-    {
-      source: "/api/:path*",
-      headers: [
         {
           key: "Access-Control-Allow-Origin",
           value: "*",
@@ -38,6 +33,60 @@ const nextConfig = {
           key: "Access-Control-Allow-Headers",
           value:
             "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
+        },
+      ],
+    },
+    {
+      source: "/admin/:path*",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "private, no-store, max-age=0, must-revalidate",
+        },
+      ],
+    },
+    {
+      source: "/painel/:path*",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "private, no-store, max-age=0, must-revalidate",
+        },
+      ],
+    },
+    {
+      source: "/dashboard/:path*",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "private, no-store, max-age=0, must-revalidate",
+        },
+      ],
+    },
+    {
+      source: "/acesso/:path*",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "private, no-store, max-age=0, must-revalidate",
+        },
+      ],
+    },
+    {
+      source: "/checkout/:path*",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "private, no-store, max-age=0, must-revalidate",
+        },
+      ],
+    },
+    {
+      source: "/carrinho/:path*",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "private, no-store, max-age=0, must-revalidate",
         },
       ],
     },
@@ -59,7 +108,7 @@ const nextConfig = {
       },
     ];
   },
-  generateEtags: false,
+  generateEtags: true,
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
