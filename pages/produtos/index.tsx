@@ -16,6 +16,7 @@ import {
   hasMoreByResult,
   mergeUniqueProducts,
 } from "@/src/services/productsPagination";
+import { getOrCreateVisitorId } from "@/src/services/recommendations";
 
 const PAGE_SIZE = 15;
 
@@ -68,6 +69,8 @@ export default function Produtos() {
       setLoading(true);
       try {
         const offset = (page - 1) * PAGE_SIZE;
+        const visitorId =
+          typeof window !== "undefined" ? getOrCreateVisitorId() : undefined;
 
         const request = (await api.request({
           method: "get",
@@ -76,6 +79,9 @@ export default function Produtos() {
             limit: PAGE_SIZE,
             offset,
             ordem: "desc",
+            source: "public:produtos",
+            visitor_id: visitorId || undefined,
+            path: typeof window !== "undefined" ? window.location.pathname : undefined,
           },
         })) as { data: ProductType[]; metadata?: { count?: number } };
 

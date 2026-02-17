@@ -85,7 +85,7 @@ export default function AdminRecomendacoes() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [insightTab, setInsightTab] = useState<"commerce" | "geo">("commerce");
+  const [insightTab, setInsightTab] = useState<"commerce" | "geo" | "search">("commerce");
   const [liveMode, setLiveMode] = useState(true);
   const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
   const [selectedProfile, setSelectedProfile] =
@@ -98,6 +98,7 @@ export default function AdminRecomendacoes() {
   const {
     actors,
     stats,
+    searchStats,
     loading,
     refreshing,
     error,
@@ -116,6 +117,14 @@ export default function AdminRecomendacoes() {
     if (!stats?.total_actors) return 0;
     return Number(stats.interactions_total || 0) / Number(stats.total_actors || 1);
   }, [stats]);
+
+  const hasCommerceInsights =
+    Boolean(stats?.top_products?.length) || Boolean(stats?.top_stores?.length);
+  const hasGeoInsights = Boolean(stats?.top_regions?.length);
+  const hasSearchInsights =
+    Boolean(searchStats?.terms?.length) ||
+    Boolean(searchStats?.top_sources?.length) ||
+    Boolean(searchStats?.top_zero_result_terms?.length);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -372,16 +381,13 @@ export default function AdminRecomendacoes() {
             </div>
           )}
 
-          {stats &&
-            (stats.top_products?.length > 0 ||
-              stats.top_stores?.length > 0 ||
-              stats.top_regions?.length > 0) && (
+          {(hasCommerceInsights || hasGeoInsights || hasSearchInsights) && (
             <div className="bg-white border border-zinc-200 rounded-2xl p-5 md:p-6 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>
                   <h2 className="font-semibold text-zinc-900 text-lg">Insights de comportamento</h2>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Altere a visão para focar em conversão comercial ou distribuição geográfica.
+                    Altere a visão para acompanhar conversão, origem do tráfego e qualidade das buscas.
                   </p>
                 </div>
                 <div className="inline-flex rounded-xl border border-zinc-200 bg-zinc-50 p-1">
@@ -407,142 +413,268 @@ export default function AdminRecomendacoes() {
                   >
                     Geografia e IP
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setInsightTab("search")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      insightTab === "search"
+                        ? "bg-white text-zinc-900 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700"
+                    }`}
+                  >
+                    Busca
+                  </button>
                 </div>
               </div>
 
               {insightTab === "commerce" ? (
-                <div className="grid xl:grid-cols-2 gap-4">
-                  <div className="border border-zinc-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <h3 className="font-semibold text-zinc-900">Top produtos</h3>
-                      <span className="text-xs text-zinc-500">Score acumulado</span>
-                    </div>
-                    <div className="grid gap-2">
-                      {(stats.top_products || []).slice(0, 8).map((row: any) => {
-                        const product = row?.product ?? null;
-                        const cover = product?.gallery?.[0];
-                        const image =
-                          getImage(cover, "thumb") ||
-                          getImage(cover, "sm") ||
-                          getImage(cover);
-                        const title = product?.title || `Produto #${row?.product_id}`;
+                stats ? (
+                  <div className="grid xl:grid-cols-2 gap-4">
+                    <div className="border border-zinc-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <h3 className="font-semibold text-zinc-900">Top produtos</h3>
+                        <span className="text-xs text-zinc-500">Score acumulado</span>
+                      </div>
+                      <div className="grid gap-2">
+                        {(stats.top_products || []).slice(0, 8).map((row: any) => {
+                          const product = row?.product ?? null;
+                          const cover = product?.gallery?.[0];
+                          const image =
+                            getImage(cover, "thumb") ||
+                            getImage(cover, "sm") ||
+                            getImage(cover);
+                          const title = product?.title || `Produto #${row?.product_id}`;
 
-                        return (
-                          <div
-                            key={`top-product-${row?.product_id}`}
-                            className="border border-zinc-200 rounded-lg p-2.5 flex items-center gap-3"
-                          >
-                            <div className="w-12 h-12 rounded-md bg-zinc-100 overflow-hidden shrink-0">
-                              {image ? (
-                                <Img src={image} className="w-full h-full object-cover" />
-                              ) : null}
+                          return (
+                            <div
+                              key={`top-product-${row?.product_id}`}
+                              className="border border-zinc-200 rounded-lg p-2.5 flex items-center gap-3"
+                            >
+                              <div className="w-12 h-12 rounded-md bg-zinc-100 overflow-hidden shrink-0">
+                                {image ? (
+                                  <Img src={image} className="w-full h-full object-cover" />
+                                ) : null}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-zinc-900 truncate">
+                                  {title}
+                                </p>
+                                <p className="text-xs text-zinc-500">
+                                  Score {Number(row?.total_score || 0)} •{" "}
+                                  {Number(row?.events_count || 0)} eventos
+                                </p>
+                              </div>
                             </div>
-                            <div className="min-w-0 flex-1">
+                          );
+                        })}
+                        {(stats.top_products || []).length === 0 && (
+                          <p className="text-sm text-zinc-500">
+                            Ainda sem dados de produtos em destaque.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border border-zinc-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <h3 className="font-semibold text-zinc-900">Top lojas</h3>
+                        <span className="text-xs text-zinc-500">Afinidade por loja</span>
+                      </div>
+                      <div className="grid gap-2">
+                        {(stats.top_stores || []).slice(0, 8).map((row: any) => (
+                          <div
+                            key={`top-store-${row?.store_id}`}
+                            className="border border-zinc-200 rounded-lg p-2.5 flex items-center justify-between gap-3"
+                          >
+                            <div className="min-w-0">
                               <p className="text-sm font-semibold text-zinc-900 truncate">
-                                {title}
+                                {row?.store_name || `Loja #${row?.store_id}`}
                               </p>
                               <p className="text-xs text-zinc-500">
-                                Score {Number(row?.total_score || 0)} •{" "}
                                 {Number(row?.events_count || 0)} eventos
                               </p>
                             </div>
+                            <span className="text-sm font-semibold text-zinc-900 whitespace-nowrap">
+                              Score {Number(row?.total_score || 0)}
+                            </span>
                           </div>
-                        );
-                      })}
-                      {(stats.top_products || []).length === 0 && (
-                        <p className="text-sm text-zinc-500">
-                          Ainda sem dados de produtos em destaque.
-                        </p>
-                      )}
+                        ))}
+                        {(stats.top_stores || []).length === 0 && (
+                          <p className="text-sm text-zinc-500">
+                            Ainda sem dados de lojas em destaque.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  <div className="border border-zinc-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <h3 className="font-semibold text-zinc-900">Top lojas</h3>
-                      <span className="text-xs text-zinc-500">Afinidade por loja</span>
-                    </div>
-                    <div className="grid gap-2">
-                      {(stats.top_stores || []).slice(0, 8).map((row: any) => (
-                        <div
-                          key={`top-store-${row?.store_id}`}
-                          className="border border-zinc-200 rounded-lg p-2.5 flex items-center justify-between gap-3"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-zinc-900 truncate">
-                              {row?.store_name || `Loja #${row?.store_id}`}
-                            </p>
-                            <p className="text-xs text-zinc-500">
+                ) : (
+                  <div className="border border-zinc-200 rounded-xl p-4 text-sm text-zinc-500">
+                    Dados de comportamento ainda não disponíveis.
+                  </div>
+                )
+              ) : insightTab === "geo" ? (
+                stats ? (
+                  <div className="grid xl:grid-cols-[2fr_1fr] gap-4">
+                    <div className="border border-zinc-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <h3 className="font-semibold text-zinc-900">Top regiões</h3>
+                        <span className="text-xs text-zinc-500">Atores e IPs por localidade</span>
+                      </div>
+                      <div className="grid gap-2">
+                        {(stats.top_regions || []).slice(0, 8).map((row: any, index: number) => (
+                          <div
+                            key={`top-region-${index}-${row?.label || "unknown"}`}
+                            className="border border-zinc-200 rounded-lg p-3 flex items-center justify-between gap-3"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-zinc-900 truncate">
+                                {row?.label || "Local não informado"}
+                              </p>
+                              <p className="text-xs text-zinc-500 mt-1">
+                                {Number(row?.actors_count || 0)} atores •{" "}
+                                {Number(row?.unique_ip_count || 0)} IPs
+                              </p>
+                            </div>
+                            <span className="text-sm font-semibold text-zinc-900 whitespace-nowrap">
                               {Number(row?.events_count || 0)} eventos
-                            </p>
+                            </span>
                           </div>
-                          <span className="text-sm font-semibold text-zinc-900 whitespace-nowrap">
-                            Score {Number(row?.total_score || 0)}
-                          </span>
-                        </div>
-                      ))}
-                      {(stats.top_stores || []).length === 0 && (
-                        <p className="text-sm text-zinc-500">
-                          Ainda sem dados de lojas em destaque.
+                        ))}
+                        {(stats.top_regions || []).length === 0 && (
+                          <p className="text-sm text-zinc-500">
+                            Ainda sem dados de regiões em destaque.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border border-zinc-200 rounded-xl p-4 bg-zinc-50">
+                      <h3 className="font-semibold text-zinc-900 text-sm">Resumo geográfico</h3>
+                      <div className="mt-3 grid gap-2 text-sm">
+                        <p className="text-zinc-700">
+                          <span className="font-semibold text-zinc-900">{stats.unique_ips || 0}</span>{" "}
+                          IPs únicas rastreadas.
                         </p>
-                      )}
+                        <p className="text-zinc-700">
+                          <span className="font-semibold text-zinc-900">
+                            {stats.countries_tracked || 0}
+                          </span>{" "}
+                          países com tráfego registrado.
+                        </p>
+                        <p className="text-zinc-700">
+                          <span className="font-semibold text-zinc-900">
+                            {stats.regions_tracked || 0}
+                          </span>{" "}
+                          regiões distintas no período.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="border border-zinc-200 rounded-xl p-4 text-sm text-zinc-500">
+                    Dados geográficos ainda não disponíveis.
+                  </div>
+                )
               ) : (
-                <div className="grid xl:grid-cols-[2fr_1fr] gap-4">
+                <div className="grid xl:grid-cols-[1.7fr_1fr] gap-4">
                   <div className="border border-zinc-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <h3 className="font-semibold text-zinc-900">Top regiões</h3>
-                      <span className="text-xs text-zinc-500">Atores e IPs por localidade</span>
+                    <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-2 mb-3">
+                      <div className="rounded-lg border border-zinc-200 p-3">
+                        <p className="text-[11px] text-zinc-500">Buscas totais</p>
+                        <p className="text-xl font-bold text-zinc-900">
+                          {Number(searchStats?.totals?.searches || 0)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-zinc-200 p-3">
+                        <p className="text-[11px] text-zinc-500">Termos únicos</p>
+                        <p className="text-xl font-bold text-zinc-900">
+                          {Number(searchStats?.totals?.unique_terms || 0)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-zinc-200 p-3">
+                        <p className="text-[11px] text-zinc-500">Taxa sem resultado</p>
+                        <p className="text-xl font-bold text-zinc-900">
+                          {Number(searchStats?.totals?.zero_results_rate || 0).toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-zinc-200 p-3">
+                        <p className="text-[11px] text-zinc-500">Média de resultados</p>
+                        <p className="text-xl font-bold text-zinc-900">
+                          {Number(searchStats?.totals?.average_results || 0).toFixed(1)}
+                        </p>
+                      </div>
                     </div>
+
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <h3 className="font-semibold text-zinc-900">Top termos de busca</h3>
+                      <span className="text-xs text-zinc-500">
+                        Última busca: {formatDateTime(searchStats?.totals?.last_search_at)}
+                      </span>
+                    </div>
+
                     <div className="grid gap-2">
-                      {(stats.top_regions || []).slice(0, 8).map((row: any, index: number) => (
+                      {(searchStats?.terms || []).slice(0, 12).map((row) => (
                         <div
-                          key={`top-region-${index}-${row?.label || "unknown"}`}
-                          className="border border-zinc-200 rounded-lg p-3 flex items-center justify-between gap-3"
+                          key={`search-term-${row.normalized_term}`}
+                          className="border border-zinc-200 rounded-lg p-3"
                         >
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-zinc-900 truncate">
-                              {row?.label || "Local não informado"}
-                            </p>
-                            <p className="text-xs text-zinc-500 mt-1">
-                              {Number(row?.actors_count || 0)} atores •{" "}
-                              {Number(row?.unique_ip_count || 0)} IPs
-                            </p>
-                          </div>
-                          <span className="text-sm font-semibold text-zinc-900 whitespace-nowrap">
-                            {Number(row?.events_count || 0)} eventos
-                          </span>
+                          <p className="text-sm font-semibold text-zinc-900">{row.term}</p>
+                          <p className="text-xs text-zinc-500 mt-1">
+                            {row.searches} buscas • {row.unique_actors} atores • média{" "}
+                            {Number(row.average_results || 0).toFixed(1)} resultados
+                          </p>
                         </div>
                       ))}
-                      {(stats.top_regions || []).length === 0 && (
+                      {(searchStats?.terms || []).length === 0 && (
                         <p className="text-sm text-zinc-500">
-                          Ainda sem dados de regiões em destaque.
+                          Ainda sem dados de buscas para análise.
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="border border-zinc-200 rounded-xl p-4 bg-zinc-50">
-                    <h3 className="font-semibold text-zinc-900 text-sm">Resumo geográfico</h3>
-                    <div className="mt-3 grid gap-2 text-sm">
-                      <p className="text-zinc-700">
-                        <span className="font-semibold text-zinc-900">{stats.unique_ips || 0}</span>{" "}
-                        IPs únicas rastreadas.
-                      </p>
-                      <p className="text-zinc-700">
-                        <span className="font-semibold text-zinc-900">
-                          {stats.countries_tracked || 0}
-                        </span>{" "}
-                        países com tráfego registrado.
-                      </p>
-                      <p className="text-zinc-700">
-                        <span className="font-semibold text-zinc-900">
-                          {stats.regions_tracked || 0}
-                        </span>{" "}
-                        regiões distintas no período.
-                      </p>
+                  <div className="grid gap-4">
+                    <div className="border border-zinc-200 rounded-xl p-4">
+                      <h3 className="font-semibold text-zinc-900 text-sm mb-3">Fontes de tráfego</h3>
+                      <div className="grid gap-2">
+                        {(searchStats?.top_sources || []).slice(0, 8).map((row) => (
+                          <div
+                            key={`search-source-${row.source}`}
+                            className="border border-zinc-200 rounded-lg p-2.5"
+                          >
+                            <p className="text-sm font-semibold text-zinc-900">{row.source}</p>
+                            <p className="text-xs text-zinc-500 mt-1">
+                              {row.searches} buscas • {Number(row.zero_results_rate || 0).toFixed(1)}%
+                              sem resultado
+                            </p>
+                          </div>
+                        ))}
+                        {(searchStats?.top_sources || []).length === 0 && (
+                          <p className="text-sm text-zinc-500">Sem fontes registradas.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border border-amber-200 rounded-xl p-4 bg-amber-50/40">
+                      <h3 className="font-semibold text-zinc-900 text-sm mb-3">
+                        Termos com mais zero resultado
+                      </h3>
+                      <div className="grid gap-2">
+                        {(searchStats?.top_zero_result_terms || []).slice(0, 8).map((row) => (
+                          <div
+                            key={`search-zero-${row.normalized_term}`}
+                            className="border border-amber-200 rounded-lg p-2.5 bg-white"
+                          >
+                            <p className="text-sm font-semibold text-zinc-900">{row.term}</p>
+                            <p className="text-xs text-zinc-500 mt-1">
+                              {row.zero_results} sem resultado em {row.searches} buscas
+                            </p>
+                          </div>
+                        ))}
+                        {(searchStats?.top_zero_result_terms || []).length === 0 && (
+                          <p className="text-sm text-zinc-500">Nenhum termo crítico no período.</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

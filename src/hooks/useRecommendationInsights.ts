@@ -58,6 +58,40 @@ export interface RecommendationStats {
   }>;
 }
 
+export interface RecommendationSearchSource {
+  source: string;
+  searches: number;
+  zero_results: number;
+  zero_results_rate: number;
+  last_search_at: string | null;
+}
+
+export interface RecommendationSearchTerm {
+  term: string;
+  normalized_term: string;
+  searches: number;
+  zero_results: number;
+  zero_results_rate: number;
+  average_results: number;
+  unique_actors: number;
+  last_search_at: string | null;
+}
+
+export interface RecommendationSearchStats {
+  totals: {
+    searches: number;
+    unique_actors: number;
+    unique_terms: number;
+    zero_results_searches: number;
+    zero_results_rate: number;
+    average_results: number;
+    last_search_at: string | null;
+  };
+  top_sources: RecommendationSearchSource[];
+  top_zero_result_terms: RecommendationSearchTerm[];
+  terms: RecommendationSearchTerm[];
+}
+
 export interface RecommendationActorProfile {
   actor_key: string;
   actor_type: "user" | "guest";
@@ -98,9 +132,11 @@ export function useRecommendationInsights(
   const api = useMemo(() => new Api(), []);
   const actorsRequestRef = useRef(0);
   const statsRequestRef = useRef(0);
+  const searchStatsRequestRef = useRef(0);
 
   const [actors, setActors] = useState<RecommendationActorRow[]>([]);
   const [stats, setStats] = useState<RecommendationStats | null>(null);
+  const [searchStats, setSearchStats] = useState<RecommendationSearchStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,6 +213,22 @@ export function useRecommendationInsights(
     }
   }, [api]);
 
+  const fetchSearchStats = useCallback(async () => {
+    const requestId = ++searchStatsRequestRef.current;
+    try {
+      const request: any = await api.bridge({
+        method: "get",
+        url: "admin/recommendations/search-stats?per_page=12&page=1",
+      });
+
+      if (requestId === searchStatsRequestRef.current && request?.response) {
+        setSearchStats(request.data as RecommendationSearchStats);
+      }
+    } catch (err) {
+      // Insights de busca não devem quebrar a tela.
+    }
+  }, [api]);
+
   const getProfile = useCallback(async (actorKey: string) => {
     try {
       const request: any = await api.bridge({
@@ -194,8 +246,8 @@ export function useRecommendationInsights(
   }, [api]);
 
   const refresh = useCallback(async (options?: { silent?: boolean }) => {
-    await Promise.all([fetchActors(options), fetchStats()]);
-  }, [fetchActors, fetchStats]);
+    await Promise.all([fetchActors(options), fetchStats(), fetchSearchStats()]);
+  }, [fetchActors, fetchStats, fetchSearchStats]);
 
   useEffect(() => {
     fetchActors();
@@ -205,9 +257,14 @@ export function useRecommendationInsights(
     fetchStats();
   }, [fetchStats]);
 
+  useEffect(() => {
+    fetchSearchStats();
+  }, [fetchSearchStats]);
+
   return {
     actors,
     stats,
+    searchStats,
     loading,
     refreshing,
     error,

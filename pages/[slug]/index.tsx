@@ -22,6 +22,7 @@ import {
   hasMoreByResult,
   mergeUniqueProducts,
 } from "@/src/services/productsPagination";
+import { getOrCreateVisitorId } from "@/src/services/recommendations";
 
 
 export interface Store {
@@ -283,6 +284,8 @@ export default function Store({
     setLoading(true);
     const api = new Api();
     const offset = 0; // sempre começa do início ao filtrar
+    const visitorId =
+      typeof window !== "undefined" ? getOrCreateVisitorId() : undefined;
 
     const request: any = await api.request({
       method: "get",
@@ -293,6 +296,9 @@ export default function Store({
         user: store?.user,
         limit: PAGE_SIZE,
         offset,
+        source: "public:store-page",
+        visitor_id: visitorId || undefined,
+        path: typeof window !== "undefined" ? window.location.pathname : undefined,
       },
     });
 
@@ -334,6 +340,8 @@ export default function Store({
 
     const api = new Api();
     const offset = number * PAGE_SIZE;
+    const visitorId =
+      typeof window !== "undefined" ? getOrCreateVisitorId() : undefined;
 
     const requestParams = sanitizeParams(params);
     let request: any = await api.request({
@@ -345,6 +353,9 @@ export default function Store({
         user: store?.user,
         limit: PAGE_SIZE,
         offset: offset,
+        source: "public:store-page",
+        visitor_id: visitorId || undefined,
+        path: typeof window !== "undefined" ? window.location.pathname : undefined,
       },
     });
 

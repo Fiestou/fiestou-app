@@ -16,6 +16,7 @@ import {
   mergeUniqueProducts,
   normalizeProductsFilters,
 } from "@/src/services/productsPagination";
+import { getOrCreateVisitorId } from "@/src/services/recommendations";
 
 const PAGE_SIZE = 15;
 
@@ -90,10 +91,14 @@ export default function Listagem({
 
       try {
         const offset = nextPage * PAGE_SIZE;
+        const visitorId = getOrCreateVisitorId();
         const qs = buildProductsQuery({
           ...activeFilters,
           limit: PAGE_SIZE,
           offset,
+          source: "public:listagem",
+          visitor_id: visitorId || undefined,
+          path: typeof window !== "undefined" ? window.location.pathname : undefined,
         });
 
         const response: any = await api.request({
