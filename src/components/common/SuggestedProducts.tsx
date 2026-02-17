@@ -1,6 +1,7 @@
 import { ProductType } from "@/src/models/product";
 import Product from "./Product";
 import { ColorsList, ColorfulRender } from "@/src/components/ui/form/ColorsUI";
+import Img from "@/src/components/utils/ImgBase";
 
 interface CategoryFilter {
   name: string;
@@ -71,7 +72,7 @@ export default function SuggestedProducts({
                     className="px-2 py-1 text-sm border border-zinc-200 bg-white text-zinc-700 rounded-lg flex items-center gap-1.5"
                   >
                     {cat.icon && (
-                      <img
+                      <Img
                         src={cat.icon}
                         alt={cat.name}
                         className="w-4 h-4 object-contain"

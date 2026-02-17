@@ -1395,7 +1395,7 @@ export default function Checkout({
                               <div key={idx} className="bg-blue-50 rounded-lg p-3">
                                 <div className="flex items-center gap-2">
                                   {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
-                                    <img
+                                    <Img
                                       src={getImage(item.product.gallery[0], "thumb")}
                                       alt={item.product?.title}
                                       className="w-10 h-10 rounded object-cover"
@@ -1415,7 +1415,11 @@ export default function Checkout({
                                           <div key={vIdx} className="ml-2 flex items-center gap-2 text-xs text-zinc-600">
                                             <span>• {v.title || v.value}</span>
                                             {v.value && typeof v.value === "string" && (v.value.startsWith("http") || v.value.startsWith("/") || v.value.startsWith("data:image")) && (
-                                              <img src={v.value} alt="" className="h-8 rounded border border-zinc-200 object-contain" />
+                                              <Img
+                                                src={v.value}
+                                                alt={v.title || "Imagem da variação"}
+                                                className="h-8 rounded border border-zinc-200 object-contain"
+                                              />
                                             )}
                                           </div>
                                         ))}
@@ -1478,7 +1482,7 @@ export default function Checkout({
                               <div key={idx} className="bg-amber-50 rounded-lg p-3">
                                 <div className="flex items-center gap-2">
                                   {item.product?.gallery?.[0] && getImage(item.product.gallery[0], "thumb") && (
-                                    <img
+                                    <Img
                                       src={getImage(item.product.gallery[0], "thumb")}
                                       alt={item.product?.title}
                                       className="w-10 h-10 rounded object-cover"
@@ -1498,7 +1502,11 @@ export default function Checkout({
                                           <div key={vIdx} className="ml-2 flex items-center gap-2 text-xs text-zinc-600">
                                             <span>• {v.title || v.value}</span>
                                             {v.value && typeof v.value === "string" && (v.value.startsWith("http") || v.value.startsWith("/") || v.value.startsWith("data:image")) && (
-                                              <img src={v.value} alt="" className="h-8 rounded border border-zinc-200 object-contain" />
+                                              <Img
+                                                src={v.value}
+                                                alt={v.title || "Imagem da variação"}
+                                                className="h-8 rounded border border-zinc-200 object-contain"
+                                              />
                                             )}
                                           </div>
                                         ))}
