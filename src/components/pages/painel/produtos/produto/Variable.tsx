@@ -7,8 +7,54 @@ import Api from "@/src/services/api";
 interface MediaItem {
   id: number;
   base_url?: string;
+  permanent_url?: string;
   details?: any;
+  title?: string;
   [key: string]: any;
+}
+
+function toMediaId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value > 0 ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const normalized = Number(value.trim());
+    return Number.isFinite(normalized) && normalized > 0 ? normalized : null;
+  }
+
+  if (value && typeof value === "object") {
+    const obj = value as any;
+    const normalized = Number(obj.id ?? obj.imageId);
+    return Number.isFinite(normalized) && normalized > 0 ? normalized : null;
+  }
+
+  return null;
+}
+
+function normalizeVariationImageValue(value: unknown): unknown {
+  if (!value) return "";
+
+  if (typeof value === "string" || typeof value === "number") {
+    return value;
+  }
+
+  if (typeof value === "object") {
+    const media = value as any;
+    const mediaId = toMediaId(media);
+
+    if (!mediaId) return "";
+
+    return {
+      id: mediaId,
+      base_url: media.base_url ?? undefined,
+      permanent_url: media.permanent_url ?? media.url ?? undefined,
+      details: media.details ?? {},
+      title: media.title ?? undefined,
+    };
+  }
+
+  return "";
 }
 
 function normalizeAttributes(input: unknown): AttributeType[] {
@@ -56,7 +102,7 @@ function ImagePicker({
   onChange,
   productId,
 }: {
-  value?: string | number;
+  value?: string | number | MediaItem | null;
   gallery: MediaItem[];
   onChange: (imageId: string | number | null, newMedia?: MediaItem) => void;
   productId?: number;
@@ -75,8 +121,13 @@ function ImagePicker({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const selected = gallery.find((m) => m.id == value);
-  const thumb = selected ? getImage(selected, "thumb") : null;
+  const selectedId = toMediaId(value);
+  const selectedFromGallery = selectedId
+    ? gallery.find((m) => Number(m.id) === Number(selectedId))
+    : null;
+  const selectedObject = value && typeof value === "object" ? (value as MediaItem) : null;
+  const selectedMedia = selectedFromGallery || selectedObject;
+  const thumb = selectedMedia ? getImage(selectedMedia, "thumb") : null;
 
   const handleUpload = async (file: File) => {
     if (!file) return;
@@ -187,9 +238,12 @@ function ImagePicker({
                 <button
                   key={m.id}
                   type="button"
-                  onClick={() => { onChange(m.id); setOpen(false); }}
+                  onClick={() => {
+                    onChange(m.id, m);
+                    setOpen(false);
+                  }}
                   className={`w-10 h-10 rounded-md overflow-hidden border-2 transition-colors ${
-                    m.id == value ? "border-yellow-400" : "border-transparent hover:border-zinc-300"
+                    Number(m.id) === Number(selectedId) ? "border-yellow-400" : "border-transparent hover:border-zinc-300"
                   }`}
                 >
                   <img src={getImage(m, "thumb")} alt="" className="w-full h-full object-cover" />
@@ -825,9 +879,24 @@ export default function Variable({
                                 gallery={galleryMedia}
                                 productId={product?.id}
                                 onChange={(imgId, newMedia) => {
-                                  updateVariation(attr.id, v.id, { image: imgId ?? "" });
-                                  if (newMedia && !galleryMedia.find((m) => m.id === newMedia.id)) {
-                                    setGalleryMedia((prev) => [...prev, newMedia]);
+                                  const selectedMedia =
+                                    newMedia ??
+                                    (imgId !== null && imgId !== undefined
+                                      ? galleryMedia.find((m) => Number(m.id) === Number(imgId))
+                                      : undefined);
+
+                                  const normalizedImage =
+                                    selectedMedia
+                                      ? normalizeVariationImageValue(selectedMedia)
+                                      : imgId ?? "";
+
+                                  updateVariation(attr.id, v.id, { image: normalizedImage });
+
+                                  if (
+                                    selectedMedia &&
+                                    !galleryMedia.find((m) => Number(m.id) === Number(selectedMedia.id))
+                                  ) {
+                                    setGalleryMedia((prev) => [...prev, selectedMedia]);
                                   }
                                 }}
                               />
