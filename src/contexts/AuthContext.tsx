@@ -59,7 +59,7 @@ export const AuthCheck = () => {
         });
 
         if (!data.id) {
-          window.location.href = "/logout";
+          window.location.href = "/logout/";
         }
       }
     };
@@ -173,9 +173,9 @@ async function UserLogout() {
 
   // Redirecione para a página de logout ou home
     if (!!window) {
-      window.location.href = "/logout";
+      window.location.href = "/logout/";
     } else {
-      Router.push("/logout");
+      Router.push("/logout/");
     }
 }
   return (
