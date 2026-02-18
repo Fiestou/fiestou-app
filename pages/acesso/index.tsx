@@ -4,10 +4,8 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FormEvent, useContext, useEffect, useState } from "react";
-import { encode as base64_encode } from "base-64";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import Modal from "@/src/components/utils/Modal";
-import { UserType } from "@/src/models/user";
 import { SocialAuth } from "@/src/components/pages/acesso/NextAuth";
 import { getSession } from "next-auth/react";
 import { AuthContext } from "@/src/contexts/AuthContext";
@@ -55,14 +53,11 @@ interface AcessoProps {
 }
 
 function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
-  const api = new Api();
-
   const router = useRouter();
   const { SignIn } = useContext(AuthContext);
 
-  const [modalStatus, setModalStatus] = useState(!!modal as boolean);
-  const [modalType, setModalType] = useState(modal as string);
-  const [user, setUser] = useState({} as UserType);
+  const [modalStatus, setModalStatus] = useState(() => Boolean(modal));
+  const [modalType] = useState(modal as string);
 
   const [form, setForm] = useState(formInitial);
   const [showPassword, setShowPassword] = useState(false);
@@ -97,11 +92,12 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
 
   useEffect(() => {
     if (form.alert) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         setFormValue({
           alert: "",
         });
       }, 3000);
+      return () => clearTimeout(timeout);
     }
   }, [form.alert]);
 
@@ -157,7 +153,7 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
               >
                 <div className="text-center mb-8 md:mb-10">
                   <h3 className="font-title text-zinc-900 font-bold text-3xl md:text-4xl text-center">
-                    Bem vindo ao Fiestou
+                    Bem-vindo a Fiestou
                   </h3>
                   <div className="pt-2 text-sm md:text-base">
                     Entre na sua conta ou faça seu cadastro
@@ -249,57 +245,59 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
           </div>
         </div>
       </div>
-      <Modal status={modalStatus} close={() => setModalStatus(false)} size="sm">
-        <div className="text-center max-w-[22rem] mx-auto py-4 grid">
-          <div className="relative mb-2">
-            <Icon
-              icon="fa-envelope-open-text"
-              type="fa"
-              className="text-[3.5rem] mt-1 text-yellow-300 absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2"
-            />
-            <Icon
-              icon="fa-envelope-open-text"
-              className="text-6xl text-yellow-400 relative"
-            />
-          </div>
-          <h4 className="font-title text-zinc-900 text-2xl md:text-3xl font-bold py-3">
-            {modalType == "register"
-              ? "Sua conta foi criada!"
-              : modalType == "await"
-              ? "Cadastro em análise!"
-              : "Confirme seu endereço de e-mail!"}
-          </h4>
-          <div className="pt-2">
-            {modalType == "register" ? (
-              <>
-                Para fazer seu primeiro acesso, confirme seu cadastro através da
-                mensagem que enviamos no e-mail cadastrado.
-              </>
-            ) : modalType == "await" ? (
-              <>
-                Nossa equipe esta analisando seu cadastro. Responderemos via
-                e-mail em breve.
-              </>
-            ) : (
-              <>
-                Não recebeu o link? Verifique sua caixa de span, lixeira ou
-                <Link
-                  href="/recuperar"
-                  className="text-cyan-500 underline px-2"
-                >
-                  recupere sua senha
-                </Link>
-                para receber o link novamente
-              </>
+      {modalStatus && (
+        <Modal status={modalStatus} close={() => setModalStatus(false)} size="sm">
+          <div className="text-center max-w-[22rem] mx-auto py-4 grid">
+            <div className="relative mb-2">
+              <Icon
+                icon="fa-envelope-open-text"
+                type="fa"
+                className="text-[3.5rem] mt-1 text-yellow-300 absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2"
+              />
+              <Icon
+                icon="fa-envelope-open-text"
+                className="text-6xl text-yellow-400 relative"
+              />
+            </div>
+            <h4 className="font-title text-zinc-900 text-2xl md:text-3xl font-bold py-3">
+              {modalType == "register"
+                ? "Sua conta foi criada!"
+                : modalType == "await"
+                  ? "Cadastro em análise!"
+                  : "Confirme seu endereço de e-mail!"}
+            </h4>
+            <div className="pt-2">
+              {modalType == "register" ? (
+                <>
+                  Para fazer seu primeiro acesso, confirme seu cadastro através da
+                  mensagem que enviamos no e-mail cadastrado.
+                </>
+              ) : modalType == "await" ? (
+                <>
+                  Nossa equipe está analisando seu cadastro. Responderemos por
+                  e-mail em breve.
+                </>
+              ) : (
+                <>
+                  Não recebeu o link? Verifique sua caixa de spam, lixeira ou
+                  <Link
+                    href="/recuperar"
+                    className="text-cyan-500 underline px-2"
+                  >
+                    recupere sua senha
+                  </Link>
+                  para receber o link novamente
+                </>
+              )}
+            </div>
+            {modalType != "await" && (
+              <Button onClick={() => setModalStatus(false)} className="mt-6">
+                Fazer login
+              </Button>
             )}
           </div>
-          {modalType != "await" && (
-            <Button onClick={() => setModalStatus(false)} className="mt-6">
-              Fazer login
-            </Button>
-          )}
-        </div>
-      </Modal>
+        </Modal>
+      )}
     </Template>
   );
 }
