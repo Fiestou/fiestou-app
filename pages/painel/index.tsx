@@ -21,6 +21,7 @@ import Api from "@/src/services/api";
 import { getExtenseData } from "@/src/helper";
 import { getDashboardStats, getMyOrders, DashboardStatsResponse } from "@/src/services/order";
 import { getRecipientStatus } from "@/src/services/recipients";
+import { getFinancialOverview } from "@/src/services/financial";
 import { RecipientStatusResponse, RecipientType } from "@/src/models/Recipient";
 import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
 import OnboardingProgress from "@/src/components/shared/OnboardingProgress";
@@ -95,6 +96,11 @@ function getStatusBadge(statusText: string) {
 
 function formatCurrency(value: number) {
   return `R$ ${(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function toNumber(value: any, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function getOrderPaymentLabel(order: any) {
@@ -300,18 +306,40 @@ export default function Parceiro({ content }: { content: any }) {
 
   const getBalance = async () => {
     try {
-      let request: any = await api.bridge({
+      const overview: any = await getFinancialOverview();
+      const overviewData = overview?.response ? overview?.data : overview?.data?.data;
+      const localBalance = overviewData?.local_balance;
+
+      if (localBalance && typeof localBalance === "object") {
+        setBalance({
+          cash: toNumber(localBalance.cash_recommended ?? localBalance.cash, 0),
+          payments: toNumber(localBalance.payments, 0),
+          promises: toNumber(localBalance.promises, 0),
+          orders: toNumber(localBalance.orders, 0),
+        });
+        return;
+      }
+
+      const legacyBalance: any = await api.bridge({
         method: "post",
         url: "stores/balance",
       });
-      const handle = request.data;
+      const legacyData = legacyBalance?.data ?? legacyBalance ?? {};
+
       setBalance({
-        cash: handle?.cash || 0,
-        payments: handle?.payments || 0,
-        promises: handle?.promises || 0,
-        orders: handle?.orders || 0,
+        cash: toNumber(legacyData.cash, 0),
+        payments: toNumber(legacyData.payments, 0),
+        promises: toNumber(legacyData.promises, 0),
+        orders: toNumber(legacyData.orders, 0),
       });
-    } catch (err) {}
+    } catch (err) {
+      setBalance({
+        cash: 0,
+        payments: 0,
+        promises: 0,
+        orders: 0,
+      });
+    }
   };
 
   const fetchStats = useCallback(async (p: string, opts?: { silent?: boolean }) => {
