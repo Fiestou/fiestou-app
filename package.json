@@ -8,9 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "qa:smoke:public": "playwright test e2e/public.audit.spec.ts --project=desktop-chromium",
+    "qa:smoke:public": "playwright test e2e/public.audit.spec.ts --project=desktop-chromium --project=mobile-chromium",
     "qa:smoke:auth": "playwright test e2e/auth.smoke.spec.ts --project=desktop-chromium",
-    "qa:smoke:all": "playwright test e2e/public.audit.spec.ts e2e/auth.smoke.spec.ts --project=desktop-chromium",
+    "qa:smoke:all": "npm run qa:smoke:public && npm run qa:smoke:auth",
     "postbuild": "next-sitemap"
   },
   "dependencies": {
