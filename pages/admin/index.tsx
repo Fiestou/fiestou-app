@@ -197,7 +197,7 @@ export default function Admin() {
               </p>
             </div>
             <Button
-              href={`${process.env.APP_URL}/logout`}
+              href="/logout/"
               style="btn-light"
               className="py-2 px-4 text-sm"
             >

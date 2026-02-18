@@ -109,6 +109,9 @@ const nextConfig = {
     ];
   },
   generateEtags: true,
+  // Avoid automatic 308 redirects between slash/non-slash.
+  // This stabilizes auth/session requests from next-auth in dev and staging.
+  skipTrailingSlashRedirect: true,
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
