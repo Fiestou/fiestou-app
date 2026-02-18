@@ -2,8 +2,55 @@ import axios, { AxiosResponse } from "axios";
 import Cookies from "js-cookie";
 import { serializeParam } from "../helper";
 
-const getPublicBaseUrl = () =>
-  process.env.NEXT_PUBLIC_BASE_URL ?? process.env.BASE_URL ?? "";
+const trimSlashes = (s: string) => s.replace(/\/+$/, "");
+const trimLeftSlashes = (s: string) => s.replace(/^\/+/, "");
+const shouldIncludeQueryValue = (value: any) =>
+  value !== undefined && value !== null;
+
+const getBaseUrlFromApiRest = (apiRestValue: string) => {
+  const trimmed = String(apiRestValue || "").trim();
+  if (!trimmed) return "";
+
+  try {
+    return trimSlashes(new URL(trimmed).origin);
+  } catch {
+    return "";
+  }
+};
+
+const resolveApiHostByWindowLocation = () => {
+  if (typeof window === "undefined") return "";
+
+  const host = window.location.hostname.toLowerCase();
+  if (host === "teste.fiestou.com.br") {
+    return "https://testeapi.fiestou.com.br";
+  }
+
+  if (host === "fiestou.com.br" || host === "www.fiestou.com.br") {
+    return "https://api.fiestou.com.br";
+  }
+
+  return `${window.location.protocol}//${window.location.host}`;
+};
+
+const getPublicBaseUrl = () => {
+  const explicitBase = trimSlashes(
+    String(process.env.NEXT_PUBLIC_BASE_URL ?? process.env.BASE_URL ?? "").trim(),
+  );
+
+  if (explicitBase) {
+    return explicitBase;
+  }
+
+  const apiRestBase = getBaseUrlFromApiRest(
+    String(process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? ""),
+  );
+  if (apiRestBase) {
+    return apiRestBase;
+  }
+
+  return resolveApiHostByWindowLocation();
+};
 
 const getInternalBaseUrl = () =>
   process.env.INTERNAL_BASE_URL ?? process.env.BASE_URL ?? "";
@@ -91,11 +138,6 @@ interface ApiRequestType {
   opts?: Object;
   noAppPrefix?: boolean; // << NOVO
 }
-
-const trimSlashes = (s: string) => s.replace(/\/+$/, '');
-const trimLeftSlashes = (s: string) => s.replace(/^\/+/, '');
-const shouldIncludeQueryValue = (value: any) =>
-  value !== undefined && value !== null;
 
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
