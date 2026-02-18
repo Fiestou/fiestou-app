@@ -54,9 +54,9 @@ export default function LazyRender({
       {visible ? (
         children
       ) : (
-        placeholder ?? (
-          <div style={{ minHeight }} aria-hidden="true" className="w-full" />
-        )
+        <div style={{ minHeight }} aria-hidden="true" className="w-full">
+          {placeholder ?? <div className="h-full w-full" />}
+        </div>
       )}
     </div>
   );
