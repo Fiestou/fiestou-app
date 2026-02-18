@@ -252,39 +252,7 @@ function exportOrdersCsv(orders: any[]) {
   document.body.removeChild(link);
 }
 
-export async function getServerSideProps(ctx: any) {
-  const api = new Api();
-
-  let request: any = await api.call(
-    {
-      method: 'post',
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "home-partner",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
-
-  let content = request?.data?.query?.page ?? {};
-
-  return {
-    props: {
-      content: content[0] ?? {},
-    },
-  };
-}
-
-export default function Parceiro({ content }: { content: any }) {
+export default function Parceiro() {
   const api = new Api();
   const [user, setUser] = useState({} as UserType);
   const [store, setStore] = useState<any>(null);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, CreditCard } from "lucide-react";
 import Api from "@/src/services/api";
 import { Input, Select } from "@/src/components/ui/form";
@@ -8,22 +8,15 @@ import { PainelLayout, PageHeader, EmptyState } from "@/src/components/painel";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
-  let request: any = await api.call(
-    {
-      method: "post",
-      url: "request/graph",
-      data: [{ model: "page", filter: [{ key: "slug", value: "bank", compare: "=" }] }],
-    },
-    ctx
-  );
-  let page: any = request?.data?.query?.page[0] ?? {};
+  const request: any = await api.content({ method: "get", url: "account/user" });
+  const page: any = request?.data?.Account ?? {};
   return { props: { page } };
 }
 
 const formInitial = { edit: -1, loading: false };
 
 export default function Conta({ page }: { page: any }) {
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
   const [content, setContent] = useState({} as UserType);
   const [user, setUser] = useState({} as UserType);
   const [banks, setBanks] = useState<BankAccountType[]>([]);
@@ -37,16 +30,16 @@ export default function Conta({ page }: { page: any }) {
     );
   };
 
-  const getUserData = async () => {
+  const getUserData = useCallback(async () => {
     const request: any = await api.bridge({ method: "get", url: "users/get" });
     if (request.response) {
       setUser(request.data);
       setContent(request.data);
       setBanks(request.data.bankAccounts || []);
     }
-  };
+  }, [api]);
 
-  useEffect(() => { getUserData(); }, []);
+  useEffect(() => { getUserData(); }, [getUserData]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
