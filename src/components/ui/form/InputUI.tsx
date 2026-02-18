@@ -9,6 +9,11 @@ interface InputType extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export default function Input(attr: InputType) {
+  const hasControlledValue = Object.prototype.hasOwnProperty.call(attr, "value");
+  const valueProps = hasControlledValue
+    ? { value: attr.value ?? "" }
+    : { defaultValue: attr.defaultValue };
+
   return (
     <>
       <input
@@ -33,8 +38,7 @@ export default function Input(attr: InputType) {
               : "focus:border-zinc-800 hover:border-zinc-400"
           }
         `}
-        value={attr.value}
-        defaultValue={attr.defaultValue}
+        {...valueProps}
         min={attr.min}
         max={attr.max}
         size={attr.size}
@@ -60,4 +64,3 @@ export default function Input(attr: InputType) {
 }
 
 Input.displayName = "Input";
-
