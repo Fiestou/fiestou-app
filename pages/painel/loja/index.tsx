@@ -1,6 +1,5 @@
 //@ts-nocheck
-import React, { useEffect, useState } from "react";
-import { NextApiRequest, NextApiResponse } from "next";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Api from "@/src/services/api";
 import { Input, Select, TextArea } from "@/src/components/ui/form";
@@ -17,21 +16,6 @@ import {
   Instagram, Facebook, Globe, Phone, Eye, ChevronRight,
 } from "lucide-react";
 import { PainelLayout, PageHeader } from "@/src/components/painel";
-
-export async function getServerSideProps(req: NextApiRequest, res: NextApiResponse) {
-  const api = new Api();
-  let request: NextApiResponse = {};
-  request = await api.call(
-    {
-      method: "post",
-      url: "request/graph",
-      data: [{ model: "page", filter: [{ key: "slug", value: "store-custom", compare: "=" }] }],
-    },
-    req
-  );
-  const page = request?.data?.query?.page ?? [];
-  return { props: { page: page[0] ?? {} } };
-}
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
@@ -82,8 +66,8 @@ const tabs = [
   { id: "contato", label: "Contato", icon: Share2 },
 ];
 
-export default function Loja({ page }: { page: any }) {
-  const api = new Api();
+export default function Loja() {
+  const api = useMemo(() => new Api(), []);
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState("aparencia");
@@ -109,8 +93,8 @@ export default function Loja({ page }: { page: any }) {
   const [oldStore, setOldStore] = useState({} as StoreType);
   const [store, setStore] = useState({} as StoreType);
 
-  const getStore = async () => {
-    let request: NextApiRequest = await api.bridge({ method: "post", url: "stores/form" });
+  const getStore = useCallback(async () => {
+    let request: any = await api.bridge({ method: "post", url: "stores/form" });
     const handle = request.data ?? {};
 
     if (typeof handle.minimum_order === "string") {
@@ -156,7 +140,7 @@ export default function Loja({ page }: { page: any }) {
     setWeek((handle?.openClose ?? []) as Array<DayType>);
     setHandleCover({ remove: 0, preview: handle?.cover ? getImage(handle?.cover, "xl") : "" });
     setHandleProfile({ remove: 0, preview: handle?.profile ? getImage(handle?.profile, "thumb") : "" });
-  };
+  }, [api]);
 
   const handleCoverRemove = async () => {
     setHandleCover({ preview: "", remove: store?.cover?.id ?? handleCover.remove });
@@ -300,9 +284,9 @@ export default function Loja({ page }: { page: any }) {
       } catch { setDeliveryRegionsOptions([]); }
     };
     fetchRegions();
-  }, []);
+  }, [api]);
 
-  useEffect(() => { getStore(); }, []);
+  useEffect(() => { getStore(); }, [getStore]);
 
   const isStoreOpen = () => {
     const now = new Date();
