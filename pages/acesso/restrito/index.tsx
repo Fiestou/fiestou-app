@@ -1,9 +1,7 @@
 import Template from "@/src/template";
-import Icon from "@/src/icons/fontAwesome/FIcon";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { decode as base64_decode } from "base-64";
-import { FormEvent, useContext, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import { AuthContext } from "@/src/contexts/AuthContext";
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
@@ -25,14 +23,29 @@ function RestritoContent() {
 
   const router = useRouter();
   const { ref } = router.query as unknown as PageQueryType;
+  const prefilledEmail = useMemo(() => {
+    if (typeof ref !== "string" || !ref) return "";
+    try {
+      return base64_decode(ref);
+    } catch {
+      return "";
+    }
+  }, [ref]);
 
-  if (!!ref) FormInitialType.email = base64_decode(ref);
-
-  const [form, setForm] = useState(FormInitialType);
+  const [form, setForm] = useState(() => ({
+    ...FormInitialType,
+    email: prefilledEmail,
+  }));
 
   const setFormValue = (value: any) => {
-    setForm({ ...form, ...value });
+    setForm((previous) => ({ ...previous, ...value }));
   };
+
+  useEffect(() => {
+    if (prefilledEmail && !form.email) {
+      setFormValue({ email: prefilledEmail });
+    }
+  }, [prefilledEmail, form.email]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -94,9 +107,10 @@ function RestritoContent() {
                     setFormValue({ email: e.target.value });
                   }}
                   value={form.email ?? ""}
-                  type="text"
+                  type="email"
                   name="email"
                   placeholder="Informe seu e-mail"
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -110,6 +124,7 @@ function RestritoContent() {
                   type="password"
                   name="senha"
                   placeholder="*******"
+                  autoComplete="current-password"
                   required
                 />
               </div>
