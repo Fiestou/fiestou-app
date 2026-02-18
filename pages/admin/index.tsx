@@ -55,6 +55,21 @@ interface DashboardStats {
       divergence: number;
     }>;
   };
+  ops_alerts: {
+    last_run_at: string | null;
+    stale: boolean;
+    critical: number;
+    warning: number;
+    info: number;
+    needs_attention: boolean;
+    alerts: Array<{
+      code: string;
+      severity: "critical" | "warning" | "info";
+      title: string;
+      message: string;
+      meta: Record<string, any>;
+    }>;
+  };
   recent_orders: Array<{
     id: number;
     group_hash: string;
@@ -195,6 +210,7 @@ export default function Admin() {
   };
 
   const reconciliation = stats?.financial_reconciliation;
+  const opsAlerts = stats?.ops_alerts;
   const reconciliationIssues = reconciliation
     ? reconciliation.warning + reconciliation.critical + reconciliation.error
     : 0;
@@ -210,6 +226,19 @@ export default function Admin() {
     }
     if (!reconciliation.last_run_at) return "Conciliação sem data de execução";
     return `Última execução: ${new Date(reconciliation.last_run_at).toLocaleString("pt-BR")}`;
+  })();
+
+  const opsCritical = opsAlerts?.critical ?? 0;
+  const opsWarning = opsAlerts?.warning ?? 0;
+  const opsIssues = opsCritical + opsWarning;
+  const opsSubtitle = (() => {
+    if (!opsAlerts) return "Sem monitoramento operacional";
+    if (opsAlerts.stale) return "Sem execução recente da rotina operacional";
+    if (opsIssues > 0) {
+      return `${opsCritical} crítico(s), ${opsWarning} aviso(s)`;
+    }
+    if (!opsAlerts.last_run_at) return "Sem histórico de execução";
+    return `Última execução: ${new Date(opsAlerts.last_run_at).toLocaleString("pt-BR")}`;
   })();
 
   return (
@@ -288,7 +317,7 @@ export default function Admin() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                   title="Produtos"
                   value={stats.products.total}
@@ -323,6 +352,21 @@ export default function Admin() {
                   href="/admin/pedidos"
                   color={stats.orders.pending > 0 ? "amber" : "zinc"}
                 />
+                <StatCard
+                  title="Alertas operacionais"
+                  value={!opsAlerts || opsAlerts.stale ? "N/A" : opsIssues}
+                  subtitle={opsSubtitle}
+                  icon="fa-bell"
+                  color={
+                    !opsAlerts || opsAlerts.stale
+                      ? "amber"
+                      : opsCritical > 0
+                        ? "red"
+                        : opsWarning > 0
+                          ? "amber"
+                          : "green"
+                  }
+                />
               </div>
 
               {reconciliation && (reconciliation.stale || reconciliation.needs_attention) && (
@@ -351,6 +395,36 @@ export default function Admin() {
                       {reconciliation.top_issues
                         .slice(0, 3)
                         .map((issue) => issue.store_name)
+                        .join(", ")}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {opsAlerts && (opsAlerts.stale || opsAlerts.needs_attention) && (
+                <div
+                  className={`border rounded-xl px-4 py-3 ${
+                    opsAlerts.stale
+                      ? "bg-amber-50 border-amber-200 text-amber-800"
+                      : "bg-red-50 border-red-200 text-red-800"
+                  }`}
+                >
+                  <p className="text-sm font-medium">
+                    {opsAlerts.stale
+                      ? "O monitoramento operacional está desatualizado."
+                      : "Foram detectados alertas operacionais relevantes."}
+                  </p>
+                  <p className="text-xs mt-1">
+                    {opsAlerts.stale
+                      ? "Execute a rotina no backend: ops:monitor-health."
+                      : `${opsCritical} crítico(s) e ${opsWarning} aviso(s) no último ciclo.`}
+                  </p>
+                  {!opsAlerts.stale && opsAlerts.alerts?.length > 0 && (
+                    <p className="text-xs mt-1">
+                      Destaques:{" "}
+                      {opsAlerts.alerts
+                        .slice(0, 3)
+                        .map((alert) => alert.title)
                         .join(", ")}
                     </p>
                   )}
