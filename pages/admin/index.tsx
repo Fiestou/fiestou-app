@@ -2,7 +2,7 @@ import { Button } from "@/src/components/ui/form";
 import { getUser } from "@/src/contexts/AuthContext";
 import { UserType } from "@/src/models/user";
 import Template from "@/src/template";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Api from "@/src/services/api";
 import { moneyFormat } from "@/src/helper";
 import Link from "next/link";
@@ -35,6 +35,25 @@ interface DashboardStats {
   withdrawals: {
     pending: number;
     pending_value: number;
+  };
+  financial_reconciliation: {
+    last_run_at: string | null;
+    stale: boolean;
+    stores_total: number;
+    stores_checked: number;
+    ok: number;
+    warning: number;
+    critical: number;
+    error: number;
+    needs_attention: boolean;
+    divergence_total: number;
+    max_divergence: number;
+    top_issues: Array<{
+      store_id: number;
+      store_name: string;
+      status: string;
+      divergence: number;
+    }>;
   };
   recent_orders: Array<{
     id: number;
@@ -125,9 +144,9 @@ export default function Admin() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res: any = await api.bridge({
         method: "get",
@@ -141,14 +160,14 @@ export default function Admin() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setUser(getUser);
       fetchStats();
     }
-  }, []);
+  }, [fetchStats]);
 
   const getVariation = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? "+100%" : "0%";
@@ -174,6 +193,24 @@ export default function Admin() {
     if (status === "canceled") return "bg-red-100 text-red-800";
     return "bg-amber-100 text-amber-800";
   };
+
+  const reconciliation = stats?.financial_reconciliation;
+  const reconciliationIssues = reconciliation
+    ? reconciliation.warning + reconciliation.critical + reconciliation.error
+    : 0;
+  const reconciliationBlocking = reconciliation
+    ? reconciliation.critical + reconciliation.error
+    : 0;
+
+  const reconciliationSubtitle = (() => {
+    if (!reconciliation) return "Sem dados de conciliação";
+    if (reconciliation.stale) return "Sem execução recente da rotina diária";
+    if (reconciliationIssues > 0) {
+      return `${reconciliation.warning} aviso(s), ${reconciliation.critical} crítico(s), ${reconciliation.error} erro(s)`;
+    }
+    if (!reconciliation.last_run_at) return "Conciliação sem data de execução";
+    return `Última execução: ${new Date(reconciliation.last_run_at).toLocaleString("pt-BR")}`;
+  })();
 
   return (
     <Template
@@ -260,16 +297,23 @@ export default function Admin() {
                   color="zinc"
                 />
                 <StatCard
-                  title="Antecipações pendentes"
-                  value={stats.withdrawals.pending}
-                  subtitle={
-                    stats.withdrawals.pending > 0
-                      ? `R$ ${moneyFormat(stats.withdrawals.pending_value)} em análise`
-                      : "Nenhuma antecipação pendente"
+                  title="Reconciliação financeira"
+                  value={
+                    !reconciliation || reconciliation.stale
+                      ? "N/A"
+                      : reconciliationIssues
                   }
-                  icon="fa-money-bill-wave"
-                  href="/admin/antecipacoes"
-                  color={stats.withdrawals.pending > 0 ? "red" : "zinc"}
+                  subtitle={reconciliationSubtitle}
+                  icon="fa-balance-scale"
+                  color={
+                    !reconciliation || reconciliation.stale
+                      ? "amber"
+                      : reconciliationBlocking > 0
+                        ? "red"
+                        : reconciliationIssues > 0
+                          ? "amber"
+                          : "green"
+                  }
                 />
                 <StatCard
                   title="Pedidos pendentes"
@@ -280,6 +324,38 @@ export default function Admin() {
                   color={stats.orders.pending > 0 ? "amber" : "zinc"}
                 />
               </div>
+
+              {reconciliation && (reconciliation.stale || reconciliation.needs_attention) && (
+                <div
+                  className={`border rounded-xl px-4 py-3 ${
+                    reconciliation.stale
+                      ? "bg-amber-50 border-amber-200 text-amber-800"
+                      : "bg-red-50 border-red-200 text-red-800"
+                  }`}
+                >
+                  <p className="text-sm font-medium">
+                    {reconciliation.stale
+                      ? "A conciliação financeira está desatualizada."
+                      : "Foram encontradas divergências na conciliação financeira."}
+                  </p>
+                  <p className="text-xs mt-1">
+                    {reconciliation.stale
+                      ? "Execute a rotina diária no backend: financial:reconcile-balances."
+                      : `Maior divergência encontrada: R$ ${moneyFormat(
+                          reconciliation.max_divergence || 0
+                        )}.`}
+                  </p>
+                  {!reconciliation.stale && reconciliation.top_issues?.length > 0 && (
+                    <p className="text-xs mt-1">
+                      Lojas com maior impacto:{" "}
+                      {reconciliation.top_issues
+                        .slice(0, 3)
+                        .map((issue) => issue.store_name)
+                        .join(", ")}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="grid lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
