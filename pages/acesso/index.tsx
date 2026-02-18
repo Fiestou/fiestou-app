@@ -166,9 +166,10 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
                     onChange={(e: any) => {
                       setFormValue({ email: e.target.value });
                     }}
-                    type="text"
+                    type="email"
                     name="email"
                     placeholder="Informe seu e-mail"
+                    autoComplete="email"
                     required
                   />
                 </div>
@@ -183,6 +184,7 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
                       type={showPassword ? "text" : "password"}
                       name="senha"
                       placeholder="Insira sua senha"
+                      autoComplete="current-password"
                     />
                     <button
                       type="button"
