@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DollarSign, Landmark, Clock3, HandCoins, RefreshCcw, Plus, XCircle, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "@/src/components/utils/Modal";
@@ -148,7 +148,7 @@ export default function FinanceiroPage() {
 
   const recipientReady = !!overview?.recipient?.ready;
 
-  const loadOverview = async () => {
+  const loadOverview = useCallback(async () => {
     setLoadingOverview(true);
     try {
       const res: any = await getFinancialOverview();
@@ -185,9 +185,9 @@ export default function FinanceiroPage() {
     } finally {
       setLoadingOverview(false);
     }
-  };
+  }, []);
 
-  const loadAnticipations = async () => {
+  const loadAnticipations = useCallback(async () => {
     setLoadingAnticipations(true);
     setProviderWarning("");
     try {
@@ -223,16 +223,16 @@ export default function FinanceiroPage() {
     } finally {
       setLoadingAnticipations(false);
     }
-  };
+  }, [recipientReady, statusFilter]);
 
   useEffect(() => {
     loadOverview();
-  }, []);
+  }, [loadOverview]);
 
   useEffect(() => {
     if (!recipientReady) return;
     loadAnticipations();
-  }, [statusFilter, recipientReady]);
+  }, [recipientReady, loadAnticipations]);
 
   const openConfirm = (
     action: ConfirmActionType,
@@ -439,33 +439,49 @@ export default function FinanceiroPage() {
   const financialCards = useMemo(() => {
     const local = overview?.local_balance ?? {};
     const pagarme = overview?.pagarme_balance ?? {};
+    const recipientIsReady = !!overview?.recipient?.ready;
+    const recommendedAvailable = recipientIsReady
+      ? Number(pagarme.available_amount || 0) / 100
+      : Number(local.cash_recommended ?? (local.cash || 0));
 
     return [
       {
-        title: "Disponível",
-        value: centsToMoney(Number(pagarme.available_amount || 0)),
-        subtitle: "Saldo disponível na Pagar.me",
+        title: "Saldo disponível",
+        value: recipientIsReady
+          ? centsToMoney(Number(pagarme.available_amount || 0))
+          : `R$ ${moneyFormat(recommendedAvailable)}`,
+        subtitle: recipientIsReady
+          ? "Fonte: Pagar.me (saldo pronto para uso)"
+          : "Fonte: plataforma (estimativa local)",
         icon: <DollarSign size={16} />,
         tone: "emerald",
       },
       {
         title: "A receber",
-        value: centsToMoney(Number(pagarme.waiting_funds_amount || 0)),
-        subtitle: "Valores aguardando liberação",
+        value: recipientIsReady
+          ? centsToMoney(Number(pagarme.waiting_funds_amount || 0))
+          : `R$ ${moneyFormat(Number(local.promises || 0))}`,
+        subtitle: recipientIsReady
+          ? "Valores aguardando liberação na Pagar.me"
+          : "Pedidos ainda não liquidados",
         icon: <Clock3 size={16} />,
         tone: "amber",
       },
       {
         title: "Recebimentos (plataforma)",
         value: `R$ ${moneyFormat(Number(local.payments || 0))}`,
-        subtitle: "Total de repasses registrados",
+        subtitle: "Histórico interno para conferência",
         icon: <Landmark size={16} />,
         tone: "blue",
       },
       {
-        title: "Antecipado transferido",
-        value: centsToMoney(Number(pagarme.transferred_amount || 0)),
-        subtitle: "Histórico de transferências",
+        title: recipientIsReady ? "Transferido pela Pagar.me" : "Saques pendentes (legado)",
+        value: recipientIsReady
+          ? centsToMoney(Number(pagarme.transferred_amount || 0))
+          : `R$ ${moneyFormat(Number(local.withdraw_pending_value || 0))}`,
+        subtitle: recipientIsReady
+          ? "Histórico de transferências e antecipações"
+          : `${Number(local.withdraw_pending_count || 0)} solicitação(ões) em análise`,
         icon: <HandCoins size={16} />,
         tone: "purple",
       },
@@ -633,6 +649,18 @@ export default function FinanceiroPage() {
           </div>
         ))}
       </div>
+
+      {!loadingOverview &&
+        recipientReady &&
+        Number(overview?.legacy_withdraw?.approved || 0) > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
+            <p className="text-sm text-amber-800">
+              Existem registros legados de saque na plataforma:{" "}
+              <strong>R$ {moneyFormat(Number(overview?.legacy_withdraw?.approved || 0))}</strong>.
+              O saldo disponível acima segue a fonte oficial da Pagar.me.
+            </p>
+          </div>
+        )}
 
       <div className="grid xl:grid-cols-2 gap-5 mb-5">
         <div className="bg-white border border-zinc-200 rounded-xl p-5">
