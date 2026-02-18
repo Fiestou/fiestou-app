@@ -25,7 +25,7 @@ export async function getServerSideProps(ctx: any) {
 export default function Logout() {
 
   const handleLogout = async () => {
-    clearCartCookies();
+    clearCartCookies({ syncApi: false, reason: "clear" });
     Cookies.remove("fiestou.authtoken", { path: "/" });
     Cookies.remove("fiestou.user", { path: "/" });
     Cookies.remove("fiestou.store", { path: "/" });
