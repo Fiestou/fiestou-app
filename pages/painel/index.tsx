@@ -305,6 +305,21 @@ export default function Parceiro({ content }: { content: any }) {
   });
 
   const getBalance = async () => {
+    const applyLegacyBalance = async () => {
+      const legacyBalance: any = await api.bridge({
+        method: "post",
+        url: "stores/balance",
+      });
+      const legacyData = legacyBalance?.data ?? legacyBalance ?? {};
+
+      setBalance({
+        cash: toNumber(legacyData.cash, 0),
+        payments: toNumber(legacyData.payments, 0),
+        promises: toNumber(legacyData.promises, 0),
+        orders: toNumber(legacyData.orders, 0),
+      });
+    };
+
     try {
       const overview: any = await getFinancialOverview();
       const overviewData = overview?.response ? overview?.data : overview?.data?.data;
@@ -319,20 +334,13 @@ export default function Parceiro({ content }: { content: any }) {
         });
         return;
       }
+    } catch {
+      // Mantém fallback legado quando overview falhar no backend ou na rede.
+    }
 
-      const legacyBalance: any = await api.bridge({
-        method: "post",
-        url: "stores/balance",
-      });
-      const legacyData = legacyBalance?.data ?? legacyBalance ?? {};
-
-      setBalance({
-        cash: toNumber(legacyData.cash, 0),
-        payments: toNumber(legacyData.payments, 0),
-        promises: toNumber(legacyData.promises, 0),
-        orders: toNumber(legacyData.orders, 0),
-      });
-    } catch (err) {
+    try {
+      await applyLegacyBalance();
+    } catch {
       setBalance({
         cash: 0,
         payments: 0,
