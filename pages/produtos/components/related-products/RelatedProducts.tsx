@@ -24,6 +24,8 @@ type RelatedProductsProps = {
 type RelatedProductsResult = {
   title: string;
   items: ProductType[];
+  strategy: string[];
+  hasPersonalization: boolean;
 };
 
 const RELATED_CACHE_LIMIT = 120;
@@ -36,6 +38,17 @@ const toStoreId = (store: StoreType) => {
 };
 
 const toCacheKey = (productId: number, storeId: number) => `${productId}:${storeId}`;
+
+const toProductStoreId = (product: any) => {
+  const rawStore = product?.store;
+  if (typeof rawStore === "number" || typeof rawStore === "string") {
+    const storeId = Number(rawStore);
+    return Number.isFinite(storeId) ? storeId : 0;
+  }
+
+  const storeId = Number(rawStore?.id ?? 0);
+  return Number.isFinite(storeId) ? storeId : 0;
+};
 
 const writeRelatedCache = (cacheKey: string, value: RelatedProductsResult) => {
   relatedCache.set(cacheKey, value);
@@ -67,9 +80,46 @@ const normalizeRecommendationItems = (
     .slice(0, 10) as ProductType[];
 };
 
+const resolveRecommendationTitle = ({
+  items,
+  storeId,
+  hasPersonalization,
+  strategy,
+}: {
+  items: ProductType[];
+  storeId: number;
+  hasPersonalization: boolean;
+  strategy: string[];
+}) => {
+  if (!items.length) return "Veja também";
+
+  const normalizedStrategy = strategy.map((value) =>
+    String(value || "").toLowerCase(),
+  );
+
+  if (hasPersonalization && normalizedStrategy.includes("search_intent")) {
+    return "Baseado no seu interesse";
+  }
+
+  if (hasPersonalization) {
+    return "Recomendados para você";
+  }
+
+  const itemsFromSameStore = items.filter(
+    (item) => toProductStoreId(item) > 0 && toProductStoreId(item) === storeId,
+  ).length;
+
+  if (storeId > 0 && itemsFromSameStore >= Math.min(3, items.length)) {
+    return "Mais dessa loja";
+  }
+
+  return "Veja também";
+};
+
 export default function RelatedProducts({ product, store }: RelatedProductsProps) {
   const [match, setMatch] = useState<ProductType[]>([]);
   const [title, setTitle] = useState("Veja também");
+  const [loading, setLoading] = useState(true);
   const requestIdRef = useRef(0);
 
   const fetchFallbackProducts = async (
@@ -110,20 +160,35 @@ export default function RelatedProducts({ product, store }: RelatedProductsProps
         return {
           title: "Veja também",
           items: [],
+          strategy: [],
+          hasPersonalization: false,
         };
       }
 
-      return {
-        title: response?.meta?.has_personalization
-          ? "Recomendados para você"
-          : "Veja também",
+      const strategy = Array.isArray(response?.meta?.strategy)
+        ? response.meta.strategy.map((value: unknown) => String(value))
+        : [];
+      const hasPersonalization = Boolean(response?.meta?.has_personalization);
+      const title = resolveRecommendationTitle({
         items,
+        storeId: toStoreId(store),
+        hasPersonalization,
+        strategy,
+      });
+
+      return {
+        title,
+        items,
+        strategy,
+        hasPersonalization,
       };
     }
 
     return {
       title: "Veja também",
       items: [],
+      strategy: [],
+      hasPersonalization: false,
     };
   };
 
@@ -142,6 +207,8 @@ export default function RelatedProducts({ product, store }: RelatedProductsProps
       let baseResult: RelatedProductsResult = {
         title: "Veja também",
         items: [],
+        strategy: [],
+        hasPersonalization: false,
       };
 
       try {
@@ -150,14 +217,24 @@ export default function RelatedProducts({ product, store }: RelatedProductsProps
         baseResult = {
           title: "Veja também",
           items: [],
+          strategy: [],
+          hasPersonalization: false,
         };
       }
 
       if (!baseResult.items.length) {
         const fallback = await fetchFallbackProducts(productId, storeId);
-        baseResult = {
-          title: "Veja também",
+        const fallbackTitle = resolveRecommendationTitle({
           items: fallback,
+          storeId,
+          hasPersonalization: false,
+          strategy: [],
+        });
+        baseResult = {
+          title: fallbackTitle,
+          items: fallback,
+          strategy: ["legacy_fallback"],
+          hasPersonalization: false,
         };
       }
 
@@ -177,7 +254,10 @@ export default function RelatedProducts({ product, store }: RelatedProductsProps
   useEffect(() => {
     const productId = Number(product?.id ?? 0);
     const storeId = toStoreId(store);
-    if (!productId) return;
+    if (!productId) {
+      setLoading(false);
+      return;
+    }
 
     let active = true;
     const currentRequestId = ++requestIdRef.current;
@@ -187,10 +267,23 @@ export default function RelatedProducts({ product, store }: RelatedProductsProps
     if (cached) {
       setTitle(cached.title);
       setMatch(cached.items);
+      setLoading(false);
+    } else {
+      setLoading(true);
     }
 
     const load = async () => {
-      const result = await resolveRelatedProducts(productId, storeId);
+      let result: RelatedProductsResult;
+      try {
+        result = await resolveRelatedProducts(productId, storeId);
+      } catch {
+        result = {
+          title: "Veja também",
+          items: [],
+          strategy: [],
+          hasPersonalization: false,
+        };
+      }
 
       if (!active || currentRequestId !== requestIdRef.current) {
         return;
@@ -198,6 +291,7 @@ export default function RelatedProducts({ product, store }: RelatedProductsProps
 
       setTitle(result.title);
       setMatch(result.items);
+      setLoading(false);
     };
 
     load();
@@ -206,6 +300,22 @@ export default function RelatedProducts({ product, store }: RelatedProductsProps
       active = false;
     };
   }, [product?.id, store?.id]);
+
+  if (loading && !match.length) {
+    return (
+      <section className="pt-8 md:pt-16">
+        <div className="container-medium">
+          <div className="h-9 w-56 rounded-md bg-zinc-100 animate-pulse" />
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="h-72 rounded-xl bg-zinc-100 animate-pulse" />
+            <div className="h-72 rounded-xl bg-zinc-100 animate-pulse hidden md:block" />
+            <div className="h-72 rounded-xl bg-zinc-100 animate-pulse hidden lg:block" />
+            <div className="h-72 rounded-xl bg-zinc-100 animate-pulse hidden lg:block" />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const renderSlideArrows = (keyRef: string | number) => (
     <div className="flex h-0 px-1 justify-between absolute md:relative gap-4 top-1/2 md:-top-4 left-0 w-full md:w-fit -translate-y-1/2 z-10">
