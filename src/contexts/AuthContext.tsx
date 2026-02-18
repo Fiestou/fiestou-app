@@ -163,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
 async function UserLogout() {
-  clearCartCookies();
+  clearCartCookies({ syncApi: false, reason: "clear" });
   // Remova todos os cookies de autenticação
   Cookies.remove("fiestou.authtoken");
   Cookies.remove("fiestou.user");

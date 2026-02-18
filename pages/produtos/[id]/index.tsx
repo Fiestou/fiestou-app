@@ -15,7 +15,7 @@ import {
   isMobileDevice,
 } from "@/src/helper";
 import { Button } from "@/src/components/ui/form";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { addToCart } from "@/src/services/cart";
 import dynamic from "next/dynamic";
@@ -34,20 +34,33 @@ import { getProductUrl } from "@/src/urlHelpers";
 import LazyRender from "@/src/components/common/LazyRender";
 import { trackProductInterest } from "@/src/services/recommendations";
 
-import ProductDimensions from "../components/product-dimensions/ProductDimensions";
 import BottomCart from "../components/bottom-cart/BottomCart";
 import ProductDeliveryBadge from "../components/product-delivery-badge/ProductDeliveryBadge";
 import ProductDeliveryCalendar from "../components/product-delivery-calendar/ProductDeliveryCalendar";
-import ProductShippingCalculator from "../components/product-shipping-calculator/ProductShippingCalculator";
 import ProductAttributes from "../components/product-attributes/ProductAttributes";
 import ProductPriceDisplay from "../components/product-price-display/ProductPriceDisplay";
 import ProductDescription from "../components/product-description/ProductDescription";
 import ProductBadges from "../components/product-badges/ProductBadges";
 import ProductGallery from "../components/product-gallery/ProductGallery";
-import ProductDetails from "../components/product-details/ProductDetails";
-import ProductComments from "../components/product-comments/ProductComments";
-import ProductRentalRules from "../components/product-rental-rules/ProductRentalRules";
-import ProductGuarantees from "../components/product-guarantees/ProductGuarantees";
+
+const ProductDimensions = dynamic(
+  () => import("../components/product-dimensions/ProductDimensions"),
+);
+const ProductShippingCalculator = dynamic(
+  () => import("../components/product-shipping-calculator/ProductShippingCalculator"),
+);
+const ProductDetails = dynamic(
+  () => import("../components/product-details/ProductDetails"),
+);
+const ProductComments = dynamic(
+  () => import("../components/product-comments/ProductComments"),
+);
+const ProductRentalRules = dynamic(
+  () => import("../components/product-rental-rules/ProductRentalRules"),
+);
+const ProductGuarantees = dynamic(
+  () => import("../components/product-guarantees/ProductGuarantees"),
+);
 
 const ProductCombinations = dynamic(
   () => import("../components/product-combinations/ProductCombinations"),
@@ -472,8 +485,18 @@ export default function Produto({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    setIsMobile(isMobileDevice());
-  }, [store, product?.id, router.query?.slug]);
+    const detectMobile = () => {
+      const isMobileByBreakpoint = window.matchMedia("(max-width: 1023px)").matches;
+      setIsMobile(isMobileByBreakpoint || isMobileDevice());
+    };
+
+    detectMobile();
+    window.addEventListener("resize", detectMobile);
+
+    return () => {
+      window.removeEventListener("resize", detectMobile);
+    };
+  }, []);
 
   useEffect(() => {
     const productId = Number(product?.id ?? 0);
@@ -511,14 +534,17 @@ export default function Produto({
       .replace(/(\d{5})(\d)/, "$1-$2")
       .slice(0, 9);
 
-  const productMediaPool = [
-    ...(Array.isArray(product?.gallery) ? product.gallery : []),
-    ...(Array.isArray((product as any)?.medias)
-      ? (product as any).medias
-      : []),
-  ];
+  const productMediaPool = useMemo(
+    () => [
+      ...(Array.isArray(product?.gallery) ? product.gallery : []),
+      ...(Array.isArray((product as any)?.medias)
+        ? (product as any).medias
+        : []),
+    ],
+    [product?.gallery, (product as any)?.medias],
+  );
 
-  const getImageAttr = (imageID: number | string) => {
+  const getImageAttr = useCallback((imageID: number | string) => {
     const normalizedId = Number(imageID);
     if (!Number.isFinite(normalizedId)) return null;
 
@@ -526,7 +552,7 @@ export default function Produto({
       productMediaPool.find((media: any) => Number(media?.id) === normalizedId) ??
       null
     );
-  };
+  }, [productMediaPool]);
 
   const productAttributes = Array.isArray(product?.attributes)
     ? product.attributes
@@ -609,6 +635,25 @@ export default function Produto({
     }
   };
 
+  const infoSectionsPlaceholder = (
+    <div className="space-y-3">
+      <div className="h-20 w-full animate-pulse rounded-xl bg-zinc-50" />
+      <div className="h-20 w-full animate-pulse rounded-xl bg-zinc-50" />
+      <div className="h-20 w-full animate-pulse rounded-xl bg-zinc-50" />
+      <div className="h-20 w-full animate-pulse rounded-xl bg-zinc-50" />
+    </div>
+  );
+
+  const infoSections = (
+    <div className="space-y-3">
+      <ProductDetails product={product} store={store} categories={categories} />
+      <ProductDimensions product={product} />
+      <ProductRentalRules store={store} />
+      <ProductGuarantees />
+      <ProductComments comments={comments} />
+    </div>
+  );
+
   return (
     <Template
       scripts={Scripts}
@@ -651,12 +696,14 @@ export default function Produto({
                 renderDetails={renderDetails}
               />
 
-              <div className="hidden lg:block space-y-3">
-                <ProductDetails product={product} store={store} categories={categories} />
-                <ProductDimensions product={product} />
-                <ProductRentalRules store={store} />
-                <ProductGuarantees />
-                <ProductComments comments={comments} />
+              <div className="hidden lg:block">
+                <LazyRender
+                  minHeight={420}
+                  rootMargin="180px 0px"
+                  placeholder={infoSectionsPlaceholder}
+                >
+                  {infoSections}
+                </LazyRender>
               </div>
             </div>
 
@@ -671,10 +718,6 @@ export default function Produto({
                   </div>
                   <ProductBadges product={product} comments={comments} />
                   <ProductDescription product={product} />
-                </div>
-
-                <div className="lg:hidden">
-                  <ProductDimensions product={product} />
                 </div>
 
                 {productAttributes.length > 0 && (
@@ -746,11 +789,14 @@ export default function Produto({
 
                 <ProductDeliveryBadge product={product} productToCart={productToCart} />
 
-                <div className="lg:hidden space-y-3">
-                  <ProductDetails product={product} store={store} categories={categories} />
-                  <ProductRentalRules store={store} />
-                  <ProductGuarantees />
-                  <ProductComments comments={comments} />
+                <div className="lg:hidden">
+                  <LazyRender
+                    minHeight={420}
+                    rootMargin="120px 0px"
+                    placeholder={infoSectionsPlaceholder}
+                  >
+                    {infoSections}
+                  </LazyRender>
                 </div>
 
                 <BottomCart
