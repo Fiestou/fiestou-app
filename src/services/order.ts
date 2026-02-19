@@ -1,4 +1,5 @@
 import { OrderType } from "@/src/models/order";
+import { CartType } from "@/src/models/cart";
 import Api from "@/src/services/api";
 
 export async function fetchOrderById(api?: Api, orderId?: number | string): Promise<OrderType | null> {
@@ -80,21 +81,43 @@ const api = new Api();
 
 function parseObject(value: any): Record<string, any> {
   if (!value) return {};
+  if (Array.isArray(value)) return {};
   if (typeof value === "string") {
     try {
       const parsed = JSON.parse(value);
-      return parsed && typeof parsed === "object" ? parsed : {};
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return {};
+      }
+      return parsed;
     } catch {
       return {};
     }
   }
-  return typeof value === "object" ? value : {};
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+  return {};
 }
 
-function normalizeOrderEntity(raw: any): Order {
+function parseArray(value: any): any[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+export function normalizeOrderEntity(raw: any): Order {
   const metadata = parseObject(raw?.metadata);
   const payment = parseObject(raw?.payment);
   const delivery = parseObject(raw?.delivery);
+  const listItems = parseArray(raw?.listItems);
+  const items = parseArray(raw?.items);
   const customer = raw?.customer ?? raw?.user ?? null;
   const user = raw?.user ?? raw?.customer ?? null;
 
@@ -103,15 +126,110 @@ function normalizeOrderEntity(raw: any): Order {
     customer,
     user,
     delivery,
+    listItems: listItems.length ? listItems : items,
+    items: items.length ? items : listItems,
     deliverySchedule:
-      raw?.deliverySchedule ?? delivery?.schedule ?? raw?.delivery_schedule,
-    createdAt: raw?.createdAt ?? raw?.created_at,
-    created_at: raw?.created_at ?? raw?.createdAt,
+      raw?.deliverySchedule ?? delivery?.schedule ?? raw?.delivery_schedule ?? null,
+    createdAt: raw?.createdAt ?? raw?.created_at ?? null,
+    created_at: raw?.created_at ?? raw?.createdAt ?? null,
     metadata: {
       ...metadata,
       ...payment,
     },
   } as Order;
+}
+
+function resolveRawOrderItem(item: any): Record<string, any> {
+  const metadata = parseObject(item?.metadata);
+  const rawItem = parseObject(metadata?.raw_item);
+  if (Object.keys(rawItem).length > 0) {
+    return rawItem;
+  }
+  return typeof item === "object" && !Array.isArray(item) ? item : {};
+}
+
+function toPositiveNumber(value: any, fallback = 0): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return parsed > 0 ? parsed : fallback;
+}
+
+export interface BuildCartItemsFromOrderResult {
+  items: CartType[];
+  skipped: number;
+}
+
+export function buildCartItemsFromOrder(order: any): BuildCartItemsFromOrderResult {
+  const sourceItemsRaw = parseArray(order?.listItems);
+  const sourceItems = sourceItemsRaw.length
+    ? sourceItemsRaw
+    : parseArray(order?.items);
+
+  const items: CartType[] = [];
+  let skipped = 0;
+
+  sourceItems.forEach((sourceItem) => {
+    const rawItem = resolveRawOrderItem(sourceItem);
+    const productObj =
+      parseObject(rawItem?.product).id
+        ? parseObject(rawItem?.product)
+        : parseObject(sourceItem?.product);
+
+    const productId = Number(
+      rawItem?.product_id ??
+      rawItem?.productId ??
+      sourceItem?.product_id ??
+      sourceItem?.productId ??
+      productObj?.id
+    );
+
+    if (!Number.isFinite(productId) || productId <= 0) {
+      skipped += 1;
+      return;
+    }
+
+    const quantity = toPositiveNumber(
+      rawItem?.quantity ?? sourceItem?.quantity,
+      1
+    );
+    const unitPrice = Number(
+      rawItem?.unit_price ??
+      rawItem?.unitPrice ??
+      sourceItem?.unit_price ??
+      sourceItem?.unitPrice ??
+      productObj?.priceSale ??
+      productObj?.price ??
+      0
+    );
+    const rawTotal = Number(rawItem?.total ?? sourceItem?.total);
+    const total =
+      Number.isFinite(rawTotal) && rawTotal > 0
+        ? rawTotal
+        : Math.max(0, unitPrice) * quantity;
+
+    const attributesSource = parseArray(rawItem?.attributes);
+    const attributes = attributesSource.length
+      ? attributesSource
+      : parseArray(sourceItem?.attributes);
+
+    const details = {
+      ...parseObject(sourceItem?.details),
+      ...parseObject(rawItem?.details),
+    } as Record<string, any>;
+
+    if (details?.dateStart) details.dateStart = String(details.dateStart);
+    if (details?.dateEnd) details.dateEnd = String(details.dateEnd);
+
+    items.push({
+      product: productId,
+      attributes,
+      quantity,
+      details,
+      total,
+    });
+  });
+
+  return { items, skipped };
 }
 
 export interface OrderCustomer {

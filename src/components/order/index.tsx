@@ -1,5 +1,6 @@
 export { default as OrderStatusBadge } from './OrderStatusBadge';
 export { default as DeliveryTimeline } from './DeliveryTimeline';
+export { default as OrderTimelineHistory } from './OrderTimelineHistory';
 export { default as AddressCard } from './AddressCard';
 export { default as PaymentMethodDisplay } from './PaymentMethodDisplay';
 export { default as OrderItemCard } from './OrderItemCard';
