@@ -1,13 +1,11 @@
 import Api from "@/src/services/api";
 import { UserType } from "@/src/models/user";
-import UserEdit from "@/src/components/shared/UserEdit";
 import { useRouter } from "next/router";
-import HelpCard from "@/src/components/common/HelpCard";
 import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Cookies from "js-cookie";
 import Product from "@/src/components/common/Product";
 
@@ -30,82 +28,44 @@ export async function getServerSideProps(ctx: any) {
 
   user = request?.data ?? {};
 
-  request = await api.call(
-    {
-      method: 'post',
-      url: "request/graph",
-      data: [
-        {
-          model: "page",
-          filter: [
-            {
-              key: "slug",
-              value: "account",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as HeaderFooter",
-          filter: [
-            {
-              key: "slug",
-              value: "menu",
-              compare: "=",
-            },
-          ],
-        },
-        {
-          model: "page as DataSeo",
-          filter: [
-            {
-              key: "slug",
-              value: "seo",
-              compare: "=",
-            },
-          ],
-        },
-      ],
-    },
-    ctx
-  );
+  request = await api.content({
+    method: "get",
+    url: "account/user",
+  });
 
-  const page: any = request?.data?.query?.page[0] ?? {};
-  const HeaderFooter = request?.data?.query?.HeaderFooter ?? [];
-  const DataSeo = request?.data?.query?.DataSeo ?? [];
+  const HeaderFooter = request?.data?.HeaderFooter ?? {};
 
   return {
     props: {
       user: user,
-      page: page,
-      HeaderFooter: HeaderFooter[0] ?? {},
-      DataSeo: DataSeo[0] ?? {},
+      HeaderFooter,
     },
   };
 }
 
 export default function Favoritos({
   user,
-  page,
   HeaderFooter,
-  DataSeo,
 }: {
   user: UserType;
-  page: any;
   HeaderFooter: any;
-  DataSeo: any;
 }) {
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
   const router = useRouter();
 
   const [products, setProducts] = useState([] as Array<number>);
 
-  const getLikes = async () => {
-    let likes: any = Object.values(
+  const getLikes = useCallback(async () => {
+    const likes: any = Object.values(
       JSON.parse(Cookies.get("fiestou.likes") ?? JSON.stringify([]))
     );
 
-    let request: any = await api.request({
+    if (!likes.length) {
+      setProducts([]);
+      return;
+    }
+
+    const request: any = await api.request({
       method: "get",
       url: "request/products",
       data: {
@@ -113,16 +73,12 @@ export default function Favoritos({
       },
     });
 
-    const handle = request.data;
-
-    setProducts(handle);
-  };
+    setProducts(request?.data ?? []);
+  }, [api]);
 
   useEffect(() => {
-    if (!!window) {
-      getLikes();
-    }
-  }, []);
+    getLikes();
+  }, [getLikes]);
 
   return (
     !router.isFallback && (
