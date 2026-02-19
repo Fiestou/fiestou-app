@@ -7,11 +7,11 @@ import { OrderType } from "@/src/models/order";
 import { RateType } from "@/src/models/product";
 import { findDates } from "@/src/helper";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Pagarme from "@/src/services/pagarme";
 import {
   OrderStatusBadge,
-  DeliveryTimeline,
+  OrderTimelineHistory,
   OrderItemCard,
   OrderSummary,
   RatingModal,
@@ -34,9 +34,9 @@ function groupItemsByStore(items: any[]): StoreGroup[] {
   const groups: Record<string, StoreGroup> = {};
 
   items.forEach((item) => {
-    const store = item?.metadata?.product?.store;
-    const storeId = store?.id || store?.slug || 'unknown';
-    const storeName = store?.title || store?.name || 'Loja';
+    const store = item?.metadata?.product?.store ?? item?.product?.store;
+    const storeId = store?.id || store?.slug || "unknown";
+    const storeName = store?.title || store?.name || "Loja";
     const storeSlug = store?.slug;
 
     if (!groups[storeId]) {
@@ -87,20 +87,22 @@ export default function Pedido({
   DataSeo: any;
   Scripts: any;
 }) {
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
 
   const [form, setForm] = useState(formInitial);
   const handleForm = (value: Object) => {
-    setForm({ ...form, ...value });
+    setForm((prev) => ({ ...prev, ...value }));
   };
 
   const [cancel, setCancel] = useState(false);
   const [order, setOrder] = useState({} as OrderType);
   const [products, setProducts] = useState([] as Array<any>);
+  const [loadingOrder, setLoadingOrder] = useState(true);
+  const [orderUnavailable, setOrderUnavailable] = useState(false);
 
   const [rate, setRate] = useState({} as RateType);
   const handleRate = (value: any) => {
-    setRate({ ...rate, ...value });
+    setRate((prev) => ({ ...prev, ...value }));
   };
 
   const [modalRating, setModalRating] = useState(false);
@@ -138,65 +140,142 @@ export default function Pedido({
 
   const [resume, setResume] = useState({} as any);
 
-  const getOrder = async () => {
-    const fetchedOrder: OrderType | null =
-      (await fetchOrderById(api, orderId)) ?? ({} as OrderType);
+  const getOrder = useCallback(async () => {
+    setLoadingOrder(true);
+    setOrderUnavailable(false);
+    try {
+      const fetchedOrder: OrderType | null =
+        (await fetchOrderById(api, orderId)) ?? ({} as OrderType);
 
-    if (!fetchedOrder?.id) {
-      return;
-    }
+      if (!fetchedOrder?.id) {
+        setOrderUnavailable(true);
+        setProducts([]);
+        setOrder({} as OrderType);
+        return;
+      }
 
-    // Produtos - merge items com products completos
-    const productsWithFullData =
-      fetchedOrder.items?.map((item: any) => {
-        const fullProduct = fetchedOrder.products?.find(
-          (p: any) => p.id === item.productId
-        );
+      // Produtos - merge items com products completos
+      const productsWithFullData =
+        fetchedOrder.items?.map((item: any) => {
+          let safeMetadata = item.metadata;
+          if (typeof safeMetadata === "string") {
+            try {
+              safeMetadata = JSON.parse(safeMetadata);
+            } catch {
+              safeMetadata = {};
+            }
+          }
 
-        return {
-          ...item,
-          metadata: {
-            ...item.metadata,
-            product: {
-              ...item.metadata?.product,
-              ...fullProduct,
+          const metadataProduct = safeMetadata?.product ?? {};
+          const rawItem = safeMetadata?.raw_item ?? {};
+          const rawProduct = rawItem?.product ?? {};
+
+          const productId =
+            Number(
+              item?.productId ??
+                item?.product_id ??
+                item?.product?.id ??
+                metadataProduct?.id ??
+                rawItem?.product_id ??
+                rawProduct?.id
+            ) || 0;
+
+          const fullProduct = fetchedOrder.products?.find(
+            (productEntry: any) => Number(productEntry?.id) === productId
+          );
+
+          const mergedProduct = {
+            ...(rawProduct ?? {}),
+            ...(metadataProduct ?? {}),
+            ...(item?.product ?? {}),
+            ...(fullProduct ?? {}),
+          };
+
+          return {
+            ...item,
+            productId: productId > 0 ? productId : undefined,
+            name:
+              item?.name ??
+              item?.title ??
+              mergedProduct?.title ??
+              mergedProduct?.name,
+            quantity: Number(item?.quantity ?? rawItem?.quantity ?? 1) || 1,
+            unitPrice:
+              Number(
+                item?.unitPrice ??
+                  item?.unit_price ??
+                  rawItem?.unit_price ??
+                  rawItem?.unitPrice ??
+                  mergedProduct?.priceSale ??
+                  mergedProduct?.price
+              ) || 0,
+            product: mergedProduct,
+            metadata: {
+              ...(safeMetadata ?? {}),
+              product: mergedProduct,
             },
-          },
-        };
-      }) || [];
+          };
+        }) || [];
 
-    setProducts(productsWithFullData);
+      setProducts(productsWithFullData);
 
-    // Datas do agendamento
-    const dates: string[] = [];
-    fetchedOrder.items?.forEach((item) => {
-      const rawDetails = item.metadata?.raw_item?.details;
-      if (rawDetails?.dateStart) dates.push(rawDetails.dateStart);
-      if (rawDetails?.dateEnd) dates.push(rawDetails.dateEnd);
-    });
+      // Datas do agendamento
+      const dates: string[] = [];
+      fetchedOrder.items?.forEach((item) => {
+        let safeItemMetadata = item.metadata;
+        if (typeof safeItemMetadata === "string") {
+          try {
+            safeItemMetadata = JSON.parse(safeItemMetadata);
+          } catch {
+            safeItemMetadata = {};
+          }
+        }
 
-    if (dates.length === 0 && fetchedOrder.metadata?.scheduleStart) {
-      dates.push(fetchedOrder.metadata.scheduleStart);
-      dates.push(
-        fetchedOrder.metadata.scheduleEnd ?? fetchedOrder.metadata.scheduleStart
-      );
+        const rawDetails =
+          safeItemMetadata?.raw_item?.details ?? safeItemMetadata?.details;
+        if (rawDetails?.dateStart) dates.push(rawDetails.dateStart);
+        if (rawDetails?.dateEnd) dates.push(rawDetails.dateEnd);
+      });
+
+      if (dates.length === 0 && fetchedOrder.metadata?.scheduleStart) {
+        dates.push(fetchedOrder.metadata.scheduleStart);
+        dates.push(
+          fetchedOrder.metadata.scheduleEnd ?? fetchedOrder.metadata.scheduleStart
+        );
+      }
+
+      const fallbackDate =
+        fetchedOrder.createdAt ?? fetchedOrder.created_at ?? new Date().toISOString();
+      const dateRange =
+        dates.length > 0
+          ? findDates(dates)
+          : { minDate: fallbackDate, maxDate: fallbackDate };
+
+      setResume({
+        startDate: dateRange.minDate,
+        endDate: dateRange.maxDate,
+      });
+
+      setOrder(fetchedOrder);
+      setOrderUnavailable(false);
+    } catch (error) {
+      console.error("pedido:getOrder error:", error);
+      setOrderUnavailable(true);
+      setProducts([]);
+      setOrder({} as OrderType);
+    } finally {
+      setLoadingOrder(false);
     }
+  }, [api, orderId]);
 
-    setResume({
-      startDate: findDates(dates).minDate,
-      endDate: findDates(dates).maxDate,
-    });
-
-    setOrder(fetchedOrder);
-  };
-
-  const initialized = useRef(false);
   useEffect(() => {
-    if (!initialized.current) {
-      initialized.current = true;
-      getOrder();
-    }
-  }, []);
+    getOrder();
+  }, [getOrder]);
+
+  const groupedProducts = useMemo(
+    () => groupItemsByStore(products || []),
+    [products]
+  );
 
   return (
     <Template
@@ -213,7 +292,39 @@ export default function Pedido({
         template: "clean",
       }}
     >
-      {!!order?.id ? (
+      {loadingOrder ? (
+        /* Loading skeleton */
+        <div className="cursor-wait container-medium animate-pulse">
+          <div className="flex pt-10 md:pt-16 gap-10">
+            <div className="w-full grid gap-4">
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
+            </div>
+            <div className="py-48 w-full max-w-[24rem] rounded-lg bg-zinc-100"></div>
+          </div>
+        </div>
+      ) : orderUnavailable ? (
+        <section>
+          <div className="container-medium py-12">
+            <div className="max-w-xl mx-auto bg-zinc-50 border border-zinc-200 rounded-xl p-6 text-center">
+              <p className="text-lg font-semibold text-zinc-900">Pedido não encontrado</p>
+              <p className="text-sm text-zinc-600 mt-2">
+                Este pedido não está disponível para sua conta.
+              </p>
+              <Link
+                href="/dashboard/pedidos"
+                className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-cyan-700 hover:underline"
+              >
+                Voltar para meus pedidos
+                <Icon icon="fa-arrow-right" className="text-xs" type="far" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : (
         <>
           {/* Breadcrumbs */}
           <section>
@@ -256,28 +367,19 @@ export default function Pedido({
                     </div>
                   </div>
 
-                  {/* Timeline de entrega */}
-                  {order?.metadata?.status !== "expired" && (
-                    <div>
-                      <DeliveryTimeline
-                        deliveryStatus={order.delivery?.status || (order as any).delivery_status}
-                        createdAt={order.createdAt}
-                      />
-                      <div className="py-10">
-                        <hr />
-                      </div>
-                    </div>
-                  )}
+                  <div className="pb-10">
+                    <OrderTimelineHistory order={order as any} />
+                  </div>
 
                   {/* Itens do pedido - Agrupados por loja */}
                   <div className="grid">
                     <h4 className="text-xl md:text-2xl text-zinc-800 pb-6">
                       Itens do pedido
                     </h4>
-                    {groupItemsByStore(products || []).map((storeGroup, groupKey) => (
+                    {groupedProducts.map((storeGroup, groupKey) => (
                       <div key={groupKey} className="mb-6">
                         {/* Header da loja - só mostra se tem mais de uma loja */}
-                        {groupItemsByStore(products || []).length > 1 && (
+                        {groupedProducts.length > 1 && (
                           <div className="bg-zinc-100 rounded-lg p-3 mb-4 flex items-center gap-2">
                             <Icon icon="fa-store" className="text-zinc-500" />
                             <span className="font-semibold text-zinc-800">
@@ -353,20 +455,6 @@ export default function Pedido({
             paymentUrl={order.metadata?.url}
           />
         </>
-      ) : (
-        /* Loading skeleton */
-        <div className="cursor-wait container-medium animate-pulse">
-          <div className="flex pt-10 md:pt-16 gap-10">
-            <div className="w-full grid gap-4">
-              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
-              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
-              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
-              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
-              <div className="py-10 w-full rounded-lg bg-zinc-100"></div>
-            </div>
-            <div className="py-48 w-full max-w-[24rem] rounded-lg bg-zinc-100"></div>
-          </div>
-        </div>
       )}
     </Template>
   );

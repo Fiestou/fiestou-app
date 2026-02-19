@@ -99,6 +99,10 @@ test.describe("Client orders smoke", () => {
     await detailsLink.click();
     await expect(page.locator("body")).toContainText(/Itens do pedido/i);
     await expect(page.locator("body")).toContainText(/Pedido #/i);
+    const itemImage = page.locator("h4:has-text('Itens do pedido')").locator("xpath=following::img[1]");
+    await expect(itemImage).toBeVisible({ timeout: 20_000 });
+    const itemImageSrc = (await itemImage.getAttribute("src")) || "";
+    expect(itemImageSrc.trim().length).toBeGreaterThan(0);
 
     const orderIdMatch = detailsHref?.match(/\/dashboard\/pedidos\/(\d+)/);
     if (orderIdMatch?.[1]) {
@@ -108,6 +112,12 @@ test.describe("Client orders smoke", () => {
       await expect(page.locator("body")).toContainText(
         /Pagamento|Resumo do pagamento|Este pedido não aceita novo pagamento/i,
       );
+      const paymentItemImage = page
+        .locator("h4:has-text('Itens do pedido')")
+        .locator("xpath=following::img[1]");
+      await expect(paymentItemImage).toBeVisible({ timeout: 20_000 });
+      const paymentItemImageSrc = (await paymentItemImage.getAttribute("src")) || "";
+      expect(paymentItemImageSrc.trim().length).toBeGreaterThan(0);
     }
 
     await page.goto("/dashboard/meus-dados", { waitUntil: "domcontentloaded" });

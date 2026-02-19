@@ -33,31 +33,91 @@ interface OrderItemCardProps {
   onRate?: (product: any) => void;
 }
 
+function parseObject(value: any): Record<string, any> {
+  if (!value) return {};
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? parsed
+        : {};
+    } catch {
+      return {};
+    }
+  }
+  return typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
 export default function OrderItemCard({ item, onRate }: OrderItemCardProps) {
-  const productData = item?.metadata?.product;
+  const metadata = parseObject(item?.metadata);
+  const rawItem = parseObject(metadata?.raw_item);
+  const rawProduct = parseObject(rawItem?.product);
+  const metadataProduct = parseObject(metadata?.product);
+  const directProduct = parseObject((item as any)?.product);
+
+  const productData = {
+    ...rawProduct,
+    ...metadataProduct,
+    ...directProduct,
+  };
+
+  const productId =
+    Number(
+      (item as any)?.productId ??
+        (item as any)?.product_id ??
+        productData?.id ??
+        rawItem?.product_id
+    ) || 0;
+
+  const quantity =
+    Number((item as any)?.quantity ?? rawItem?.quantity ?? 1) || 1;
+  const unitPrice =
+    Number(
+      (item as any)?.unitPrice ??
+        (item as any)?.unit_price ??
+        rawItem?.unit_price ??
+        rawItem?.unitPrice ??
+        0
+    ) || 0;
+
+  const itemName =
+    (item as any)?.name ||
+    (item as any)?.title ||
+    productData?.title ||
+    productData?.name ||
+    "Produto";
+
+  const imageUrl =
+    getImage(productData?.gallery, "thumb") ||
+    getImage(productData?.image, "thumb") ||
+    getImage(rawProduct?.gallery, "thumb") ||
+    getImage(rawProduct?.image, "thumb") ||
+    "";
 
   return (
     <div>
       <div className="flex items-center gap-6">
         <div className="w-fit">
           <div className="aspect-square bg-zinc-200 w-[6rem] rounded-xl">
-            {!!productData?.gallery?.length && (
+            {!!imageUrl && (
               <Img
-                src={getImage(productData.gallery[0], "thumb")}
-                className="w-full h-full object-contain"
+                src={imageUrl}
+                className="w-full h-full object-cover rounded-xl"
               />
             )}
           </div>
         </div>
         <div className="grid gap-1 w-full">
           <div className="font-title text-lg font-bold text-zinc-900">
-            <Link href={`/produtos/${item?.productId}`}>
-              {item.name || productData?.title}
-            </Link>
+            {productId ? (
+              <Link href={`/produtos/${productId}`}>{itemName}</Link>
+            ) : (
+              <span>{itemName}</span>
+            )}
           </div>
           <div className="text-sm">
             <div>
-              Quantidade: {item.quantity} | Valor unitário: R$ {moneyFormat(item.unitPrice)}
+              Quantidade: {quantity} | Valor unitário: R$ {moneyFormat(unitPrice)}
             </div>
             {!!productData?.sku && (
               <>
@@ -109,7 +169,12 @@ export default function OrderItemCard({ item, onRate }: OrderItemCardProps) {
             <div className="mt-2">
               <Button
                 type="button"
-                onClick={() => onRate({ ...productData, id: item.productId })}
+                onClick={() =>
+                  onRate({
+                    ...productData,
+                    id: productId || (item as any)?.productId,
+                  })
+                }
                 style="btn-transparent"
                 className="whitespace-nowrap text-sm font-semibold text-zinc-900 p-0 ease hover:text-yellow-500"
               >

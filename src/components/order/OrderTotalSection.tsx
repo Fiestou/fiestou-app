@@ -2,14 +2,20 @@ import { moneyFormat } from "@/src/helper";
 
 interface OrderItem {
   name?: string;
+  title?: string;
   quantity: number;
   unitPrice: number;
+  unit_price?: number | string;
   addons?: Array<{
     name: string;
     quantity: number;
     price: number;
     total?: number;
   }>;
+  product?: {
+    name?: string;
+    title?: string;
+  };
   metadata?: {
     product?: {
       name?: string;
@@ -37,16 +43,23 @@ export default function OrderTotalSection({
       <div className="grid gap-2 text-sm">
         {/* Itens do pedido */}
         {items.map((item, idx) => {
-          const productData = item?.metadata?.product || item;
-          const itemName = (productData as any)?.name || (productData as any)?.title || item.name || 'Produto';
+          const productData = item?.metadata?.product || item?.product || item;
+          const itemName =
+            (productData as any)?.name ||
+            (productData as any)?.title ||
+            item?.name ||
+            item?.title ||
+            "Produto";
+          const quantity = Number(item?.quantity ?? 1) || 1;
+          const unitPrice = Number(item?.unitPrice ?? item?.unit_price ?? 0) || 0;
           return (
             <div key={idx}>
               <div className="flex gap-2">
                 <div className="w-full">
-                  {item.quantity > 1 ? `${item.quantity}x ` : ''}{itemName}
+                  {quantity > 1 ? `${quantity}x ` : ""}{itemName}
                 </div>
                 <div className="whitespace-nowrap">
-                  R$ {moneyFormat(item.unitPrice * item.quantity)}
+                  R$ {moneyFormat(unitPrice * quantity)}
                 </div>
               </div>
               {/* Adicionais do item */}
