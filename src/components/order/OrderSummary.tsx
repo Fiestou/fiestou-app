@@ -2,6 +2,10 @@ import { Button } from "@/src/components/ui/form";
 import { dateBRFormat, getShorDate, moneyFormat } from "@/src/helper";
 import { deliveryToName } from "@/src/models/delivery";
 import Icon from "@/src/icons/fontAwesome/FIcon";
+import {
+  getOrderStatusKey,
+  isOrderProcessing,
+} from "@/src/services/order-status";
 import AddressCard from "./AddressCard";
 import PaymentMethodDisplay from "./PaymentMethodDisplay";
 import OrderTotalSection from "./OrderTotalSection";
@@ -25,7 +29,7 @@ interface OrderSummaryProps {
     delivery?: {
       to?: string;
       price?: number;
-      schedule?: string;
+      schedule?: string | { date?: string; period?: string; time?: string };
       scheduleDate?: string;
       address?: {
         street?: string;
@@ -64,17 +68,35 @@ interface OrderSummaryProps {
 }
 
 export default function OrderSummary({ order, products, resume }: OrderSummaryProps) {
-  const subtotal = order.subtotal || ((order.total || 0) - (order.delivery?.price || 0));
-  const deliveryPrice = order.deliveryTotal || order.delivery?.price;
+  const total = Number(order.total || 0);
+  const deliveryPrice = Number(order.deliveryTotal ?? order.delivery?.price ?? 0);
+  const subtotal = Number(order.subtotal ?? Math.max(0, total - deliveryPrice));
+  const statusKey = getOrderStatusKey(order);
+  const canPayOrder = statusKey === "pending";
+  const rawSchedule = order.delivery?.schedule;
+  const scheduleLabel =
+    typeof rawSchedule === "string"
+      ? rawSchedule
+      : rawSchedule && typeof rawSchedule === "object"
+        ? [rawSchedule.period, rawSchedule.time].filter(Boolean).join(" - ")
+        : "";
+  const scheduleDateFromDelivery =
+    rawSchedule && typeof rawSchedule === "object"
+      ? rawSchedule.date
+      : undefined;
 
   // Data de agendamento - usa delivery.scheduleDate (novo), resume, ou metadata como fallback
-  const scheduleStartDate = order.delivery?.scheduleDate || resume?.startDate || order.metadata?.scheduleStart;
+  const scheduleStartDate =
+    order.delivery?.scheduleDate ||
+    scheduleDateFromDelivery ||
+    resume?.startDate ||
+    order.metadata?.scheduleStart;
   const scheduleEndDate = resume?.endDate || order.metadata?.scheduleEnd;
 
   return (
     <div className="rounded-2xl bg-zinc-100 p-4 md:p-8">
       {/* Botão de pagamento para pedidos em aberto */}
-      {order.status === 0 && (
+      {canPayOrder && (
         <div>
           {order.metadata?.url ? (
             <Button
@@ -99,7 +121,7 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
       )}
 
       {/* Mensagem de aguardando pagamento */}
-      {order.status === -1 && (
+      {isOrderProcessing(order) && (
         <div>
           <div className="bg-zinc-50 text-center p-2 text-zinc-800 rounded">
             Aguardando confirmação de pagamento...
@@ -134,7 +156,7 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
         </div>
 
         {/* Agendamento - Destacado (mostra se tem data OU horário) */}
-        {(scheduleStartDate || order.delivery?.schedule) && (
+        {(scheduleStartDate || scheduleLabel) && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-center gap-2 text-yellow-700 font-semibold mb-2">
               <Icon icon="fa-calendar" className="text-sm" />
@@ -151,11 +173,11 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
                 </span>
               </div>
             )}
-            {order.delivery?.schedule && (
+            {scheduleLabel && (
               <div className="flex items-center gap-2 text-zinc-700">
                 <Icon icon="fa-clock" className="text-sm text-yellow-600" />
                 <span className="text-zinc-600">Horário:</span>
-                <span className="font-semibold text-zinc-900">{order.delivery.schedule}</span>
+                <span className="font-semibold text-zinc-900">{scheduleLabel}</span>
               </div>
             )}
           </div>
@@ -178,8 +200,8 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
         <div className="flex justify-between text-sm">
           <span className="text-zinc-600">Valor de entrega:</span>
           <span className="font-medium text-zinc-900">
-            {order.delivery?.price
-              ? `R$ ${moneyFormat(order.delivery.price)}`
+            {deliveryPrice > 0
+              ? `R$ ${moneyFormat(deliveryPrice)}`
               : "Gratuita"}
           </span>
         </div>
@@ -217,7 +239,7 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
           items={products}
           subtotal={subtotal}
           deliveryPrice={deliveryPrice}
-          total={order.total}
+          total={total}
         />
 
         <div>
@@ -228,7 +250,7 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
         <div className="flex items-center gap-2">
           <div className="w-full font-title text-zinc-900 font-bold">TOTAL</div>
           <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
-            R$ {moneyFormat(order.total)}
+            R$ {moneyFormat(total)}
           </div>
         </div>
       </div>

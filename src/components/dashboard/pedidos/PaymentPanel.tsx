@@ -13,6 +13,7 @@ import {
 import { CardType, OrderType, PaymentType, PixType } from "@/src/models/order";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
+import Link from "next/link";
 import { useEffect } from "react";
 
 interface FormInitialType {
@@ -25,6 +26,7 @@ interface PaymentPanelProps {
   order: OrderType;
   productsCount: number;
   deliveryPrice?: number;
+  allowPayment?: boolean;
   form: FormInitialType;
   handleForm: (value: Partial<FormInitialType>) => void;
   pix: PixType;
@@ -46,10 +48,31 @@ interface PaymentPanelProps {
   setUseOrderAddress: (value: boolean) => void;
 }
 
+function toMoneyNumber(value: any): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const sanitized = value.trim();
+    if (!sanitized) return 0;
+
+    const normalized = sanitized.includes(",")
+      ? sanitized.replace(/\./g, "").replace(",", ".")
+      : sanitized;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export const PaymentPanel = ({
   order,
   productsCount,
   deliveryPrice,
+  allowPayment = true,
   form,
   handleForm,
   pix,
@@ -71,6 +94,7 @@ export const PaymentPanel = ({
   setUseOrderAddress,
 }: PaymentPanelProps) => {
   const hasPixOrBoleto = pix.status || boleto?.status;
+  const orderTotal = toMoneyNumber(order?.total);
 
   return (
     <div className="rounded-2xl bg-zinc-100 p-4 md:p-8 relative">
@@ -84,6 +108,20 @@ export const PaymentPanel = ({
         deliveryPrice={deliveryPrice}
       />
 
+      <div className="md:hidden rounded-xl bg-white border border-zinc-200 px-3 py-2 mb-3">
+        <div className="text-[11px] uppercase tracking-wide text-zinc-500">
+          Resumo do pagamento
+        </div>
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-sm text-zinc-700">
+            {productsCount} {productsCount === 1 ? "item" : "itens"}
+          </span>
+          <span className="text-base font-bold text-zinc-900">
+            R$ {moneyFormat(orderTotal)}
+          </span>
+        </div>
+      </div>
+
       <FeedbackAlert
         visible={!form.sended && !!form.feedback}
         message={form.feedback}
@@ -92,7 +130,7 @@ export const PaymentPanel = ({
 
       <PixBoletoCard pix={pix} boleto={boleto} expire={expire} />
 
-      {!hasPixOrBoleto && (
+      {!hasPixOrBoleto && allowPayment && (
         <>
           <PaymentMethodOptions
             user={user}
@@ -111,17 +149,35 @@ export const PaymentPanel = ({
             setUseOrderAddress={setUseOrderAddress}
           />
 
-          <div className="grid mt-4">
-            <Button
-              loading={form.loading}
-              checked={form.sended || pix.status}
-              style="btn-success"
-              className="py-6 px-3"
-            >
-              Confirmar e pagar
-            </Button>
+          <div className="sticky md:static bottom-2 z-20 mt-4">
+            <div className="rounded-xl md:rounded-none bg-white/95 md:bg-transparent backdrop-blur md:backdrop-blur-0 border border-zinc-200 md:border-0 p-3 md:p-0 shadow-sm md:shadow-none">
+              <div className="md:hidden flex items-center justify-between text-sm mb-2">
+                <span className="text-zinc-600">Total agora</span>
+                <span className="font-bold text-zinc-900">
+                  R$ {moneyFormat(orderTotal)}
+                </span>
+              </div>
+              <Button
+                loading={form.loading}
+                checked={form.sended || pix.status}
+                style="btn-success"
+                className="py-6 px-3"
+              >
+                Confirmar e pagar
+              </Button>
+            </div>
           </div>
         </>
+      )}
+
+      {!allowPayment && (
+        <div className="rounded-xl bg-white p-4 text-sm text-zinc-700 mb-4">
+          Este pedido não aceita novo pagamento. Confira o status em{" "}
+          <Link href="/dashboard/pedidos" className="font-semibold text-cyan-700 hover:underline">
+            Meus pedidos
+          </Link>
+          .
+        </div>
       )}
 
       {form.loading && (
@@ -148,8 +204,9 @@ const PaymentSummaryCard = ({
   deliveryPrice?: number;
 }) => {
   // Calcula o subtotal: total do pedido - valor do frete
-  const freightValue = order.delivery?.price ?? deliveryPrice ?? 0;
-  const subtotal = (order.total || 0) - freightValue;
+  const freightValue = toMoneyNumber(order.delivery?.price ?? deliveryPrice ?? 0);
+  const totalValue = toMoneyNumber(order.total);
+  const subtotal = Math.max(0, totalValue - freightValue);
 
   return (
     <div className="grid text-sm gap-2 mb-2 py-2">
@@ -173,7 +230,7 @@ const PaymentSummaryCard = ({
       <div className="flex gap-2">
         <div className="w-full text-zinc-900 font-bold">Total</div>
         <div className="text-2xl text-zinc-900 font-bold whitespace-nowrap">
-          R$ {moneyFormat(order.total)}
+          R$ {moneyFormat(totalValue)}
         </div>
       </div>
     </div>
@@ -274,7 +331,12 @@ const PixBoletoCard = ({
         </div>
         <div className="w-full max-w-[16rem] mx-auto">
           {!!pix.qrcode ? (
-            <img src={pix.qrcode} className="w-full" alt="QR Code PIX" />
+            <Img
+              src={pix.qrcode}
+              className="w-full h-auto"
+              alt="QR Code PIX"
+              loading="eager"
+            />
           ) : (
             <div className="aspect-square border rounded flex items-center justify-center text-gray-400">
               <span className="text-sm">Gerando QR Code...</span>

@@ -1,26 +1,19 @@
 import Template from "@/src/template";
 import Api from "@/src/services/api";
 import { fetchOrderById } from "@/src/services/order";
-import { useEffect, useRef, useState } from "react";
 import {
-  CopyClipboard,
-  dateBRFormat,
-  documentIsValid,
+  getOrderStatusKey,
+  isOrderPaid,
+} from "@/src/services/order-status";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
   findDates,
-  getBrazilianStates,
-  getImage,
-  getShorDate,
   getZipCode,
   justNumber,
-  moneyFormat,
 } from "@/src/helper";
-import { Button } from "@/src/components/ui/form";
 import { CardType, OrderType, PaymentType, PixType } from "@/src/models/order";
 import Icon from "@/src/icons/fontAwesome/FIcon";
-import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Link from "next/link";
-import Img from "@/src/components/utils/ImgBase";
-import { deliveryToName } from "@/src/models/delivery";
 import { UserType } from "@/src/models/user";
 import { AddressType } from "@/src/models/address";
 import { LoadingSkeleton } from "@/src/components/dashboard/pedidos/LoadingSkeleton";
@@ -34,6 +27,26 @@ interface FormInitialType {
   sended: boolean;
   loading: boolean;
   feedback: string;
+}
+
+function parseMoneyValue(value: any): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const sanitized = value.trim();
+    if (!sanitized) return 0;
+
+    const normalized = sanitized.includes(",")
+      ? sanitized.replace(/\./g, "").replace(",", ".")
+      : sanitized;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 export async function getServerSideProps(ctx: any) {
@@ -51,7 +64,7 @@ export async function getServerSideProps(ctx: any) {
 
   return {
     props: {
-      orderId: params.id,
+      orderId: Number(params.id),
       HeaderFooter,
       DataSeo,
       Scripts,
@@ -70,7 +83,7 @@ export default function Pagamento({
   DataSeo: any;
   Scripts: any;
 }) {
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
 
   const [form, setForm] = useState<FormInitialType>({
     sended: false,
@@ -93,27 +106,42 @@ export default function Pagamento({
   const deliverySchedule =
     order?.delivery?.schedule ?? legacyOrder?.deliverySchedule;
 
-  const calculateTotalDeliveryFee = () => {
-    if (!order?.items?.length) return 0;
-    
-    const totalFee = order.items.reduce((sum, item: any) => {
-      const metadata = typeof item.metadata === 'string' 
-        ? JSON.parse(item.metadata) 
-        : item.metadata;
-      
-      const fee = Number(metadata?.details?.deliveryFee || 0);
-      return sum + fee;
-    }, 0);
-    
-    return totalFee > 0
-      ? totalFee 
-      : (Number(order?.delivery?.priceLabel) || Number(order?.delivery?.price) || Number(legacyOrder?.deliveryPrice) || 0);
-  };
+  const deliveryPrice = useMemo(() => {
+    const persistedDeliveryPrice = parseMoneyValue(
+      order?.delivery?.priceLabel ??
+      order?.delivery?.price ??
+      legacyOrder?.deliveryPrice ??
+      0
+    );
 
-  const deliveryPrice = calculateTotalDeliveryFee();
+    if (persistedDeliveryPrice > 0) {
+      return persistedDeliveryPrice;
+    }
+
+    if (!order?.items?.length) {
+      return 0;
+    }
+
+    const totalFee = order.items.reduce((sum, item: any) => {
+      let metadata = item.metadata;
+      if (typeof metadata === "string") {
+        try {
+          metadata = JSON.parse(metadata);
+        } catch {
+          metadata = {};
+        }
+      }
+
+      const fee = Number(metadata?.details?.deliveryFee || 0);
+      return sum + (Number.isFinite(fee) ? fee : 0);
+    }, 0);
+
+    return totalFee > 0 ? totalFee : 0;
+  }, [legacyOrder?.deliveryPrice, order?.delivery?.price, order?.delivery?.priceLabel, order?.items]);
 
   const deliveryTo: string | undefined =
     order?.delivery?.to ?? legacyOrder?.deliveryTo;
+  const orderStatusKey = getOrderStatusKey(order);
 
 
   const handleCustomer = (value: Partial<UserType>) => {
@@ -148,6 +176,7 @@ export default function Pagamento({
   const [products, setProducts] = useState<Array<any>>([]);
   const [resume, setResume] = useState({} as any);
   const [placeholder, setPlaceholder] = useState(true);
+  const [orderUnavailable, setOrderUnavailable] = useState(false);
 
   const [expire, setExpire] = useState("start");
   const [pix, setPix] = useState<PixType>({
@@ -168,17 +197,17 @@ export default function Pagamento({
     };
   }, []);
 
-  const ConfirmManager = async () => {
+  const ConfirmManager = useCallback(async () => {
     try {
       const handle = await fetchOrderById(api, orderId);
 
-      if (handle && handle.status === 1) {
+      if (handle && isOrderPaid(handle)) {
         window.location.href = `/dashboard/pedidos`;
       }
     } catch (err) {
       console.error("ConfirmManager error:", err);
     }
-  };
+  }, [api, orderId]);
 
   const CardManager = () => {
     let attempts = 6;
@@ -213,7 +242,7 @@ export default function Pagamento({
 
       if (distance <= 0) {
         setExpire("expired");
-        return;
+        return false;
       }
 
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
@@ -223,24 +252,20 @@ export default function Pagamento({
         `${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""
         }${seconds}`
       );
+      return true;
     };
 
     updateExpire();
     if (pollingRef.current) clearInterval(pollingRef.current);
 
     pollingRef.current = setInterval(() => {
-      if (!!expire && expire !== "expired") {
-        updateExpire();
+      const active = updateExpire();
 
-        if (
-          new Date().getSeconds() === 30 ||
-          new Date().getSeconds() === 0
-        ) {
-          ConfirmManager();
-        }
+      if (active && (new Date().getSeconds() === 30 || new Date().getSeconds() === 0)) {
+        ConfirmManager();
       }
 
-      if (expire === "expired") {
+      if (!active) {
         setExpire("");
         if (pollingRef.current) clearInterval(pollingRef.current);
         pollingRef.current = null;
@@ -268,19 +293,17 @@ export default function Pagamento({
     setPayment((prev) => ({ ...(prev ?? {}), ...value } as PaymentType));
   };
 
-  const getOrder = async () => {
+  const getOrder = useCallback(async () => {
     setPlaceholder(true);
+    setOrderUnavailable(false);
 
     try {
-      const request: any = await api.bridge({
-        method: "get",
-        url: `order/${orderId}`,
-      });
+      const fetchedOrder: OrderType | null = await fetchOrderById(api, orderId);
 
-      const fetchedOrder: OrderType | undefined = request?.order;
-
-      if (!fetchedOrder) {
-        setPlaceholder(false);
+      if (!fetchedOrder?.id) {
+        setOrderUnavailable(true);
+        setOrder({} as OrderType);
+        setProducts([]);
         return;
       }
 
@@ -306,6 +329,9 @@ export default function Pagamento({
         if (rawDetails?.dateEnd) dates.push(rawDetails.dateEnd);
       });
 
+      const fallbackDate =
+        fetchedOrder.createdAt ?? fetchedOrder.created_at ?? new Date().toISOString();
+
       const resumeData =
         dates.length > 0
           ? {
@@ -313,8 +339,8 @@ export default function Pagamento({
             endDate: findDates(dates).maxDate,
           }
           : {
-            startDate: fetchedOrder.createdAt,
-            endDate: fetchedOrder.createdAt,
+            startDate: fallbackDate,
+            endDate: fallbackDate,
           };
 
       setResume(resumeData as any);
@@ -322,7 +348,7 @@ export default function Pagamento({
       const productsList = fetchedOrder.products ?? [];
       setProducts(productsList);
 
-      const fetchedUser = fetchedOrder.customer ?? null;
+      const fetchedUser = fetchedOrder.customer ?? fetchedOrder.user ?? null;
       if (fetchedUser) {
         setUser({
           id: fetchedUser.id,
@@ -331,31 +357,44 @@ export default function Pagamento({
           phone: fetchedUser.phone,
         } as UserType);
       }
+    } catch (error) {
+      console.error("pagamento:getOrder error:", error);
+      setOrderUnavailable(true);
+      setOrder({} as OrderType);
+      setProducts([]);
     } finally {
       setPlaceholder(false);
     }
-  };
+  }, [api, orderId]);
 
   useEffect(() => {
     getOrder();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [getOrder]);
 
   const submitPayment = async (e: any) => {
     e.preventDefault();
+
+    if (orderStatusKey !== "pending") {
+      handleForm({
+        loading: false,
+        sended: false,
+        feedback: "Este pedido não está disponível para pagamento.",
+      });
+      return;
+    }
 
     let formFeedback: any = { loading: true, feedback: "" };
     handleForm(formFeedback);
 
     const orderAddress: any = useOrderAddress ? deliveryAddress : address;
 
-    const deliveryAmountCents = Math.round(deliveryPrice * 100);
-    const totalAmountCents = Math.round((order.total || 0) * 100);
+    const deliveryAmountCents = Math.round(parseMoneyValue(deliveryPrice) * 100);
+    const totalAmountCents = Math.round(parseMoneyValue(order.total) * 100);
     const subtotalCents = totalAmountCents - deliveryAmountCents;
 
-    const orderItems = order.items?.map((item: any, index: number) => {
+    const orderItems = order.items?.map((item: any) => {
       const itemTotalCents = Math.round((item.total || 0) * 100);
-      
+
       return {
         amount: itemTotalCents,
         description: item.name || "Produto",
@@ -567,6 +606,20 @@ export default function Pagamento({
         <div className="container-medium">
           {placeholder ? (
             <LoadingSkeleton />
+          ) : orderUnavailable ? (
+            <div className="max-w-xl mx-auto bg-zinc-50 border border-zinc-200 rounded-xl p-6 text-center">
+              <p className="text-lg font-semibold text-zinc-900">Pedido não encontrado</p>
+              <p className="text-sm text-zinc-600 mt-2">
+                Este pedido não está disponível para sua conta.
+              </p>
+              <Link
+                href="/dashboard/pedidos"
+                className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-cyan-700 hover:underline"
+              >
+                Voltar para meus pedidos
+                <Icon icon="fa-arrow-right" className="text-xs" type="far" />
+              </Link>
+            </div>
           ) : (
             <form onSubmit={submitPayment}>
               <div className="grid md:flex items-start gap-10">
@@ -595,6 +648,7 @@ export default function Pagamento({
                     order={order}
                     productsCount={products.length}
                     deliveryPrice={deliveryPrice}
+                    allowPayment={orderStatusKey === "pending"}
                     form={form}
                     handleForm={handleForm}
                     pix={pix}
@@ -624,4 +678,3 @@ export default function Pagamento({
     </Template>
   );
 };
-
