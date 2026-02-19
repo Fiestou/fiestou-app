@@ -1,6 +1,28 @@
 import { expect, test, type APIRequestContext, type Page, type TestInfo } from "@playwright/test";
 
-const apiBaseURL = process.env.E2E_API_BASE_URL || "http://[::1]:3031";
+const appBaseURL = process.env.E2E_BASE_URL || process.env.APP_URL || "";
+
+function resolveApiBaseURL(): string {
+  if (process.env.E2E_API_BASE_URL) {
+    return process.env.E2E_API_BASE_URL;
+  }
+
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL;
+  }
+
+  if (appBaseURL.includes("teste.fiestou.com.br")) {
+    return "https://testeapi.fiestou.com.br";
+  }
+
+  if (appBaseURL.includes("fiestou.com.br")) {
+    return "https://api.fiestou.com.br";
+  }
+
+  return "http://[::1]:3031";
+}
+
+const apiBaseURL = resolveApiBaseURL();
 
 function slugify(text: string): string {
   if (!text) return "";
