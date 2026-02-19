@@ -11,27 +11,34 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useEffect, useState } from "react";
 
 export async function getServerSideProps(ctx: any) {
-  const api = new Api(); 
+  const api = new Api();
   let request: any = {};
 
-  let user = JSON.parse(ctx.req.cookies["fiestou.user"]);
+  let cookieUser: any = {};
+  try {
+    cookieUser = JSON.parse(ctx?.req?.cookies?.["fiestou.user"] ?? "{}");
+  } catch {
+    cookieUser = {};
+  }
 
-  request = await api.bridge(
-    {
-      method: "get",
-      url: "users/get",
-      data: {
-        ref: user.email,
-        person: "client",
+  if (cookieUser?.email) {
+    request = await api.bridge(
+      {
+        method: "get",
+        url: "users/get",
+        data: {
+          ref: cookieUser.email,
+          person: "client",
+        },
       },
-    },
-    ctx
-  );
+      ctx
+    );
+  }
 
-  user = request?.data ?? {};
+  const user = request?.data ?? cookieUser ?? {};
 
   request = await api.content({
-    method: 'get',
+    method: "get",
     url: "account/user",
   });
 
@@ -61,21 +68,27 @@ export default function MeusDados({
   HeaderFooter: any;
 }) {
   const router = useRouter();
-  const [message, setMessage] = useState<string>('');
+  const [message, setMessage] = useState<string>("");
 
-  useEffect(()=>{
-    if (typeof window !== 'undefined') setMessage(localStorage.getItem('message') || '')
-  }, [])
-
-  useEffect(()=>{
-    if(message){
-      setTimeout(()=>{
-        setMessage('')
-        if (typeof window !== 'undefined') localStorage.setItem('message', '') 
-      }, 10000)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setMessage(localStorage.getItem("message") || "");
     }
-  }, [message])
-  
+  }, []);
+
+  useEffect(() => {
+    if (message) {
+      setTimeout(() => {
+        setMessage("");
+        if (typeof window !== "undefined") {
+          localStorage.setItem("message", "");
+        }
+      }, 10000);
+    }
+  }, [message]);
+
+  const isErrorMessage = /erro|falha|inválid|invalido|incorret/i.test(message);
+
   return (
     !router.isFallback && (
       <Template
@@ -85,8 +98,8 @@ export default function MeusDados({
           content: HeaderFooter,
         }}
       >
-        <section className="">
-          <div className="container-medium pt-12 pb-8 md:py-12">
+        <section>
+          <div className="container-medium pt-10 pb-8 md:py-12">
             <div className="pb-4">
               <Breadcrumbs
                 links={[
@@ -95,37 +108,47 @@ export default function MeusDados({
                 ]}
               />
             </div>
-            <div className="flex items-center">
-              <Link passHref href="/dashboard">
-                <Icon
-                  icon="fa-long-arrow-left"
-                  className="mr-6 text-2xl text-zinc-900"
-                />
+            <div className="flex items-start gap-4">
+              <Link passHref href="/dashboard" className="pt-1">
+                <Icon icon="fa-long-arrow-left" className="text-2xl text-zinc-900" />
               </Link>
-              <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                Meus dados
+              <div className="w-full">
+                <h1 className="font-title font-bold text-3xl md:text-4xl text-zinc-900">
+                  Meus dados
+                </h1>
+                <p className="text-sm md:text-base text-zinc-600 mt-2 max-w-2xl leading-relaxed">
+                  Atualize seus dados pessoais e endereço para acelerar pagamento e entrega dos próximos pedidos.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="">
-          <div className="container-medium pb-12">
-            <div className="grid md:flex gap-10 md:gap-24">
-              <div className="w-full grid gap-8">
+        <section>
+          <div className="container-medium pb-14">
+            <div className="grid xl:grid-cols-[minmax(0,1fr),22rem] gap-8 xl:gap-10 items-start">
+              <div className="w-full grid gap-5 md:gap-6">
                 {message && (
-                    <div className="py-3 pl-4 bg-red-50 text-red-600 rounded-md text-center mt-2">
+                  <div
+                    className={`py-3 px-4 rounded-lg text-sm font-medium ${
+                      isErrorMessage
+                        ? "bg-red-50 text-red-700 border border-red-200"
+                        : "bg-green-50 text-green-700 border border-green-200"
+                    }`}
+                  >
                     {message}
                   </div>
                 )}
-                {user.type === 'client' ? (
+
+                {user.type === "client" ? (
                   <UserDataSimple user={user} />
                 ) : (
                   <UserEdit user={user} />
                 )}
               </div>
-              <div className="w-full max-w-[24rem]">
-                <HelpCard list={page.help_list} />
+
+              <div className="w-full xl:max-w-[22rem] xl:sticky xl:top-24">
+                <HelpCard list={page?.help_list ?? []} />
               </div>
             </div>
           </div>
