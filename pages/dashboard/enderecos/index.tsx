@@ -1,252 +1,438 @@
-import Image from "next/image";
 import Link from "next/link";
+import React, { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/router";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import { useState } from "react";
-import { Button, Input, Select, TextArea } from "@/src/components/ui/form";
-import { NextApiRequest, NextApiResponse } from "next";
+import { Button } from "@/src/components/ui/form";
 import Api from "@/src/services/api";
-import { useRouter } from "next/router";
 import { UserType } from "@/src/models/user";
-import Img from "@/src/components/utils/ImgBase";
-import FileInput from "@/src/components/ui/form/FileInputUI";
-import { getExtenseData, getZipCode } from "@/src/helper";
+import { getZipCode } from "@/src/helper";
 import { AddressType } from "@/src/models/address";
 import HelpCard from "@/src/components/common/HelpCard";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { formatCep } from "@/src/components/utils/FormMasks";
 import { toast } from "react-toastify";
 
+const INPUT_BASE_CLASS =
+  "w-full rounded-md border border-zinc-300 px-4 py-3 font-sans text-base leading-relaxed text-zinc-900 placeholder:font-sans placeholder:text-base placeholder:leading-relaxed placeholder:text-zinc-400 focus:border-zinc-800 hover:border-zinc-400";
+
+interface AddressInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  className?: string;
+}
+
+const AddressInput = React.forwardRef<HTMLInputElement, AddressInputProps>(
+  ({ className = "", ...props }, ref) => {
+    return <input ref={ref} {...props} className={`${INPUT_BASE_CLASS} ${className}`} />;
+  }
+);
+
+AddressInput.displayName = "AddressInput";
+
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
-  let request: any = {};
 
-  let user = JSON.parse(ctx.req.cookies["fiestou.user"]);
+  let cookieUser: any = {};
+  try {
+    cookieUser = JSON.parse(ctx?.req?.cookies?.["fiestou.user"] ?? "{}");
+  } catch {
+    cookieUser = {};
+  }
 
-  request = await api.bridge(
-    {
-      method: "get",
-      url: "users/get",
-      data: {
-        ref: user.email,
-        person: "client",
+  let userRequest: any = {};
+  if (cookieUser?.email) {
+    userRequest = await api.bridge(
+      {
+        method: "get",
+        url: "users/get",
+        data: {
+          ref: cookieUser.email,
+          person: "client",
+        },
       },
-    },
-    ctx
-  );
+      ctx
+    );
+  }
 
-  user = request?.data ?? {};
+  const user = userRequest?.data ?? cookieUser ?? {};
 
-  request = await api.content({
-    method: 'get',
+  const contentRequest = await api.content({
+    method: "get",
     url: "account/address",
   });
 
-  const Address: any = request?.data?.Address ?? {};
-  const HeaderFooter = request?.data?.HeaderFooter ?? {};
-  const DataSeo = request?.data?.DataSeo ?? {};
-  const Scripts = request?.data?.Scripts ?? {};
+  const Address: any = contentRequest?.data?.Address ?? {};
+  const HeaderFooter = contentRequest?.data?.HeaderFooter ?? {};
+  const DataSeo = contentRequest?.data?.DataSeo ?? {};
+  const Scripts = contentRequest?.data?.Scripts ?? {};
 
   return {
     props: {
-      user: user,
+      user,
       page: Address,
-      HeaderFooter: HeaderFooter,
-      DataSeo: DataSeo,
-      Scripts: Scripts,
+      HeaderFooter,
+      DataSeo,
+      Scripts,
     },
   };
 }
 
-const formInitial = {
-  edit: -1,
-  loading: false,
+function emptyAddress(): AddressType {
+  return {
+    zipCode: "",
+    street: "",
+    number: "",
+    neighborhood: "",
+    complement: "",
+    city: "",
+    state: "",
+    country: "Brasil",
+    main: false,
+  };
+}
+
+function normalizeAddress(address: AddressType): AddressType {
+  return {
+    zipCode: formatCep(String(address?.zipCode ?? "")).trim(),
+    street: String(address?.street ?? "").trim(),
+    number: String(address?.number ?? "").trim(),
+    neighborhood: String(address?.neighborhood ?? "").trim(),
+    complement: String(address?.complement ?? "").trim(),
+    city: String(address?.city ?? "").trim(),
+    state: String(address?.state ?? "").trim().toUpperCase(),
+    country: String(address?.country ?? "Brasil").trim() || "Brasil",
+    main: !!address?.main,
+  };
+}
+
+function hasAnyAddressData(address: AddressType): boolean {
+  return [
+    address?.zipCode,
+    address?.street,
+    address?.number,
+    address?.neighborhood,
+    address?.city,
+    address?.state,
+    address?.complement,
+  ].some((value) => String(value ?? "").trim().length > 0);
+}
+
+function ensureMainAddress(addresses: AddressType[]): AddressType[] {
+  if (!addresses.length) return [];
+
+  const normalized = addresses.map((address) => normalizeAddress(address));
+  const firstMain = normalized.findIndex((address) => address.main);
+
+  if (firstMain === -1) {
+    normalized[0].main = true;
+    return normalized;
+  }
+
+  return normalized.map((address, index) => ({
+    ...address,
+    main: index === firstMain,
+  }));
+}
+
+function validateAddress(address: AddressType): string | null {
+  const zipDigits = String(address.zipCode ?? "").replace(/\D/g, "");
+  if (zipDigits.length !== 8) return "Informe um CEP válido com 8 números.";
+
+  if (!address.street) return "Informe a rua.";
+  if (!address.number) return "Informe o número.";
+  if (!address.neighborhood) return "Informe o bairro.";
+  if (!address.city) return "Informe a cidade.";
+
+  const uf = String(address.state ?? "").toUpperCase();
+  if (!/^[A-Z]{2}$/.test(uf)) {
+    return "Informe a UF com 2 letras.";
+  }
+
+  return null;
+}
+
+function addressSummary(address: AddressType): string[] {
+  return [
+    `${address.street || "Rua não informada"}${address.number ? `, ${address.number}` : ""}`,
+    address.neighborhood || "Bairro não informado",
+    `CEP: ${address.zipCode || "Não informado"}`,
+    `${address.city || "Cidade não informada"} | ${address.state || "UF"} - ${address.country || "Brasil"}`,
+    address.complement ? `Complemento: ${address.complement}` : "",
+  ].filter(Boolean);
+}
+
+type EditorMode =
+  | { type: "none"; index: null }
+  | { type: "create"; index: null }
+  | { type: "edit"; index: number };
+
+type LookupMessage = {
+  type: "info" | "success" | "error";
+  text: string;
 };
 
-export default function Conta({
+export default function Enderecos({
   user,
   page,
   HeaderFooter,
-  DataSeo,
 }: {
   user: UserType;
   page: any;
   HeaderFooter: any;
-  DataSeo: any;
 }) {
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
   const router = useRouter();
 
-  const [form, setForm] = useState(formInitial);
-  const handleForm = (value: Object) => {
-    setForm({ ...form, ...value });
-  };
+  const initialAddresses = (Array.isArray(user?.address) ? user.address : [])
+    .map((address) => normalizeAddress(address as AddressType))
+    .filter((address) => hasAnyAddressData(address));
 
-  const [locations, setLocation] = useState(
-    user.address ?? ([] as Array<AddressType>)
+  const [addresses, setAddresses] = useState<AddressType[]>(
+    ensureMainAddress(initialAddresses)
   );
-  const handleAddress = (value: any, key: any) => {
-    setLocation((locations: Array<AddressType>) =>
-      locations.map((locate: AddressType, index: any) =>
-        index == key
-          ? {
-              ...locate,
-              ...value,
-            }
-          : locate
+  const [editor, setEditor] = useState<EditorMode>({ type: "none", index: null });
+  const [draft, setDraft] = useState<AddressType>(emptyAddress());
+  const [saving, setSaving] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupMessage, setLookupMessage] = useState<LookupMessage>({
+    type: "info",
+    text: "Digite o CEP para tentar preencher rua, bairro, cidade e UF automaticamente.",
+  });
+
+  const lastLookupCepRef = useRef<string>("");
+  const numberFieldRef = useRef<HTMLInputElement>(null);
+
+  const completion = addresses.length
+    ? Math.round(
+        (addresses.filter((address) => !validateAddress(normalizeAddress(address))).length /
+          addresses.length) *
+          100
       )
-    );
+    : 0;
+
+  const mainAddress = addresses.find((address) => address.main) ?? addresses[0] ?? null;
+
+  const resetLookupFeedback = () => {
+    setLookupMessage({
+      type: "info",
+      text: "Digite o CEP para tentar preencher rua, bairro, cidade e UF automaticamente.",
+    });
   };
 
-  const addLocation = () => {
-    let locations = (content?.address ?? []).filter((locate) => locate);
-
-    locations.push({} as AddressType);
-
-    setLocation(locations);
-
-    handleForm({ edit: locations.length - 1 });
+  const openCreate = () => {
+    setEditor({ type: "create", index: null });
+    setDraft(emptyAddress());
+    lastLookupCepRef.current = "";
+    resetLookupFeedback();
   };
 
-  const [content, setContent] = useState(user as UserType);
-  const handleSubmit = async (e: any, handleLocations?: Array<AddressType>) => {
-    e.preventDefault();
+  const openEdit = (index: number) => {
+    const current = addresses[index] ?? emptyAddress();
+    setEditor({ type: "edit", index });
+    setDraft(normalizeAddress(current));
+    lastLookupCepRef.current = String(current?.zipCode ?? "").replace(/\D/g, "");
+    resetLookupFeedback();
+  };
 
-    handleForm({ loading: true });
+  const copyMainAddress = () => {
+    if (!mainAddress) return;
 
-    const handle: UserType = {
-      ...content,
-      address: handleLocations ?? locations,
-      id: user.id,
-    };
-
-    setContent(handle);
-
-    const request: any = await api.bridge({
-      method: 'post',
-      url: "users/update",
-      data: handle,
+    setDraft({
+      ...normalizeAddress(mainAddress),
+      main: false,
     });
 
-    if (request.response) {
-      setContent(handle);
-      setLocation(handle?.address ?? ([] as Array<AddressType>));
-    }
+    const mainZipDigits = String(mainAddress?.zipCode ?? "").replace(/\D/g, "");
+    lastLookupCepRef.current = mainZipDigits;
 
-    handleForm({ edit: -1, loading: false });
+    toast.info("Endereço principal copiado para edição.");
   };
 
-  const [cepValue, setCepValue] = useState("");
-  const [rawCepValue, setRawCepValue] = useState("");
-  const key = "cepMask";
+  const duplicateAddress = (address: AddressType) => {
+    setEditor({ type: "create", index: null });
+    setDraft({
+      ...normalizeAddress(address),
+      main: false,
+    });
+    lastLookupCepRef.current = String(address?.zipCode ?? "").replace(/\D/g, "");
+    resetLookupFeedback();
+  };
 
-  const handleZipCode = async (zipCode: string, key: any) => {
-    const toastId = "cep-error";
-  
+  const closeEditor = () => {
+    setEditor({ type: "none", index: null });
+    setDraft(emptyAddress());
+    lastLookupCepRef.current = "";
+    resetLookupFeedback();
+  };
+
+  const setDraftField = (patch: Partial<AddressType>) => {
+    setDraft((previousDraft) => normalizeAddress({ ...previousDraft, ...patch } as AddressType));
+  };
+
+  const lookupZipCode = async (zipDigitsInput?: string, fromUserAction = false) => {
+    const zipDigits = (
+      zipDigitsInput ?? String(draft.zipCode ?? "").replace(/\D/g, "")
+    )
+      .replace(/\D/g, "")
+      .slice(0, 8);
+
+    if (zipDigits.length !== 8) {
+      if (fromUserAction) {
+        toast.warning("Informe um CEP válido com 8 números para buscar.");
+      }
+      return;
+    }
+
+    setLookupLoading(true);
+
     try {
-      const location = await getZipCode(zipCode);
-  
-      interface AddressData {
-        zipCode: string;
-        country: string;
-        street?: string;
-        neighborhood?: string;
-        city?: string;
-        state?: string;
-        number?: string;
-        complement?: string;
-        main?: boolean;
-      }
-  
-      const addressData: AddressData = {
-        zipCode: zipCode,
-        country: "Brasil"
-      };
-  
-      if (!location?.erro) {
-        addressData.street = location.logradouro || "";
-        addressData.neighborhood = location.bairro || "";
-        addressData.city = location.localidade || "";
-        addressData.state = location.uf || "";
-        if (toast.isActive(toastId)) {
-          toast.dismiss(toastId);
-        }
-      } else {
-        throw new Error("CEP não encontrado!");
-      }
-  
-      handleAddress(addressData, key);
-    } catch (error) {
-      if (!toast.isActive(toastId)) {
-        toast.error(error instanceof Error ? error.message : "CEP não encontrado!", {
-          toastId: toastId
+      const location: any = await getZipCode(zipDigits);
+
+      if (location?.erro) {
+        setLookupMessage({
+          type: "error",
+          text: "Não encontramos esse CEP. Você pode preencher manualmente.",
         });
+        toast.warning("CEP não encontrado.");
+        return;
       }
+
+      setDraft((previousDraft) =>
+        normalizeAddress({
+          ...previousDraft,
+          zipCode: formatCep(zipDigits),
+          street: previousDraft.street || location?.logradouro || "",
+          neighborhood: previousDraft.neighborhood || location?.bairro || "",
+          city: previousDraft.city || location?.localidade || "",
+          state: (previousDraft.state || location?.uf || "").toUpperCase(),
+          country: previousDraft.country || "Brasil",
+        } as AddressType)
+      );
+
+      setLookupMessage({
+        type: "success",
+        text: "CEP localizado. Confira o número e finalize o cadastro.",
+      });
+
+      window.setTimeout(() => {
+        numberFieldRef.current?.focus();
+      }, 20);
+    } catch {
+      setLookupMessage({
+        type: "error",
+        text: "Não foi possível consultar o CEP agora. Continue com o preenchimento manual.",
+      });
+      toast.error("Não foi possível consultar o CEP agora.");
+    } finally {
+      setLookupLoading(false);
     }
   };
 
-  const handleInputChange = (value: string) => {
-    const rawValue = value.replace(/\D/g, "");
-    setRawCepValue(rawValue);
-    setCepValue(formatCep(value));
+  const onZipChange = (value: string) => {
+    const zipDigits = value.replace(/\D/g, "").slice(0, 8);
+    setDraftField({ zipCode: formatCep(zipDigits) });
 
-    if (rawValue.length == 8) {
-      handleZipCode(rawValue, form.edit);
+    if (zipDigits.length < 8) {
+      lastLookupCepRef.current = "";
+      if (lookupMessage.type !== "info") {
+        resetLookupFeedback();
+      }
+      return;
+    }
+
+    if (zipDigits !== lastLookupCepRef.current) {
+      lastLookupCepRef.current = zipDigits;
+      lookupZipCode(zipDigits);
     }
   };
 
-  const renderAction = (
-    key: number,
-    label?: { edit?: string; save?: string; cancel?: string }
-  ) => {
-    return form.edit == key ? (
-      <div className="flex gap-4 md:gap-10">
-        <Button
-          onClick={(e: any) => {
-            handleForm({ edit: -1 });
-            setLocation(content?.address ?? []);
-          }}
-          type="button"
-          style="btn-link"
-        >
-          {label?.cancel ? label.cancel : "Cancelar"}
-        </Button>
-        <Button
-          loading={form.edit == key && form.loading}
-          className="py-2 px-4"
-          onClick={() => handleZipCode(rawCepValue, key)}
-        >
-          {label?.save ? label.save : "Salvar"}
-        </Button>
-      </div>
-    ) : !form.loading ? (
-      <Button
-        onClick={(e: any) => {
-          handleForm({ edit: key });
-          setLocation(content?.address ?? []);
-        }}
-        type="button"
-        style="btn-link"
-      >
-        {label?.edit ? label.edit : "Editar"}
-      </Button>
-    ) : (
-      <button type="button" className="p-0 font-bold opacity-50">
-        {label?.edit ? label.edit : "Editar"}
-      </button>
+  const persistAddresses = async (nextAddresses: AddressType[]) => {
+    const normalizedNextAddresses = ensureMainAddress(
+      nextAddresses.map((address) => normalizeAddress(address)).filter((address) => hasAnyAddressData(address))
     );
+
+    setSaving(true);
+
+    try {
+      const payload: UserType = {
+        ...(user ?? {}),
+        id: user?.id,
+        address: normalizedNextAddresses,
+      } as UserType;
+
+      const request: any = await api.bridge({
+        method: "post",
+        url: "users/update",
+        data: payload,
+      });
+
+      if (request?.response || request?.data) {
+        setAddresses(normalizedNextAddresses);
+        toast.success("Endereços atualizados com sucesso.");
+        closeEditor();
+      } else {
+        toast.error("Não foi possível salvar os endereços.");
+      }
+    } catch {
+      toast.error("Falha ao salvar endereços. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const removeLocation = (e: any, remove: any) => {
-    e.preventDefault();
+  const saveDraft = async () => {
+    const normalizedDraft = normalizeAddress(draft);
+    const validationError = validateAddress(normalizedDraft);
 
-    let handleLocations = (locations ?? []).filter(
-      (locate: AddressType, index: any) => locate.zipCode != remove.zipCode
-    );
+    if (validationError) {
+      toast.warning(validationError);
+      return;
+    }
 
-    handleForm({ edit: -1 });
+    let nextAddresses = [...addresses];
+    let targetIndex = nextAddresses.length;
 
-    handleSubmit(e, handleLocations);
+    if (editor.type === "edit" && editor.index !== null) {
+      targetIndex = editor.index;
+      nextAddresses[targetIndex] = normalizedDraft;
+    } else {
+      nextAddresses.push(normalizedDraft);
+    }
+
+    const shouldSetAsMain = normalizedDraft.main || nextAddresses.length === 1;
+
+    if (shouldSetAsMain) {
+      nextAddresses = nextAddresses.map((address, index) => ({
+        ...address,
+        main: index === targetIndex,
+      }));
+    }
+
+    nextAddresses = ensureMainAddress(nextAddresses);
+    await persistAddresses(nextAddresses);
+  };
+
+  const removeAddress = async (index: number) => {
+    const target = addresses[index];
+    if (!target) return;
+
+    const shouldRemove = window.confirm("Deseja remover este endereço?");
+    if (!shouldRemove) return;
+
+    let nextAddresses = addresses.filter((_, currentIndex) => currentIndex !== index);
+    nextAddresses = ensureMainAddress(nextAddresses);
+    await persistAddresses(nextAddresses);
+  };
+
+  const markAsMain = async (index: number) => {
+    if (!addresses[index]) return;
+
+    let nextAddresses = addresses.map((address, currentIndex) => ({
+      ...address,
+      main: currentIndex === index,
+    }));
+
+    nextAddresses = ensureMainAddress(nextAddresses);
+    await persistAddresses(nextAddresses);
   };
 
   return (
@@ -258,8 +444,8 @@ export default function Conta({
           content: HeaderFooter,
         }}
       >
-        <section className="">
-          <div className="container-medium pt-12 pb-8 md:pt-12">
+        <section>
+          <div className="container-medium pt-10 pb-8 md:py-12">
             <div className="pb-4">
               <Breadcrumbs
                 links={[
@@ -268,205 +454,297 @@ export default function Conta({
                 ]}
               />
             </div>
-            <div className="flex items-center">
-              <Link passHref href="/dashboard">
-                <Icon
-                  icon="fa-long-arrow-left"
-                  className="mr-6 text-2xl text-zinc-900"
-                />
+
+            <div className="flex items-start gap-4">
+              <Link passHref href="/dashboard" className="pt-1">
+                <Icon icon="fa-long-arrow-left" className="text-2xl text-zinc-900" />
               </Link>
-              <div className="font-title font-bold text-3xl md:text-4xl flex gap-4 items-center text-zinc-900 w-full">
-                Endereços
+              <div className="w-full">
+                <h1 className="font-title font-bold text-3xl md:text-4xl text-zinc-900">Meus endereços</h1>
+                <p className="text-sm md:text-base text-zinc-600 mt-2 max-w-2xl leading-relaxed">
+                  Salve seus endereços para finalizar pedidos mais rápido. Ao informar o CEP, a plataforma tenta
+                  preencher os campos automaticamente.
+                </p>
               </div>
             </div>
           </div>
         </section>
-        <section className="">
-          <div className="container-medium pb-12">
-            <div className="grid md:flex gap-10 md:gap-24">
-              <div className="w-full grid gap-4 md:gap-8 border-t pt-4 md:pt-7">
-                {!!locations.length ? (
-                  locations.map((locate: AddressType, key: any) => (
-                    <form
-                      key={key}
-                      onSubmit={(e: any) => handleSubmit(e)}
-                      method="POST"
-                      className="grid gap-4 border-b pb-8 mb-0"
-                    >
-                      <div className="flex items-center">
-                        <div className="w-full">
-                          <h4 className="text-xl md:text-2xl leading-tight text-zinc-800">
-                            {!!locate.street
-                              ? `Endereço ${key + 1}`
-                              : "Novo endereço"}
-                          </h4>
-                        </div>
-                        <div className="w-fit text-sm md:text-base">
-                          {renderAction(key)}
-                        </div>
-                      </div>
-                      <div className="w-full">
-                        {form.edit == key ? (
-                          <div className="grid gap-2">
-                            <div className="relative">
-                              <Input
-                                name="cep"
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e.target.value)}
-                                onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                                  if (!/[0-9]/.test(e.key)) {
-                                    e.preventDefault();
-                                  }
-                                }}
-                                required
-                                value={cepValue}
-                                placeholder="CEP"
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="w-full">
-                                <Input
-                                  name="rua"
-                                  required
-                                  value={locate?.street ?? ""}
-                                  placeholder="Rua"
-                                  onChange={(e: any) =>
-                                    handleAddress(
-                                      { street: e.target.value },
-                                      key
-                                    )
-                                  }
-                                />
-                              </div>
-                              <div className="w-[10rem]">
-                                <Input
-                                  name="numero"
-                                  onChange={(e: any) =>
-                                    handleAddress(
-                                      { number: e.target.value },
-                                      key
-                                    )
-                                  }
-                                  required
-                                  value={locate?.number ?? ""}
-                                  placeholder="Número"
-                                />
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="w-full">
-                                <Input
-                                  name="bairro"
-                                  required
-                                  value={locate?.neighborhood ?? ""}
-                                  placeholder="Bairro"
-                                  onChange={(e: any) =>
-                                    handleAddress(
-                                      { neighborhood: e.target.value },
-                                      key
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="w-full">
-                                <Input
-                                  name="cidade"
-                                  required
-                                  value={locate?.city ?? ""}
-                                  placeholder="Cidade"
-                                  onChange={(e: any) =>
-                                    handleAddress({ city: e.target.value }, key)
-                                  }
-                                />
-                              </div>
-                              <div className="w-[10rem]">
-                                <Input
-                                  name="estado"
-                                  required
-                                  value={locate?.state ?? ""}
-                                  placeholder="UF"
-                                  onChange={(e: any) =>
-                                    handleAddress(
-                                      { state: e.target.value },
-                                      key
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
 
-                            <div className="w-full">
-                              <Input
-                                name="complemento"
-                                onChange={(e: any) =>
-                                  handleAddress(
-                                    { complement: e.target.value },
-                                    key
-                                  )
-                                }
-                                required
-                                value={locate?.complement ?? ""}
-                                placeholder="Complemento"
-                              />
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <label className="flex gap-2 items-center pt-2 text-zinc-900">
-                                <input
-                                  name="prioridade"
-                                  type="checkbox"
-                                  defaultChecked={!!locate.main}
-                                  onChange={(e: any) =>
-                                    handleAddress({ main: !locate.main }, key)
-                                  }
-                                />
-                                Endereço principal
-                              </label>
-                              <div>
-                                <button
-                                  type="button"
-                                  className="font-semibold text-sm text-zinc-950"
-                                  onClick={(e) => removeLocation(e, locate)}
-                                >
-                                  remover
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : !!locate?.street ? (
-                          <div className="text-sm md:text-base">
-                            <div>
-                              {locate.street}, {locate.number}
-                            </div>
-                            <div>{locate.neighborhood}</div>
-                            <div>CEP: {locate.zipCode}</div>
-                            <div>
-                              {locate.city} | {locate.state} - {locate.country}
-                            </div>
-                          </div>
-                        ) : (
-                          "Informe a localização da sua loja"
-                        )}
+        <section>
+          <div className="container-medium pb-14">
+            <div className="grid xl:grid-cols-[minmax(0,1fr),22rem] gap-8 xl:gap-10 items-start">
+              <div className="w-full grid gap-5 md:gap-6">
+                <div className="rounded-2xl border border-zinc-200 bg-white p-5 md:p-6 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-zinc-900">Resumo de endereços</h2>
+                      <p className="text-sm text-zinc-600 mt-1">
+                        Defina um endereço principal para facilitar o checkout e a entrega.
+                      </p>
+                    </div>
+                    <Button type="button" onClick={openCreate} disable={saving || editor.type !== "none"}>
+                      Adicionar endereço
+                    </Button>
+                  </div>
+
+                  <div className="mt-4 grid sm:grid-cols-3 gap-3">
+                    <div className="rounded-xl bg-zinc-50 border border-zinc-200 px-3 py-2.5">
+                      <p className="text-xs uppercase tracking-wide text-zinc-500">Total cadastrado</p>
+                      <p className="text-lg font-bold text-zinc-900 mt-1">{addresses.length}</p>
+                    </div>
+                    <div className="rounded-xl bg-zinc-50 border border-zinc-200 px-3 py-2.5">
+                      <p className="text-xs uppercase tracking-wide text-zinc-500">Endereço principal</p>
+                      <p className="text-sm font-semibold text-zinc-900 mt-1">
+                        {mainAddress?.street || "Não definido"}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-zinc-50 border border-zinc-200 px-3 py-2.5">
+                      <p className="text-xs uppercase tracking-wide text-zinc-500">Cadastro completo</p>
+                      <p className="text-lg font-bold text-zinc-900 mt-1">{completion}%</p>
+                    </div>
+                  </div>
+                </div>
+
+                {editor.type !== "none" && (
+                  <div className="rounded-2xl border border-zinc-200 bg-white p-5 md:p-6 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-zinc-900">
+                          {editor.type === "create" ? "Novo endereço" : `Editar endereço ${editor.index + 1}`}
+                        </h3>
+                        <p className="text-sm text-zinc-600 mt-1">
+                          Comece pelo CEP e depois confirme os demais campos.
+                        </p>
                       </div>
-                    </form>
-                  ))
-                ) : (
-                  <div className="grid gap-4 border-b pb-4 mb-0">
-                    Sem endereços cadastrados
+                      <div className="flex flex-wrap items-center gap-2">
+                        {editor.type === "create" && !!mainAddress && (
+                          <Button
+                            type="button"
+                            style="btn-outline-light"
+                            className="px-3 py-2 text-sm"
+                            onClick={copyMainAddress}
+                            disable={saving}
+                          >
+                            Copiar endereço principal
+                          </Button>
+                        )}
+                        <Button type="button" style="btn-link" onClick={closeEditor} disable={saving}>
+                          Fechar
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`rounded-lg border px-3 py-2.5 text-sm mb-4 ${
+                        lookupMessage.type === "success"
+                          ? "bg-green-50 border-green-200 text-green-700"
+                          : lookupMessage.type === "error"
+                            ? "bg-red-50 border-red-200 text-red-700"
+                            : "bg-zinc-50 border-zinc-200 text-zinc-600"
+                      }`}
+                    >
+                      {lookupMessage.text}
+                    </div>
+
+                    <div className="grid gap-4">
+                      <div className="grid md:grid-cols-[1fr,auto] gap-3 items-start">
+                        <AddressInput
+                          name="zipCode"
+                          placeholder="CEP"
+                          value={draft.zipCode ?? ""}
+                          onChange={(event) => onZipChange(event.target.value)}
+                          onBlur={() => lookupZipCode()}
+                          maxLength={9}
+                          autoComplete="postal-code"
+                          inputMode="numeric"
+                        />
+                        <Button
+                          type="button"
+                          style="btn-outline-light"
+                          className="px-4 py-2.5"
+                          onClick={() => lookupZipCode(undefined, true)}
+                          disable={lookupLoading}
+                        >
+                          {lookupLoading ? "Buscando CEP..." : "Buscar CEP"}
+                        </Button>
+                      </div>
+
+                      <div className="grid md:grid-cols-[1fr,11rem] gap-3">
+                        <AddressInput
+                          name="street"
+                          placeholder="Rua"
+                          value={draft.street ?? ""}
+                          onChange={(event) => setDraftField({ street: event.target.value })}
+                          autoComplete="address-line1"
+                        />
+                        <AddressInput
+                          ref={numberFieldRef}
+                          name="number"
+                          placeholder="Número"
+                          value={String(draft.number ?? "")}
+                          onChange={(event) => setDraftField({ number: event.target.value })}
+                          autoComplete="address-line2"
+                          inputMode="numeric"
+                        />
+                      </div>
+
+                      <div className="grid md:grid-cols-[1fr,1fr,6rem] gap-3">
+                        <AddressInput
+                          name="neighborhood"
+                          placeholder="Bairro"
+                          value={draft.neighborhood ?? ""}
+                          onChange={(event) => setDraftField({ neighborhood: event.target.value })}
+                          autoComplete="address-level3"
+                        />
+                        <AddressInput
+                          name="city"
+                          placeholder="Cidade"
+                          value={draft.city ?? ""}
+                          onChange={(event) => setDraftField({ city: event.target.value })}
+                          autoComplete="address-level2"
+                        />
+                        <AddressInput
+                          name="state"
+                          placeholder="UF"
+                          value={draft.state ?? ""}
+                          maxLength={2}
+                          onChange={(event) => setDraftField({ state: event.target.value.toUpperCase() })}
+                          autoComplete="address-level1"
+                        />
+                      </div>
+
+                      <AddressInput
+                        name="complement"
+                        placeholder="Complemento (opcional)"
+                        value={draft.complement ?? ""}
+                        onChange={(event) => setDraftField({ complement: event.target.value })}
+                        autoComplete="off"
+                      />
+
+                      <label className="inline-flex items-center gap-2 text-sm text-zinc-700 select-none">
+                        <input
+                          type="checkbox"
+                          checked={!!draft.main}
+                          onChange={(event) => setDraftField({ main: event.target.checked })}
+                        />
+                        Definir como endereço principal
+                      </label>
+
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Button type="button" style="btn-light" onClick={closeEditor} disable={saving}>
+                          Cancelar
+                        </Button>
+                        <Button type="button" onClick={saveDraft} loading={saving} disable={saving}>
+                          Salvar endereço
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
-                <div className="grid">
-                  <Button
-                    type="button"
-                    onClick={() => (form.edit == -1 ? addLocation() : {})}
-                    {...(form.edit == -1 ? {} : { disable: true })}
-                  >
-                    Adicionar endereço
-                  </Button>
-                </div>
+
+                {addresses.length > 0 ? (
+                  <div className="grid gap-4">
+                    {addresses.map((address, index) => {
+                      const summary = addressSummary(address);
+
+                      return (
+                        <article
+                          key={`address-${index}`}
+                          className="rounded-2xl border border-zinc-200 bg-white p-5 md:p-6 shadow-sm"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="text-lg font-semibold text-zinc-900">Endereço {index + 1}</h4>
+                                {address.main && (
+                                  <span className="inline-flex items-center rounded-full bg-cyan-100 text-cyan-700 px-2.5 py-1 text-xs font-semibold">
+                                    Principal
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-zinc-500 mt-1">Utilizado no checkout para entrega.</p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              {!address.main && (
+                                <Button
+                                  type="button"
+                                  style="btn-outline-light"
+                                  className="px-3 py-2 text-sm"
+                                  onClick={() => markAsMain(index)}
+                                  disable={saving}
+                                >
+                                  Tornar principal
+                                </Button>
+                              )}
+
+                              <Button
+                                type="button"
+                                style="btn-outline-light"
+                                className="px-3 py-2 text-sm"
+                                onClick={() => duplicateAddress(address)}
+                                disable={saving || editor.type !== "none"}
+                              >
+                                Reutilizar
+                              </Button>
+
+                              <Button
+                                type="button"
+                                style="btn-light"
+                                className="px-3 py-2 text-sm"
+                                onClick={() => openEdit(index)}
+                                disable={saving || editor.type !== "none"}
+                              >
+                                Editar
+                              </Button>
+
+                              <Button
+                                type="button"
+                                style="btn-link"
+                                className="text-red-600"
+                                onClick={() => removeAddress(index)}
+                                disable={saving}
+                              >
+                                Remover
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid gap-1.5 text-sm text-zinc-700">
+                            {summary.map((line, lineIndex) => (
+                              <p key={`address-${index}-line-${lineIndex}`}>{line}</p>
+                            ))}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center">
+                    <p className="text-zinc-700">Você ainda não possui endereços cadastrados.</p>
+                    <p className="text-sm text-zinc-500 mt-1">
+                      Clique em <strong>Adicionar endereço</strong> para agilizar seus próximos pedidos.
+                    </p>
+                    <div className="mt-4">
+                      <Button type="button" onClick={openCreate}>
+                        Adicionar primeiro endereço
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="w-full max-w-[24rem]">
-                <HelpCard list={page.help_list} />
+
+              <div className="w-full xl:max-w-[22rem] xl:sticky xl:top-24 grid gap-4">
+                <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-zinc-900">Dicas para preencher rápido</h3>
+                  <ul className="mt-2 text-sm text-zinc-600 grid gap-1.5">
+                    <li>Digite o CEP completo para preencher automaticamente.</li>
+                    <li>Use um endereço principal para reduzir passos no checkout.</li>
+                    <li>Quando necessário, use o botão Reutilizar e ajuste só o número.</li>
+                  </ul>
+                </div>
+
+                <HelpCard list={page?.help_list ?? []} />
               </div>
             </div>
           </div>

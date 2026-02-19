@@ -5,35 +5,53 @@ function getUserType(user: any): string {
   return user?.type || user?.person || "user";
 }
 
-export async function middleware(req: any) {
-  let url = req.url;
-  let permanentLink = req.nextUrl.clone();
+function isRoute(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
 
-  let token = req.cookies.get("fiestou.authtoken");
+function parseCookieUser(raw: string | undefined): any {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  const permanentLink = req.nextUrl.clone();
+  const token = req.cookies.get("fiestou.authtoken");
+
+  const isDashboardPath = isRoute(pathname, "/dashboard");
+  const isPainelPath = isRoute(pathname, "/painel");
+  const isAdminPath = isRoute(pathname, "/admin");
+  const isAcessoPath = isRoute(pathname, "/acesso");
+  const isDashboardPedidosPath = isRoute(pathname, "/dashboard/pedidos");
 
   if (!token) {
-    if (url.includes("/dashboard") || url.includes("/painel/")) {
+    if (isDashboardPath || isPainelPath) {
       permanentLink.pathname = "/acesso";
       return NextResponse.redirect(permanentLink);
     }
 
-    if (url.includes("/admin")) {
+    if (isAdminPath) {
       permanentLink.pathname = "/acesso/restrito";
       return NextResponse.redirect(permanentLink);
     }
   }
 
-  if (!!token) {
-    let user = JSON.parse(req.cookies.get("fiestou.user")?.value ?? "[]");
+  if (token) {
+    const user = parseCookieUser(req.cookies.get("fiestou.user")?.value);
     const userType = getUserType(user);
 
-    if (!user.status && url.includes("/dashboard")) {
+    if (!user?.status && isDashboardPath) {
       permanentLink.pathname = "/cadastre-se/completar";
       return NextResponse.redirect(permanentLink);
     }
 
     // Redireciona usuários logados que acessam /acesso para seu painel apropriado
-    if (url.includes("/acesso")) {
+    if (isAcessoPath) {
       if (userType === "master") {
         permanentLink.pathname = "/admin";
       } else if (userType === "partner") {
@@ -49,31 +67,24 @@ export async function middleware(req: any) {
     // Partner não pode acessar dashboard (exceto pedidos) nem admin
     if (
       userType === "partner" &&
-      (url.includes("/dashboard") || url.includes("/admin")) &&
-      !url.includes("/dashboard/pedidos")
+      (isDashboardPath || isAdminPath) &&
+      !isDashboardPedidosPath
     ) {
       permanentLink.pathname = "/painel";
       return NextResponse.redirect(permanentLink);
     }
 
     // Client não pode acessar painel nem admin
-    if (
-      userType === "client" &&
-      (url.includes("/painel/") || url.includes("/admin"))
-    ) {
+    if (userType === "client" && (isPainelPath || isAdminPath)) {
       permanentLink.pathname = "/dashboard";
       return NextResponse.redirect(permanentLink);
     }
 
     // Master não pode acessar dashboard nem painel
-    if (
-      userType === "master" &&
-      (url.includes("/dashboard") || url.includes("/painel/"))
-    ) {
+    if (userType === "master" && (isDashboardPath || isPainelPath)) {
       permanentLink.pathname = "/admin";
       return NextResponse.redirect(permanentLink);
     }
-
   }
 
   return NextResponse.next();
