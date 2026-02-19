@@ -650,18 +650,6 @@ export default function FinanceiroPage() {
         ))}
       </div>
 
-      {!loadingOverview &&
-        recipientReady &&
-        Number(overview?.legacy_withdraw?.approved || 0) > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
-            <p className="text-sm text-amber-800">
-              Existem registros legados de saque na plataforma:{" "}
-              <strong>R$ {moneyFormat(Number(overview?.legacy_withdraw?.approved || 0))}</strong>.
-              O saldo disponível acima segue a fonte oficial da Pagar.me.
-            </p>
-          </div>
-        )}
-
       <div className="grid xl:grid-cols-2 gap-5 mb-5">
         <div className="bg-white border border-zinc-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
