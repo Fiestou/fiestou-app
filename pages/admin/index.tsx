@@ -431,76 +431,24 @@ export default function Admin() {
                 />
               </div>
 
-              {reconciliation && (reconciliation.stale || reconciliation.needs_attention) && (
+              {(reconciliation?.stale ||
+                reconciliation?.needs_attention ||
+                opsAlerts?.stale ||
+                opsAlerts?.needs_attention) && (
                 <div
                   className={`border rounded-xl px-4 py-3 ${
-                    reconciliation.stale
-                      ? "bg-amber-50 border-amber-200 text-amber-800"
-                      : "bg-red-50 border-red-200 text-red-800"
+                    reconciliationBlocking > 0 || opsCritical > 0
+                      ? "bg-red-50 border-red-200 text-red-800"
+                      : "bg-amber-50 border-amber-200 text-amber-800"
                   }`}
                 >
                   <p className="text-sm font-medium">
-                    {reconciliation.stale
-                      ? "A atualização financeira ainda não terminou neste ciclo."
-                      : "Foram encontradas divergências na conciliação financeira."}
+                    Os indicadores operacionais estão em atualização.
                   </p>
                   <p className="text-xs mt-1">
-                    {reconciliation.stale
-                      ? "Essa rotina roda automaticamente. Se precisar, atualize agora pelo botão acima."
-                      : `Maior divergência encontrada: R$ ${moneyFormat(
-                          reconciliation.max_divergence || 0
-                        )}.`}
+                    A plataforma atualiza esses dados automaticamente. Se quiser,
+                    atualize agora pelo botão abaixo.
                   </p>
-                  {!reconciliation.stale && reconciliation.top_issues?.length > 0 && (
-                    <p className="text-xs mt-1">
-                      Lojas com maior impacto:{" "}
-                      {reconciliation.top_issues
-                        .slice(0, 3)
-                        .map((issue) => issue.store_name)
-                        .join(", ")}
-                    </p>
-                  )}
-                  <div className="mt-3">
-                    <Button
-                      type="button"
-                      style="btn-light"
-                      className="py-2 px-3 text-xs"
-                      loading={refreshingStatus}
-                      onClick={refreshOperationalStatus}
-                    >
-                      Atualizar agora
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {opsAlerts && (opsAlerts.stale || opsAlerts.needs_attention) && (
-                <div
-                  className={`border rounded-xl px-4 py-3 ${
-                    opsAlerts.stale
-                      ? "bg-amber-50 border-amber-200 text-amber-800"
-                      : "bg-red-50 border-red-200 text-red-800"
-                  }`}
-                >
-                  <p className="text-sm font-medium">
-                    {opsAlerts.stale
-                      ? "O monitoramento operacional ainda não terminou neste ciclo."
-                      : "Foram detectados alertas operacionais relevantes."}
-                  </p>
-                  <p className="text-xs mt-1">
-                    {opsAlerts.stale
-                      ? "Esse monitoramento roda automaticamente. Se precisar, atualize agora pelo botão acima."
-                      : `${opsCritical} crítico(s) e ${opsWarning} aviso(s) no último ciclo.`}
-                  </p>
-                  {!opsAlerts.stale && opsAlerts.alerts?.length > 0 && (
-                    <p className="text-xs mt-1">
-                      Destaques:{" "}
-                      {opsAlerts.alerts
-                        .slice(0, 3)
-                        .map((alert) => alert.title)
-                        .join(", ")}
-                    </p>
-                  )}
                   <div className="mt-3">
                     <Button
                       type="button"
