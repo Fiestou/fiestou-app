@@ -158,6 +158,11 @@ export default function Admin() {
   const [user, setUser] = useState({} as UserType);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const api = useMemo(() => new Api(), []);
 
@@ -176,6 +181,40 @@ export default function Admin() {
       setLoading(false);
     }
   }, [api]);
+
+  const refreshOperationalStatus = useCallback(async () => {
+    try {
+      setRefreshingStatus(true);
+      setRefreshMessage(null);
+
+      const res: any = await api.bridge({
+        method: "post",
+        url: "admin/dashboard/refresh-operational-status",
+        data: {
+          force: true,
+        },
+      });
+
+      if (!res?.response) {
+        throw new Error(res?.message || "Falha ao atualizar dados.");
+      }
+
+      await fetchStats();
+
+      setRefreshMessage({
+        type: "success",
+        text: "Dados financeiros e operacionais atualizados com sucesso.",
+      });
+    } catch (error) {
+      console.log("refresh operational status error", error);
+      setRefreshMessage({
+        type: "error",
+        text: "Não foi possível atualizar agora. Tente novamente em instantes.",
+      });
+    } finally {
+      setRefreshingStatus(false);
+    }
+  }, [api, fetchStats]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -220,12 +259,12 @@ export default function Admin() {
 
   const reconciliationSubtitle = (() => {
     if (!reconciliation) return "Sem dados de conciliação";
-    if (reconciliation.stale) return "Sem execução recente da rotina diária";
+    if (reconciliation.stale) return "Aguardando a próxima atualização automática";
     if (reconciliationIssues > 0) {
       return `${reconciliation.warning} aviso(s), ${reconciliation.critical} crítico(s), ${reconciliation.error} erro(s)`;
     }
-    if (!reconciliation.last_run_at) return "Conciliação sem data de execução";
-    return `Última execução: ${new Date(reconciliation.last_run_at).toLocaleString("pt-BR")}`;
+    if (!reconciliation.last_run_at) return "Aguardando a primeira atualização";
+    return `Última atualização: ${new Date(reconciliation.last_run_at).toLocaleString("pt-BR")}`;
   })();
 
   const opsCritical = opsAlerts?.critical ?? 0;
@@ -233,12 +272,12 @@ export default function Admin() {
   const opsIssues = opsCritical + opsWarning;
   const opsSubtitle = (() => {
     if (!opsAlerts) return "Sem monitoramento operacional";
-    if (opsAlerts.stale) return "Sem execução recente da rotina operacional";
+    if (opsAlerts.stale) return "Aguardando a próxima atualização automática";
     if (opsIssues > 0) {
       return `${opsCritical} crítico(s), ${opsWarning} aviso(s)`;
     }
-    if (!opsAlerts.last_run_at) return "Sem histórico de execução";
-    return `Última execução: ${new Date(opsAlerts.last_run_at).toLocaleString("pt-BR")}`;
+    if (!opsAlerts.last_run_at) return "Aguardando a primeira atualização";
+    return `Última atualização: ${new Date(opsAlerts.last_run_at).toLocaleString("pt-BR")}`;
   })();
 
   return (
@@ -262,19 +301,42 @@ export default function Admin() {
                 Aqui está o resumo da sua plataforma
               </p>
             </div>
-            <Button
-              href="/logout/"
-              style="btn-light"
-              className="py-2 px-4 text-sm"
-            >
-              Sair da conta
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                style="btn-yellow"
+                className="py-2 px-4 text-sm"
+                loading={refreshingStatus}
+                onClick={refreshOperationalStatus}
+              >
+                Atualizar dados agora
+              </Button>
+              <Button
+                href="/logout/"
+                style="btn-light"
+                className="py-2 px-4 text-sm"
+              >
+                Sair da conta
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
       <section>
         <div className="container-medium py-4">
+          {refreshMessage && (
+            <div
+              className={`border rounded-xl px-4 py-3 mb-4 text-sm ${
+                refreshMessage.type === "success"
+                  ? "bg-green-50 border-green-200 text-green-800"
+                  : "bg-red-50 border-red-200 text-red-800"
+              }`}
+            >
+              {refreshMessage.text}
+            </div>
+          )}
+
           {loading ? (
             <div className="flex justify-center items-center py-16">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-zinc-400"></div>
@@ -379,12 +441,12 @@ export default function Admin() {
                 >
                   <p className="text-sm font-medium">
                     {reconciliation.stale
-                      ? "A conciliação financeira está desatualizada."
+                      ? "A atualização financeira ainda não terminou neste ciclo."
                       : "Foram encontradas divergências na conciliação financeira."}
                   </p>
                   <p className="text-xs mt-1">
                     {reconciliation.stale
-                      ? "Execute a rotina diária no backend: financial:reconcile-balances."
+                      ? "Essa rotina roda automaticamente. Se precisar, atualize agora pelo botão acima."
                       : `Maior divergência encontrada: R$ ${moneyFormat(
                           reconciliation.max_divergence || 0
                         )}.`}
@@ -398,6 +460,17 @@ export default function Admin() {
                         .join(", ")}
                     </p>
                   )}
+                  <div className="mt-3">
+                    <Button
+                      type="button"
+                      style="btn-light"
+                      className="py-2 px-3 text-xs"
+                      loading={refreshingStatus}
+                      onClick={refreshOperationalStatus}
+                    >
+                      Atualizar agora
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -411,12 +484,12 @@ export default function Admin() {
                 >
                   <p className="text-sm font-medium">
                     {opsAlerts.stale
-                      ? "O monitoramento operacional está desatualizado."
+                      ? "O monitoramento operacional ainda não terminou neste ciclo."
                       : "Foram detectados alertas operacionais relevantes."}
                   </p>
                   <p className="text-xs mt-1">
                     {opsAlerts.stale
-                      ? "Execute a rotina no backend: ops:monitor-health."
+                      ? "Esse monitoramento roda automaticamente. Se precisar, atualize agora pelo botão acima."
                       : `${opsCritical} crítico(s) e ${opsWarning} aviso(s) no último ciclo.`}
                   </p>
                   {!opsAlerts.stale && opsAlerts.alerts?.length > 0 && (
@@ -428,6 +501,17 @@ export default function Admin() {
                         .join(", ")}
                     </p>
                   )}
+                  <div className="mt-3">
+                    <Button
+                      type="button"
+                      style="btn-light"
+                      className="py-2 px-3 text-xs"
+                      loading={refreshingStatus}
+                      onClick={refreshOperationalStatus}
+                    >
+                      Atualizar agora
+                    </Button>
+                  </div>
                 </div>
               )}
 
