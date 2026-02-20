@@ -27,6 +27,8 @@ interface PaymentPanelProps {
   productsCount: number;
   deliveryPrice?: number;
   allowPayment?: boolean;
+  isConfirmingPayment?: boolean;
+  confirmationMessage?: string;
   form: FormInitialType;
   handleForm: (value: Partial<FormInitialType>) => void;
   pix: PixType;
@@ -73,6 +75,8 @@ export const PaymentPanel = ({
   productsCount,
   deliveryPrice,
   allowPayment = true,
+  isConfirmingPayment = false,
+  confirmationMessage = "",
   form,
   handleForm,
   pix,
@@ -127,6 +131,13 @@ export const PaymentPanel = ({
         message={form.feedback}
         onClose={() => handleForm({ feedback: "" })}
       />
+
+      {isConfirmingPayment && (
+        <div className="p-3 bg-cyan-50 text-cyan-900 rounded-xl mb-4 flex items-start gap-2 text-sm border border-cyan-100">
+          <span className="mt-0.5 inline-block w-2 h-2 rounded-full bg-cyan-600 animate-pulse" />
+          <span>{confirmationMessage || "Confirmando pagamento automaticamente..."}</span>
+        </div>
+      )}
 
       <PixBoletoCard pix={pix} boleto={boleto} expire={expire} />
 
