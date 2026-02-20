@@ -3,6 +3,7 @@ import Api from "@/src/services/api";
 import { fetchOrderById } from "@/src/services/order";
 import {
   getOrderStatusKey,
+  isOrderCanceled,
   isOrderPaid,
 } from "@/src/services/order-status";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -22,6 +23,8 @@ import { OrderDetailsCard } from "@/src/components/dashboard/pedidos/OrderDetail
 import { OrderItemsList } from "@/src/components/dashboard/pedidos/OrderItemsList";
 import { PaymentPanel } from "@/src/components/dashboard/pedidos/PaymentPanel";
 
+const DEFAULT_CONFIRM_INTERVAL_MS = 4000;
+const DEFAULT_GATEWAY_POLL_MS = 12000;
 
 interface FormInitialType {
   sended: boolean;
@@ -189,56 +192,202 @@ export default function Pagamento({
 
   const [boleto, setBoleto] = useState<any>({});
 
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState("");
+
+  const confirmPollingRef = useRef<NodeJS.Timeout | null>(null);
+  const pixCountdownRef = useRef<NodeJS.Timeout | null>(null);
+  const gatewayTickRef = useRef(0);
+  const pollingBusyRef = useRef(false);
+  const remotePaidRef = useRef(false);
+
+  const clearConfirmPolling = useCallback(() => {
+    if (confirmPollingRef.current) {
+      clearInterval(confirmPollingRef.current);
+      confirmPollingRef.current = null;
+    }
+    pollingBusyRef.current = false;
+    gatewayTickRef.current = 0;
+    remotePaidRef.current = false;
+  }, []);
+
+  const clearPixCountdown = useCallback(() => {
+    if (pixCountdownRef.current) {
+      clearInterval(pixCountdownRef.current);
+      pixCountdownRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      clearConfirmPolling();
+      clearPixCountdown();
     };
-  }, []);
+  }, [clearConfirmPolling, clearPixCountdown]);
 
-  const ConfirmManager = useCallback(async () => {
+  const fetchGatewayStatus = useCallback(async (): Promise<"paid" | "failed" | "pending"> => {
     try {
-      const handle = await fetchOrderById(api, orderId);
+      const check: any = await api.bridge({
+        method: "get",
+        url: `orders/${orderId}/check-payment`,
+      });
 
-      if (handle && isOrderPaid(handle)) {
-        window.location.href = `/dashboard/pedidos`;
+      if (!check?.response) {
+        return "pending";
       }
-    } catch (err) {
-      console.error("ConfirmManager error:", err);
+
+      const rawStatus = String(check?.pagarme_status ?? "").toLowerCase();
+      if (["paid", "approved", "captured", "authorized"].includes(rawStatus)) {
+        return "paid";
+      }
+
+      if (["canceled", "cancelled", "failed", "expired", "refused"].includes(rawStatus)) {
+        return "failed";
+      }
+    } catch (error) {
+      console.error("fetchGatewayStatus error:", error);
     }
+
+    return "pending";
   }, [api, orderId]);
 
-  const CardManager = () => {
-    let attempts = 6;
-    if (pollingRef.current) clearInterval(pollingRef.current);
+  const finalizePaymentAsConfirmed = useCallback(() => {
+    clearConfirmPolling();
+    clearPixCountdown();
+    setIsConfirmingPayment(false);
+    setConfirmationMessage("");
+    handleForm({ loading: false, sended: true, feedback: "" });
+    window.location.href = `/dashboard/pedidos/${orderId}`;
+  }, [clearConfirmPolling, clearPixCountdown, handleForm, orderId]);
 
-    pollingRef.current = setInterval(() => {
-      attempts--;
-      ConfirmManager();
+  const finalizePaymentAsFailed = useCallback((message: string) => {
+    clearConfirmPolling();
+    clearPixCountdown();
+    setIsConfirmingPayment(false);
+    setConfirmationMessage("");
+    handleForm({
+      loading: false,
+      sended: false,
+      feedback: message,
+    });
+    setTimeout(() => {
+      window.location.href = `/dashboard/pedidos`;
+    }, 3000);
+  }, [clearConfirmPolling, clearPixCountdown, handleForm]);
 
-      if (attempts <= 0) {
-        if (pollingRef.current) clearInterval(pollingRef.current);
-        pollingRef.current = null;
-        handleForm({
-          loading: false,
-          sended: false,
-          feedback: "Não foi possível confirmar o pagamento. Verifique seus pedidos.",
-        });
-        setTimeout(() => {
-          window.location.href = `/dashboard/pedidos`;
-        }, 3000);
+  const startConfirmationPolling = useCallback(({
+    loadingOverlay = false,
+    initialMessage = "Confirmando pagamento...",
+    timeoutMs = null,
+    intervalMs = DEFAULT_CONFIRM_INTERVAL_MS,
+    enableGatewayCheck = true,
+  }: {
+    loadingOverlay?: boolean;
+    initialMessage?: string;
+    timeoutMs?: number | null;
+    intervalMs?: number;
+    enableGatewayCheck?: boolean;
+  } = {}) => {
+    clearConfirmPolling();
+    setIsConfirmingPayment(true);
+    setConfirmationMessage(initialMessage);
+    handleForm({ loading: loadingOverlay, feedback: "" });
+
+    const startedAt = Date.now();
+    gatewayTickRef.current = 0;
+    remotePaidRef.current = false;
+
+    confirmPollingRef.current = setInterval(async () => {
+      if (pollingBusyRef.current) return;
+      pollingBusyRef.current = true;
+
+      try {
+        const latestOrder = await fetchOrderById(api, orderId);
+
+        if (latestOrder?.id) {
+          setOrder(latestOrder);
+
+          if (isOrderPaid(latestOrder)) {
+            finalizePaymentAsConfirmed();
+            return;
+          }
+
+          if (isOrderCanceled(latestOrder)) {
+            finalizePaymentAsFailed("Pagamento não aprovado. Tente novamente.");
+            return;
+          }
+        }
+
+        if (enableGatewayCheck) {
+          gatewayTickRef.current += intervalMs;
+
+          if (gatewayTickRef.current >= DEFAULT_GATEWAY_POLL_MS) {
+            gatewayTickRef.current = 0;
+
+            const gatewayStatus = await fetchGatewayStatus();
+
+            if (gatewayStatus === "paid") {
+              remotePaidRef.current = true;
+              setConfirmationMessage("Pagamento confirmado na operadora. Finalizando pedido...");
+            } else if (gatewayStatus === "failed") {
+              finalizePaymentAsFailed("Pagamento recusado ou cancelado. Tente novamente.");
+              return;
+            }
+          }
+        }
+
+        const elapsedMs = Date.now() - startedAt;
+        const hasTimeout = typeof timeoutMs === "number" && timeoutMs > 0;
+
+        if (hasTimeout && !remotePaidRef.current && elapsedMs >= timeoutMs) {
+          finalizePaymentAsFailed("Não foi possível confirmar o pagamento agora. Verifique seus pedidos.");
+          return;
+        }
+
+        if (remotePaidRef.current) {
+          setConfirmationMessage("Pagamento aprovado. Sincronizando pedido...");
+        }
+      } catch (error) {
+        console.error("startConfirmationPolling error:", error);
+      } finally {
+        pollingBusyRef.current = false;
       }
-    }, 5000);
-  };
+    }, intervalMs);
+  }, [
+    api,
+    orderId,
+    clearConfirmPolling,
+    clearPixCountdown,
+    fetchGatewayStatus,
+    finalizePaymentAsConfirmed,
+    finalizePaymentAsFailed,
+    handleForm,
+  ]);
 
-  const PixManager = (charge: any) => {
+  const startCardConfirmation = useCallback(() => {
+    startConfirmationPolling({
+      loadingOverlay: true,
+      initialMessage: "Confirmando pagamento com a operadora...",
+      timeoutMs: null,
+      intervalMs: 3000,
+      enableGatewayCheck: true,
+    });
+  }, [startConfirmationPolling]);
+
+  const startPixConfirmation = useCallback((charge: any) => {
     handlePix(charge);
 
-    const targetTime = new Date(charge.time).getTime();
+    const expiresAt = new Date(charge?.time ?? "").getTime();
+    const hasValidExpire = Number.isFinite(expiresAt) && expiresAt > 0;
+
     const updateExpire = () => {
-      const now = new Date().getTime();
-      const distance = targetTime - now;
+      if (!hasValidExpire) {
+        setExpire("");
+        return true;
+      }
+
+      const now = Date.now();
+      const distance = expiresAt - now;
 
       if (distance <= 0) {
         setExpire("expired");
@@ -249,37 +398,49 @@ export default function Pagamento({
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
       setExpire(
-        `${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""
-        }${seconds}`
+        `${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
       );
       return true;
     };
 
     updateExpire();
-    if (pollingRef.current) clearInterval(pollingRef.current);
+    clearPixCountdown();
 
-    pollingRef.current = setInterval(() => {
+    startConfirmationPolling({
+      loadingOverlay: false,
+      initialMessage: "Aguardando confirmação do PIX...",
+      timeoutMs: null,
+      intervalMs: 3000,
+      enableGatewayCheck: true,
+    });
+
+    pixCountdownRef.current = setInterval(() => {
       const active = updateExpire();
 
-      if (active && (new Date().getSeconds() === 30 || new Date().getSeconds() === 0)) {
-        ConfirmManager();
-      }
-
       if (!active) {
-        setExpire("");
-        if (pollingRef.current) clearInterval(pollingRef.current);
-        pollingRef.current = null;
-        handleForm({ loading: false, sended: false, feedback: "Seu código PIX expirou. Tente novamente." });
-        setTimeout(() => {
-          window.location.href = `/dashboard/pedidos`;
-        }, 3000);
+        clearPixCountdown();
+        clearConfirmPolling();
+        setIsConfirmingPayment(false);
+        setConfirmationMessage("");
+        handleForm({
+          loading: false,
+          sended: false,
+          feedback: "Seu código PIX expirou. Tente novamente.",
+        });
       }
     }, 1000);
-  };
+  }, [clearConfirmPolling, clearPixCountdown, handleForm, startConfirmationPolling]);
 
-  const BoletoManager = (charge: any) => {
+  const startBoletoConfirmation = useCallback((charge: any) => {
     setBoleto(charge);
-  };
+    startConfirmationPolling({
+      loadingOverlay: false,
+      initialMessage: "Aguardando confirmação do boleto...",
+      timeoutMs: 300000,
+      intervalMs: 5000,
+      enableGatewayCheck: true,
+    });
+  }, [startConfirmationPolling]);
 
   const [card, setCard] = useState({} as CardType);
   const handleCard = (value: Partial<CardType>) => {
@@ -512,26 +673,35 @@ export default function Pagamento({
 
       if (!response?.error && response?.response) {
         const data = response?.data || {};
+        const paymentStatus = String(data?.status || "").toLowerCase();
+        const paidStatuses = ["paid", "approved", "captured", "authorized"];
+        const pendingStatuses = ["pending", "processing", "analyzing", "in_analysis", "waiting_payment"];
+
+        if (paidStatuses.includes(paymentStatus)) {
+          finalizePaymentAsConfirmed();
+          return;
+        }
 
         if (payment.payment_method === "credit_card") {
-          if (data?.status === "paid") {
+          if (pendingStatuses.includes(paymentStatus)) {
             formFeedback["sended"] = true;
-            window.location.href = `/dashboard/pedidos/${orderId}`;
+            handleForm(formFeedback);
+            startCardConfirmation();
             return;
-          } else {
-            formFeedback = {
-              ...formFeedback,
-              sended: false,
-              feedback:
-                "Os dados fornecidos não foram aprovados. Tente novamente.",
-            };
           }
+
+          formFeedback = {
+            ...formFeedback,
+            sended: false,
+            feedback:
+              "Os dados fornecidos não foram aprovados. Tente novamente.",
+          };
         }
 
         if (payment.payment_method === "pix") {
-          if (data?.status === "paid" || data?.status === "pending") {
+          if (pendingStatuses.includes(paymentStatus) || paidStatuses.includes(paymentStatus)) {
             const tx = data?.charges?.[0]?.last_transaction || {};
-            PixManager({
+            startPixConfirmation({
               status: true,
               code: tx.qr_code,
               qrcode: tx.qr_code_url,
@@ -539,6 +709,8 @@ export default function Pagamento({
               expires_in: pix.expires_in,
             });
             formFeedback["sended"] = true;
+            handleForm(formFeedback);
+            return;
           } else {
             formFeedback = {
               ...formFeedback,
@@ -549,15 +721,17 @@ export default function Pagamento({
         }
 
         if (payment.payment_method === "boleto") {
-          if (data?.status === "paid" || data?.status === "pending") {
+          if (pendingStatuses.includes(paymentStatus) || paidStatuses.includes(paymentStatus)) {
             const tx = data?.charges?.[0]?.last_transaction || {};
-            BoletoManager({
+            startBoletoConfirmation({
               status: true,
               pdf: tx?.pdf,
               due_at: tx?.due_at,
               line: tx?.line,
             });
             formFeedback["sended"] = true;
+            handleForm(formFeedback);
+            return;
           } else {
             formFeedback = {
               ...formFeedback,
@@ -577,6 +751,8 @@ export default function Pagamento({
       }
     } catch (err) {
       console.error("Erro no pagamento:", err);
+      setIsConfirmingPayment(false);
+      setConfirmationMessage("");
       formFeedback = {
         ...formFeedback,
         loading: false,
@@ -649,6 +825,8 @@ export default function Pagamento({
                     productsCount={products.length}
                     deliveryPrice={deliveryPrice}
                     allowPayment={orderStatusKey === "pending"}
+                    isConfirmingPayment={isConfirmingPayment}
+                    confirmationMessage={confirmationMessage}
                     form={form}
                     handleForm={handleForm}
                     pix={pix}
