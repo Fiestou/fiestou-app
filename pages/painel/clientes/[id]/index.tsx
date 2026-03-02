@@ -8,7 +8,9 @@ import { PainelLayout, Badge, EmptyState } from "@/src/components/painel";
 
 export async function getServerSideProps(ctx: any) {
   const { id } = ctx.query;
-  const store = ctx.req.cookies["fiestou.store"] ?? 0;
+  const rawStore = ctx.req.cookies["fiestou.store"];
+  const parsedStore = Number(rawStore);
+  const store = Number.isInteger(parsedStore) && parsedStore > 0 ? parsedStore : 0;
   return { props: { id, store } };
 }
 
@@ -20,6 +22,11 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!store) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const [userReq, ordersReq]: any[] = await Promise.all([
           api.bridge({ method: "post", url: "stores/customers", data: { id, store } }),
@@ -31,7 +38,7 @@ export default function Cliente({ id, store }: { id: number; store: number }) {
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [id, store]);
 
   return (
     <PainelLayout>

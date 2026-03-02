@@ -10,6 +10,7 @@ import { getImage, getZipCode, justNumber } from "@/src/helper";
 import { RelationType } from "@/src/models/relation";
 import MultiSelect from "@/src/components/ui/form/MultiSelectUi";
 import { useSegmentGroups } from "@/src/hooks/useSegmentGroups";
+import { toast } from "react-toastify";
 import {
   ImageIcon, UserCircle, Save, X, Pencil, FileText,
   Building2, MapPin, Clock, Truck, ScrollText, Share2,
@@ -105,7 +106,9 @@ export default function Loja() {
     handle.minimum_order.value = handle.minimum_order.value
       ? Number(handle.minimum_order.value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
       : "";
-    handle.deliveryRegions = handle.zipcode_cities_ranges?.map((item: any) => item.zipcode_cities_range_id);
+    handle.deliveryRegions = normalizeRegionIds(
+      handle.zipcode_cities_ranges?.map((item: any) => item.zipcode_cities_range_id),
+    );
 
     if (typeof handle.rental_rules === "string") {
       try { handle.rental_rules = JSON.parse(handle.rental_rules); } catch { handle.rental_rules = null; }
@@ -163,27 +166,49 @@ export default function Loja() {
   const handleSubmitCover = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    let coverValue = store?.cover;
+    try {
+      let coverValue = store?.cover;
 
-    if (handleCover.remove) {
-      const request = await api.media({ dir: "store", app: store.id, index: store.id, method: "remove", medias: [handleCover.remove] }).then((res) => res);
-      if (request.response && request.removed) coverValue = {};
-    }
-
-    if (store?.cover?.files) {
-      const upload = await api.media({ dir: "store", app: store.id, index: store.id, method: "upload", medias: [store?.cover?.files] }).then((data) => data);
-      if (upload.response && upload.medias[0].status) {
-        const media = upload.medias[0].media;
-        media["details"] = JSON.parse(media.details);
-        coverValue = { id: media.id, base_url: media.base_url, permanent_url: media.permanent_url, details: media.details, preview: media.base_url + media.details?.sizes["lg"] };
+      if (handleCover.remove) {
+        const request = await api
+          .media({ dir: "store", app: store.id, index: store.id, method: "remove", medias: [handleCover.remove] })
+          .then((res) => res);
+        if (request.response && request.removed) coverValue = {};
       }
-    }
 
-    handleStore({ cover: coverValue });
-    const handle = { ...store, cover: coverValue };
-    const request: NextApiResponse = await api.bridge({ method: "post", url: "stores/register", data: handle });
-    if (request.response) { setStore(handle); setOldStore(Object.assign({}, handle)); setHandleCover({ preview: coverValue?.preview, remove: 0 }); }
-    setSaving(false);
+      if (store?.cover?.files) {
+        const upload = await api
+          .media({ dir: "store", app: store.id, index: store.id, method: "upload", medias: [store?.cover?.files] })
+          .then((data) => data);
+        if (upload.response && upload.medias[0].status) {
+          const media = upload.medias[0].media;
+          media["details"] = JSON.parse(media.details);
+          coverValue = {
+            id: media.id,
+            base_url: media.base_url,
+            permanent_url: media.permanent_url,
+            details: media.details,
+            preview: media.base_url + media.details?.sizes["lg"],
+          };
+        }
+      }
+
+      handleStore({ cover: coverValue });
+      const handle = { ...store, cover: coverValue };
+      const request: NextApiResponse = await api.bridge({ method: "post", url: "stores/register", data: handle });
+      if (request?.response) {
+        setStore(handle);
+        setOldStore(Object.assign({}, handle));
+        setHandleCover({ preview: coverValue?.preview, remove: 0 });
+        toast.success("Capa salva com sucesso.");
+      } else {
+        toast.error(request?.message || request?.data?.message || "Não foi possível salvar a capa.");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível salvar a capa.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleProfileRemove = async () => {
@@ -207,27 +232,49 @@ export default function Loja() {
   const handleSubmitProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    let profileValue = store?.profile;
+    try {
+      let profileValue = store?.profile;
 
-    if (handleProfile.remove) {
-      const request = await api.media({ dir: "store", app: store.id, index: store.id, method: "remove", medias: [handleProfile.remove] }).then((res) => res);
-      if (request.response && request.removed) profileValue = {};
-    }
-
-    if (store?.profile?.files) {
-      const upload = await api.media({ dir: "store", app: store.id, index: store.id, method: "upload", medias: [store?.profile?.files] }).then((data) => data);
-      if (upload.response && upload.medias[0].status) {
-        const media = upload.medias[0].media;
-        media["details"] = JSON.parse(media.details);
-        profileValue = { id: media.id, base_url: media.base_url, permanent_url: media.permanent_url, details: media.details, preview: media.base_url + media.details?.sizes["lg"] };
+      if (handleProfile.remove) {
+        const request = await api
+          .media({ dir: "store", app: store.id, index: store.id, method: "remove", medias: [handleProfile.remove] })
+          .then((res) => res);
+        if (request.response && request.removed) profileValue = {};
       }
-    }
 
-    handleStore({ profile: profileValue });
-    const handle = { ...store, profile: profileValue };
-    const request: NextApiResponse = await api.bridge({ method: "post", url: "stores/register", data: handle });
-    if (request.response) { setStore(handle); setOldStore(Object.assign({}, handle)); setHandleProfile({ preview: profileValue?.preview, remove: 0 }); }
-    setSaving(false);
+      if (store?.profile?.files) {
+        const upload = await api
+          .media({ dir: "store", app: store.id, index: store.id, method: "upload", medias: [store?.profile?.files] })
+          .then((data) => data);
+        if (upload.response && upload.medias[0].status) {
+          const media = upload.medias[0].media;
+          media["details"] = JSON.parse(media.details);
+          profileValue = {
+            id: media.id,
+            base_url: media.base_url,
+            permanent_url: media.permanent_url,
+            details: media.details,
+            preview: media.base_url + media.details?.sizes["lg"],
+          };
+        }
+      }
+
+      handleStore({ profile: profileValue });
+      const handle = { ...store, profile: profileValue };
+      const request: NextApiResponse = await api.bridge({ method: "post", url: "stores/register", data: handle });
+      if (request?.response) {
+        setStore(handle);
+        setOldStore(Object.assign({}, handle));
+        setHandleProfile({ preview: profileValue?.preview, remove: 0 });
+        toast.success("Foto da loja salva com sucesso.");
+      } else {
+        toast.error(request?.message || request?.data?.message || "Não foi possível salvar a foto da loja.");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível salvar a foto da loja.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleZipCode = async (zipCode: string) => {
@@ -259,19 +306,75 @@ export default function Loja() {
     return (parseInt(onlyNumbers, 10) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   };
 
-  const handleSubmit = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const normalizeRegionIds = (regions: any): number[] => {
+    if (!Array.isArray(regions)) return [];
+
+    return regions
+      .map((region: any) => {
+        if (typeof region === "number") return region;
+        if (typeof region === "string") return Number(region);
+        if (region && typeof region === "object") {
+          if (typeof region.id === "number") return region.id;
+          if (typeof region.id === "string") return Number(region.id);
+          if (typeof region.value === "number") return region.value;
+          if (typeof region.value === "string") return Number(region.value);
+        }
+        return NaN;
+      })
+      .filter((id: number) => Number.isInteger(id) && id > 0);
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
-    const payload = {
-      ...store,
-      metadata: { ...(store.metadata || {}), social_links: store.social_links },
-      default_delivery_fee: moneyBRToNumber(store?.default_delivery_fee),
-      minimum_order: { enabled: store?.minimum_order?.enabled ? 1 : 0, value: moneyBRToNumber(store?.minimum_order?.value) },
-    };
-    const request: NextApiResponse = await api.bridge({ method: "post", url: "stores/register", data: payload });
-    if (request.response) { setOldStore(store); handleStore(store); }
-    setSaving(false);
-    await api.request({ method: "PUT", url: `app/zipcode-cities-range-stores/${store?.id}`, data: { ids: store?.deliveryRegions } });
+    try {
+      const normalizedDeliveryRegions = normalizeRegionIds(store?.deliveryRegions);
+      const payload = {
+        ...store,
+        deliveryRegions: normalizedDeliveryRegions,
+        metadata: { ...(store.metadata || {}), social_links: store.social_links },
+        default_delivery_fee: moneyBRToNumber(store?.default_delivery_fee),
+        minimum_order: { enabled: store?.minimum_order?.enabled ? 1 : 0, value: moneyBRToNumber(store?.minimum_order?.value) },
+      };
+      const request: NextApiResponse = await api.bridge({
+        method: "post",
+        url: "stores/register",
+        data: payload,
+      });
+
+      if (!request?.response) {
+        const message = request?.message || request?.data?.message || "Não foi possível salvar os dados da loja.";
+        toast.error(message);
+        return;
+      }
+
+      setStore(payload);
+      setOldStore(payload);
+
+      const resolvedStoreId = Number(payload?.id || store?.id);
+      if (Number.isInteger(resolvedStoreId) && resolvedStoreId > 0) {
+        const regionRequest: any = await api.request({
+          method: "PUT",
+          url: `app/zipcode-cities-range-stores/${resolvedStoreId}`,
+          data: { ids: normalizedDeliveryRegions },
+        });
+
+        if (regionRequest?.status && Number(regionRequest.status) >= 400) {
+          const regionMessage =
+            regionRequest?.data?.error ||
+            regionRequest?.data?.message ||
+            "Dados da loja salvos, mas houve falha ao atualizar as regiões de entrega.";
+          toast.error(regionMessage);
+          return;
+        }
+      }
+
+      toast.success("Dados da loja salvos com sucesso.");
+    } catch (error: any) {
+      toast.error(error?.message || "Falha ao salvar a loja. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const [deliveryRegionsOptions, setDeliveryRegionsOptions] = useState([]);
@@ -330,7 +433,7 @@ export default function Loja() {
 
             <form onSubmit={handleSubmitProfile} encType="multipart/form-data" className="bg-white rounded-xl border border-zinc-200 p-6">
               <h3 className="text-base font-semibold text-zinc-900 mb-4">Foto de perfil</h3>
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
                 <div className="w-[90px]">
                   <FileInput
                     name="profile"
@@ -344,7 +447,7 @@ export default function Loja() {
                     preview={handleProfile.preview}
                   />
                 </div>
-                <p className="text-sm text-zinc-500">Imagem quadrada, mínimo 200x200px</p>
+                <p className="text-base text-zinc-500 break-words">Imagem quadrada, mínimo 200x200px</p>
               </div>
               <div className="flex justify-end mt-4">
                 <button
@@ -784,9 +887,9 @@ export default function Loja() {
     <PainelLayout>
       <PageHeader title="Minha Loja" description="Personalize sua loja no Fiestou" />
 
-      <div className="grid lg:grid-cols-[1fr_300px] gap-8">
-        <div>
-          <div className="flex gap-1 border-b border-zinc-200 mb-6 overflow-x-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-8">
+        <div className="min-w-0">
+          <div className="flex w-full min-w-0 gap-1 border-b border-zinc-200 mb-6 overflow-x-auto pb-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -795,13 +898,20 @@ export default function Loja() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  className={`group flex items-center gap-2 px-4 py-3 text-base font-medium whitespace-nowrap border-b-2 transition-colors ${
                     isActive
                       ? "border-yellow-400 text-zinc-900"
                       : "border-transparent text-zinc-400 hover:text-zinc-600"
                   }`}
                 >
-                  <Icon size={16} />
+                  <Icon
+                    size={18}
+                    className={
+                      isActive
+                        ? "text-yellow-600"
+                        : "text-zinc-400 group-hover:text-yellow-600"
+                    }
+                  />
                   {tab.label}
                 </button>
               );
