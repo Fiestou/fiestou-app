@@ -511,7 +511,7 @@ export default function Variable({
   const addVariation = (attrId: string) => {
     const attr = attributes.find((a) => a.id === attrId);
     if (!attr) return;
-    const newVar = { id: shortId(), title: "", price: 0 };
+    const newVar = { id: shortId(), title: "", price: 0, minQuantity: 0, maxQuantity: 0 };
     updateAttribute(attrId, { variations: [...(attr.variations || []), newVar] });
   };
 
@@ -911,7 +911,7 @@ export default function Variable({
                             </>
                           )}
 
-                          {(attr.selectType === "checkbox" || attr.selectType === "quantity") && (
+                          {attr.selectType === "checkbox" && (
                             <div className="flex items-center gap-1 shrink-0">
                               <span className="text-xs text-zinc-400">Min:</span>
                               <input
@@ -922,6 +922,41 @@ export default function Variable({
                                 min={0}
                                 className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
                               />
+                            </div>
+                          )}
+
+                          {attr.selectType === "quantity" && (
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-zinc-400">Min:</span>
+                                <input
+                                  type="number"
+                                  value={v.minQuantity ?? 0}
+                                  onChange={(e) =>
+                                    updateVariation(attr.id, v.id, {
+                                      minQuantity: Number(e.target.value) || 0,
+                                    })
+                                  }
+                                  placeholder="0"
+                                  min={0}
+                                  className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-zinc-400">Max:</span>
+                                <input
+                                  type="number"
+                                  value={v.maxQuantity ?? 0}
+                                  onChange={(e) =>
+                                    updateVariation(attr.id, v.id, {
+                                      maxQuantity: Number(e.target.value) || 0,
+                                    })
+                                  }
+                                  placeholder="0"
+                                  min={0}
+                                  className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                                />
+                              </div>
                             </div>
                           )}
 

@@ -31,6 +31,7 @@ export interface VariationType {
   data?: any;
   canAddToCart?: boolean;
   minQuantity?: number;
+  maxQuantity?: number;
   quantity?: number;
 }
 

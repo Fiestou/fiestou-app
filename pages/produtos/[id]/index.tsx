@@ -286,7 +286,23 @@ export default function Produto({
       if (attr.selectType === "quantity") {
         const existsIndex = variations.findIndex((v) => v.id === value.id);
 
-        const qty = Number(value.quantity ?? 0);
+        const itemConfig = (attr.variations || []).find(
+          (variation: any) => variation.id === value.id
+        ) as any;
+
+        let qty = Number(value.quantity ?? 0);
+        if (!Number.isFinite(qty)) qty = 0;
+        qty = Math.max(0, Math.floor(qty));
+
+        const maxQuantityRaw = Number(itemConfig?.maxQuantity ?? 0);
+        const maxQuantity =
+          Number.isFinite(maxQuantityRaw) && maxQuantityRaw > 0
+            ? maxQuantityRaw
+            : undefined;
+
+        if (maxQuantity !== undefined) {
+          qty = Math.min(qty, maxQuantity);
+        }
 
         if (qty > 0) {
           const updatedValue = { ...value, quantity: qty };
@@ -577,7 +593,49 @@ export default function Produto({
         }
 
         if (attribute.selectType === "quantity") {
-          return selected.variations.some((v: any) => Number(v.quantity) > 0);
+          const selectedQuantities = new Map(
+            (selected.variations || []).map((variation: any) => [
+              variation.id,
+              Number(variation.quantity ?? 0),
+            ])
+          );
+
+          const configuredVariations = Array.isArray(attribute.variations)
+            ? attribute.variations
+            : [];
+
+          const hasRequiredMinimum = configuredVariations.some((variation: any) => {
+            const minRaw = Number(variation?.minQuantity ?? 0);
+            return Number.isFinite(minRaw) && minRaw > 0;
+          });
+
+          const quantitiesWithinMax = Array.from(selectedQuantities.entries()).every(
+            ([variationId, quantity]) => {
+              const source = configuredVariations.find(
+                (variation: any) => variation.id === variationId
+              );
+              const maxRaw = Number(source?.maxQuantity ?? 0);
+              if (!Number.isFinite(maxRaw) || maxRaw <= 0) return true;
+              return quantity <= maxRaw;
+            }
+          );
+
+          if (!quantitiesWithinMax) return false;
+
+          if (hasRequiredMinimum) {
+            return configuredVariations.every((variation: any) => {
+              const minRaw = Number(variation?.minQuantity ?? 0);
+              const minRequired =
+                Number.isFinite(minRaw) && minRaw > 0 ? minRaw : 0;
+              if (minRequired === 0) return true;
+              const selectedQuantity = selectedQuantities.get(variation.id) ?? 0;
+              return selectedQuantity >= minRequired;
+            });
+          }
+
+          return Array.from(selectedQuantities.values()).some(
+            (quantity) => quantity > 0
+          );
         }
 
         return selected.variations.length > 0;
