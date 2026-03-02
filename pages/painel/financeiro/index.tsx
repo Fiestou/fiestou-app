@@ -75,6 +75,36 @@ function centsToMoney(cents: number) {
   return `R$ ${moneyFormat((Number(cents) || 0) / 100)}`;
 }
 
+function getAnticipationMinimumDate() {
+  const nowInSaoPaulo = new Date(
+    new Date().toLocaleString("sv-SE", {
+      timeZone: "America/Sao_Paulo",
+      hour12: false,
+    }).replace(" ", "T")
+  );
+
+  if (Number.isNaN(nowInSaoPaulo.getTime())) {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  const isAfterCutoff =
+    nowInSaoPaulo.getHours() > 11 ||
+    (nowInSaoPaulo.getHours() === 11 &&
+      (nowInSaoPaulo.getMinutes() > 0 ||
+        nowInSaoPaulo.getSeconds() > 0 ||
+        nowInSaoPaulo.getMilliseconds() > 0));
+
+  if (isAfterCutoff) {
+    nowInSaoPaulo.setDate(nowInSaoPaulo.getDate() + 1);
+  }
+
+  const year = nowInSaoPaulo.getFullYear();
+  const month = String(nowInSaoPaulo.getMonth() + 1).padStart(2, "0");
+  const day = String(nowInSaoPaulo.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function normalizeTransferInterval(value: any): "daily" | "weekly" | "monthly" {
   const normalized = String(value || "").trim().toLowerCase();
   if (normalized === "daily" || normalized === "diario") return "daily";
@@ -112,8 +142,8 @@ export default function FinanceiroPage() {
   const [saving, setSaving] = useState(false);
 
   const [overview, setOverview] = useState<any>(null);
-  const [limits, setLimits] = useState<any>(null);
   const [anticipations, setAnticipations] = useState<any[]>([]);
+  const [anticipationLimits, setAnticipationLimits] = useState<any>(null);
   const [providerWarning, setProviderWarning] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -135,7 +165,7 @@ export default function FinanceiroPage() {
   const [anticipationModal, setAnticipationModal] = useState(false);
   const [newAnticipation, setNewAnticipation] = useState({
     requested_amount: "",
-    payment_date: "",
+    payment_date: getAnticipationMinimumDate(),
     timeframe: "",
   });
 
@@ -147,6 +177,57 @@ export default function FinanceiroPage() {
   });
 
   const recipientReady = !!overview?.recipient?.ready;
+  const minimumAnticipationDate = getAnticipationMinimumDate();
+  const hasMinimumAnticipationAmount =
+    anticipationLimits?.minimum?.amount != null &&
+    Number.isFinite(Number(anticipationLimits.minimum.amount));
+  const minimumAnticipationAmount = hasMinimumAnticipationAmount
+    ? Number(anticipationLimits.minimum.amount)
+    : null;
+  const hasMaximumAnticipationAmount =
+    anticipationLimits?.maximum?.amount != null &&
+    Number.isFinite(Number(anticipationLimits.maximum.amount));
+  const maximumAnticipationAmount = hasMaximumAnticipationAmount
+    ? Number(anticipationLimits.maximum.amount)
+    : null;
+  const hasMinimumAnticipationFee =
+    anticipationLimits?.minimum?.anticipation_fee != null &&
+    Number.isFinite(Number(anticipationLimits.minimum.anticipation_fee));
+  const minimumAnticipationFee = hasMinimumAnticipationFee
+    ? Number(anticipationLimits.minimum.anticipation_fee)
+    : null;
+  const hasMaximumAnticipationFee =
+    anticipationLimits?.maximum?.anticipation_fee != null &&
+    Number.isFinite(Number(anticipationLimits.maximum.anticipation_fee));
+  const maximumAnticipationFee = hasMaximumAnticipationFee
+    ? Number(anticipationLimits.maximum.anticipation_fee)
+    : null;
+  const hasMinimumOperationalFee =
+    anticipationLimits?.minimum?.fee != null &&
+    Number.isFinite(Number(anticipationLimits.minimum.fee));
+  const minimumOperationalFee = hasMinimumOperationalFee
+    ? Number(anticipationLimits.minimum.fee)
+    : null;
+  const hasMaximumOperationalFee =
+    anticipationLimits?.maximum?.fee != null &&
+    Number.isFinite(Number(anticipationLimits.maximum.fee));
+  const maximumOperationalFee = hasMaximumOperationalFee
+    ? Number(anticipationLimits.maximum.fee)
+    : null;
+  const hasMinimumFraudFee =
+    anticipationLimits?.minimum?.fraud_coverage_fee != null &&
+    Number.isFinite(Number(anticipationLimits.minimum.fraud_coverage_fee));
+  const minimumFraudFee = hasMinimumFraudFee
+    ? Number(anticipationLimits.minimum.fraud_coverage_fee)
+    : null;
+  const hasMaximumFraudFee =
+    anticipationLimits?.maximum?.fraud_coverage_fee != null &&
+    Number.isFinite(Number(anticipationLimits.maximum.fraud_coverage_fee));
+  const maximumFraudFee = hasMaximumFraudFee
+    ? Number(anticipationLimits.maximum.fraud_coverage_fee)
+    : null;
+  const noEligibleAnticipationBalance =
+    maximumAnticipationAmount != null && maximumAnticipationAmount <= 0;
 
   const loadOverview = useCallback(async () => {
     setLoadingOverview(true);
@@ -199,7 +280,7 @@ export default function FinanceiroPage() {
 
       if (res?.response && res?.data) {
         setAnticipations(Array.isArray(res.data.items) ? res.data.items : []);
-        setLimits(res.data.limits ?? null);
+        setAnticipationLimits(res.data?.limits ?? null);
 
         const providerMessage =
           res.data?.provider_error?.message ||
@@ -210,7 +291,7 @@ export default function FinanceiroPage() {
         }
       } else {
         setAnticipations([]);
-        setLimits(null);
+        setAnticipationLimits(null);
         setProviderWarning("");
         if (recipientReady) {
           toast.error(res?.message || "Não foi possível carregar antecipações");
@@ -218,7 +299,7 @@ export default function FinanceiroPage() {
       }
     } catch {
       setAnticipations([]);
-      setLimits(null);
+      setAnticipationLimits(null);
       setProviderWarning("");
     } finally {
       setLoadingAnticipations(false);
@@ -310,8 +391,40 @@ export default function FinanceiroPage() {
           setSaving(false);
           return;
         }
+        if (maximumAnticipationAmount != null && maximumAnticipationAmount <= 0) {
+          toast.error("Sem saldo elegível para antecipação no momento.");
+          setSaving(false);
+          return;
+        }
+        if (
+          minimumAnticipationAmount != null &&
+          minimumAnticipationAmount > 0 &&
+          cents < minimumAnticipationAmount
+        ) {
+          toast.error(
+            `O valor mínimo para antecipar é ${centsToMoney(minimumAnticipationAmount)}`
+          );
+          setSaving(false);
+          return;
+        }
+        if (
+          maximumAnticipationAmount != null &&
+          maximumAnticipationAmount > 0 &&
+          cents > maximumAnticipationAmount
+        ) {
+          toast.error(
+            `O valor máximo para antecipar agora é ${centsToMoney(maximumAnticipationAmount)}`
+          );
+          setSaving(false);
+          return;
+        }
         if (!newAnticipation.payment_date) {
           toast.error("Informe a data de pagamento");
+          setSaving(false);
+          return;
+        }
+        if (newAnticipation.payment_date < minimumAnticipationDate) {
+          toast.error("Escolha uma data válida para antecipação");
           setSaving(false);
           return;
         }
@@ -326,7 +439,11 @@ export default function FinanceiroPage() {
         if (res?.response) {
           toast.success("Antecipação solicitada com sucesso");
           setAnticipationModal(false);
-          setNewAnticipation({ requested_amount: "", payment_date: "", timeframe: "" });
+          setNewAnticipation({
+            requested_amount: "",
+            payment_date: getAnticipationMinimumDate(),
+            timeframe: "",
+          });
           await loadAnticipations();
           await loadOverview();
         } else {
@@ -511,12 +628,57 @@ export default function FinanceiroPage() {
               placeholder="Ex: 1200,00"
               className="w-full mt-1 border border-zinc-300 rounded-lg px-3 py-2 text-sm"
             />
+            {noEligibleAnticipationBalance && (
+              <p className="mt-2 text-xs text-red-700 font-semibold">
+                Sem saldo elegível para antecipação no momento.
+              </p>
+            )}
+            <p className="mt-1 text-xs text-red-600 font-semibold">
+              {minimumAnticipationAmount != null
+                ? `Valor mínimo para antecipação: ${centsToMoney(minimumAnticipationAmount)}.`
+                : "Aguardando limite mínimo da Pagar.me para esta loja."}
+            </p>
+            <p className="mt-1 text-xs text-red-600 font-semibold">
+              {maximumAnticipationAmount != null
+                ? `Valor máximo para antecipação agora: ${centsToMoney(maximumAnticipationAmount)}.`
+                : "Aguardando limite máximo da Pagar.me para esta loja."}
+            </p>
+            <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-2.5">
+              <p className="text-xs font-semibold text-red-700">
+                A Pagar.me pode cobrar taxa na antecipação.
+              </p>
+              <p className="mt-1 text-[11px] text-red-700">
+                Taxa de antecipação:{" "}
+                {minimumAnticipationFee != null &&
+                maximumAnticipationFee != null &&
+                !noEligibleAnticipationBalance
+                  ? `${centsToMoney(minimumAnticipationFee)} até ${centsToMoney(maximumAnticipationFee)}`
+                  : "não informado"}
+              </p>
+              <p className="text-[11px] text-red-700">
+                Taxa operacional:{" "}
+                {minimumOperationalFee != null &&
+                maximumOperationalFee != null &&
+                !noEligibleAnticipationBalance
+                  ? `${centsToMoney(minimumOperationalFee)} até ${centsToMoney(maximumOperationalFee)}`
+                  : "não informado"}
+              </p>
+              <p className="text-[11px] text-red-700">
+                Cobertura antifraude:{" "}
+                {minimumFraudFee != null &&
+                maximumFraudFee != null &&
+                !noEligibleAnticipationBalance
+                  ? `${centsToMoney(minimumFraudFee)} até ${centsToMoney(maximumFraudFee)}`
+                  : "não informado"}
+              </p>
+            </div>
           </div>
           <div>
             <label className="text-sm font-medium text-zinc-700">Data de pagamento</label>
             <input
               type="date"
               value={newAnticipation.payment_date}
+              min={minimumAnticipationDate}
               onChange={(e) =>
                 setNewAnticipation((prev) => ({
                   ...prev,
@@ -549,6 +711,7 @@ export default function FinanceiroPage() {
 
           <button
             type="button"
+            disabled={noEligibleAnticipationBalance}
             onClick={() =>
               openConfirm(
                 "create_anticipation",
@@ -556,7 +719,7 @@ export default function FinanceiroPage() {
                 "Confirma o envio da solicitação de antecipação para a Pagar.me?"
               )
             }
-            className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg py-2.5 text-sm font-semibold"
+            className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg py-2.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Solicitar antecipação
           </button>
@@ -611,7 +774,14 @@ export default function FinanceiroPage() {
             <button
               type="button"
               disabled={!recipientReady}
-              onClick={() => setAnticipationModal(true)}
+              onClick={() => {
+                setNewAnticipation({
+                  requested_amount: "",
+                  payment_date: getAnticipationMinimumDate(),
+                  timeframe: "",
+                });
+                setAnticipationModal(true);
+              }}
               className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={15} />
@@ -848,13 +1018,6 @@ export default function FinanceiroPage() {
             </select>
           </div>
         </div>
-
-        {!!limits && (
-          <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-3 mb-4 text-xs text-zinc-600">
-            <p className="font-semibold text-zinc-700 mb-1">Limites de antecipação (Pagar.me)</p>
-            <pre className="whitespace-pre-wrap">{JSON.stringify(limits, null, 2)}</pre>
-          </div>
-        )}
 
         {!!providerWarning && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
