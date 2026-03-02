@@ -12,7 +12,9 @@ import {
 import type { Column } from "@/src/components/painel";
 
 export async function getServerSideProps(ctx: any) {
-  const store = ctx.req.cookies["fiestou.store"] ?? 0;
+  const rawStore = ctx.req.cookies["fiestou.store"];
+  const parsedStore = Number(rawStore);
+  const store = Number.isInteger(parsedStore) && parsedStore > 0 ? parsedStore : 0;
   return { props: { store } };
 }
 
@@ -24,6 +26,12 @@ export default function Clientes({ store }: { store: any }) {
 
   useEffect(() => {
     const fetch = async () => {
+      if (!store) {
+        setClients([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         const request: any = await api.bridge({
           method: "post",
@@ -37,7 +45,7 @@ export default function Clientes({ store }: { store: any }) {
       setLoading(false);
     };
     fetch();
-  }, []);
+  }, [store]);
 
   const filtered = clients.filter((c) => {
     if (!search) return true;
