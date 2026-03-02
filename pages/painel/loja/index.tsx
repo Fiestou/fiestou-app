@@ -336,7 +336,6 @@ export default function Loja() {
         default_delivery_fee: moneyBRToNumber(store?.default_delivery_fee),
         minimum_order: { enabled: store?.minimum_order?.enabled ? 1 : 0, value: moneyBRToNumber(store?.minimum_order?.value) },
       };
-
       const request: NextApiResponse = await api.bridge({
         method: "post",
         url: "stores/register",
@@ -434,7 +433,7 @@ export default function Loja() {
 
             <form onSubmit={handleSubmitProfile} encType="multipart/form-data" className="bg-white rounded-xl border border-zinc-200 p-6">
               <h3 className="text-base font-semibold text-zinc-900 mb-4">Foto de perfil</h3>
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
                 <div className="w-[90px]">
                   <FileInput
                     name="profile"
@@ -448,7 +447,7 @@ export default function Loja() {
                     preview={handleProfile.preview}
                   />
                 </div>
-                <p className="text-sm text-zinc-500">Imagem quadrada, mínimo 200x200px</p>
+                <p className="text-base text-zinc-500 break-words">Imagem quadrada, mínimo 200x200px</p>
               </div>
               <div className="flex justify-end mt-4">
                 <button
@@ -888,9 +887,9 @@ export default function Loja() {
     <PainelLayout>
       <PageHeader title="Minha Loja" description="Personalize sua loja no Fiestou" />
 
-      <div className="grid lg:grid-cols-[1fr_300px] gap-8">
-        <div>
-          <div className="flex gap-1 border-b border-zinc-200 mb-6 overflow-x-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-8">
+        <div className="min-w-0">
+          <div className="flex w-full min-w-0 gap-1 border-b border-zinc-200 mb-6 overflow-x-auto pb-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -899,13 +898,20 @@ export default function Loja() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  className={`group flex items-center gap-2 px-4 py-3 text-base font-medium whitespace-nowrap border-b-2 transition-colors ${
                     isActive
                       ? "border-yellow-400 text-zinc-900"
                       : "border-transparent text-zinc-400 hover:text-zinc-600"
                   }`}
                 >
-                  <Icon size={16} />
+                  <Icon
+                    size={18}
+                    className={
+                      isActive
+                        ? "text-yellow-600"
+                        : "text-zinc-400 group-hover:text-yellow-600"
+                    }
+                  />
                   {tab.label}
                 </button>
               );
