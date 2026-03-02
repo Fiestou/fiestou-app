@@ -108,15 +108,15 @@ export default function Sidebar({
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 flex items-center justify-between border-b border-zinc-100">
         {!collapsed ? (
-          <span className="text-xs font-bold tracking-[0.15em] text-cyan-700 uppercase font-display">
+          <span className="text-sm font-bold tracking-[0.1em] text-yellow-700 uppercase font-display">
             Painel Lojista
           </span>
         ) : (
-          <span className="text-xs font-bold text-cyan-700 mx-auto">PL</span>
+          <span className="text-sm font-bold text-yellow-700 mx-auto">PL</span>
         )}
         <button
           onClick={onMobileClose}
-          className="lg:hidden p-1 rounded-md hover:bg-zinc-100 text-zinc-500"
+          className="lg:hidden p-1.5 rounded-md hover:bg-zinc-100 text-yellow-700"
         >
           <X size={20} />
         </button>
@@ -126,7 +126,7 @@ export default function Sidebar({
         {NAV_GROUPS.map((group) => (
           <div key={group.title} className="mb-6">
             {!collapsed && (
-              <div className="px-3 mb-2 text-[11px] font-semibold tracking-wider text-zinc-400">
+              <div className="px-3 mb-2 text-xs font-semibold tracking-wider text-zinc-600">
                 {group.title}
               </div>
             )}
@@ -138,19 +138,19 @@ export default function Sidebar({
                     key={item.href}
                     href={item.href}
                     onClick={onMobileClose}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                    className={`group flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-all duration-200
                       ${active
-                        ? "bg-yellow-50 text-yellow-700 shadow-sm"
-                        : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                        ? "bg-yellow-50 text-yellow-800 shadow-sm border border-yellow-200"
+                        : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
                       }
                       ${collapsed ? "justify-center" : ""}
                     `}
                     title={collapsed ? item.label : undefined}
                   >
-                    <span className={active ? "text-yellow-600" : "text-zinc-400 group-hover:text-zinc-600"}>
+                    <span className={active ? "text-yellow-600" : "text-yellow-600 group-hover:text-yellow-700"}>
                       {item.icon}
                     </span>
-                    {!collapsed && <span>{item.label}</span>}
+                    {!collapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 );
               })}
@@ -162,9 +162,9 @@ export default function Sidebar({
       <div className="hidden lg:block px-3 py-4 border-t border-zinc-100">
         <button
           onClick={onToggle}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-base text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors border border-zinc-200"
         >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          {collapsed ? <ChevronRight size={18} className="text-yellow-700" /> : <ChevronLeft size={18} className="text-yellow-700" />}
           {!collapsed && <span>Recolher</span>}
         </button>
       </div>
@@ -186,7 +186,7 @@ export default function Sidebar({
           transition-all duration-300 lg:translate-x-0
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
           ${collapsed ? "lg:w-[72px]" : "lg:w-[260px]"}
-          w-[280px]
+          w-[88vw] max-w-[320px]
         `}
         style={{ height: "calc(100vh - 48px)" }}
       >

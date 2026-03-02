@@ -40,33 +40,33 @@ export default function FilterDropdown({
     <div ref={ref} className={`relative ${className}`}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2.5 text-sm bg-white border border-zinc-200 rounded-lg
+        className="flex items-center gap-2 px-3 py-3 text-base bg-white border border-zinc-200 rounded-lg
           hover:border-zinc-300 transition-colors text-zinc-700"
       >
-        <span className="text-zinc-400">{label}:</span>
-        <span className="font-medium">{selected?.label || "Todos"}</span>
-        <ChevronDown size={14} className={`text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className="text-zinc-600">{label}:</span>
+        <span className="font-semibold">{selected?.label || "Todos"}</span>
+        <ChevronDown size={16} className={`text-yellow-700 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
         <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-zinc-200 rounded-lg shadow-lg z-20 py-1">
           <button
             onClick={() => { onChange(""); setOpen(false); }}
-            className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-zinc-50 transition-colors
+            className={`w-full flex items-center justify-between px-3 py-2.5 text-base hover:bg-zinc-50 transition-colors
               ${!value ? "text-yellow-700 font-medium" : "text-zinc-700"}`}
           >
             Todos
-            {!value && <Check size={14} className="text-yellow-600" />}
+            {!value && <Check size={16} className="text-yellow-600" />}
           </button>
           {options.map((opt) => (
             <button
               key={opt.value}
               onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-zinc-50 transition-colors
+              className={`w-full flex items-center justify-between px-3 py-2.5 text-base hover:bg-zinc-50 transition-colors
                 ${value === opt.value ? "text-yellow-700 font-medium" : "text-zinc-700"}`}
             >
               {opt.label}
-              {value === opt.value && <Check size={14} className="text-yellow-600" />}
+              {value === opt.value && <Check size={16} className="text-yellow-600" />}
             </button>
           ))}
         </div>

@@ -1,6 +1,18 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, FileUp, Pencil, Trash2, Package, SlidersHorizontal } from "lucide-react";
+import {
+  Plus,
+  FileUp,
+  Pencil,
+  Trash2,
+  Package,
+  SlidersHorizontal,
+  Clock,
+  Tag,
+  UtensilsCrossed,
+  Briefcase,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Api from "@/src/services/api";
 import { ProductType } from "@/src/models/product";
 import { moneyFormat } from "@/src/helper";
@@ -36,6 +48,41 @@ const TYPE_OPTIONS = [
 ];
 
 const PAGE_SIZE = 15;
+
+const TYPE_META: Record<
+  string,
+  {
+    label: string;
+    icon: LucideIcon;
+    className: string;
+    iconClassName: string;
+  }
+> = {
+  aluguel: {
+    label: "Aluguel",
+    icon: Clock,
+    className: "border-blue-200 bg-blue-50 text-blue-800",
+    iconClassName: "bg-blue-100 text-blue-700",
+  },
+  venda: {
+    label: "Venda",
+    icon: Tag,
+    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    iconClassName: "bg-emerald-100 text-emerald-700",
+  },
+  comestivel: {
+    label: "Comestível",
+    icon: UtensilsCrossed,
+    className: "border-amber-200 bg-amber-50 text-amber-800",
+    iconClassName: "bg-amber-100 text-amber-700",
+  },
+  servicos: {
+    label: "Serviços",
+    icon: Briefcase,
+    className: "border-violet-200 bg-violet-50 text-violet-800",
+    iconClassName: "bg-violet-100 text-violet-700",
+  },
+};
 
 export default function Produtos({ store }: { store: any }) {
   const api = new Api();
@@ -189,9 +236,9 @@ export default function Produtos({ store }: { store: any }) {
       sortable: true,
       render: (row) => (
         <div>
-          <p className="font-medium text-zinc-900 truncate max-w-[200px]">{row.title}</p>
+          <p className="font-semibold text-zinc-900 truncate max-w-[220px] text-base">{row.title}</p>
           {row.subtitle && (
-            <p className="text-xs text-zinc-400 truncate max-w-[200px]">{row.subtitle}</p>
+            <p className="text-sm text-zinc-500 truncate max-w-[220px]">{row.subtitle}</p>
           )}
         </div>
       ),
@@ -205,7 +252,7 @@ export default function Produtos({ store }: { store: any }) {
         return (
           <Link
             href={`/painel/produtos/${row.id}#variacoes-section`}
-            className={`inline-flex items-center gap-2 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+            className={`inline-flex items-center gap-2 text-sm font-semibold px-2.5 py-1.5 rounded-lg border transition-colors ${
               hasVariations
                 ? "bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
                 : "bg-zinc-50 border-zinc-200 text-zinc-500 hover:bg-zinc-100"
@@ -216,7 +263,7 @@ export default function Produtos({ store }: { store: any }) {
                 : "Produto sem variações cadastradas"
             }
           >
-            <SlidersHorizontal size={13} />
+            <SlidersHorizontal size={15} />
             {hasVariations ? "Editável" : "Sem opções"}
           </Link>
         );
@@ -234,7 +281,7 @@ export default function Produtos({ store }: { store: any }) {
       sortable: true,
       className: "w-24",
       render: (row) => (
-        <span className={`text-sm ${row.quantity ? "text-zinc-700" : "text-red-500"}`}>
+        <span className={`text-base font-semibold ${row.quantity ? "text-zinc-700" : "text-red-500"}`}>
           {row.quantity ?? 0}
         </span>
       ),
@@ -245,14 +292,26 @@ export default function Produtos({ store }: { store: any }) {
       className: "w-28",
       render: (row) => {
         if (!row.comercialType) return <span className="text-zinc-300">-</span>;
-        const typeMap: Record<string, { label: string; variant: string }> = {
-          aluguel: { label: "Aluguel", variant: "info" },
-          venda: { label: "Venda", variant: "success" },
-          comestivel: { label: "Comestível", variant: "warning" },
-          servicos: { label: "Serviços", variant: "neutral" },
-        };
-        const t = typeMap[row.comercialType] || { label: row.comercialType, variant: "neutral" };
-        return <Badge variant={t.variant as any}>{t.label}</Badge>;
+        const typeKey = String(row.comercialType).toLowerCase();
+        const meta = TYPE_META[typeKey];
+
+        if (!meta) {
+          return <Badge variant="neutral">{row.comercialType}</Badge>;
+        }
+
+        const Icon = meta.icon;
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-semibold ${meta.className}`}
+          >
+            <span
+              className={`inline-flex h-4 w-4 items-center justify-center rounded-full ${meta.iconClassName}`}
+            >
+              <Icon size={10} />
+            </span>
+            {meta.label}
+          </span>
+        );
       },
     },
     {
@@ -273,7 +332,7 @@ export default function Produtos({ store }: { store: any }) {
         <div className="flex items-center gap-1">
           <Link
             href={`/painel/produtos/${row.id}`}
-            className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-700 transition-colors"
+            className="p-2 rounded-lg hover:bg-yellow-50 text-yellow-700 hover:text-yellow-800 transition-colors border border-transparent hover:border-yellow-200"
           >
             <Pencil size={15} />
           </Link>
@@ -295,13 +354,13 @@ export default function Produtos({ store }: { store: any }) {
         description="Gerencie seu catálogo de produtos"
         actions={
           <>
-            <Link href="/painel/produtos/importar" className="bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2">
+            <Link href="/painel/produtos/importar" className="bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-lg px-4 py-3 text-base font-semibold transition-colors flex items-center gap-2">
               <FileUp size={16} />
               Importar
             </Link>
             <Link
               href="/painel/produtos/novo"
-              className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2"
+              className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg px-4 py-3 text-base font-semibold transition-colors flex items-center gap-2"
             >
               <Plus size={16} />
               Novo Produto
@@ -332,29 +391,29 @@ export default function Produtos({ store }: { store: any }) {
       </div>
 
       {selectedRows.size > 0 && (
-        <div className="flex items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 mb-4">
-          <span className="text-sm font-medium text-zinc-700">
+        <div className="flex flex-wrap items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 mb-4">
+          <span className="text-base font-semibold text-zinc-700">
             {selectedRows.size} selecionado{selectedRows.size > 1 ? "s" : ""}
           </span>
           <div className="h-4 w-px bg-zinc-300" />
           <button
             onClick={() => bulkAction("activate")}
             disabled={bulkLoading}
-            className="text-sm text-emerald-700 hover:text-emerald-800 font-medium disabled:opacity-50"
+            className="text-base text-emerald-700 hover:text-emerald-800 font-semibold disabled:opacity-50"
           >
             Ativar
           </button>
           <button
             onClick={() => bulkAction("deactivate")}
             disabled={bulkLoading}
-            className="text-sm text-amber-700 hover:text-amber-800 font-medium disabled:opacity-50"
+            className="text-base text-amber-700 hover:text-amber-800 font-semibold disabled:opacity-50"
           >
             Desativar
           </button>
           <button
             onClick={() => bulkAction("delete")}
             disabled={bulkLoading}
-            className="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
+            className="text-base text-red-600 hover:text-red-700 font-semibold disabled:opacity-50"
           >
             Excluir
           </button>

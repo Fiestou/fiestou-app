@@ -16,11 +16,11 @@ type BadgeProps = {
 export default function Badge({ variant = "neutral", children, className = "", dot = false }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border ${VARIANTS[variant] || VARIANTS.neutral} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full border ${VARIANTS[variant] || VARIANTS.neutral} ${className}`}
     >
       {dot && (
         <span
-          className={`w-1.5 h-1.5 rounded-full ${
+          className={`w-2 h-2 rounded-full ${
             variant === "success" ? "bg-emerald-500" :
             variant === "warning" ? "bg-amber-500" :
             variant === "danger" ? "bg-red-500" :

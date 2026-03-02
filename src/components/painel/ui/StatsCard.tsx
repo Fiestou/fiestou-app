@@ -25,21 +25,21 @@ export default function StatsCard({ icon, value, label, iconColor, trend, classN
         </div>
         {trend && (
           <div
-            className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+            className={`flex items-center gap-1 text-sm font-semibold px-2.5 py-1 rounded-full ${
               isPositive
                 ? "bg-emerald-50 text-emerald-600"
                 : "bg-red-50 text-red-600"
             }`}
           >
-            {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+            {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
             <span>{Math.abs(trend.value)}%</span>
           </div>
         )}
       </div>
       <div className="text-2xl font-bold text-zinc-900 font-display">{value}</div>
-      <div className="text-sm text-zinc-500 mt-1">{label}</div>
+      <div className="text-base text-zinc-700 mt-1">{label}</div>
       {trend?.label && (
-        <div className="text-xs text-zinc-400 mt-1">{trend.label}</div>
+        <div className="text-sm text-zinc-500 mt-1">{trend.label}</div>
       )}
     </div>
   );

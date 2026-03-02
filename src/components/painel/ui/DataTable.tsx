@@ -93,7 +93,7 @@ export default function DataTable<T extends Record<string, any>>({
       <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm p-8">
         <div className="flex items-center justify-center gap-3 text-zinc-400">
           <div className="w-5 h-5 border-2 border-zinc-300 border-t-yellow-400 rounded-full animate-spin" />
-          <span className="text-sm">Carregando...</span>
+          <span className="text-base">Carregando...</span>
         </div>
       </div>
     );
@@ -102,7 +102,7 @@ export default function DataTable<T extends Record<string, any>>({
   return (
     <div className={`bg-white rounded-xl border border-zinc-200/80 shadow-sm overflow-hidden ${className}`}>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[840px] text-[15px]">
           <thead>
             <tr className="border-b border-zinc-100">
               {selectable && (
@@ -118,8 +118,8 @@ export default function DataTable<T extends Record<string, any>>({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider
-                    ${col.sortable ? "cursor-pointer select-none hover:text-zinc-700" : ""}
+                  className={`px-4 py-3 text-left text-sm font-semibold text-zinc-700 uppercase tracking-wider
+                    ${col.sortable ? "cursor-pointer select-none hover:text-zinc-900" : ""}
                     ${col.className || ""}
                   `}
                   onClick={() => col.sortable && toggleSort(col.key)}
@@ -139,7 +139,7 @@ export default function DataTable<T extends Record<string, any>>({
               <tr>
                 <td
                   colSpan={columns.length + (selectable ? 1 : 0)}
-                  className="px-4 py-12 text-center text-zinc-400"
+                  className="px-4 py-12 text-center text-zinc-500 text-base"
                 >
                   {emptyMessage}
                 </td>
@@ -166,7 +166,7 @@ export default function DataTable<T extends Record<string, any>>({
                       </td>
                     )}
                     {columns.map((col) => (
-                      <td key={col.key} className={`px-4 py-3 text-zinc-700 ${col.className || ""}`}>
+                      <td key={col.key} className={`px-4 py-3 text-zinc-800 align-top ${col.className || ""}`}>
                         {col.render ? col.render(row, i) : row[col.key]}
                       </td>
                     ))}
@@ -180,7 +180,7 @@ export default function DataTable<T extends Record<string, any>>({
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-100">
-          <span className="text-xs text-zinc-500">
+          <span className="text-sm text-zinc-600">
             {page * pageSize + 1}-{Math.min((page + 1) * pageSize, sorted.length)} de {sorted.length}
           </span>
           <div className="flex items-center gap-1">
@@ -201,10 +201,10 @@ export default function DataTable<T extends Record<string, any>>({
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`w-8 h-8 text-xs rounded-md transition-colors
+                  className={`w-8 h-8 text-sm rounded-md transition-colors
                     ${p === page
                       ? "bg-yellow-400 text-white font-semibold"
-                      : "hover:bg-zinc-100 text-zinc-600"
+                      : "hover:bg-zinc-100 text-zinc-700"
                     }`}
                 >
                   {p + 1}

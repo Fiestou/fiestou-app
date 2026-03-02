@@ -27,13 +27,13 @@ function GlobalHeader({ user }: { user: UserType }) {
 
         <Link href="/painel" className="flex items-center gap-3 text-white hover:text-yellow-300 transition-colors">
           <div className="hidden sm:block text-right leading-tight">
-            <div className="text-sm font-semibold font-display whitespace-nowrap">
+            <div className="text-base font-semibold font-display whitespace-nowrap">
               Ola, {getFirstName(user.name || "")}
             </div>
-            <div className="text-xs text-zinc-400 whitespace-nowrap">Meu painel</div>
+            <div className="text-sm text-zinc-300 whitespace-nowrap">Meu painel</div>
           </div>
-          <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center">
-            <User size={18} className="text-zinc-300" />
+          <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center border border-zinc-600">
+            <User size={18} className="text-yellow-300" />
           </div>
         </Link>
       </div>
@@ -78,7 +78,7 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
         >
           <TopBar user={user} onMenuClick={() => setMobileMenuOpen(true)} />
 
-          <main className="p-4 lg:p-8">
+          <main className="p-3 sm:p-4 lg:p-8">
             {children}
           </main>
         </div>
