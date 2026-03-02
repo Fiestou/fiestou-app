@@ -1,8 +1,9 @@
 import { AttributeType, ProductType } from "@/src/models/product";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { shortId, realMoneyNumber, getImage } from "@/src/helper";
-import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical, ImageIcon, X, Smile, Type, Upload, CircleDot, CheckSquare, Hash, Palette } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical, ImageIcon, X, Smile, Type, Upload, CircleDot, CheckSquare, Hash, Palette, Sparkles } from "lucide-react";
 import Api from "@/src/services/api";
+import Modal from "@/src/components/utils/Modal";
 
 interface MediaItem {
   id: number;
@@ -71,14 +72,66 @@ function normalizeAttributes(input: unknown): AttributeType[] {
   return [];
 }
 
-const SELECT_TYPES = [
-  { value: "radio", label: "Seleção única", desc: "Cliente escolhe 1 opção" },
-  { value: "checkbox", label: "Múltipla escolha", desc: "Cliente pode marcar várias" },
-  { value: "quantity", label: "Por quantidade", desc: "Cliente define a qtde" },
-  { value: "color", label: "Seleção de cor", desc: "Cliente escolhe uma cor" },
-  { value: "text", label: "Texto personalizado", desc: "Cliente digita um texto" },
-  { value: "image", label: "Envio de imagem", desc: "Cliente envia uma foto" },
+type SelectTypeValue = "radio" | "checkbox" | "quantity" | "color" | "text" | "image";
+
+const SELECT_TYPES: Array<{
+  value: SelectTypeValue;
+  label: string;
+  summary: string;
+  group: "primary" | "advanced";
+}> = [
+  { value: "radio", label: "Escolha única", summary: "1 opção", group: "primary" },
+  { value: "checkbox", label: "Múltipla escolha", summary: "Várias opções", group: "primary" },
+  { value: "quantity", label: "Por quantidade", summary: "Min e max", group: "primary" },
+  { value: "color", label: "Seleção de cor", summary: "Escolha por cor", group: "primary" },
+  { value: "text", label: "Texto livre", summary: "Cliente digita", group: "advanced" },
+  { value: "image", label: "Envio de imagem", summary: "Cliente envia foto", group: "advanced" },
 ];
+
+const PRIMARY_SELECT_TYPES = SELECT_TYPES.filter((item) => item.group === "primary");
+const ADVANCED_SELECT_TYPES = SELECT_TYPES.filter((item) => item.group === "advanced");
+
+function getSelectTypeIcon(
+  type: SelectTypeValue,
+  className: string,
+  size = 17
+) {
+  if (type === "radio") return <CircleDot size={size} className={className} />;
+  if (type === "checkbox") return <CheckSquare size={size} className={className} />;
+  if (type === "quantity") return <Hash size={size} className={className} />;
+  if (type === "color") return <Palette size={size} className={className} />;
+  if (type === "text") return <Type size={size} className={className} />;
+  return <Upload size={size} className={className} />;
+}
+
+function getSelectTypeAccent(type: SelectTypeValue) {
+  if (type === "radio") return { icon: "text-amber-700", bg: "bg-amber-100", border: "border-amber-200" };
+  if (type === "checkbox") return { icon: "text-emerald-700", bg: "bg-emerald-100", border: "border-emerald-200" };
+  if (type === "quantity") return { icon: "text-orange-700", bg: "bg-orange-100", border: "border-orange-200" };
+  if (type === "color") return { icon: "text-fuchsia-700", bg: "bg-fuchsia-100", border: "border-fuchsia-200" };
+  if (type === "text") return { icon: "text-lime-700", bg: "bg-lime-100", border: "border-lime-200" };
+  return { icon: "text-rose-700", bg: "bg-rose-100", border: "border-rose-200" };
+}
+
+function renderSelectTypeIcon(
+  type: SelectTypeValue,
+  active: boolean,
+  variant: "default" | "colorful" = "default"
+) {
+  if (variant === "colorful") {
+    const accent = getSelectTypeAccent(type);
+    return (
+      <span
+        className={`inline-flex h-7 w-7 items-center justify-center rounded-full border ${accent.bg} ${accent.border}`}
+      >
+        {getSelectTypeIcon(type, accent.icon, 15)}
+      </span>
+    );
+  }
+
+  const iconClass = active ? "text-yellow-700" : "text-zinc-500";
+  return getSelectTypeIcon(type, iconClass, 17);
+}
 
 const COLOR_OPTIONS = [
   { name: "Vermelho", hex: "#ef4444" },
@@ -95,6 +148,125 @@ const COLOR_OPTIONS = [
   { name: "Dourado", hex: "#fbbf24" },
   { name: "Prata", hex: "#d1d5db" },
 ];
+
+const QUICK_ATTRIBUTE_TEMPLATES: Array<{
+  id: string;
+  title: string;
+  description: string;
+  iconType: SelectTypeValue;
+  build: () => AttributeType;
+}> = [
+  {
+    id: "additional-yes-no",
+    title: "Adicional simples",
+    description: "Cria Sim/Não com preço para facilitar extras rápidos.",
+    iconType: "radio",
+    build: () => ({
+      id: shortId(),
+      title: "Adicionar item extra?",
+      selectType: "radio",
+      priceType: "on",
+      limit: 0,
+      variations: [
+        { id: shortId(), title: "Não, obrigado", price: 0 },
+        { id: shortId(), title: "Sim, adicionar", price: 10 },
+      ],
+    }),
+  },
+  {
+    id: "quantity",
+    title: "Por quantidade",
+    description: "Ideal para itens extras por unidade com min/max.",
+    iconType: "quantity",
+    build: () => ({
+      id: shortId(),
+      title: "Quantidade extra",
+      selectType: "quantity",
+      priceType: "on",
+      limit: 0,
+      variations: [
+        { id: shortId(), title: "Unidade", price: 5, minQuantity: 0, maxQuantity: 0 },
+      ],
+    }),
+  },
+  {
+    id: "color",
+    title: "Seleção de cor",
+    description: "Cria opções iniciais de cor com um clique.",
+    iconType: "color",
+    build: () => ({
+      id: shortId(),
+      title: "Escolha uma cor",
+      selectType: "color",
+      priceType: "off",
+      limit: 0,
+      variations: [
+        { id: shortId(), title: "Branco", color: "#ffffff", price: 0 },
+        { id: shortId(), title: "Preto", color: "#000000", price: 0 },
+      ],
+    }),
+  },
+  {
+    id: "customer-name",
+    title: "Pedir nome",
+    description: "Cliente informa nome ou texto para personalização.",
+    iconType: "text",
+    build: () =>
+      ({
+        id: shortId(),
+        title: "Nome para personalização",
+        selectType: "text",
+        priceType: "off",
+        limit: 0,
+        variations: [],
+        placeholder: "Ex: Nome da criança",
+        customPrice: "",
+      } as any),
+  },
+  {
+    id: "customer-image",
+    title: "Pedir imagem",
+    description: "Cliente envia uma foto para personalizar o item.",
+    iconType: "image",
+    build: () =>
+      ({
+        id: shortId(),
+        title: "Envie a imagem para personalização",
+        selectType: "image",
+        priceType: "off",
+        limit: 0,
+        variations: [],
+        placeholder: "Ex: Envie a foto aqui",
+        customPrice: "",
+      } as any),
+  },
+];
+
+type QuickTemplateId =
+  | "additional-yes-no"
+  | "quantity"
+  | "color"
+  | "customer-name"
+  | "customer-image";
+
+const WIZARD_STEPS = [
+  { step: 1, label: "Modelo" },
+  { step: 2, label: "Configurar" },
+  { step: 3, label: "Revisar" },
+] as const;
+
+function moneyStringToNumber(value: string): number {
+  if (!value) return 0;
+
+  const normalized = value
+    .toString()
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .replace(/[^\d.-]/g, "");
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 function ImagePicker({
   value,
@@ -218,14 +390,14 @@ function ImagePicker({
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className={`w-8 h-8 rounded-md border border-dashed border-zinc-300 hover:border-yellow-400 hover:bg-yellow-50 flex items-center justify-center transition-colors ${uploading ? "opacity-50" : ""}`}
+          className={`w-8 h-8 rounded-md border border-dashed border-zinc-300 hover:border-yellow-500 hover:bg-yellow-50 flex items-center justify-center transition-colors ${uploading ? "opacity-50" : ""}`}
           title="Adicionar imagem"
           disabled={uploading}
         >
           {uploading ? (
             <div className="w-3 h-3 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
           ) : (
-            <ImageIcon size={14} className="text-zinc-400" />
+            <ImageIcon size={14} className="text-yellow-700" />
           )}
         </button>
       )}
@@ -303,7 +475,7 @@ function EmojiPicker({
         type="button"
         onClick={() => setOpen(!open)}
         className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
-          open ? "bg-yellow-100 text-yellow-600" : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600"
+          open ? "bg-yellow-100 text-yellow-700" : "hover:bg-yellow-50 text-yellow-700 hover:text-yellow-800"
         }`}
         title="Inserir emoji"
       >
@@ -379,8 +551,8 @@ function ColorPicker({
             ? `${buttonClassName} ${open ? "ring-2 ring-yellow-300" : ""}`
             : `w-8 h-8 rounded-md flex items-center justify-center transition-colors ${
                 open
-                  ? "bg-yellow-100 text-amber-600"
-                  : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "hover:bg-yellow-50 text-yellow-700 hover:text-yellow-800"
               }`
         }
         title={title}
@@ -427,6 +599,20 @@ export default function Variable({
   const [galleryMedia, setGalleryMedia] = useState<MediaItem[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
+  const [wizardTemplateId, setWizardTemplateId] = useState<QuickTemplateId | null>(null);
+  const [wizardGroupTitle, setWizardGroupTitle] = useState("");
+  const [wizardAdditionalLabel, setWizardAdditionalLabel] = useState("Sim, adicionar");
+  const [wizardAdditionalPrice, setWizardAdditionalPrice] = useState("10,00");
+  const [wizardQuantityLabel, setWizardQuantityLabel] = useState("Unidade");
+  const [wizardQuantityPrice, setWizardQuantityPrice] = useState("5,00");
+  const [wizardQuantityMin, setWizardQuantityMin] = useState(0);
+  const [wizardQuantityMax, setWizardQuantityMax] = useState(0);
+  const [wizardColorHexes, setWizardColorHexes] = useState<string[]>(["#ffffff", "#000000"]);
+  const [wizardColorWithPrice, setWizardColorWithPrice] = useState(false);
+  const [wizardCustomPlaceholder, setWizardCustomPlaceholder] = useState("");
+  const [wizardCustomPrice, setWizardCustomPrice] = useState("");
 
   const fetchGallery = useCallback(async () => {
     if (!product?.id) return;
@@ -494,6 +680,167 @@ export default function Variable({
     setOpenId(newAttr.id);
   };
 
+  const appendAttribute = (newAttr: AttributeType) => {
+    const next = [...attributes, newAttr];
+    setAttributes(next);
+    setHasChanges(true);
+    setOpenId(newAttr.id);
+  };
+
+  const resetWizard = () => {
+    setWizardStep(1);
+    setWizardTemplateId(null);
+    setWizardGroupTitle("");
+    setWizardAdditionalLabel("Sim, adicionar");
+    setWizardAdditionalPrice("10,00");
+    setWizardQuantityLabel("Unidade");
+    setWizardQuantityPrice("5,00");
+    setWizardQuantityMin(0);
+    setWizardQuantityMax(0);
+    setWizardColorHexes(["#ffffff", "#000000"]);
+    setWizardColorWithPrice(false);
+    setWizardCustomPlaceholder("");
+    setWizardCustomPrice("");
+  };
+
+  const openWizard = () => {
+    resetWizard();
+    setWizardOpen(true);
+  };
+
+  const closeWizard = () => {
+    setWizardOpen(false);
+    setTimeout(() => resetWizard(), 180);
+  };
+
+  const handleWizardTemplateSelect = (templateId: QuickTemplateId) => {
+    setWizardTemplateId(templateId);
+
+    if (templateId === "additional-yes-no") {
+      setWizardGroupTitle("Adicionar item extra?");
+      setWizardAdditionalLabel("Sim, adicionar");
+      setWizardAdditionalPrice("10,00");
+      setWizardColorWithPrice(false);
+    }
+
+    if (templateId === "quantity") {
+      setWizardGroupTitle("Quantidade extra");
+      setWizardQuantityLabel("Unidade");
+      setWizardQuantityPrice("5,00");
+      setWizardQuantityMin(0);
+      setWizardQuantityMax(0);
+      setWizardColorWithPrice(false);
+    }
+
+    if (templateId === "color") {
+      setWizardGroupTitle("Escolha uma cor");
+      setWizardColorHexes(["#ffffff", "#000000"]);
+      setWizardColorWithPrice(false);
+    }
+
+    if (templateId === "customer-name") {
+      setWizardGroupTitle("Nome para personalização");
+      setWizardCustomPlaceholder("Ex: Nome da criança");
+      setWizardCustomPrice("");
+      setWizardColorWithPrice(false);
+    }
+
+    if (templateId === "customer-image") {
+      setWizardGroupTitle("Envie a imagem para personalização");
+      setWizardCustomPlaceholder("Ex: Envie a foto aqui");
+      setWizardCustomPrice("");
+      setWizardColorWithPrice(false);
+    }
+  };
+
+  const toggleWizardColor = (hex: string) => {
+    setWizardColorHexes((prev) => {
+      const normalized = hex.toLowerCase();
+      const exists = prev.some((entry) => entry.toLowerCase() === normalized);
+      if (exists) {
+        const next = prev.filter((entry) => entry.toLowerCase() !== normalized);
+        return next.length > 0 ? next : [hex];
+      }
+      return [...prev, hex];
+    });
+  };
+
+  const buildWizardAttribute = (): AttributeType | null => {
+    const template = QUICK_ATTRIBUTE_TEMPLATES.find((item) => item.id === wizardTemplateId);
+    if (!template) return null;
+
+    const attribute = template.build();
+    const cleanTitle = wizardGroupTitle.trim();
+    if (cleanTitle) attribute.title = cleanTitle;
+
+    if (wizardTemplateId === "additional-yes-no") {
+      attribute.selectType = "radio";
+      attribute.priceType = "on";
+      attribute.variations = [
+        { id: shortId(), title: "Não, obrigado", price: 0 },
+        {
+          id: shortId(),
+          title: wizardAdditionalLabel.trim() || "Sim, adicionar",
+          price: moneyStringToNumber(realMoneyNumber(wizardAdditionalPrice || "0")),
+        },
+      ];
+    }
+
+    if (wizardTemplateId === "quantity") {
+      attribute.selectType = "quantity";
+      attribute.priceType = "on";
+      attribute.variations = [
+        {
+          id: shortId(),
+          title: wizardQuantityLabel.trim() || "Unidade",
+          price: moneyStringToNumber(realMoneyNumber(wizardQuantityPrice || "0")),
+          minQuantity: Math.max(0, Number(wizardQuantityMin) || 0),
+          maxQuantity: Math.max(0, Number(wizardQuantityMax) || 0),
+        },
+      ];
+    }
+
+    if (wizardTemplateId === "color") {
+      const selectedColors = wizardColorHexes.length ? wizardColorHexes : ["#ffffff"];
+      attribute.selectType = "color";
+      attribute.priceType = wizardColorWithPrice ? "on" : "off";
+      attribute.variations = selectedColors.map((hex) => {
+        const color = COLOR_OPTIONS.find((entry) => entry.hex.toLowerCase() === hex.toLowerCase());
+        return {
+          id: shortId(),
+          title: color?.name ?? "Cor",
+          color: hex,
+          price: 0,
+        };
+      });
+    }
+
+    if (wizardTemplateId === "customer-name") {
+      (attribute as any).selectType = "text";
+      (attribute as any).priceType = "off";
+      (attribute as any).variations = [];
+      (attribute as any).placeholder = wizardCustomPlaceholder || "Ex: Nome da criança";
+      (attribute as any).customPrice = realMoneyNumber(wizardCustomPrice || "");
+    }
+
+    if (wizardTemplateId === "customer-image") {
+      (attribute as any).selectType = "image";
+      (attribute as any).priceType = "off";
+      (attribute as any).variations = [];
+      (attribute as any).placeholder = wizardCustomPlaceholder || "Ex: Envie a foto aqui";
+      (attribute as any).customPrice = realMoneyNumber(wizardCustomPrice || "");
+    }
+
+    return attribute;
+  };
+
+  const createAttributeFromWizard = () => {
+    const attribute = buildWizardAttribute();
+    if (!attribute) return;
+    appendAttribute(attribute);
+    closeWizard();
+  };
+
   const removeAttribute = (id: string) => {
     const next = attributes.filter((a) => a.id !== id);
     setAttributes(next);
@@ -511,7 +858,7 @@ export default function Variable({
   const addVariation = (attrId: string) => {
     const attr = attributes.find((a) => a.id === attrId);
     if (!attr) return;
-    const newVar = { id: shortId(), title: "", price: 0 };
+    const newVar = { id: shortId(), title: "", price: 0, minQuantity: 0, maxQuantity: 0 };
     updateAttribute(attrId, { variations: [...(attr.variations || []), newVar] });
   };
 
@@ -531,6 +878,12 @@ export default function Variable({
     updateAttribute(attrId, { variations: vars });
     setConfirmDeleteVar(null);
   };
+
+  const selectedWizardTemplate = QUICK_ATTRIBUTE_TEMPLATES.find(
+    (template) => template.id === wizardTemplateId
+  );
+  const canAdvanceToConfig = !!wizardTemplateId;
+  const canAdvanceToReview = canAdvanceToConfig && wizardGroupTitle.trim().length > 0;
 
   return (
     <div className="space-y-3">
@@ -558,18 +911,382 @@ export default function Variable({
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={addAttribute}
-        className="w-full py-3.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+        <div>
+          <p className="text-lg font-semibold text-zinc-900">Variações e adicionais</p>
+          <p className="text-base text-zinc-600 mt-1">
+            Escolha o formato de criação: rápido por assistente ou completo no modo manual.
+          </p>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={openWizard}
+            className="rounded-xl border border-yellow-300 bg-yellow-50 hover:bg-yellow-100 px-4 py-3 text-left transition-colors"
+          >
+            <div className="flex items-center gap-2 text-amber-700 font-semibold text-base">
+              <Sparkles size={17} />
+              Assistente passo a passo
+            </div>
+            <p className="text-sm text-zinc-700 mt-1.5">
+              Abre um modal guiado com 3 passos.
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={addAttribute}
+            className="rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 px-4 py-3 text-left transition-colors"
+          >
+            <div className="flex items-center gap-2 text-zinc-900 font-semibold text-base">
+              <Plus size={18} />
+              Criar manualmente
+            </div>
+            <p className="text-sm text-zinc-700 mt-1.5">
+              Controle total para configurar tudo do seu jeito.
+            </p>
+          </button>
+        </div>
+      </div>
+
+      <Modal
+        status={wizardOpen}
+        close={closeWizard}
+        title="Assistente de criação de adicionais"
+        size="lg"
       >
-        <Plus size={20} />
-        Adicionar Grupo de Variações
-      </button>
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-2">
+            {WIZARD_STEPS.map((item) => {
+              const isDone = wizardStep > item.step;
+              const isActive = wizardStep === item.step;
+              return (
+                <div
+                  key={item.step}
+                  className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                    isActive
+                      ? "border-yellow-300 bg-yellow-50 text-yellow-900"
+                      : isDone
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-zinc-200 bg-zinc-50 text-zinc-500"
+                  }`}
+                >
+                  {item.step}. {item.label}
+                </div>
+              );
+            })}
+          </div>
+
+          {wizardStep === 1 && (
+            <div className="space-y-3">
+              <p className="text-sm text-zinc-600">
+                Selecione um modelo para iniciar.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {QUICK_ATTRIBUTE_TEMPLATES.map((template) => {
+                  const active = wizardTemplateId === template.id;
+                  return (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => handleWizardTemplateSelect(template.id as QuickTemplateId)}
+                      className={`rounded-lg border px-3 py-3 text-left transition-colors ${
+                        active
+                          ? "border-yellow-300 bg-yellow-50"
+                          : "border-zinc-200 bg-white hover:bg-zinc-50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5">
+                          {renderSelectTypeIcon(template.iconType, active, "colorful")}
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold text-zinc-900">{template.title}</p>
+                          <p className="text-xs text-zinc-600 mt-1">{template.description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {wizardStep === 2 && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                  Nome do grupo
+                </label>
+                <input
+                  type="text"
+                  value={wizardGroupTitle}
+                  onChange={(e) => setWizardGroupTitle(e.target.value)}
+                  placeholder="Ex: Adicional de balões"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                />
+              </div>
+
+              {wizardTemplateId === "additional-yes-no" && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                      Texto da opção positiva
+                    </label>
+                    <input
+                      type="text"
+                      value={wizardAdditionalLabel}
+                      onChange={(e) => setWizardAdditionalLabel(e.target.value)}
+                      className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                      Preço da opção
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-zinc-500">R$</span>
+                      <input
+                        type="text"
+                        value={wizardAdditionalPrice}
+                        onChange={(e) => setWizardAdditionalPrice(realMoneyNumber(e.target.value))}
+                        className="w-28 px-2 py-2 border border-zinc-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-yellow-400 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {wizardTemplateId === "quantity" && (
+                <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                        Nome da opção
+                      </label>
+                      <input
+                        type="text"
+                        value={wizardQuantityLabel}
+                        onChange={(e) => setWizardQuantityLabel(e.target.value)}
+                        className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                        Preço por unidade
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm text-zinc-500">R$</span>
+                        <input
+                          type="text"
+                          value={wizardQuantityPrice}
+                          onChange={(e) => setWizardQuantityPrice(realMoneyNumber(e.target.value))}
+                          className="w-28 px-2 py-2 border border-zinc-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-yellow-400 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                        Quantidade mínima
+                      </label>
+                      <input
+                        type="number"
+                        value={wizardQuantityMin}
+                        onChange={(e) => setWizardQuantityMin(Number(e.target.value) || 0)}
+                        min={0}
+                        className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                        Quantidade máxima
+                      </label>
+                      <input
+                        type="number"
+                        value={wizardQuantityMax}
+                        onChange={(e) => setWizardQuantityMax(Number(e.target.value) || 0)}
+                        min={0}
+                        className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {wizardTemplateId === "color" && (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-700 mb-1.5">Cores iniciais</p>
+                    <div className="grid grid-cols-7 gap-2">
+                      {COLOR_OPTIONS.map((color) => {
+                        const selected = wizardColorHexes.some(
+                          (hex) => hex.toLowerCase() === color.hex.toLowerCase()
+                        );
+
+                        return (
+                          <button
+                            key={color.hex}
+                            type="button"
+                            onClick={() => toggleWizardColor(color.hex)}
+                            className={`relative h-9 rounded-md border-2 transition-colors ${
+                              selected ? "border-yellow-400" : "border-zinc-200 hover:border-zinc-300"
+                            }`}
+                            style={{ backgroundColor: color.hex }}
+                            title={color.name}
+                          >
+                            {color.hex === "#ffffff" && (
+                              <span className="absolute inset-0 rounded-md border border-zinc-300" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm text-zinc-700">
+                    <input
+                      type="checkbox"
+                      checked={wizardColorWithPrice}
+                      onChange={(e) => setWizardColorWithPrice(e.target.checked)}
+                    />
+                    Definir preço por cor
+                  </label>
+                </div>
+              )}
+
+              {(wizardTemplateId === "customer-name" || wizardTemplateId === "customer-image") && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                      Texto de ajuda
+                    </label>
+                    <input
+                      type="text"
+                      value={wizardCustomPlaceholder}
+                      onChange={(e) => setWizardCustomPlaceholder(e.target.value)}
+                      placeholder={
+                        wizardTemplateId === "customer-name"
+                          ? "Ex: Nome da criança"
+                          : "Ex: Envie a foto aqui"
+                      }
+                      className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                      Taxa de personalização
+                      <span className="ml-1 font-normal text-zinc-500">opcional</span>
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-zinc-500">R$</span>
+                      <input
+                        type="text"
+                        value={wizardCustomPrice}
+                        onChange={(e) => setWizardCustomPrice(realMoneyNumber(e.target.value))}
+                        placeholder="0,00"
+                        className="w-28 px-2 py-2 border border-zinc-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-yellow-400 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {wizardStep === 3 && (
+            <div className="space-y-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+              <p className="text-sm font-semibold text-zinc-900">
+                Revise antes de criar
+              </p>
+              <p className="text-sm text-zinc-700">
+                Modelo: <span className="font-medium">{selectedWizardTemplate?.title ?? "-"}</span>
+              </p>
+              <p className="text-sm text-zinc-700">
+                Grupo: <span className="font-medium">{wizardGroupTitle || "-"}</span>
+              </p>
+              {wizardTemplateId === "additional-yes-no" && (
+                <p className="text-sm text-zinc-700">
+                  Opção positiva:{" "}
+                  <span className="font-medium">
+                    {wizardAdditionalLabel || "Sim, adicionar"} (R$ {wizardAdditionalPrice || "0,00"})
+                  </span>
+                </p>
+              )}
+              {wizardTemplateId === "quantity" && (
+                <p className="text-sm text-zinc-700">
+                  Quantidade:{" "}
+                  <span className="font-medium">
+                    {wizardQuantityLabel || "Unidade"} (R$ {wizardQuantityPrice || "0,00"}) min {wizardQuantityMin} / max {wizardQuantityMax}
+                  </span>
+                </p>
+              )}
+              {wizardTemplateId === "color" && (
+                <p className="text-sm text-zinc-700">
+                  Cores selecionadas:{" "}
+                  <span className="font-medium">{wizardColorHexes.length}</span>
+                </p>
+              )}
+              {(wizardTemplateId === "customer-name" || wizardTemplateId === "customer-image") && (
+                <p className="text-sm text-zinc-700">
+                  Entrada do cliente:{" "}
+                  <span className="font-medium">
+                    {wizardTemplateId === "customer-name" ? "Texto" : "Imagem"}
+                    {wizardCustomPrice ? ` (taxa R$ ${wizardCustomPrice})` : ""}
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-100">
+            <button
+              type="button"
+              onClick={() => (wizardStep === 1 ? closeWizard() : setWizardStep((prev) => (prev - 1) as 1 | 2 | 3))}
+              className="px-3 py-2 text-sm font-medium rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50"
+            >
+              {wizardStep === 1 ? "Cancelar" : "Voltar"}
+            </button>
+
+            {wizardStep < 3 ? (
+              <button
+                type="button"
+                onClick={() => setWizardStep((prev) => (prev + 1) as 1 | 2 | 3)}
+                disabled={(wizardStep === 1 && !canAdvanceToConfig) || (wizardStep === 2 && !canAdvanceToReview)}
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-yellow-400 hover:bg-yellow-500 disabled:bg-zinc-200 disabled:text-zinc-500 disabled:cursor-not-allowed text-zinc-900"
+              >
+                Continuar
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={createAttributeFromWizard}
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white"
+              >
+                Criar grupo
+              </button>
+            )}
+          </div>
+        </div>
+      </Modal>
 
       {attributes.map((attr) => {
         const isOpen = openId === attr.id;
         const varCount = attr.variations?.length ?? 0;
+        const selectTypeLabel =
+          attr.selectType === "radio"
+            ? "Seleção única"
+            : attr.selectType === "checkbox"
+            ? "Múltipla escolha"
+            : attr.selectType === "quantity"
+            ? "Por quantidade"
+            : attr.selectType === "color"
+            ? "Seleção de cor"
+            : attr.selectType === "text"
+            ? "Texto personalizado"
+            : "Envio de imagem";
+        const supportsPriceType = attr.selectType !== "text" && attr.selectType !== "image";
 
         return (
           <div
@@ -582,20 +1299,17 @@ export default function Variable({
               className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
               onClick={() => setOpenId(isOpen ? null : attr.id)}
             >
-              <GripVertical size={16} className="text-zinc-300 shrink-0" />
+              <GripVertical size={16} className="text-yellow-700 shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm text-zinc-900 truncate">
+                <div className="font-semibold text-base text-zinc-900 truncate">
                   {attr.title || "Grupo sem nome"}
                 </div>
-                <div className="text-xs text-zinc-400">
+                <div className="text-sm text-zinc-600">
                   {(attr.selectType === "text" || attr.selectType === "image") ? (
-                    attr.selectType === "text" ? "Texto personalizado" : "Envio de imagem"
+                    selectTypeLabel
                   ) : (
                     <>
-                      {varCount} {varCount === 1 ? "opção" : "opções"} · {
-                        attr.selectType === "radio" ? "Seleção única" :
-                        attr.selectType === "checkbox" ? "Múltipla escolha" : "Quantidade"
-                      }
+                      {varCount} {varCount === 1 ? "opção" : "opções"} · {selectTypeLabel}
                       {attr.priceType === "on" ? " · Com preços" : ""}
                     </>
                   )}
@@ -624,15 +1338,15 @@ export default function Variable({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setConfirmDelete(attr.id); }}
-                    className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-1.5 text-yellow-700 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <Trash2 size={14} />
                   </button>
                 )}
                 {isOpen ? (
-                  <ChevronUp size={16} className="text-zinc-400" />
+                  <ChevronUp size={16} className="text-yellow-700" />
                 ) : (
-                  <ChevronDown size={16} className="text-zinc-400" />
+                  <ChevronDown size={16} className="text-yellow-700" />
                 )}
               </div>
             </div>
@@ -640,7 +1354,7 @@ export default function Variable({
             {isOpen && (
               <div className="px-4 pb-4 space-y-4 border-t border-zinc-100">
                 <div className="pt-4">
-                  <label className="block text-xs font-medium text-zinc-600 mb-1.5">
+                  <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
                     Nome do grupo <span className="ml-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
                   </label>
                   <div className="flex items-center gap-1.5">
@@ -656,111 +1370,117 @@ export default function Variable({
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1.5">
-                      Tipo de seleção
+                  <div className="space-y-3">
+                    <label className="block text-base font-semibold text-zinc-800">
+                      Como o cliente vai escolher
                     </label>
-                    <div className="space-y-1.5">
-                      {SELECT_TYPES.map((st) => (
-                        <button
-                          key={st.value}
-                          type="button"
-                          onClick={() => updateAttribute(attr.id, { selectType: st.value })}
-                          className={`w-full px-3 py-2 rounded-lg border text-left text-sm transition-all ${
-                            attr.selectType === st.value
-                              ? "border-yellow-300 bg-yellow-50 text-zinc-900"
-                              : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            {st.value === "radio" && <CircleDot size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
-                            {st.value === "checkbox" && <CheckSquare size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
-                            {st.value === "quantity" && <Hash size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
-                            {st.value === "color" && <Palette size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
-                            {st.value === "text" && <Type size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
-                            {st.value === "image" && <Upload size={15} className={attr.selectType === st.value ? "text-amber-600" : "text-zinc-400"} />}
-                            <div>
-                              <div className="font-medium text-xs">{st.label}</div>
-                              <div className="text-[10px] text-zinc-400">{st.desc}</div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {PRIMARY_SELECT_TYPES.map((st) => {
+                        const active = attr.selectType === st.value;
+                        return (
+                          <button
+                            key={st.value}
+                            type="button"
+                            onClick={() => updateAttribute(attr.id, { selectType: st.value })}
+                            className={`w-full px-3 py-3 rounded-lg border text-left transition-all ${
+                              active
+                                ? "border-yellow-300 bg-yellow-50 text-zinc-900"
+                                : "border-zinc-200 text-zinc-700 hover:border-zinc-300 bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              {renderSelectTypeIcon(st.value, active)}
+                              <div>
+                                <div className="font-semibold text-sm leading-tight">{st.label}</div>
+                                <div className="text-xs text-zinc-500">{st.summary}</div>
+                              </div>
                             </div>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
 
+                    <details
+                      className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
+                      open={attr.selectType === "text" || attr.selectType === "image"}
+                    >
+                      <summary className="flex items-center justify-between gap-2 cursor-pointer text-sm font-semibold text-zinc-700">
+                        Tipos avançados
+                        <span className="text-xs font-medium text-zinc-500">
+                          Texto e imagem
+                        </span>
+                      </summary>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                        {ADVANCED_SELECT_TYPES.map((st) => {
+                          const active = attr.selectType === st.value;
+                          return (
+                            <button
+                              key={st.value}
+                              type="button"
+                              onClick={() => updateAttribute(attr.id, { selectType: st.value })}
+                              className={`w-full px-3 py-3 rounded-lg border text-left transition-all ${
+                                active
+                                  ? "border-yellow-300 bg-yellow-50 text-zinc-900"
+                                  : "border-zinc-200 text-zinc-700 hover:border-zinc-300 bg-white"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                {renderSelectTypeIcon(st.value, active)}
+                                <div>
+                                  <div className="font-semibold text-sm leading-tight">{st.label}</div>
+                                  <div className="text-xs text-zinc-500">{st.summary}</div>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </details>
+
                     {attr.selectType === "checkbox" && (
-                      <div className="mt-2">
-                        <label className="block text-xs text-zinc-500 mb-1">Limite de seleção (0 = sem limite)</label>
+                      <div className="pt-1">
+                        <label className="block text-sm text-zinc-600 mb-1">
+                          Limite de seleção (0 = sem limite)
+                        </label>
                         <input
                           type="number"
                           value={attr.limit ?? 0}
                           onChange={(e) => updateAttribute(attr.id, { limit: Number(e.target.value) || 0 })}
                           min={0}
-                          className="w-24 px-3 py-1.5 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                          className="w-28 px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
                         />
                       </div>
                     )}
                   </div>
 
-                  {attr.selectType !== "text" && attr.selectType !== "image" && attr.selectType !== "color" && (
+                  {supportsPriceType && (
                     <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1.5">
-                        Preços nas opções
+                      <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                        {attr.selectType === "color" ? "Preço nas cores" : "Preço nas opções"}
                       </label>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
                           onClick={() => updateAttribute(attr.id, { priceType: "on" })}
-                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                          className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                             attr.priceType === "on"
                               ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                              : "border-zinc-200 text-zinc-500 bg-white hover:border-zinc-300"
+                              : "border-zinc-200 text-zinc-600 bg-white hover:border-zinc-300"
                           }`}
                         >
-                          Com preços
+                          Com preço
                         </button>
                         <button
                           type="button"
                           onClick={() => updateAttribute(attr.id, { priceType: "off" })}
-                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                          className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                             attr.priceType === "off"
                               ? "border-zinc-400 bg-zinc-100 text-zinc-700"
-                              : "border-zinc-200 text-zinc-500 bg-white hover:border-zinc-300"
+                              : "border-zinc-200 text-zinc-600 bg-white hover:border-zinc-300"
                           }`}
                         >
-                          Sem preços
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {attr.selectType === "color" && (
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1.5">
-                        Preços nas cores
-                      </label>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => updateAttribute(attr.id, { priceType: "on" })}
-                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
-                            attr.priceType === "on"
-                              ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                              : "border-zinc-200 text-zinc-500 bg-white hover:border-zinc-300"
-                          }`}
-                        >
-                          Com preços
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => updateAttribute(attr.id, { priceType: "off" })}
-                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
-                            attr.priceType === "off"
-                              ? "border-zinc-400 bg-zinc-100 text-zinc-700"
-                              : "border-zinc-200 text-zinc-500 bg-white hover:border-zinc-300"
-                          }`}
-                        >
-                          Sem preços
+                          Sem preço
                         </button>
                       </div>
                     </div>
@@ -769,8 +1489,8 @@ export default function Variable({
                   {(attr.selectType === "text" || attr.selectType === "image") && (
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1.5">
-                          Placeholder <span className="ml-1 text-[10px] font-normal text-zinc-400">opcional</span>
+                        <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                          Placeholder <span className="font-normal text-zinc-500">opcional</span>
                         </label>
                         <input
                           type="text"
@@ -781,11 +1501,11 @@ export default function Variable({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1.5">
-                          Taxa de personalização <span className="ml-1 text-[10px] font-normal text-zinc-400">opcional</span>
+                        <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                          Taxa de personalização <span className="font-normal text-zinc-500">opcional</span>
                         </label>
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-zinc-400">R$</span>
+                          <span className="text-sm text-zinc-500">R$</span>
                           <input
                             type="text"
                             value={(attr as any).customPrice ?? ""}
@@ -795,16 +1515,16 @@ export default function Variable({
                           />
                         </div>
                       </div>
-                      <div className="bg-zinc-50 rounded-lg p-3 text-xs text-zinc-500">
+                      <div className="bg-zinc-50 rounded-lg p-3 text-sm text-zinc-600">
                         {attr.selectType === "text" ? (
                           <div className="flex items-start gap-2">
                             <Type size={14} className="mt-0.5 shrink-0" />
-                            <span>O cliente vai ver um campo de texto na página do produto. Exemplo: &quot;Qual o nome do aniversariante?&quot;</span>
+                            <span>O cliente verá um campo para texto livre.</span>
                           </div>
                         ) : (
                           <div className="flex items-start gap-2">
                             <Upload size={14} className="mt-0.5 shrink-0" />
-                            <span>O cliente vai poder enviar uma imagem na página do produto. Exemplo: &quot;Envie a foto para o topo do bolo&quot;</span>
+                            <span>O cliente poderá enviar uma imagem neste grupo.</span>
                           </div>
                         )}
                       </div>
@@ -815,13 +1535,13 @@ export default function Variable({
                 {attr.selectType !== "text" && attr.selectType !== "image" && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-medium text-zinc-600">
+                    <label className="text-sm font-semibold text-zinc-700">
                       {attr.selectType === "color" ? "Cores" : "Opções"} ({varCount})
                     </label>
                     <button
                       type="button"
                       onClick={() => addVariation(attr.id)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors"
                     >
                       <Plus size={14} />
                       {attr.selectType === "color" ? "Adicionar cor" : "Adicionar opção"}
@@ -830,11 +1550,11 @@ export default function Variable({
 
                   {varCount === 0 && (
                     <div className="text-center py-6 bg-white border border-dashed border-zinc-200 rounded-lg">
-                      <p className="text-sm text-zinc-400 mb-2">Nenhuma opção adicionada</p>
+                      <p className="text-base text-zinc-500 mb-2">Nenhuma opção adicionada</p>
                       <button
                         type="button"
                         onClick={() => addVariation(attr.id)}
-                        className="text-xs text-amber-700 hover:text-amber-800 font-medium"
+                        className="text-sm text-amber-700 hover:text-amber-800 font-semibold"
                       >
                         Adicionar primeira opção
                       </button>
@@ -911,7 +1631,7 @@ export default function Variable({
                             </>
                           )}
 
-                          {(attr.selectType === "checkbox" || attr.selectType === "quantity") && (
+                          {attr.selectType === "checkbox" && (
                             <div className="flex items-center gap-1 shrink-0">
                               <span className="text-xs text-zinc-400">Min:</span>
                               <input
@@ -922,6 +1642,41 @@ export default function Variable({
                                 min={0}
                                 className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
                               />
+                            </div>
+                          )}
+
+                          {attr.selectType === "quantity" && (
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-zinc-400">Min:</span>
+                                <input
+                                  type="number"
+                                  value={v.minQuantity ?? 0}
+                                  onChange={(e) =>
+                                    updateVariation(attr.id, v.id, {
+                                      minQuantity: Number(e.target.value) || 0,
+                                    })
+                                  }
+                                  placeholder="0"
+                                  min={0}
+                                  className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-zinc-400">Max:</span>
+                                <input
+                                  type="number"
+                                  value={v.maxQuantity ?? 0}
+                                  onChange={(e) =>
+                                    updateVariation(attr.id, v.id, {
+                                      maxQuantity: Number(e.target.value) || 0,
+                                    })
+                                  }
+                                  placeholder="0"
+                                  min={0}
+                                  className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                                />
+                              </div>
                             </div>
                           )}
 

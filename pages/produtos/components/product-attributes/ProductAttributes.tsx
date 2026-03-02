@@ -116,38 +116,58 @@ export default function ProductAttributes({
 
             <div className="space-y-2">
               {attribute.variations?.map((item: any, key) => {
+                const isQuantityType = attribute.selectType === "quantity";
+                const selectedAttribute = activeVariations?.find(
+                  (attr: any) => attr.id === attribute.id
+                );
+                const selectedVariation = selectedAttribute?.variations?.find(
+                  (v: any) => v.id === item.id
+                );
+                const selectedQuantity = Number(selectedVariation?.quantity ?? 0);
+                const minPerItemRaw = Number(item?.minQuantity ?? 0);
+                const maxPerItemRaw = Number(item?.maxQuantity ?? 0);
+                const minPerItem = Number.isFinite(minPerItemRaw)
+                  ? Math.max(0, minPerItemRaw)
+                  : 0;
+                const maxPerItem =
+                  Number.isFinite(maxPerItemRaw) && maxPerItemRaw > 0
+                    ? Math.max(minPerItem, maxPerItemRaw)
+                    : undefined;
+
                 const isChecked =
-                  activeVariations
-                    ?.find((attr: any) => attr.id === attribute.id)
-                    ?.variations?.some((v: any) => v.id === item.id) ?? false;
+                  selectedAttribute?.variations?.some((v: any) => v.id === item.id) ??
+                  false;
                 const variationImageSrc = resolveVariationImageSrc(
                   item?.image,
                   getImageAttr
                 );
+                const handleSelectVariation = () => {
+                  if (isQuantityType) return;
+                  updateOrder(
+                    {
+                      id: item.id,
+                      title: item.title ?? "",
+                      price: item.price,
+                      quantity: 1,
+                    },
+                    attribute
+                  );
+                };
 
                 return (
-                  <label
+                  <div
                     key={key}
                     className={`
-                      flex items-center gap-3 py-2.5 px-3 rounded-lg cursor-pointer
+                      flex items-center gap-3 py-2.5 px-3 rounded-lg
                       transition-all duration-200 border
                       ${
                         isChecked
                           ? "bg-yellow-50 border-yellow-300 shadow-sm"
                           : "bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
                       }
+                      ${isQuantityType ? "cursor-default" : "cursor-pointer"}
                     `}
-                    onClick={() =>
-                      updateOrder(
-                        {
-                          id: item.id,
-                          title: item.title ?? "",
-                          price: item.price,
-                          quantity: 1,
-                        },
-                        attribute
-                      )
-                    }
+                    onClick={handleSelectVariation}
                   >
                     {(attribute.selectType === "radio" ||
                       attribute.selectType === "checkbox") && (
@@ -168,7 +188,15 @@ export default function ProductAttributes({
                       </div>
                     )}
 
-                    <div className="flex-1 text-sm text-zinc-900">{item.title}</div>
+                    <div className="flex-1">
+                      <div className="text-sm text-zinc-900">{item.title}</div>
+                      {isQuantityType && (
+                        <div className="text-[11px] text-zinc-500 mt-0.5">
+                          Mínimo: {minPerItem} · Máximo:{" "}
+                          {maxPerItem !== undefined ? maxPerItem : "sem limite"}
+                        </div>
+                      )}
+                    </div>
 
                     {!!item?.price && (
                       <div className="shrink-0 text-sm font-medium text-emerald-600">
@@ -177,14 +205,14 @@ export default function ProductAttributes({
                     )}
 
                     {attribute.selectType === "quantity" && (
-                      <div className="shrink-0">
+                      <div
+                        className="shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <QtdInput
-                          value={
-                            activeVariations
-                              ?.find((a: any) => a.id === attribute.id)
-                              ?.variations?.find((v: any) => v.id === item.id)
-                              ?.quantity ?? 0
-                          }
+                          value={selectedQuantity}
+                          min={0}
+                          max={maxPerItem}
                           emitQtd={(value: number) =>
                             updateOrder(
                               {
@@ -200,7 +228,7 @@ export default function ProductAttributes({
                         />
                       </div>
                     )}
-                  </label>
+                  </div>
                 );
               })}
             </div>

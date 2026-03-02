@@ -49,11 +49,49 @@ const schedulingPeriodOptions = [
   { value: 3, name: "Por hora" },
 ];
 
-const colorMap: Record<string, { border: string; bg: string }> = {
-  blue: { border: "border-blue-400", bg: "bg-blue-50" },
-  emerald: { border: "border-emerald-400", bg: "bg-emerald-50" },
-  amber: { border: "border-amber-400", bg: "bg-amber-50" },
-  purple: { border: "border-purple-400", bg: "bg-purple-50" },
+const colorMap: Record<
+  string,
+  {
+    border: string;
+    bg: string;
+    ring: string;
+    iconWrap: string;
+    icon: string;
+    hover: string;
+  }
+> = {
+  blue: {
+    border: "border-blue-300",
+    bg: "bg-blue-50",
+    ring: "ring-2 ring-blue-200",
+    iconWrap: "bg-blue-100",
+    icon: "text-blue-700",
+    hover: "hover:border-blue-300",
+  },
+  emerald: {
+    border: "border-emerald-300",
+    bg: "bg-emerald-50",
+    ring: "ring-2 ring-emerald-200",
+    iconWrap: "bg-emerald-100",
+    icon: "text-emerald-700",
+    hover: "hover:border-emerald-300",
+  },
+  amber: {
+    border: "border-amber-300",
+    bg: "bg-amber-50",
+    ring: "ring-2 ring-amber-200",
+    iconWrap: "bg-amber-100",
+    icon: "text-amber-700",
+    hover: "hover:border-amber-300",
+  },
+  purple: {
+    border: "border-violet-300",
+    bg: "bg-violet-50",
+    ring: "ring-2 ring-violet-200",
+    iconWrap: "bg-violet-100",
+    icon: "text-violet-700",
+    hover: "hover:border-violet-300",
+  },
 };
 
 const showScheduling = (type?: string) => type === "aluguel" || type === "servicos";
@@ -87,13 +125,21 @@ const ProductCommercialType: React.FC<ProductCommercialTypeProps> = ({
                 }}
                 className={`px-3 py-3 rounded-lg border text-sm text-left transition-all ${
                   selected
-                    ? `${c.border} ${c.bg} text-zinc-900`
-                    : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                    ? `${c.border} ${c.bg} ${c.ring} text-zinc-900 shadow-sm`
+                    : `border-zinc-200 bg-white text-zinc-600 ${c.hover}`
                 }`}
               >
-                <Icon size={18} className={`mb-1.5 ${selected ? "text-zinc-700" : "text-zinc-400"}`} />
-                <div className="font-medium">{t.label}</div>
-                <div className="text-xs text-zinc-400 mt-0.5">{t.desc}</div>
+                <div className="mb-2 flex items-center gap-2">
+                  <span
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-md ${c.iconWrap}`}
+                  >
+                    <Icon size={17} className={c.icon} />
+                  </span>
+                  <div className="font-semibold leading-tight">{t.label}</div>
+                </div>
+                <div className={`text-xs leading-snug ${selected ? "text-zinc-600" : "text-zinc-500"}`}>
+                  {t.desc}
+                </div>
               </button>
             );
           })}
