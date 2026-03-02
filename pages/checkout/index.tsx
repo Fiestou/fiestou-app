@@ -325,6 +325,7 @@ export default function Checkout({
   );
   const lastFetchedZipRef = useRef<string | null>(null);
   const lastFetchedDeliverySignatureRef = useRef<string>("");
+  const deliveryRequestSeqRef = useRef(0);
   const isSubmittingRef = useRef(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
@@ -627,8 +628,13 @@ export default function Checkout({
 
   useEffect(() => {
     const sanitizedZip = justNumber(address?.zipCode ?? "");
+    const resetDeliveryFetchState = () => {
+      deliveryRequestSeqRef.current += 1;
+      setLoadingDeliveryPrice(false);
+    };
 
     if (!deliveryProductIds.length) {
+      resetDeliveryFetchState();
       setDeliveryPrice([]);
       lastFetchedZipRef.current = null;
       lastFetchedDeliverySignatureRef.current = "";
@@ -636,6 +642,7 @@ export default function Checkout({
     }
 
     if (sanitizedZip.length !== 8) {
+      resetDeliveryFetchState();
       setDeliveryPrice([]);
       lastFetchedZipRef.current = null;
       lastFetchedDeliverySignatureRef.current = "";
@@ -646,13 +653,17 @@ export default function Checkout({
       lastFetchedZipRef.current === sanitizedZip &&
       lastFetchedDeliverySignatureRef.current === deliverySignature
     ) {
+      setLoadingDeliveryPrice(false);
       return;
     }
 
     lastFetchedZipRef.current = sanitizedZip;
     lastFetchedDeliverySignatureRef.current = deliverySignature;
 
+    const requestSeq = ++deliveryRequestSeqRef.current;
     let cancelled = false;
+    const isCurrentRequest = () =>
+      !cancelled && deliveryRequestSeqRef.current === requestSeq;
 
     const getShippingPrice = async () => {
       setLoadingDeliveryPrice(true);
@@ -664,23 +675,24 @@ export default function Checkout({
           deliveryProductIds
         );
 
+        if (!isCurrentRequest()) {
+          return;
+        }
+
         if (!calculation.success) {
-          if (!cancelled) {
-            setDeliveryPrice([]);
-            toast.error(
-              calculation.error ??
-                "Não conseguimos calcular o frete para este CEP."
-            );
-            lastFetchedZipRef.current = null;
-            lastFetchedDeliverySignatureRef.current = "";
-          }
+          setDeliveryPrice([]);
+          toast.error(
+            calculation.error ?? "Não conseguimos calcular o frete para este CEP."
+          );
+          lastFetchedZipRef.current = null;
+          lastFetchedDeliverySignatureRef.current = "";
           return;
         }
 
         const normalizedFees = normalizeDeliveryItems(calculation.fees);
 
         if (!normalizedFees.length) {
-          if (cancelled) {
+          if (!isCurrentRequest()) {
             return;
           }
           setDeliveryPrice([]);
@@ -690,7 +702,7 @@ export default function Checkout({
           return;
         }
 
-        if (cancelled) {
+        if (!isCurrentRequest()) {
           return;
         }
 
@@ -706,7 +718,7 @@ export default function Checkout({
           lastFetchedDeliverySignatureRef.current = "";
         }
       } catch (error: any) {
-        if (cancelled) {
+        if (!isCurrentRequest()) {
           return;
         }
         setDeliveryPrice([]);
@@ -719,7 +731,7 @@ export default function Checkout({
         lastFetchedZipRef.current = null;
         lastFetchedDeliverySignatureRef.current = "";
       } finally {
-        if (!cancelled) {
+        if (deliveryRequestSeqRef.current === requestSeq) {
           setLoadingDeliveryPrice(false);
         }
       }
