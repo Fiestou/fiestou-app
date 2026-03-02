@@ -25,7 +25,7 @@ function Breadcrumbs() {
   const segments = cleanPath.split("/").filter(Boolean);
 
   return (
-    <div className="flex items-center gap-1.5 text-sm">
+    <div className="flex items-center gap-1.5 text-base overflow-x-auto whitespace-nowrap max-w-[60vw] sm:max-w-none">
       {segments.map((seg, i) => {
         const isLast = i === segments.length - 1;
         const isId = /^\d+$/.test(seg) || seg.startsWith("[");
@@ -34,11 +34,11 @@ function Breadcrumbs() {
 
         return (
           <span key={i} className="flex items-center gap-1.5">
-            {i > 0 && <ChevronRight size={14} className="text-zinc-300" />}
+            {i > 0 && <ChevronRight size={14} className="text-zinc-400" />}
             {isLast ? (
-              <span className="text-zinc-900 font-medium">{label}</span>
+              <span className="text-zinc-900 font-semibold">{label}</span>
             ) : (
-              <Link href={href} className="text-zinc-400 hover:text-zinc-600 transition-colors">
+              <Link href={href} className="text-zinc-600 hover:text-zinc-900 transition-colors">
                 {label}
               </Link>
             )}
@@ -65,7 +65,7 @@ export default function TopBar({
         <div className="flex items-center gap-4">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors border border-zinc-200"
           >
             <Menu size={20} />
           </button>
@@ -74,9 +74,9 @@ export default function TopBar({
 
         <button
           onClick={() => UserLogout()}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 py-2 text-base text-zinc-700 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-zinc-200"
         >
-          <LogOut size={16} />
+          <LogOut size={16} className="text-yellow-700" />
           <span className="hidden sm:inline">Sair</span>
         </button>
       </div>

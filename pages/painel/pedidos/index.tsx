@@ -38,6 +38,8 @@ const QUICK_FILTER_META = {
   },
 } as const;
 
+const MOBILE_PAGE_SIZE = 10;
+
 type QuickFilterKey = keyof typeof QUICK_FILTER_META;
 
 type ProductPreview = {
@@ -49,7 +51,7 @@ type ProductPreview = {
 
 function getProductPreviews(
   row: any,
-  resolvedGalleryByProductId: Record<number, any[]>
+  resolvedGalleryByProductId: Record<number, any[]>,
 ): ProductPreview[] {
   const previews: ProductPreview[] = [];
   const seen = new Set<string>();
@@ -59,7 +61,7 @@ function getProductPreviews(
 
   for (const item of source) {
     const productId = Number(
-      item?.product?.id ?? item?.productId ?? item?.product_id ?? 0
+      item?.product?.id ?? item?.productId ?? item?.product_id ?? 0,
     );
     const productTitle = item?.product?.title ?? item?.name ?? "Produto";
     const quantity = Number(item?.quantity || item?.product?.quantity || 1);
@@ -152,12 +154,17 @@ function getOrderDeliveryDateYmd(order: any): string | null {
 
 function getOrderDeliveryStatus(order: any): string {
   return String(
-    order?.deliveryStatus || order?.delivery_status || order?.delivery?.status || ""
+    order?.deliveryStatus ||
+      order?.delivery_status ||
+      order?.delivery?.status ||
+      "",
   ).toLowerCase();
 }
 
 function isOrderCanceled(order: any): boolean {
-  const paymentStatus = String(order?.metadata?.payment_status || "").toLowerCase();
+  const paymentStatus = String(
+    order?.metadata?.payment_status || "",
+  ).toLowerCase();
   const metadataStatus = String(order?.metadata?.status || "").toLowerCase();
   const status = Number(order?.status);
   return (
@@ -171,7 +178,9 @@ function isOrderCanceled(order: any): boolean {
 }
 
 function isOrderPaid(order: any): boolean {
-  const paymentStatus = String(order?.metadata?.payment_status || "").toLowerCase();
+  const paymentStatus = String(
+    order?.metadata?.payment_status || "",
+  ).toLowerCase();
   return (
     Number(order?.status) === 1 ||
     !!order?.metadata?.paid_at ||
@@ -197,7 +206,11 @@ function isQuickFilter(value: string): value is QuickFilterKey {
   return Object.prototype.hasOwnProperty.call(QUICK_FILTER_META, value);
 }
 
-function matchesQuickFilter(order: any, quickFilter: QuickFilterKey, todayYmd: string): boolean {
+function matchesQuickFilter(
+  order: any,
+  quickFilter: QuickFilterKey,
+  todayYmd: string,
+): boolean {
   if (isOrderCanceled(order)) return false;
 
   const deliveryDateYmd = getOrderDeliveryDateYmd(order);
@@ -222,7 +235,9 @@ function matchesQuickFilter(order: any, quickFilter: QuickFilterKey, todayYmd: s
 export default function Pedidos() {
   const router = useRouter();
   const [orders, setOrders] = useState<Array<any>>([]);
-  const [resolvedGalleryByProductId, setResolvedGalleryByProductId] = useState<Record<number, any[]>>({});
+  const [resolvedGalleryByProductId, setResolvedGalleryByProductId] = useState<
+    Record<number, any[]>
+  >({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -232,6 +247,8 @@ export default function Pedidos() {
   const [priceMax, setPriceMax] = useState("");
   const [quickFilter, setQuickFilter] = useState<QuickFilterKey | "">("");
   const [showFilters, setShowFilters] = useState(false);
+  const [mobileVisibleCount, setMobileVisibleCount] =
+    useState(MOBILE_PAGE_SIZE);
 
   const debounceRef = useRef<any>(null);
 
@@ -265,7 +282,7 @@ export default function Pedidos() {
 
         for (const item of listItems) {
           const productId = Number(
-            item?.product?.id ?? item?.productId ?? item?.product_id ?? 0
+            item?.product?.id ?? item?.productId ?? item?.product_id ?? 0,
           );
           if (!productId) continue;
           if (resolvedGalleryByProductId[productId]?.length) continue;
@@ -292,7 +309,7 @@ export default function Pedidos() {
               ? response.data.gallery
               : [],
           };
-        })
+        }),
       );
 
       if (!active) return;
@@ -350,14 +367,40 @@ export default function Pedidos() {
     return () => clearTimeout(debounceRef.current);
   }, [fetchOrders, search, statusFilter, dateFrom, dateTo, priceMin, priceMax]);
 
-  const activeFilterCount = [statusFilter, dateFrom, dateTo, priceMin, priceMax].filter(Boolean).length;
+  const activeFilterCount = [
+    statusFilter,
+    dateFrom,
+    dateTo,
+    priceMin,
+    priceMax,
+  ].filter(Boolean).length;
   const quickFilterMeta = quickFilter ? QUICK_FILTER_META[quickFilter] : null;
 
   const visibleOrders = useMemo(() => {
     if (!quickFilter) return orders;
     const todayYmd = toYmd(new Date());
-    return orders.filter((order) => matchesQuickFilter(order, quickFilter, todayYmd));
+    return orders.filter((order) =>
+      matchesQuickFilter(order, quickFilter, todayYmd),
+    );
   }, [orders, quickFilter]);
+
+  useEffect(() => {
+    setMobileVisibleCount(MOBILE_PAGE_SIZE);
+  }, [
+    search,
+    statusFilter,
+    dateFrom,
+    dateTo,
+    priceMin,
+    priceMax,
+    quickFilter,
+    orders.length,
+  ]);
+
+  const mobileOrders = useMemo(
+    () => visibleOrders.slice(0, mobileVisibleCount),
+    [visibleOrders, mobileVisibleCount],
+  );
 
   const clearFilters = () => {
     setStatusFilter("");
@@ -377,7 +420,9 @@ export default function Pedidos() {
     const nextQuery = { ...router.query };
     delete nextQuery.quick;
     router
-      .replace({ pathname: router.pathname, query: nextQuery }, undefined, { shallow: true })
+      .replace({ pathname: router.pathname, query: nextQuery }, undefined, {
+        shallow: true,
+      })
       .catch(() => undefined);
     setQuickFilter("");
   }, [router]);
@@ -399,7 +444,137 @@ export default function Pedidos() {
       boleto: "Boleto bancário",
     };
 
-    return rawMethod ? (methodMap[rawMethod] || rawMethod) : "Não informado";
+    return rawMethod ? methodMap[rawMethod] || rawMethod : "Não informado";
+  };
+
+  const renderMobileOrderCard = (row: any) => {
+    const previews = getProductPreviews(row, resolvedGalleryByProductId);
+    const listItems = Array.isArray(row?.listItems)
+      ? row.listItems
+      : Array.isArray(row?.items)
+        ? row.items
+        : [];
+    const totalItems = listItems.length || previews.length;
+    const store = getStoreData(row);
+    const customerName =
+      row.customer?.name || row.user?.name || "Cliente não informado";
+    const customerEmail = row.customer?.email || row.user?.email || "";
+    const displayOrderId = row.mainOrderId || row.id;
+    const primaryPreview = previews[0]?.title || "Sem prévia disponível";
+
+    return (
+      <article
+        key={`mobile-order-${displayOrderId}`}
+        className="overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-zinc-900">
+              Pedido #{displayOrderId}
+              {row.ordersCount > 1 && (
+                <span className="text-xs text-zinc-500 ml-1">
+                  (+{row.ordersCount - 1})
+                </span>
+              )}
+            </p>
+            <p className="text-xs text-zinc-500">
+              {getExtenseData(row.createdAt || row.created_at)}
+            </p>
+          </div>
+          <div className="shrink-0">
+            <OrderStatusBadge
+              status={row.status}
+              metadataStatus={row.metadata?.status}
+              paymentStatus={row.metadata?.payment_status}
+              paidAt={row.metadata?.paid_at}
+              statusText={row.statusText}
+            />
+          </div>
+        </div>
+
+        <div className="mt-3 space-y-0.5">
+          <p className="text-sm font-medium text-zinc-900 break-words">
+            {customerName}
+          </p>
+          {customerEmail && (
+            <p className="text-xs text-zinc-500 break-all">{customerEmail}</p>
+          )}
+        </div>
+
+        <div className="mt-3 flex items-start gap-2 min-w-0">
+          <div className="flex -space-x-2 shrink-0">
+            {previews.slice(0, 3).map((preview, idx) => (
+              <div
+                key={preview.key}
+                className="w-9 h-9 rounded-md overflow-hidden border border-white bg-zinc-100"
+                title={`${preview.quantity}x ${preview.title}`}
+                style={{ zIndex: 10 - idx }}
+              >
+                {preview.image ? (
+                  <Image
+                    src={preview.image}
+                    alt={preview.title}
+                    width={36}
+                    height={36}
+                    unoptimized
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[9px] text-zinc-500">
+                    IMG
+                  </div>
+                )}
+              </div>
+            ))}
+            {!previews.length && (
+              <div className="w-9 h-9 rounded-md bg-zinc-100 border border-zinc-200 flex items-center justify-center text-[9px] text-zinc-500">
+                IMG
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-zinc-700 font-medium break-words">
+              {primaryPreview}
+            </p>
+            <p className="text-xs text-zinc-500">{totalItems} item(ns)</p>
+          </div>
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-2 min-w-0">
+            <p className="text-[11px] text-zinc-500 uppercase tracking-wide">
+              Loja
+            </p>
+            <p className="text-xs font-medium text-zinc-900 break-words">
+              {store.name}
+            </p>
+          </div>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-2 min-w-0">
+            <p className="text-[11px] text-zinc-500 uppercase tracking-wide">
+              Pagamento
+            </p>
+            <p className="text-xs font-medium text-zinc-900 break-words">
+              {getPaymentMethodLabel(row)}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-3 border-t border-zinc-100 pt-3 flex items-center justify-between gap-2">
+          <span className="text-sm text-zinc-500">Total</span>
+          <span className="text-base font-semibold text-zinc-900">
+            R$ {moneyFormat(row.total)}
+          </span>
+        </div>
+
+        <Link
+          href={`/painel/pedidos/${displayOrderId}`}
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-3 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
+        >
+          <Eye size={15} />
+          Ver detalhes
+        </Link>
+      </article>
+    );
   };
 
   const columns: Column<any>[] = [
@@ -412,7 +587,9 @@ export default function Pedidos() {
         <span className="font-medium text-zinc-900">
           #{row.mainOrderId || row.id}
           {row.ordersCount > 1 && (
-            <span className="text-xs text-zinc-400 ml-1">(+{row.ordersCount - 1})</span>
+            <span className="text-xs text-zinc-400 ml-1">
+              (+{row.ordersCount - 1})
+            </span>
           )}
         </span>
       ),
@@ -435,8 +612,14 @@ export default function Pedidos() {
         const email = row.customer?.email || row.user?.email;
         return (
           <div>
-            <p className="font-medium text-zinc-900 truncate max-w-[180px]">{name}</p>
-            {email && <p className="text-xs text-zinc-400 truncate max-w-[180px]">{email}</p>}
+            <p className="font-medium text-zinc-900 truncate max-w-[180px]">
+              {name}
+            </p>
+            {email && (
+              <p className="text-xs text-zinc-400 truncate max-w-[180px]">
+                {email}
+              </p>
+            )}
           </div>
         );
       },
@@ -495,9 +678,7 @@ export default function Pedidos() {
                 {previews[0]?.title}
                 {previews.length > 1 && ` +${previews.length - 1}`}
               </p>
-              <p className="text-[11px] text-zinc-500">
-                {totalItems} item(ns)
-              </p>
+              <p className="text-[11px] text-zinc-500">{totalItems} item(ns)</p>
             </div>
           </div>
         );
@@ -530,7 +711,9 @@ export default function Pedidos() {
       sortable: true,
       className: "w-32",
       render: (row) => (
-        <span className="font-semibold text-zinc-900">R$ {moneyFormat(row.total)}</span>
+        <span className="font-semibold text-zinc-900">
+          R$ {moneyFormat(row.total)}
+        </span>
       ),
     },
     {
@@ -541,22 +724,18 @@ export default function Pedidos() {
         const methodLabel = getPaymentMethodLabel(row);
         const methodCode = String(
           row?.metadata?.payment_method ??
-          row?.metadata?.transaction_type ??
-          row?.payment?.method ??
-          ""
+            row?.metadata?.transaction_type ??
+            row?.payment?.method ??
+            "",
         ).toLowerCase();
         const installments = Number(row?.metadata?.installments || 0);
         const isCard = methodCode === "credit_card";
 
         return (
           <div className="text-sm text-zinc-700">
-            <div className="font-medium text-zinc-900">
-              {methodLabel}
-            </div>
+            <div className="font-medium text-zinc-900">{methodLabel}</div>
             {isCard && installments > 1 && (
-              <div className="text-xs text-zinc-400">
-                {installments}x
-              </div>
+              <div className="text-xs text-zinc-400">{installments}x</div>
             )}
           </div>
         );
@@ -599,144 +778,191 @@ export default function Pedidos() {
         description="Acompanhe os pedidos da sua loja"
       />
 
-      <div className="bg-white rounded-xl border border-zinc-200 mb-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4">
-          <SearchInput
-            placeholder="Buscar por pedido, cliente..."
-            value={search}
-            onChange={setSearch}
-            className="w-full sm:w-72"
-          />
-          <FilterDropdown
-            label="Status"
-            options={STATUS_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-          />
-          <button
-            type="button"
-            onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
-              showFilters || activeFilterCount > 0
-                ? "border-yellow-400 bg-yellow-50 text-zinc-900"
-                : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
-            }`}
-          >
-            <SlidersHorizontal size={15} />
-            Filtros
-            {activeFilterCount > 0 && (
-              <span className="bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
-          {activeFilterCount > 0 && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="text-xs text-red-500 hover:text-red-700 font-medium"
-            >
-              Limpar filtros
-            </button>
-          )}
-        </div>
+      <div className="space-y-4 overflow-x-hidden">
+        <div className="bg-white rounded-xl border border-zinc-200">
+          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+            <SearchInput
+              placeholder="Buscar por pedido, cliente..."
+              value={search}
+              onChange={setSearch}
+              className="w-full sm:max-w-xs"
+            />
 
-        {showFilters && (
-          <div className="px-4 pb-4 border-t border-zinc-100 pt-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Data início</label>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Data fim</label>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Preço mínimo</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">R$</span>
+            <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:items-center">
+              <FilterDropdown
+                label="Status"
+                options={STATUS_OPTIONS}
+                value={statusFilter}
+                onChange={setStatusFilter}
+                className="w-full sm:w-auto"
+              />
+              <button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`inline-flex w-full items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border transition-colors sm:w-auto ${
+                  showFilters || activeFilterCount > 0
+                    ? "border-yellow-400 bg-yellow-50 text-zinc-900"
+                    : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                }`}
+              >
+                <SlidersHorizontal size={15} />
+                Filtros
+                {activeFilterCount > 0 && (
+                  <span className="bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-xs text-red-500 hover:text-red-700 font-medium sm:ml-auto"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
+
+          {showFilters && (
+            <div className="px-4 pb-4 border-t border-zinc-100 pt-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-500 mb-1">
+                    Data início
+                  </label>
                   <input
-                    type="number"
-                    value={priceMin}
-                    onChange={(e) => setPriceMin(e.target.value)}
-                    placeholder="0"
-                    min={0}
-                    className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Preço máximo</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">R$</span>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-500 mb-1">
+                    Data fim
+                  </label>
                   <input
-                    type="number"
-                    value={priceMax}
-                    onChange={(e) => setPriceMax(e.target.value)}
-                    placeholder="0"
-                    min={0}
-                    className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-500 mb-1">
+                    Preço mínimo
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                      R$
+                    </span>
+                    <input
+                      type="number"
+                      value={priceMin}
+                      onChange={(e) => setPriceMin(e.target.value)}
+                      placeholder="0"
+                      min={0}
+                      className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-500 mb-1">
+                    Preço máximo
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                      R$
+                    </span>
+                    <input
+                      type="number"
+                      value={priceMax}
+                      onChange={(e) => setPriceMax(e.target.value)}
+                      placeholder="0"
+                      min={0}
+                      className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
+          )}
+        </div>
+
+        {quickFilterMeta && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-amber-900">
+                Filtro rápido ativo: {quickFilterMeta.label}
+              </p>
+              <p className="text-xs text-amber-700">
+                {quickFilterMeta.description} • {visibleOrders.length} pedido(s)
+                encontrado(s)
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={clearQuickFilter}
+              className="text-xs font-medium text-amber-800 hover:text-amber-950"
+            >
+              Remover filtro rápido
+            </button>
           </div>
         )}
-      </div>
 
-      {quickFilterMeta && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-sm font-semibold text-amber-900">
-              Filtro rápido ativo: {quickFilterMeta.label}
-            </p>
-            <p className="text-xs text-amber-700">
-              {quickFilterMeta.description} • {visibleOrders.length} pedido(s) encontrado(s)
-            </p>
+        {!loading && visibleOrders.length === 0 ? (
+          <div className="bg-white rounded-xl border border-zinc-200">
+            <EmptyState
+              icon={<ShoppingBag size={32} />}
+              title="Nenhum pedido encontrado"
+              description={
+                search || activeFilterCount > 0 || !!quickFilter
+                  ? "Tente ajustar os filtros ou a busca"
+                  : "Quando seus clientes fizerem pedidos, eles vão aparecer aqui"
+              }
+            />
           </div>
-          <button
-            type="button"
-            onClick={clearQuickFilter}
-            className="text-xs font-medium text-amber-800 hover:text-amber-950"
-          >
-            Remover filtro rápido
-          </button>
-        </div>
-      )}
+        ) : (
+          <>
+            <div className="sm:hidden space-y-3">
+              {loading ? (
+                <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-500 flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-zinc-300 border-t-yellow-400 rounded-full animate-spin" />
+                  Carregando pedidos...
+                </div>
+              ) : (
+                <>
+                  {mobileOrders.map(renderMobileOrderCard)}
+                  {visibleOrders.length > mobileVisibleCount && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setMobileVisibleCount((prev) => prev + MOBILE_PAGE_SIZE)
+                      }
+                      className="w-full rounded-lg border border-zinc-300 bg-white py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+                    >
+                      Carregar mais pedidos
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
 
-      {!loading && visibleOrders.length === 0 ? (
-        <div className="bg-white rounded-xl border border-zinc-200">
-          <EmptyState
-            icon={<ShoppingBag size={32} />}
-            title="Nenhum pedido encontrado"
-            description={
-              search || activeFilterCount > 0 || !!quickFilter
-                ? "Tente ajustar os filtros ou a busca"
-                : "Quando seus clientes fizerem pedidos, eles vão aparecer aqui"
-            }
-          />
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={visibleOrders}
-          keyField="id"
-          pageSize={15}
-          loading={loading}
-          emptyMessage="Nenhum pedido encontrado"
-        />
-      )}
+            <div className="hidden sm:block">
+              <DataTable
+                columns={columns}
+                data={visibleOrders}
+                keyField="id"
+                pageSize={15}
+                loading={loading}
+                emptyMessage="Nenhum pedido encontrado"
+              />
+            </div>
+          </>
+        )}
+      </div>
     </PainelLayout>
   );
 }

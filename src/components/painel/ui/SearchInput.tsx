@@ -36,22 +36,22 @@ export default function SearchInput({
 
   return (
     <div className={`relative ${className}`}>
-      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+      <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-600" />
       <input
         type="text"
         value={internal}
         onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-9 pr-9 py-2.5 text-sm bg-white border border-zinc-200 rounded-lg
+        className="w-full pl-10 pr-10 py-3 text-base bg-white border border-zinc-200 rounded-lg
           placeholder:text-zinc-400 text-zinc-900 outline-none
           focus:ring-2 focus:ring-yellow-400/30 focus:border-yellow-400 transition-all"
       />
       {internal && (
         <button
           onClick={clear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700"
         >
-          <X size={14} />
+          <X size={15} />
         </button>
       )}
     </div>

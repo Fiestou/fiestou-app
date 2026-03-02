@@ -17,6 +17,7 @@ interface ModalProps {
 
 export default function Modal(attr: ModalProps) {
   const [status, setStatus] = useState<boolean>(attr.status);
+  const isVisible = attr.status || status;
 
   const styles: Record<string, string> = {
     success: "bg-green-400 text-white",
@@ -120,51 +121,51 @@ export default function Modal(attr: ModalProps) {
               {attr.children}
             </div>
           </div>
-        ) : (
+        ) : isVisible ? (
           <div
-            className={`fixed top-0 left-0 w-full z-[100] ${attr.status ? "h-[100svh] overflow-y-scroll" : "h-0 overflow-hidden"
-              }`}
+            className="fixed inset-0 z-[100] pointer-events-auto"
           >
-            <div className="absolute flex min-h-[100svh] w-full py-10 lg:py-20">
-              <div
-                onClick={() => onClose()}
-                className={`${status ? "opacity-75" : "opacity-0 pointer-events-none"
-                  } transition-opacity duration-300 w-full absolute inset-0 min-h-[100svh] bg-zinc-900`}
-              ></div>
+            <div
+              onClick={() => onClose()}
+              className={`absolute inset-0 bg-zinc-900 transition-opacity duration-300 ${
+                status ? "opacity-60" : "opacity-0"
+              }`}
+            />
 
+            <div className="absolute inset-0 flex items-end sm:items-center justify-center p-2 sm:p-4 md:p-6">
               <div
                 className={`${
                   status
                     ? "translate-y-0 scale-100 opacity-100"
-                    : "translate-y-6 scale-[0.985] opacity-0 pointer-events-none"
-                } ${dialogSize[attr.size ?? "xl"]} relative w-full mx-auto px-4 transform-gpu transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`}
+                    : "translate-y-4 scale-[0.99] opacity-0"
+                } ${dialogSize[attr.size ?? "xl"]} w-full max-h-[94svh] rounded-2xl bg-white text-zinc-950 shadow-2xl transform-gpu transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden`}
               >
-                <div className="relative rounded-xl bg-white text-zinc-950 p-4 md:p-6">
-                  <div
-                    className={`w-full flex items-start ${!!attr?.title ? "border-b mb-2" : ""
-                      }`}
+                <div className="flex items-start gap-3 border-b border-zinc-100 px-4 py-3 sm:px-5 sm:py-4">
+                  {!!attr?.title && (
+                    <h4 className="text-lg sm:text-xl font-semibold text-zinc-900 w-full pr-8">
+                      {attr?.title}
+                    </h4>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onClose()}
+                    className="ml-auto rounded-full p-2 text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 transition-colors"
+                    aria-label="Fechar"
                   >
-                    {!!attr?.title && (
-                      <h4 className="text-xl text-zinc-900 w-full pb-2">
-                        {attr?.title}
-                      </h4>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => onClose()}
-                      className="text-xl -mt-1 absolute right-0 top-0 p-5"
-                    >
-                      <Icon icon="fa-times" />
-                    </button>
-                  </div>
-                  <div className={`${!!attr?.title ? "pt-3" : ""}`}>
-                    {attr?.children}
-                  </div>
+                    <Icon icon="fa-times" />
+                  </button>
+                </div>
+                <div
+                  className={`overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 ${
+                    !!attr?.title ? "" : "pt-5"
+                  } ${withStyle}`}
+                >
+                  {attr?.children}
                 </div>
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
       {/* trava scroll do body enquanto aberto */}
       {attr.status && (
