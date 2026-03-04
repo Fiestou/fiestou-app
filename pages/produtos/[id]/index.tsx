@@ -737,7 +737,7 @@ export default function Produto({
       <section>
         <div className="container-medium py-2 md:py-3">
           <Breadcrumbs
-            links={[{ url: getProductUrl(product, store), name: "Produtos" }]}
+            links={[{ url: "/produtos/listagem", name: "Produtos" }]}
           />
         </div>
       </section>
