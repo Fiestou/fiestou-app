@@ -14,6 +14,27 @@ function ProductCard({ product }: { product: ProductType | any }) {
   let store: StoreType = product?.store ?? {};
   const comercialType = product?.comercialType || "";
 
+  const parseAttributes = (raw: any): any[] => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const hasCustomizableAttributes = parseAttributes(product?.attributes).some(
+    (attribute: any) =>
+      !!attribute &&
+      (typeof attribute?.selectType === "string" ||
+        (Array.isArray(attribute?.variations) && attribute.variations.length > 0))
+  );
+
   const storeLogo = store.logo || store.image;
 
   const badgeConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
@@ -43,12 +64,20 @@ function ProductCard({ product }: { product: ProductType | any }) {
           )}
 
           <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
-            {badge && (
-              <div className={`flex items-center gap-1.5 ${badge.bg} ${badge.text} backdrop-blur-sm rounded-full text-xs font-medium px-3 py-1.5 shadow-sm`}>
-                <Icon icon={badge.icon} className="text-xs" type="far" />
-                <span>{badge.label}</span>
-              </div>
-            )}
+            <div className="flex flex-col items-start gap-1.5">
+              {badge && (
+                <div className={`flex items-center gap-1.5 ${badge.bg} ${badge.text} backdrop-blur-sm rounded-full text-xs font-medium px-3 py-1.5 shadow-sm`}>
+                  <Icon icon={badge.icon} className="text-xs" type="far" />
+                  <span>{badge.label}</span>
+                </div>
+              )}
+              {hasCustomizableAttributes && (
+                <div className="flex items-center gap-1.5 bg-yellow-100 text-yellow-800 backdrop-blur-sm rounded-full text-xs font-medium px-3 py-1.5 shadow-sm">
+                  <Icon icon="fa-sliders-h" className="text-xs" type="far" />
+                  <span>Editável</span>
+                </div>
+              )}
+            </div>
 
             <div className="ml-auto">
               <LikeButton id={Number(product?.id ?? 0)} />
