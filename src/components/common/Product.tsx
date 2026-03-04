@@ -73,7 +73,7 @@ function ProductCard({ product }: { product: ProductType | any }) {
               )}
               {hasCustomizableAttributes && (
                 <div className="flex items-center gap-1.5 bg-yellow-100 text-yellow-800 backdrop-blur-sm rounded-full text-xs font-medium px-3 py-1.5 shadow-sm">
-                  <Icon icon="fa-sliders-h" className="text-xs" type="far" />
+                  <Icon icon="fa-pen" className="text-xs" type="far" />
                   <span>Editável</span>
                 </div>
               )}
