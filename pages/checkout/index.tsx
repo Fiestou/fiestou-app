@@ -1714,6 +1714,9 @@ export default function Checkout({
                             if (rules.late_fee_enabled && rules.late_fee_value) {
                               ruleItems.push({ icon: "fa-clock", text: `Atraso: R$ ${rules.late_fee_value}/dia` });
                             }
+                            if (rules.damage_rules) {
+                              ruleItems.push({ icon: "fa-exclamation-triangle", text: "Regras para dano e avaria disponíveis" });
+                            }
 
                             return (
                               <div key={s.id} className="border border-gray-200 rounded-xl p-4 bg-white">
@@ -1744,7 +1747,7 @@ export default function Checkout({
                                   </div>
                                 )}
 
-                                {(ruleItems.length > 0 || rules.additional_rules) && (
+                                {(ruleItems.length > 0 || rules.additional_rules || rules.damage_rules) && (
                                   <button
                                     type="button"
                                     onClick={() => setRulesModalStore(s)}
@@ -1948,6 +1951,16 @@ export default function Checkout({
                           <div>
                             <div className="font-semibold text-sm text-zinc-900">Observações</div>
                             <div className="text-sm text-zinc-600 whitespace-pre-line">{rules.additional_rules}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {rules.damage_rules && (
+                        <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+                          <Icon icon="fa-exclamation-triangle" className="text-red-600 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-sm text-zinc-900">Danos e avarias</div>
+                            <div className="text-sm text-zinc-600 whitespace-pre-line">{rules.damage_rules}</div>
                           </div>
                         </div>
                       )}

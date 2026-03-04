@@ -154,6 +154,7 @@ export default function CheckoutSummary({
                     parts.push(cancel);
                   }
                   if (rules.late_fee_enabled && rules.late_fee_value) parts.push(`multa por atraso: R$ ${rules.late_fee_value}/dia`);
+                  if (rules.damage_rules) parts.push("regras para dano e avaria");
                   return (
                     <div key={s.id} className="flex gap-3">
                       <div className="pt-1">
@@ -163,6 +164,7 @@ export default function CheckoutSummary({
                         <span>Li e aceito as regras de locação de <strong>{s.title}</strong></span>
                         {parts.length > 0 && <span>: {parts.join(", ")}.</span>}
                         {!!rules.additional_rules && <p className="text-zinc-500 mt-1">{rules.additional_rules}</p>}
+                        {!!rules.damage_rules && <p className="text-zinc-500 mt-1">{rules.damage_rules}</p>}
                       </div>
                     </div>
                   );
