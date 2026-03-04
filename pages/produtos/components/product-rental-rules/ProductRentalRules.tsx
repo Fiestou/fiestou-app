@@ -5,7 +5,20 @@ interface ProductRentalRulesProps {
 }
 
 export default function ProductRentalRules({ store }: ProductRentalRulesProps) {
-  const rules = store?.rental_rules;
+  const parseRules = (value: any) => {
+    if (!value) return null;
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === "object" ? parsed : null;
+      } catch {
+        return null;
+      }
+    }
+    return typeof value === "object" ? value : null;
+  };
+
+  const rules = parseRules(store?.rental_rules);
   if (!rules?.enabled) return null;
 
   const returnLabels: any = {
@@ -47,7 +60,7 @@ export default function ProductRentalRules({ store }: ProductRentalRulesProps) {
     });
   }
 
-  if (items.length === 0 && !rules.additional_rules) return null;
+  if (items.length === 0 && !rules.additional_rules && !rules.damage_rules) return null;
 
   return (
     <div className="border rounded-lg p-3 bg-gray-50">
@@ -84,6 +97,21 @@ export default function ProductRentalRules({ store }: ProductRentalRulesProps) {
             />
             <div className="text-xs text-zinc-600 leading-relaxed whitespace-pre-line">
               {rules.additional_rules}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rules.damage_rules && (
+        <div className="mt-2.5 pt-2.5 border-t">
+          <div className="flex items-start gap-2">
+            <Icon
+              icon="fa-exclamation-triangle"
+              className="text-xs text-amber-600 mt-0.5 flex-shrink-0"
+            />
+            <div className="text-xs text-zinc-600 leading-relaxed whitespace-pre-line">
+              <span className="font-medium text-zinc-700">Danos e avarias:</span>{" "}
+              {rules.damage_rules}
             </div>
           </div>
         </div>

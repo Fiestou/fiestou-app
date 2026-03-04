@@ -73,6 +73,11 @@ export default function Loja() {
 
   const [activeTab, setActiveTab] = useState("aparencia");
   const [saving, setSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<{
+    type: "success" | "warning" | "error";
+    text: string;
+    at: number;
+  } | null>(null);
 
   const [week, setWeek] = useState([] as Array<DayType>);
   const handleWeek = (value: Object, day: string) => {
@@ -113,7 +118,7 @@ export default function Loja() {
     if (typeof handle.rental_rules === "string") {
       try { handle.rental_rules = JSON.parse(handle.rental_rules); } catch { handle.rental_rules = null; }
     }
-    handle.rental_rules = handle.rental_rules ?? {
+    const rentalRuleDefaults = {
       enabled: false,
       return_period: "next_day",
       return_period_custom: "",
@@ -125,7 +130,9 @@ export default function Loja() {
       late_fee_enabled: false,
       late_fee_value: "",
       additional_rules: "",
+      damage_rules: "",
     };
+    handle.rental_rules = { ...rentalRuleDefaults, ...(handle.rental_rules || {}) };
 
     if (typeof handle.metadata === "string") {
       try { handle.metadata = JSON.parse(handle.metadata); } catch { handle.metadata = {}; }
@@ -327,6 +334,7 @@ export default function Loja() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
+    setSaveFeedback(null);
     try {
       const normalizedDeliveryRegions = normalizeRegionIds(store?.deliveryRegions);
       const payload = {
@@ -344,12 +352,17 @@ export default function Loja() {
 
       if (!request?.response) {
         const message = request?.message || request?.data?.message || "Não foi possível salvar os dados da loja.";
+        setSaveFeedback({ type: "error", text: message, at: Date.now() });
         toast.error(message);
         return;
       }
 
       setStore(payload);
       setOldStore(payload);
+      let feedback: { type: "success" | "warning"; text: string } = {
+        type: "success",
+        text: "Dados da loja salvos com sucesso.",
+      };
 
       const resolvedStoreId = Number(payload?.id || store?.id);
       if (Number.isInteger(resolvedStoreId) && resolvedStoreId > 0) {
@@ -364,14 +377,19 @@ export default function Loja() {
             regionRequest?.data?.error ||
             regionRequest?.data?.message ||
             "Dados da loja salvos, mas houve falha ao atualizar as regiões de entrega.";
-          toast.error(regionMessage);
-          return;
+          feedback = { type: "warning", text: regionMessage };
+          toast.warning(regionMessage);
         }
       }
 
-      toast.success("Dados da loja salvos com sucesso.");
+      if (feedback.type === "success") {
+        toast.success(feedback.text);
+      }
+      setSaveFeedback({ type: feedback.type, text: feedback.text, at: Date.now() });
     } catch (error: any) {
-      toast.error(error?.message || "Falha ao salvar a loja. Tente novamente.");
+      const message = error?.message || "Falha ao salvar a loja. Tente novamente.";
+      setSaveFeedback({ type: "error", text: message, at: Date.now() });
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -799,6 +817,17 @@ export default function Loja() {
                     />
                     <p className="text-xs text-zinc-400 mt-1">Estas regras serão exibidas para o cliente no momento da compra</p>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1.5">Regras em caso de dano ou avaria</label>
+                    <TextArea
+                      value={store?.rental_rules?.damage_rules ?? ""}
+                      onChange={(e) => handleStore({ rental_rules: { ...store.rental_rules, damage_rules: e.target.value } })}
+                      placeholder="Explique como funciona a cobrança em caso de dano, perda ou avaria dos itens."
+                      rows={4}
+                    />
+                    <p className="text-xs text-zinc-400 mt-1">Este texto também será exibido para o cliente no checkout.</p>
+                  </div>
                 </>
               )}
             </div>
@@ -917,6 +946,27 @@ export default function Loja() {
               );
             })}
           </div>
+
+          {saveFeedback && (
+            <div
+              className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
+                saveFeedback.type === "success"
+                  ? "border-green-200 bg-green-50 text-green-700"
+                  : saveFeedback.type === "warning"
+                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : "border-red-200 bg-red-50 text-red-700"
+              }`}
+            >
+              <div className="font-medium">{saveFeedback.text}</div>
+              <div className="text-xs opacity-80 mt-1">
+                Última atualização às{" "}
+                {new Date(saveFeedback.at).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+            </div>
+          )}
 
           {renderTabContent()}
         </div>
