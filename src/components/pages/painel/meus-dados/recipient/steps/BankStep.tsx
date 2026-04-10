@@ -14,7 +14,7 @@ export default function BankStep({ bank, typeEnum, onChange }: Props) {
 
   return (
     <div className="space-y-6">
-      <p className="text-zinc-600">Conta bancária para recebimento. Deve estar no nome do titular (CPF/CNPJ).</p>
+      <p className="text-sm leading-relaxed text-zinc-600 sm:text-base">Informe a conta onde sua loja vai receber.</p>
 
       <div className="grid md:grid-cols-2 gap-4">
         <Select
@@ -57,9 +57,9 @@ export default function BankStep({ bank, typeEnum, onChange }: Props) {
         required
       />
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm text-yellow-800">
-        <p className="font-semibold mb-1">Atenção:</p>
-        <p>Os dados bancários devem pertencer ao mesmo CPF/CNPJ do cadastro.</p>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm leading-relaxed text-yellow-800">
+        <p className="font-semibold mb-1">Importante</p>
+        <p>Use uma conta no mesmo CPF ou CNPJ do cadastro.</p>
       </div>
     </div>
   );

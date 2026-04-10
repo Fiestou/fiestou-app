@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Modal from "@/src/components/utils/Modal";
 import { Button } from "@/src/components/ui/form";
 import { AddressType, RecipientEntity, RecipientStatusResponse, RecipientType, RecipientTypeEnum, PhoneType } from "@/src/models/Recipient";
@@ -49,24 +49,100 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
 
   const currentStep = visibleSteps[Math.min(stepIndex, visibleSteps.length - 1)];
 
+  const buildAddressFromAvailable = useCallback(() => {
+    const storeAddr = store ? {
+      street: store.street || "", street_number: String(store.number || ""),
+      neighborhood: store.neighborhood || "", city: store.city || "",
+      state: store.state || "", zip_code: store.zipCode || "",
+      complementary: store.complement || "",
+    } : null;
+
+    const userAddr = user?.address?.[0] ? {
+      street: user.address[0].street || "", street_number: String(user.address[0].number || ""),
+      neighborhood: user.address[0].neighborhood || "", city: user.address[0].city || "",
+      state: user.address[0].state || "", zip_code: user.address[0].zipCode || "",
+      complementary: user.address[0].complement || "",
+    } : null;
+
+    const addr = (userType === "PJ" ? (storeAddr || userAddr) : (userAddr || storeAddr)) || null;
+
+    if (addr && addr.street) {
+      return {
+        id: undefined, type: "Recipient" as const, partner_document: "",
+        street: addr.street, complementary: addr.complementary,
+        street_number: addr.street_number, neighborhood: addr.neighborhood,
+        city: addr.city, state: addr.state, zip_code: addr.zip_code,
+        reference_point: addr.complementary || "SN",
+      };
+    }
+    return createAddress();
+  }, [store, user, userType]);
+
+  const buildPhoneFromUser = useCallback(() => {
+    const raw = user?.phone?.replace(/\D/g, "") || "";
+    if (raw.length >= 10) {
+      return { id: undefined, type: "Recipient" as const, partner_document: "", area_code: raw.slice(0, 2), number: raw.slice(2) };
+    }
+    return createPhone();
+  }, [user?.phone]);
+
+  const buildBankFromAvailable = useCallback(() => {
+    const mainDoc = user?.cpf || user?.document || store?.document || "";
+    const userBank = (user as any)?.bankAccounts?.[0];
+
+    if (userBank) {
+      return {
+        ...createBankAccount(),
+        bank: userBank.bank || "", branch_number: userBank.agence || "",
+        branch_check_digit: userBank.agenceDigit || "",
+        account_number: userBank.accountNumber || "",
+        account_check_digit: userBank.accountDigit || "",
+        holder_name: userBank.title || user?.name || "",
+        holder_type: (userType === "PJ" ? "company" : "individual") as "individual" | "company",
+        holder_document: justNumber(mainDoc),
+        type: (userBank.type === "savings" ? "savings" : "checking") as "checking" | "savings",
+      };
+    }
+
+    return {
+      ...createBankAccount(),
+      holder_name: user?.name || "",
+      holder_type: (userType === "PJ" ? "company" : "individual") as "individual" | "company",
+      holder_document: justNumber(mainDoc),
+    };
+  }, [store?.document, user, userType]);
+
+  const buildPartnerFromUser = useCallback(() => {
+    const userCpf = user?.cpf || "";
+    return {
+      ...createPartner(),
+      name: user?.name || "",
+      email: user?.email || "",
+      document: userCpf,
+      birth_date: user?.date || "",
+      self_declared_legal_representative: true,
+    };
+  }, [user?.cpf, user?.date, user?.email, user?.name]);
+
   useEffect(() => {
     if (!open) return;
 
     if (status?.recipient) {
       const r = status.recipient as RecipientType;
+      const resolvedType = (r.type_enum as RecipientTypeEnum) || userType;
       const cfg = (r as any).configs ?? r.config ?? null;
       const userDetails = (user as any)?.details || {};
       const storeMetadata = store?.metadata || {};
 
       setFormData({
         ...buildInitialForm(),
-        type_enum: userType,
+        type_enum: resolvedType,
         email: user?.email || r.email || "",
         document: user?.cpf || user?.document || r.document || "",
         name: user?.name || r.name || "",
         birth_date: user?.date || r.birth_date || userDetails?.birthDate || "",
-        company_name: userType === "PJ" ? (r.company_name ?? store?.companyName ?? "") : null,
-        trading_name: userType === "PJ" ? (r.trading_name ?? store?.title ?? "") : null,
+        company_name: resolvedType === "PJ" ? (r.company_name ?? store?.companyName ?? "") : null,
+        trading_name: resolvedType === "PJ" ? (r.trading_name ?? store?.title ?? "") : null,
         annual_revenue: r.annual_revenue ? Number(r.annual_revenue) : (storeMetadata?.annual_revenue || null),
         monthly_income: r.monthly_income ? Number(r.monthly_income) : (userDetails?.monthlyIncome || null),
         professional_occupation: r.professional_occupation || userDetails?.profession || userDetails?.occupation || "",
@@ -85,14 +161,14 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
           monthly_income: p.monthly_income ? Number(p.monthly_income) : null,
           professional_occupation: p.professional_occupation,
           self_declared_legal_representative: Boolean(p.self_declared_legal_representative),
-        })) : (userType === "PJ" ? [buildPartnerFromUser()] : []),
+        })) : (resolvedType === "PJ" ? [buildPartnerFromUser()] : []),
         configs: cfg ? { ...createConfig(), ...cfg, transfer_enabled: Boolean(cfg.transfer_enabled), anticipation_enabled: Boolean(cfg.anticipation_enabled) } : createConfig(),
         bank_account: r.bank_account ? {
           ...createBankAccount(),
           bank: r.bank_account.bank ?? "", branch_number: r.bank_account.branch_number ?? "",
           branch_check_digit: r.bank_account.branch_check_digit ?? "", account_number: r.bank_account.account_number ?? "",
           account_check_digit: r.bank_account.account_check_digit ?? "", holder_name: r.bank_account.holder_name ?? "",
-          holder_type: userType === "PJ" ? "company" : "individual",
+          holder_type: resolvedType === "PJ" ? "company" : "individual",
           holder_document: r.bank_account.holder_document ?? "",
           type: (r.bank_account.type as "checking" | "savings") ?? "checking",
         } : buildBankFromAvailable(),
@@ -121,82 +197,7 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     }
     setStepIndex(0);
     setStepError(null);
-  }, [open, status, userType, user, store]);
-
-  function buildAddressFromAvailable() {
-    const storeAddr = store ? {
-      street: store.street || "", street_number: String(store.number || ""),
-      neighborhood: store.neighborhood || "", city: store.city || "",
-      state: store.state || "", zip_code: store.zipCode || "",
-      complementary: store.complement || "",
-    } : null;
-
-    const userAddr = user?.address?.[0] ? {
-      street: user.address[0].street || "", street_number: String(user.address[0].number || ""),
-      neighborhood: user.address[0].neighborhood || "", city: user.address[0].city || "",
-      state: user.address[0].state || "", zip_code: user.address[0].zipCode || "",
-      complementary: user.address[0].complement || "",
-    } : null;
-
-    const addr = (userType === "PJ" ? (storeAddr || userAddr) : (userAddr || storeAddr)) || null;
-
-    if (addr && addr.street) {
-      return {
-        id: undefined, type: "Recipient" as const, partner_document: "",
-        street: addr.street, complementary: addr.complementary,
-        street_number: addr.street_number, neighborhood: addr.neighborhood,
-        city: addr.city, state: addr.state, zip_code: addr.zip_code,
-        reference_point: addr.complementary || "SN",
-      };
-    }
-    return createAddress();
-  }
-
-  function buildPhoneFromUser() {
-    const raw = user?.phone?.replace(/\D/g, "") || "";
-    if (raw.length >= 10) {
-      return { id: undefined, type: "Recipient" as const, partner_document: "", area_code: raw.slice(0, 2), number: raw.slice(2) };
-    }
-    return createPhone();
-  }
-
-  function buildBankFromAvailable() {
-    const mainDoc = user?.cpf || user?.document || store?.document || "";
-    const userBank = (user as any)?.bankAccounts?.[0];
-
-    if (userBank) {
-      return {
-        ...createBankAccount(),
-        bank: userBank.bank || "", branch_number: userBank.agence || "",
-        branch_check_digit: userBank.agenceDigit || "",
-        account_number: userBank.accountNumber || "",
-        account_check_digit: userBank.accountDigit || "",
-        holder_name: userBank.title || user?.name || "",
-        holder_type: (userType === "PJ" ? "company" : "individual") as "individual" | "company",
-        holder_document: justNumber(mainDoc),
-        type: (userBank.type === "savings" ? "savings" : "checking") as "checking" | "savings",
-      };
-    }
-
-    return {
-      ...createBankAccount(),
-      holder_name: user?.name || "",
-      holder_type: (userType === "PJ" ? "company" : "individual") as "individual" | "company",
-      holder_document: justNumber(mainDoc),
-    };
-  }
-
-  function buildPartnerFromUser() {
-    const userCpf = user?.cpf || "";
-    return {
-      ...createPartner(),
-      name: user?.name || "",
-      email: user?.email || "",
-      document: userCpf,
-      birth_date: user?.date || "",
-      self_declared_legal_representative: true,
-    };
-  }
+  }, [open, status, userType, user, store, buildAddressFromAvailable, buildBankFromAvailable, buildPartnerFromUser, buildPhoneFromUser]);
 
   const updateField = (field: keyof RecipientEntity, value: any) => setFormData((prev) => ({ ...prev, [field]: value }));
   const updateAddress = (i: number, field: any, value: string) => setFormData((prev) => ({ ...prev, addresses: prev.addresses.map((a, idx) => idx === i ? { ...a, [field]: value } : a) }));
@@ -254,11 +255,11 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
     setSubmitting(true);
     try {
       const saved = await createRecipient(payload);
-      toast.success("Dados enviados para análise.");
+      toast.success((saved as any)?.__message || "Pronto. Seus dados foram salvos.");
       onCompleted?.(saved);
       onClose();
     } catch (error: any) {
-      toast.error(error?.message || "Não foi possível salvar.");
+      toast.error(error?.message || "Não foi possível salvar agora.");
     } finally {
       setSubmitting(false);
     }
@@ -278,7 +279,7 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
   if (!mounted) return null;
 
   return (
-    <Modal status={open} close={() => !submitting && onClose()} title="Cadastro Pagar.me" fullscreen>
+    <Modal status={open} close={() => !submitting && onClose()} title="Cadastro financeiro" fullscreen>
       <div className="flex flex-col gap-6">
         <StepIndicator steps={visibleSteps as Step[]} currentIndex={stepIndex} />
 
@@ -286,10 +287,12 @@ export default function RecipientModal({ open, onClose, status, onCompleted, use
 
         {renderStep()}
 
-        <div className="flex justify-between pt-4">
-          <Button style="btn-outline-light" type="button" disable={stepIndex === 0 || submitting} onClick={handlePrev}>Voltar</Button>
-          <Button style={stepIndex === visibleSteps.length - 1 ? "btn-success" : "btn-yellow"} type="button" loading={submitting} onClick={handleNext}>
-            {stepIndex === visibleSteps.length - 1 ? "Enviar para análise" : "Continuar"}
+        <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-between">
+          <Button style="btn-outline-light" type="button" disable={stepIndex === 0 || submitting} onClick={handlePrev} className="w-full sm:w-auto">
+            Voltar
+          </Button>
+          <Button style={stepIndex === visibleSteps.length - 1 ? "btn-success" : "btn-yellow"} type="button" loading={submitting} onClick={handleNext} className="w-full sm:w-auto">
+            {stepIndex === visibleSteps.length - 1 ? "Salvar cadastro" : "Continuar"}
           </Button>
         </div>
       </div>

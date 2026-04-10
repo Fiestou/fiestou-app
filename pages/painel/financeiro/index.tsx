@@ -1,6 +1,17 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DollarSign, Landmark, Clock3, HandCoins, RefreshCcw, Plus, XCircle, AlertCircle } from "lucide-react";
+import {
+  DollarSign,
+  Landmark,
+  Clock3,
+  HandCoins,
+  RefreshCcw,
+  Plus,
+  XCircle,
+  AlertCircle,
+  ArrowRight,
+  WalletCards,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "@/src/components/utils/Modal";
 import { moneyFormat } from "@/src/helper";
@@ -9,7 +20,6 @@ import {
   getFinancialAnticipations,
   createFinancialAnticipation,
   cancelFinancialAnticipation,
-  updateAutomaticAnticipationSettings,
   updateTransferSettings,
 } from "@/src/services/financial";
 import {
@@ -20,6 +30,8 @@ import {
   EmptyState,
 } from "@/src/components/painel";
 import type { Column } from "@/src/components/painel";
+import FinanceSectionNav from "@/src/components/painel/FinanceSectionNav";
+import usePainelPageMode from "@/src/components/painel/usePainelPageMode";
 
 type TransferSettings = {
   transfer_enabled: boolean;
@@ -27,17 +39,8 @@ type TransferSettings = {
   transfer_day: number;
 };
 
-type AutoAnticipationSettings = {
-  enabled: boolean;
-  type: "full" | "1025";
-  volume_percentage: number | null;
-  delay: number | null;
-  anticipation_days: number[];
-};
-
 type ConfirmActionType =
   | "save_transfer"
-  | "save_automatic"
   | "create_anticipation"
   | "cancel_anticipation";
 
@@ -48,6 +51,101 @@ type ConfirmState = {
   description: string;
   payload?: any;
 };
+
+const PAGARME_STANDARD_WITHDRAW_FEE_CENTS = 367;
+
+function calculateEasterSunday(year: number) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date: Date, amount: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function getBrazilBankHolidaySet(year: number) {
+  const easterSunday = calculateEasterSunday(year);
+  const carnivalMonday = addDays(easterSunday, -48);
+  const carnivalTuesday = addDays(easterSunday, -47);
+  const corpusChristi = addDays(easterSunday, 60);
+
+  return new Set([
+    `${year}-01-01`,
+    `${year}-04-21`,
+    `${year}-05-01`,
+    `${year}-09-07`,
+    `${year}-10-12`,
+    `${year}-11-02`,
+    `${year}-11-15`,
+    `${year}-11-20`,
+    `${year}-12-25`,
+    toDateInputValue(carnivalMonday),
+    toDateInputValue(carnivalTuesday),
+    toDateInputValue(corpusChristi),
+  ]);
+}
+
+function isBankingBusinessDay(date: Date) {
+  const day = date.getDay();
+  if (day === 0 || day === 6) return false;
+  return !getBrazilBankHolidaySet(date.getFullYear()).has(toDateInputValue(date));
+}
+
+function getNextBusinessDay(date: Date) {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  while (!isBankingBusinessDay(normalized)) {
+    normalized.setDate(normalized.getDate() + 1);
+  }
+  return normalized;
+}
+
+function toDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateInput(value?: string | null) {
+  const raw = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  const [year, month, day] = raw.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  parsed.setHours(0, 0, 0, 0);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+  return parsed;
+}
+
+const WEEKDAY_OPTIONS = [
+  { value: 1, label: "Segunda-feira" },
+  { value: 2, label: "Terça-feira" },
+  { value: 3, label: "Quarta-feira" },
+  { value: 4, label: "Quinta-feira" },
+  { value: 5, label: "Sexta-feira" },
+];
 
 function toCents(value: string): number {
   if (!value) return 0;
@@ -84,7 +182,7 @@ function getAnticipationMinimumDate() {
   );
 
   if (Number.isNaN(nowInSaoPaulo.getTime())) {
-    return new Date().toISOString().slice(0, 10);
+    return toDateInputValue(getNextBusinessDay(new Date()));
   }
 
   const isAfterCutoff =
@@ -98,11 +196,7 @@ function getAnticipationMinimumDate() {
     nowInSaoPaulo.setDate(nowInSaoPaulo.getDate() + 1);
   }
 
-  const year = nowInSaoPaulo.getFullYear();
-  const month = String(nowInSaoPaulo.getMonth() + 1).padStart(2, "0");
-  const day = String(nowInSaoPaulo.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return toDateInputValue(getNextBusinessDay(nowInSaoPaulo));
 }
 
 function normalizeTransferInterval(value: any): "daily" | "weekly" | "monthly" {
@@ -121,6 +215,35 @@ function normalizeTransferDay(value: any, interval: "daily" | "weekly" | "monthl
   return Math.min(31, Math.max(1, safe || 5));
 }
 
+function getTransferIntervalLabel(value: "daily" | "weekly" | "monthly") {
+  if (value === "daily") return "Diário";
+  if (value === "monthly") return "Mensal";
+  return "Semanal";
+}
+
+function getTransferDayLabel(
+  interval: "daily" | "weekly" | "monthly",
+  day: number,
+) {
+  if (interval === "daily") {
+    return "Repasse em dias úteis";
+  }
+
+  if (interval === "weekly") {
+    const weekDays = [
+      "",
+      "Segunda-feira",
+      "Terça-feira",
+      "Quarta-feira",
+      "Quinta-feira",
+      "Sexta-feira",
+    ];
+    return weekDays[day] || `Dia ${day}`;
+  }
+
+  return `Todo dia ${day}`;
+}
+
 function statusInfo(raw: any) {
   const status = String(raw || "").toLowerCase();
 
@@ -137,6 +260,7 @@ function statusInfo(raw: any) {
 }
 
 export default function FinanceiroPage() {
+  const panelMode = usePainelPageMode();
   const [loadingOverview, setLoadingOverview] = useState(true);
   const [loadingAnticipations, setLoadingAnticipations] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -152,15 +276,6 @@ export default function FinanceiroPage() {
     transfer_interval: "weekly",
     transfer_day: 5,
   });
-
-  const [autoSettings, setAutoSettings] = useState<AutoAnticipationSettings>({
-    enabled: false,
-    type: "full",
-    volume_percentage: null,
-    delay: null,
-    anticipation_days: [],
-  });
-  const [autoDaysInput, setAutoDaysInput] = useState("");
 
   const [anticipationModal, setAnticipationModal] = useState(false);
   const [newAnticipation, setNewAnticipation] = useState({
@@ -226,6 +341,8 @@ export default function FinanceiroPage() {
   const maximumFraudFee = hasMaximumFraudFee
     ? Number(anticipationLimits.maximum.fraud_coverage_fee)
     : null;
+  const hasAnticipationLimitsLoaded =
+    minimumAnticipationAmount != null || maximumAnticipationAmount != null;
   const noEligibleAnticipationBalance =
     maximumAnticipationAmount != null && maximumAnticipationAmount <= 0;
 
@@ -243,21 +360,6 @@ export default function FinanceiroPage() {
           transfer_interval: interval,
           transfer_day: normalizeTransferDay(transfer.transfer_day, interval),
         });
-
-        const auto = res.data.automatic_anticipation_settings ?? {};
-        const days = Array.isArray(auto.anticipation_days)
-          ? auto.anticipation_days.map((d: any) => Number(d)).filter((d: number) => Number.isFinite(d))
-          : [];
-
-        setAutoSettings({
-          enabled: Boolean(auto.enabled),
-          type: auto.type === "1025" ? "1025" : "full",
-          volume_percentage:
-            auto.volume_percentage == null ? null : Number(auto.volume_percentage),
-          delay: auto.delay == null ? null : Number(auto.delay),
-          anticipation_days: days,
-        });
-        setAutoDaysInput(days.join(","));
       } else {
         toast.error(res?.message || "Não foi possível carregar dados financeiros");
       }
@@ -357,37 +459,17 @@ export default function FinanceiroPage() {
         }
       }
 
-      if (confirm.action === "save_automatic") {
-        const days = autoDaysInput
-          .split(",")
-          .map((v) => Number(v.trim()))
-          .filter((n) => Number.isFinite(n) && n >= 1 && n <= 31);
-        const uniqueDays = Array.from(new Set(days)).sort((a, b) => a - b);
-
-        const payload = {
-          enabled: autoSettings.enabled,
-          type: autoSettings.type,
-          volume_percentage:
-            autoSettings.volume_percentage == null
-              ? null
-              : Number(autoSettings.volume_percentage),
-          delay: autoSettings.delay == null ? null : Number(autoSettings.delay),
-          anticipation_days: uniqueDays,
-        };
-
-        const res: any = await updateAutomaticAnticipationSettings(payload);
-        if (res?.response) {
-          toast.success("Antecipação automática atualizada");
-          await loadOverview();
-        } else {
-          toast.error(res?.message || "Falha ao salvar antecipação automática");
-        }
-      }
-
       if (confirm.action === "create_anticipation") {
         const cents = toCents(newAnticipation.requested_amount);
         if (!cents) {
           toast.error("Informe um valor válido para antecipação");
+          setSaving(false);
+          return;
+        }
+        if (!hasAnticipationLimitsLoaded) {
+          toast.error(
+            "Não foi possível consultar o valor mínimo e máximo de antecipação da sua loja agora."
+          );
           setSaving(false);
           return;
         }
@@ -423,8 +505,19 @@ export default function FinanceiroPage() {
           setSaving(false);
           return;
         }
+        const selectedPaymentDate = parseDateInput(newAnticipation.payment_date);
+        if (!selectedPaymentDate) {
+          toast.error("Escolha uma data válida para antecipação");
+          setSaving(false);
+          return;
+        }
         if (newAnticipation.payment_date < minimumAnticipationDate) {
           toast.error("Escolha uma data válida para antecipação");
+          setSaving(false);
+          return;
+        }
+        if (!isBankingBusinessDay(selectedPaymentDate)) {
+          toast.error("Escolha um dia útil bancário para antecipação");
           setSaving(false);
           return;
         }
@@ -568,8 +661,8 @@ export default function FinanceiroPage() {
           ? centsToMoney(Number(pagarme.available_amount || 0))
           : `R$ ${moneyFormat(recommendedAvailable)}`,
         subtitle: recipientIsReady
-          ? "Fonte: Pagar.me (saldo pronto para uso)"
-          : "Fonte: plataforma (estimativa local)",
+          ? "Valor já liberado para sua loja"
+          : "Estimativa atual da plataforma",
         icon: <DollarSign size={16} />,
         tone: "emerald",
       },
@@ -579,25 +672,25 @@ export default function FinanceiroPage() {
           ? centsToMoney(Number(pagarme.waiting_funds_amount || 0))
           : `R$ ${moneyFormat(Number(local.promises || 0))}`,
         subtitle: recipientIsReady
-          ? "Valores aguardando liberação na Pagar.me"
-          : "Pedidos ainda não liquidados",
+          ? "Valores ainda em liberação"
+          : "Pedidos ainda em processamento",
         icon: <Clock3 size={16} />,
         tone: "amber",
       },
       {
-        title: "Recebimentos (plataforma)",
+        title: "Recebimentos registrados",
         value: `R$ ${moneyFormat(Number(local.payments || 0))}`,
-        subtitle: "Histórico interno para conferência",
+        subtitle: "Resumo usado para conferência",
         icon: <Landmark size={16} />,
         tone: "blue",
       },
       {
-        title: recipientIsReady ? "Transferido pela Pagar.me" : "Saques pendentes (legado)",
+        title: recipientIsReady ? "Transferido para a conta" : "Transferências pendentes",
         value: recipientIsReady
           ? centsToMoney(Number(pagarme.transferred_amount || 0))
           : `R$ ${moneyFormat(Number(local.withdraw_pending_value || 0))}`,
         subtitle: recipientIsReady
-          ? "Histórico de transferências e antecipações"
+          ? "Movimentações já concluídas"
           : `${Number(local.withdraw_pending_count || 0)} solicitação(ões) em análise`,
         icon: <HandCoins size={16} />,
         tone: "purple",
@@ -605,8 +698,42 @@ export default function FinanceiroPage() {
     ];
   }, [overview]);
 
-  return (
-    <PainelLayout>
+  const openAnticipationModal = () => {
+    setNewAnticipation({
+      requested_amount: "",
+      payment_date: getAnticipationMinimumDate(),
+      timeframe: "",
+    });
+    setAnticipationModal(true);
+  };
+
+  const pageActions = (
+    <div className="flex w-full sm:w-auto flex-col gap-2 sm:flex-row sm:items-center">
+      <button
+        type="button"
+        onClick={() => {
+          loadOverview();
+          if (recipientReady) loadAnticipations();
+        }}
+        className="bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
+      >
+        <RefreshCcw size={15} />
+        Atualizar
+      </button>
+      <button
+        type="button"
+        disabled={!recipientReady}
+        onClick={openAnticipationModal}
+        className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Plus size={15} />
+        Nova antecipação
+      </button>
+    </div>
+  );
+
+  const sharedModals = (
+    <>
       <Modal
         status={anticipationModal}
         title="Nova antecipação"
@@ -636,16 +763,16 @@ export default function FinanceiroPage() {
             <p className="mt-1 text-xs text-red-600 font-semibold">
               {minimumAnticipationAmount != null
                 ? `Valor mínimo para antecipação: ${centsToMoney(minimumAnticipationAmount)}.`
-                : "Aguardando limite mínimo da Pagar.me para esta loja."}
+                : "Não foi possível consultar o valor mínimo de antecipação da sua loja agora."}
             </p>
             <p className="mt-1 text-xs text-red-600 font-semibold">
               {maximumAnticipationAmount != null
                 ? `Valor máximo para antecipação agora: ${centsToMoney(maximumAnticipationAmount)}.`
-                : "Aguardando limite máximo da Pagar.me para esta loja."}
+                : "Não foi possível consultar o valor máximo de antecipação da sua loja agora."}
             </p>
             <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-2.5">
               <p className="text-xs font-semibold text-red-700">
-                A Pagar.me pode cobrar taxa na antecipação.
+                A antecipação pode ter custos.
               </p>
               <p className="mt-1 text-[11px] text-red-700">
                 Taxa de antecipação:{" "}
@@ -679,14 +806,32 @@ export default function FinanceiroPage() {
               type="date"
               value={newAnticipation.payment_date}
               min={minimumAnticipationDate}
-              onChange={(e) =>
+              onChange={(e) => {
+                const rawValue = e.target.value;
+                const selectedDate = parseDateInput(rawValue);
+                if (selectedDate && !isBankingBusinessDay(selectedDate)) {
+                  const nextBusinessDay = getNextBusinessDay(selectedDate);
+                  const normalizedValue = toDateInputValue(nextBusinessDay);
+                  toast.info(
+                    `Antecipações só podem ser agendadas em dias úteis bancários. Ajustamos para ${formatDate(normalizedValue)}.`
+                  );
+                  setNewAnticipation((prev) => ({
+                    ...prev,
+                    payment_date: normalizedValue,
+                  }));
+                  return;
+                }
+
                 setNewAnticipation((prev) => ({
                   ...prev,
-                  payment_date: e.target.value,
-                }))
-              }
+                  payment_date: rawValue,
+                }));
+              }}
               className="w-full mt-1 border border-zinc-300 rounded-lg px-3 py-2 text-sm"
             />
+            <p className="mt-1 text-xs text-zinc-500">
+              Antecipações só podem ser agendadas em dias úteis bancários, sem feriados nacionais, Carnaval e Corpus Christi.
+            </p>
           </div>
           <div>
             <label className="text-sm font-medium text-zinc-700">Quando antecipar (opcional)</label>
@@ -711,18 +856,23 @@ export default function FinanceiroPage() {
 
           <button
             type="button"
-            disabled={noEligibleAnticipationBalance}
+            disabled={noEligibleAnticipationBalance || !hasAnticipationLimitsLoaded}
             onClick={() =>
               openConfirm(
                 "create_anticipation",
                 "Confirmar antecipação",
-                "Confirma o envio da solicitação de antecipação para a Pagar.me?"
+                "Confirma o pedido de antecipação?"
               )
             }
             className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg py-2.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Solicitar antecipação
           </button>
+          {!hasAnticipationLimitsLoaded && (
+            <p className="text-xs text-amber-700 font-medium">
+              Aguarde os limites da Pagar.me carregarem antes de solicitar a antecipação.
+            </p>
+          )}
         </div>
       </Modal>
 
@@ -754,76 +904,301 @@ export default function FinanceiroPage() {
           </div>
         </div>
       </Modal>
+    </>
+  );
+
+  const recipientPendingAlert =
+    !loadingOverview && !recipientReady ? (
+      <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-red-800">
+              Cadastro financeiro ainda não concluído
+            </p>
+            <p className="mt-1 text-sm text-red-700">
+              Para liberar recebimentos e antecipações, conclua primeiro a
+              aba Cadastro financeiro.
+            </p>
+          </div>
+          <Link
+            href="/painel/dados_do_recebedor"
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 sm:w-auto"
+          >
+            Ir para cadastro
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+      </div>
+    ) : null;
+
+  const financialCardsGrid = (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-5">
+      {financialCards.map((card) => (
+        <div
+          key={card.title}
+          className={`rounded-2xl border p-4 ${
+            card.tone === "emerald"
+              ? "border-emerald-200 bg-emerald-50/70"
+              : card.tone === "amber"
+                ? "border-amber-200 bg-amber-50/70"
+                : card.tone === "blue"
+                  ? "border-blue-200 bg-blue-50/70"
+                  : "border-violet-200 bg-violet-50/70"
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs text-zinc-500">{card.title}</p>
+              <p className="text-lg font-bold text-zinc-900 mt-1">{card.value}</p>
+              <p className="text-xs text-zinc-400 mt-1">{card.subtitle}</p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-white/80 flex items-center justify-center text-zinc-700 shadow-sm">
+              {card.icon}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const anticipationHistoryContent = !recipientReady ? (
+    <EmptyState
+      icon={<XCircle size={30} />}
+      title="Cadastro financeiro pendente"
+      description="Finalize a aba Cadastro financeiro para usar antecipações."
+    />
+  ) : (
+    <DataTable
+      columns={columns}
+      data={anticipations}
+      keyField="id"
+      pageSize={panelMode === "simple" ? 5 : 8}
+      loading={loadingAnticipations}
+      emptyMessage="Nenhuma antecipação encontrada"
+    />
+  );
+
+  if (panelMode === "simple") {
+    return (
+      <PainelLayout>
+        {sharedModals}
+
+        <PageHeader
+          title="Financeiro"
+          description="Veja o essencial do financeiro da sua loja."
+          actions={pageActions}
+        />
+
+        <FinanceSectionNav />
+
+        {recipientPendingAlert}
+        {financialCardsGrid}
+
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-5">
+            <h2 className="text-lg font-bold text-zinc-900">O essencial</h2>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/painel/dados_do_recebedor"
+                className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 transition-colors hover:border-yellow-300 hover:bg-white"
+              >
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  Cadastro financeiro
+                </div>
+                <div className="mt-2 text-base font-semibold text-zinc-900">
+                  {recipientReady ? "Concluído" : "Pendente"}
+                </div>
+              </Link>
+
+              <Link
+                href="/painel/conta"
+                className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 transition-colors hover:border-yellow-300 hover:bg-white"
+              >
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  Conta bancária
+                </div>
+                <div className="mt-2 text-base font-semibold text-zinc-900">
+                  {overview?.bank_account?.bank_code ? "Revisar conta" : "Cadastrar conta"}
+                </div>
+              </Link>
+
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  Recebimento
+                </div>
+                <div className="mt-2 text-base font-semibold text-zinc-900">
+                  {transferSettings.transfer_enabled
+                    ? `${getTransferIntervalLabel(transferSettings.transfer_interval)}`
+                    : "Desligado"}
+                </div>
+                {transferSettings.transfer_enabled && (
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {getTransferDayLabel(
+                      transferSettings.transfer_interval,
+                      transferSettings.transfer_day
+                    )}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  Antecipação
+                </div>
+                <div className="mt-2 text-base font-semibold text-zinc-900">
+                  {hasAnticipationLimitsLoaded
+                    ? `${centsToMoney(minimumAnticipationAmount || 0)} até ${centsToMoney(maximumAnticipationAmount || 0)}`
+                    : "Indisponível agora"}
+                </div>
+                {hasAnticipationLimitsLoaded && (
+                  <p className="mt-1 text-sm text-zinc-500">
+                    A partir de {formatDate(minimumAnticipationDate)}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-5">
+            <h2 className="text-lg font-bold text-zinc-900">Ações</h2>
+
+            {!!providerWarning && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle size={16} className="mt-0.5 text-amber-700" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800">
+                      Antecipação indisponível no momento
+                    </p>
+                    <p className="mt-1 text-xs text-amber-700">{providerWarning}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 space-y-3">
+              <Link
+                href="/painel/dados_do_recebedor"
+                className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/70 px-4 py-3 transition-colors hover:border-yellow-300 hover:bg-white"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Cadastro financeiro</p>
+                  <p className="text-xs text-zinc-500">
+                    {recipientReady ? "Revisar dados" : "Concluir cadastro"}
+                  </p>
+                </div>
+                <ArrowRight size={16} className="text-zinc-400" />
+              </Link>
+
+              <Link
+                href="/painel/conta"
+                className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/70 px-4 py-3 transition-colors hover:border-yellow-300 hover:bg-white"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Conta bancária</p>
+                  <p className="text-xs text-zinc-500">
+                    {overview?.bank_account?.bank_code ? "Revisar conta" : "Cadastrar conta"}
+                  </p>
+                </div>
+                <ArrowRight size={16} className="text-zinc-400" />
+              </Link>
+            </div>
+          </section>
+        </div>
+      </PainelLayout>
+    );
+  }
+
+  return (
+    <PainelLayout>
+      {sharedModals}
 
       <PageHeader
         title="Financeiro"
-        description="Recebimentos, repasses e antecipações da sua loja"
-        actions={
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                loadOverview();
-                if (recipientReady) loadAnticipations();
-              }}
-              className="bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              <RefreshCcw size={15} />
-              Atualizar
-            </button>
-            <button
-              type="button"
-              disabled={!recipientReady}
-              onClick={() => {
-                setNewAnticipation({
-                  requested_amount: "",
-                  payment_date: getAnticipationMinimumDate(),
-                  timeframe: "",
-                });
-                setAnticipationModal(true);
-              }}
-              className="bg-yellow-400 hover:bg-yellow-500 text-zinc-900 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Plus size={15} />
-              Nova antecipação
-            </button>
-          </div>
-        }
+        description="Recebimentos da loja."
+        actions={pageActions}
       />
 
-      {!loadingOverview && !recipientReady && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
-          <p className="text-sm text-red-700">
-            Para liberar recebimentos e antecipações, conclua primeiro o{" "}
-            <Link href="/painel/dados_do_recebedor" className="underline font-semibold">
-              cadastro da Pagar.me
-            </Link>
-            .
-          </p>
-        </div>
-      )}
+      <FinanceSectionNav />
 
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-        {financialCards.map((card) => (
-          <div key={card.title} className="bg-white border border-zinc-200 rounded-xl p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs text-zinc-500">{card.title}</p>
-                <p className="text-lg font-bold text-zinc-900 mt-1">{card.value}</p>
-                <p className="text-xs text-zinc-400 mt-1">{card.subtitle}</p>
-              </div>
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-600">
-                {card.icon}
-              </div>
+      <div className="mb-5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="rounded-xl bg-yellow-50 p-2.5 text-yellow-600">
+            <WalletCards size={18} />
+          </div>
+          <h2 className="text-base font-semibold text-zinc-900">Situação atual</h2>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                  Cadastro financeiro
+            </div>
+            <div className="mt-1 flex items-center gap-2 text-sm font-medium text-zinc-900">
+              <span
+                className={`inline-block h-2.5 w-2.5 rounded-full ${
+                  recipientReady ? "bg-emerald-500" : "bg-amber-500"
+                }`}
+              />
+                  {recipientReady ? "Concluído" : "Pendente"}
             </div>
           </div>
-        ))}
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                  Recebimento
+                </div>
+                <div className="mt-1 text-sm font-medium text-zinc-900">
+                  {transferSettings.transfer_enabled ? "Ligado" : "Desligado"}
+                </div>
+                <div className="mt-1 text-xs text-zinc-500">
+                  {transferSettings.transfer_enabled
+                    ? `${getTransferIntervalLabel(transferSettings.transfer_interval)} · ${getTransferDayLabel(
+                        transferSettings.transfer_interval,
+                        transferSettings.transfer_day,
+                      )}`
+                    : "Desligado"}
+                </div>
+              </div>
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                  Antecipação
+                </div>
+                <div className="mt-1 text-sm font-medium text-zinc-900">
+                  {hasAnticipationLimitsLoaded
+                    ? `${centsToMoney(minimumAnticipationAmount || 0)} até ${centsToMoney(maximumAnticipationAmount || 0)}`
+                    : "Indisponível agora"}
+                </div>
+                {hasAnticipationLimitsLoaded && (
+                  <div className="mt-1 text-xs text-zinc-500">
+                    A partir de {formatDate(minimumAnticipationDate)}
+                  </div>
+                )}
+              </div>
+            </div>
       </div>
 
+      {recipientPendingAlert}
+      {financialCardsGrid}
+
       <div className="grid xl:grid-cols-2 gap-5 mb-5">
-        <div className="bg-white border border-zinc-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-zinc-900">Configurações de recebimento</h3>
+        <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5">
+          <div className="mb-4">
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 mb-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                Resumo do recebimento
+              </div>
+              <div className="mt-1 text-sm font-medium text-zinc-900">
+                {transferSettings.transfer_enabled
+                  ? `${getTransferIntervalLabel(transferSettings.transfer_interval)} · ${getTransferDayLabel(
+                      transferSettings.transfer_interval,
+                      transferSettings.transfer_day,
+                    )}`
+                  : "Transferência desligada"}
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold text-zinc-900">Recebimento</h3>
+            </div>
           </div>
           <div className="space-y-3">
             <label className="flex items-center justify-between text-sm">
@@ -841,7 +1216,7 @@ export default function FinanceiroPage() {
               />
             </label>
 
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-sm">
                 <span className="block text-zinc-600 mb-1">Frequência</span>
                 <select
@@ -861,27 +1236,52 @@ export default function FinanceiroPage() {
                 </select>
               </label>
               {transferSettings.transfer_interval !== "daily" && (
-                <label className="text-sm">
-                  <span className="block text-zinc-600 mb-1">
-                    {transferSettings.transfer_interval === "weekly"
-                      ? "Dia da semana (1-5)"
+              <label className="text-sm">
+                <span className="block text-zinc-600 mb-1">
+                  {transferSettings.transfer_interval === "weekly"
+                      ? "Dia da semana"
                       : "Dia do mês (1-31)"}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={transferSettings.transfer_interval === "weekly" ? 5 : 31}
-                    value={transferSettings.transfer_day}
-                    onChange={(e) =>
-                      setTransferSettings((prev) => ({
-                        ...prev,
-                        transfer_day: Number(e.target.value || 1),
-                      }))
-                    }
-                    className="w-full border border-zinc-300 rounded-lg px-3 py-2"
-                  />
+                </span>
+                  {transferSettings.transfer_interval === "weekly" ? (
+                    <select
+                      value={transferSettings.transfer_day}
+                      onChange={(e) =>
+                        setTransferSettings((prev) => ({
+                          ...prev,
+                          transfer_day: Number(e.target.value || 1),
+                        }))
+                      }
+                      className="w-full border border-zinc-300 rounded-lg px-3 py-2"
+                    >
+                      {WEEKDAY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={transferSettings.transfer_day}
+                      onChange={(e) =>
+                        setTransferSettings((prev) => ({
+                          ...prev,
+                          transfer_day: Number(e.target.value || 1),
+                        }))
+                      }
+                      className="w-full border border-zinc-300 rounded-lg px-3 py-2"
+                    />
+                  )}
                 </label>
               )}
+            </div>
+
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+              <p className="text-sm font-semibold text-red-700">
+                Taxa padrão por transferência: {centsToMoney(PAGARME_STANDARD_WITHDRAW_FEE_CENTS)}
+              </p>
             </div>
 
             <button
@@ -895,120 +1295,75 @@ export default function FinanceiroPage() {
               }
               className="w-full mt-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg py-2.5 text-sm font-semibold"
             >
-              Salvar configurações
+              Salvar recebimento
             </button>
           </div>
         </div>
 
-        <div className="bg-white border border-zinc-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-zinc-900">Antecipação automática</h3>
+        <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5">
+          <div className="mb-4">
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 mb-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                Disponível agora
+              </div>
+              <div className="mt-1 text-sm font-medium text-zinc-900">
+                {hasAnticipationLimitsLoaded
+                  ? `${centsToMoney(minimumAnticipationAmount || 0)} até ${centsToMoney(maximumAnticipationAmount || 0)}`
+                  : "Antecipação indisponível agora"}
+              </div>
+              {hasAnticipationLimitsLoaded && (
+                <div className="mt-1 text-xs text-zinc-500">
+                  A partir de {formatDate(minimumAnticipationDate)}
+                </div>
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold text-zinc-900">Nova antecipação</h3>
+            </div>
           </div>
           <div className="space-y-3">
-            <label className="flex items-center justify-between text-sm">
-              <span className="text-zinc-600">Ativar antecipação automática</span>
-              <input
-                type="checkbox"
-                checked={autoSettings.enabled}
-                onChange={(e) =>
-                  setAutoSettings((prev) => ({
-                    ...prev,
-                    enabled: e.target.checked,
-                  }))
-                }
-                className="w-4 h-4 accent-yellow-500"
-              />
-            </label>
-
-            <div className="grid sm:grid-cols-2 gap-3">
-              <label className="text-sm">
-                <span className="block text-zinc-600 mb-1">Tipo</span>
-                <select
-                  value={autoSettings.type}
-                  onChange={(e) =>
-                    setAutoSettings((prev) => ({
-                      ...prev,
-                      type: e.target.value as "full" | "1025",
-                    }))
-                  }
-                  className="w-full border border-zinc-300 rounded-lg px-3 py-2"
-                >
-                  <option value="full">Total (full)</option>
-                  <option value="1025">10/25 (1025)</option>
-                </select>
-              </label>
-              <label className="text-sm">
-                <span className="block text-zinc-600 mb-1">Percentual (%)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={autoSettings.volume_percentage ?? ""}
-                  onChange={(e) =>
-                    setAutoSettings((prev) => ({
-                      ...prev,
-                      volume_percentage: e.target.value ? Number(e.target.value) : null,
-                    }))
-                  }
-                  className="w-full border border-zinc-300 rounded-lg px-3 py-2"
-                />
-              </label>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600">
+              Use a antecipação manual quando quiser adiantar um valor específico.
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-3">
-              <label className="text-sm">
-                <span className="block text-zinc-600 mb-1">Delay (dias)</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={31}
-                  value={autoSettings.delay ?? ""}
-                  onChange={(e) =>
-                    setAutoSettings((prev) => ({
-                      ...prev,
-                      delay: e.target.value ? Number(e.target.value) : null,
-                    }))
-                  }
-                  className="w-full border border-zinc-300 rounded-lg px-3 py-2"
-                />
-              </label>
-              <label className="text-sm">
-                <span className="block text-zinc-600 mb-1">Dias (1-31, separado por vírgula)</span>
-                <input
-                  type="text"
-                  value={autoDaysInput}
-                  onChange={(e) => setAutoDaysInput(e.target.value)}
-                  placeholder="Ex: 5,10,20"
-                  className="w-full border border-zinc-300 rounded-lg px-3 py-2"
-                />
-              </label>
-            </div>
+            {!!providerWarning ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                {providerWarning}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-zinc-200 bg-white p-3 text-sm text-zinc-600">
+                Abra uma nova antecipação para escolher valor e data do pagamento.
+              </div>
+            )}
 
             <button
               type="button"
-              onClick={() =>
-                openConfirm(
-                  "save_automatic",
-                  "Salvar antecipação automática",
-                  "Confirma a atualização da antecipação automática na Pagar.me?"
-                )
-              }
-              className="w-full mt-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg py-2.5 text-sm font-semibold"
+              disabled={!recipientReady || noEligibleAnticipationBalance || !hasAnticipationLimitsLoaded}
+              onClick={openAnticipationModal}
+              className="w-full rounded-lg bg-yellow-400 py-2.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Salvar antecipação automática
+              Nova antecipação
             </button>
+
+            {!hasAnticipationLimitsLoaded && (
+              <p className="text-xs text-amber-700 font-medium">
+                Aguarde os limites da Pagar.me carregarem antes de solicitar a antecipação.
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="bg-white border border-zinc-200 rounded-xl p-5 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-zinc-900">Antecipações solicitadas</h3>
-          <div className="flex items-center gap-2">
+      <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 mb-4">
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-semibold text-zinc-900">Antecipações solicitadas</h3>
+          </div>
+          <div className="flex w-full sm:w-auto items-center gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-zinc-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full sm:w-auto border border-zinc-300 rounded-lg px-3 py-2 text-sm"
             >
               <option value="">Todos os status</option>
               <option value="pending">Pendentes</option>
@@ -1025,7 +1380,7 @@ export default function FinanceiroPage() {
               <AlertCircle size={16} className="text-amber-700 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-amber-800">
-                  Integração de antecipação indisponível no momento
+                  Antecipação indisponível no momento
                 </p>
                 <p className="text-xs text-amber-700 mt-1">{providerWarning}</p>
               </div>
@@ -1033,22 +1388,7 @@ export default function FinanceiroPage() {
           </div>
         )}
 
-        {!recipientReady ? (
-          <EmptyState
-            icon={<XCircle size={30} />}
-            title="Recebedor não configurado"
-            description="Finalize o cadastro da Pagar.me para usar antecipações."
-          />
-        ) : (
-          <DataTable
-            columns={columns}
-            data={anticipations}
-            keyField="id"
-            pageSize={8}
-            loading={loadingAnticipations}
-            emptyMessage="Nenhuma antecipação encontrada"
-          />
-        )}
+        {anticipationHistoryContent}
       </div>
     </PainelLayout>
   );

@@ -83,11 +83,11 @@ export const buildInitialForm = (): RecipientEntity => ({
 
 // Configuração dos steps
 export const STEPS = [
-  { id: "type", label: "Tipo" },
-  { id: "identity", label: "Dados gerais" },
-  { id: "contact", label: "Contato" },
-  { id: "bank", label: "Banco" },
-  { id: "partners", label: "Sócios", only: "PJ" as RecipientTypeEnum },
+  { id: "type", label: "Como você recebe" },
+  { id: "identity", label: "Dados do cadastro" },
+  { id: "contact", label: "Contato e endereço" },
+  { id: "bank", label: "Conta para receber" },
+  { id: "partners", label: "Sócios da empresa", only: "PJ" as RecipientTypeEnum },
 ] as const;
 
 export type Step = (typeof STEPS)[number];
@@ -96,19 +96,19 @@ export type StepId = Step["id"];
 // Validação de cada step
 export function validateStep(stepId: StepId, formData: RecipientEntity): string | null {
   if (stepId === "type" && !formData.type_enum) {
-    return "Selecione PJ ou PF.";
+    return "Escolha como a sua loja vai receber.";
   }
 
   if (stepId === "identity") {
-    if (!formData.email || !formData.document) return "Email e documento obrigatórios.";
+    if (!formData.email || !formData.document) return "Preencha e-mail e CPF ou CNPJ.";
     if (formData.type_enum === "PF") {
-      if (!formData.name || !formData.birth_date) return "Nome e data de nascimento obrigatórios.";
+      if (!formData.name || !formData.birth_date) return "Preencha nome e data de nascimento.";
     } else {
       if (!formData.company_name || !formData.trading_name || !formData.name) {
-        return "Razão social, nome fantasia e representante legal obrigatórios.";
+        return "Preencha razão social, nome fantasia e quem responde pela loja.";
       }
       if (!formData.annual_revenue) {
-        return "Faturamento anual é obrigatório para empresas.";
+        return "Informe o faturamento anual da empresa para continuar.";
       }
     }
   }
@@ -117,24 +117,24 @@ export function validateStep(stepId: StepId, formData: RecipientEntity): string 
     const invalidAddr = formData.addresses.some(
       (a) => !a.street.trim() || !a.street_number.trim() || !a.neighborhood.trim() || !a.city.trim() || !a.state.trim() || !a.zip_code.trim()
     );
-    if (invalidAddr) return "Preencha todos os campos de endereço.";
+    if (invalidAddr) return "Preencha todo o endereço.";
 
     const invalidPhone = formData.phones.some((p) => !p.area_code.trim() || !p.number.trim());
     if (invalidPhone) return "Informe DDD e telefone.";
   }
 
   if (stepId === "bank") {
-    if (!formData.bank_account) return "Dados bancários obrigatórios.";
+    if (!formData.bank_account) return "Preencha a conta que vai receber.";
     const b = formData.bank_account;
     if (!b.bank.trim() || !b.branch_number.trim() || !b.account_number.trim() || !b.account_check_digit.trim() || !b.holder_name.trim() || !b.holder_document.trim()) {
-      return "Preencha todos os campos bancários.";
+      return "Preencha banco, agência, conta e titular.";
     }
   }
 
   if (stepId === "partners" && formData.type_enum === "PJ") {
-    if (!formData.partners || !formData.partners.length) return "Cadastro PJ precisa de pelo menos um sócio.";
+    if (!formData.partners || !formData.partners.length) return "Adicione pelo menos um sócio.";
     if (formData.partners.some((p) => !p.name.trim() || !p.document.trim())) {
-      return "Complete nome e CPF de todos os sócios.";
+      return "Preencha nome e CPF de todos os sócios.";
     }
   }
 

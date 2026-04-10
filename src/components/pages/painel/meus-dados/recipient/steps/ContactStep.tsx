@@ -82,11 +82,11 @@ export default function ContactStep({
       {/* Endereços */}
       <div className="space-y-6">
         {addresses.map((addr, i) => (
-          <div key={`addr-${i}`} className="border rounded-lg p-4 space-y-3">
-            <div className="flex justify-between items-center">
+          <div key={`addr-${i}`} className="border rounded-xl p-4 space-y-3 sm:p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="font-semibold">Endereço {i + 1}</p>
               {addresses.length > 1 && (
-                <button type="button" className="text-sm text-red-600" onClick={() => onRemoveAddress(i)}>remover</button>
+                <button type="button" className="text-sm text-red-600" onClick={() => onRemoveAddress(i)}>Remover</button>
               )}
             </div>
             <div className="grid md:grid-cols-2 gap-3">
@@ -107,7 +107,7 @@ export default function ContactStep({
                 />
                 {loadingCep === i && (
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500">
-                    Buscando...
+                    Buscando CEP...
                   </span>
                 )}
               </div>
@@ -124,17 +124,19 @@ export default function ContactStep({
             </div>
           </div>
         ))}
-        <Button style="btn-light" type="button" onClick={onAddAddress}>Adicionar endereço</Button>
+        <Button style="btn-light" type="button" onClick={onAddAddress} className="w-full sm:w-auto">
+          Adicionar endereço
+        </Button>
       </div>
 
       {/* Telefones */}
       <div className="space-y-6">
         {phones.map((phone, i) => (
-          <div key={`phone-${i}`} className="border rounded-lg p-4 space-y-3">
-            <div className="flex justify-between items-center">
+          <div key={`phone-${i}`} className="border rounded-xl p-4 space-y-3 sm:p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="font-semibold">Telefone {i + 1}</p>
               {phones.length > 1 && (
-                <button type="button" className="text-sm text-red-600" onClick={() => onRemovePhone(i)}>remover</button>
+                <button type="button" className="text-sm text-red-600" onClick={() => onRemovePhone(i)}>Remover</button>
               )}
             </div>
             <div className="grid md:grid-cols-3 gap-3">
@@ -149,7 +151,9 @@ export default function ContactStep({
             </div>
           </div>
         ))}
-        <Button style="btn-light" type="button" onClick={onAddPhone}>Adicionar telefone</Button>
+        <Button style="btn-light" type="button" onClick={onAddPhone} className="w-full sm:w-auto">
+          Adicionar telefone
+        </Button>
       </div>
     </div>
   );

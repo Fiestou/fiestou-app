@@ -43,20 +43,6 @@ export async function cancelFinancialAnticipation(anticipationId: string) {
   });
 }
 
-export async function updateAutomaticAnticipationSettings(data: {
-  enabled: boolean;
-  type: "full" | "1025";
-  volume_percentage?: number | null;
-  delay?: number | null;
-  anticipation_days?: number[];
-}) {
-  return api.bridge({
-    method: "patch",
-    url: "info/financial/automatic-anticipation-settings",
-    data,
-  });
-}
-
 export async function updateTransferSettings(data: {
   transfer_enabled: boolean;
   transfer_interval: "daily" | "weekly" | "monthly";
