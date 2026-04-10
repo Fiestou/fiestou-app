@@ -1,6 +1,7 @@
+import Image from "next/image";
 import { Button, Input, Label, Select } from "@/src/components/ui/form";
 import { formatName } from "@/src/components/utils/FormMasks";
-import Icon from "@/src/icons/fontAwesome/FIcon"; // ← ícone do voltar
+import Icon from "@/src/icons/fontAwesome/FIcon";
 import * as React from "react";
 
 type Categorie = {
@@ -15,9 +16,6 @@ interface Props {
   elements: Categorie[];
   submitStore: (e: React.FormEvent) => void;
   backStep?: () => void;
-  stepLabel?: string;
-  title?: string;
-  subtitle?: string;
 }
 
 export default function StepFinalReview({
@@ -26,17 +24,11 @@ export default function StepFinalReview({
   elements,
   submitStore,
   backStep,
-  stepLabel = "Etapa 3 de 3",
-  title = "Quase lá!",
-  subtitle = "Revise os seus dados antes de finalizar o cadastro.",
 }: Props) {
   const selectOptions = React.useMemo(
     () => [
       { value: "", name: "Selecione um segmento", disabled: true },
-      ...elements.map((el) => ({
-        value: el.id.toString(),
-        name: el.name,
-      })),
+      ...elements.map((el) => ({ value: el.id.toString(), name: el.name })),
     ],
     [elements]
   );
@@ -49,9 +41,8 @@ export default function StepFinalReview({
 
   return (
     <div className="block">
-      {/* Voltar de cima */}
       {backStep && (
-        <div className="w-full relative ">
+        <div className="w-full relative">
           <button className="absolute -left-36" type="button" onClick={backStep}>
             <div className="flex items-center h-fit text-lg gap-2 text-zinc-900">
               <Icon icon="fa-long-arrow-left" />
@@ -62,18 +53,11 @@ export default function StepFinalReview({
       )}
 
       <div className="text-center mb-4 md:mb-10">
-        <h3 className="font-title text-zinc-900 font-bold text-4xl text-center">
-          {title}
-        </h3>
-        <div className="pt-2">{subtitle}</div>
+        <h3 className="font-title text-zinc-900 font-bold text-4xl text-center">Quase lá!</h3>
+        <div className="pt-2 text-zinc-500">Dê um nome à sua loja e escolha o segmento.</div>
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          submitStore(e);
-        }}
-      >
+      <form onSubmit={(e) => { e.preventDefault(); submitStore(e); }}>
         <div className="form-group">
           <Label>Nome da Sua Loja</Label>
           <Input
@@ -105,44 +89,25 @@ export default function StepFinalReview({
             }}
           />
 
-          <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-            {selectedSegment?.icon && (
-              <img
-                src={selectedSegment.icon}
-                alt={selectedSegment.name}
-                className="w-4 h-4 object-contain"
-                onError={(e) => (e.currentTarget.style.display = "none")}
-              />
-            )}
-            <span>Segmento selecionado: {selectedSegment?.name ?? "Nenhum"}</span>
-          </div>
+          {selectedSegment && (
+            <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+              {selectedSegment?.icon && (
+                <Image
+                  src={selectedSegment.icon}
+                  alt={selectedSegment.name}
+                  width={16}
+                  height={16}
+                  className="h-4 w-4 object-contain"
+                  onError={(e) => (e.currentTarget.style.display = "none")}
+                />
+              )}
+              <span>Segmento selecionado: {selectedSegment.name}</span>
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-col gap-2 mb-6">
-          <Label>Você possui serviço de entrega?</Label>
-          <div className="flex mt-1 gap-4">
-            <Label className="block w-full border p-3 rounded-md cursor-pointer">
-              <input
-                className="mr-2"
-                type="radio"
-                name="entrega"
-                checked={store?.hasDelivery === true}
-                onChange={() => setStore({ hasDelivery: true })}
-              />
-              Sim
-            </Label>
-
-            <Label className="block w-full border p-3 rounded-md cursor-pointer">
-              <input
-                className="mr-2"
-                type="radio"
-                name="entrega"
-                checked={store?.hasDelivery === false}
-                onChange={() => setStore({ hasDelivery: false })}
-              />
-              Não
-            </Label>
-          </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-sm text-yellow-800">
+          <strong>Importante:</strong> sua loja e seus produtos só ficarão visíveis para clientes após você completar todos os dados no painel e confirmar sua conta no Pagar.me.
         </div>
 
         <Button className="w-full" type="submit" disable={store?.__loading}>
@@ -150,7 +115,7 @@ export default function StepFinalReview({
         </Button>
       </form>
 
-      <div className="text-center pt-4 text-sm">{stepLabel}</div>
+      <div className="text-center pt-4 text-sm text-zinc-400">Etapa 3 de 3</div>
     </div>
   );
 }
