@@ -241,7 +241,7 @@ export default function FileManager(attr: FileManagerType) {
                     <div
                       className={`${
                         attr?.options?.type != "thumb" ? "p-2" : "text-xs"
-                      } hidden group-hover:block absolute top-0 right-0 z-10`}
+                      } absolute top-0 right-0 z-10 block sm:hidden sm:group-hover:block`}
                     >
                       <Button
                         type="button"
@@ -296,15 +296,15 @@ export default function FileManager(attr: FileManagerType) {
               <Button
                 type="button"
                 onClick={() => emitSelection()}
-                className="py-2 px-5 text-sm"
-              >
-                Confimar
-              </Button>
-            </div>
+                  className="py-2 px-5 text-sm"
+                >
+                Confirmar
+                </Button>
+              </div>
           </div>
           <div className="h-full relative">
             <div className="absolute w-full h-full inset-0 overflow-x-hidden overflow-y-auto">
-              <div className="grid grid-cols-7 p-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 p-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7">
                 {!!placeholder.length &&
                   placeholder.map((item: any, key: any) => (
                     <div

@@ -49,6 +49,7 @@ interface TextAreaType {
 
 export default function TextArea(attr: TextAreaType) {
   const [render, setRender] = useState(false as boolean);
+  const hasCustomMinHeight = /(^|\s)([a-z]+:)?min-h-/.test(attr?.className ?? "");
 
   const getLines = (value: string) => {
     let split = value.toString().split("\n");
@@ -70,7 +71,9 @@ export default function TextArea(attr: TextAreaType) {
       setRender(true);
       setRows(parseInt((attr?.rows ?? getLines(attr?.value ?? "")).toString()));
     }
-  }, []);
+  }, [attr?.rows, attr?.value]);
+
+  const resolvedMinHeight = `${Math.max(rows, 5) * 1.5}rem`;
 
   return render ? (
     <>
@@ -122,7 +125,7 @@ export default function TextArea(attr: TextAreaType) {
           onKeyUp={(e) => (!!onKeyUp && !attr?.prevent ? onKeyUp(e) : {})}
           onBlur={(e) => (!!onBlur && !attr?.prevent ? onBlur(e) : {})}
           rows={rows}
-          style={{ minHeight: `6rem` }}
+          style={hasCustomMinHeight ? undefined : { minHeight: resolvedMinHeight }}
           {...(!!attr?.required ? { required: true } : {})}
         ></textarea>
       )}

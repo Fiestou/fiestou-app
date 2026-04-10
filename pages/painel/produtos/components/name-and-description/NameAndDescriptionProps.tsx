@@ -25,7 +25,7 @@ export const NameAndDescription: React.FC<NameAndDescriptionProps> = ({
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-zinc-700 mb-1.5">
-          Título do produto <span className="ml-1.5 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
+          Nome do produto <span className="ml-1.5 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
         </label>
         <input
           type="text"
@@ -63,15 +63,14 @@ export const NameAndDescription: React.FC<NameAndDescriptionProps> = ({
 
       <div>
         <label className="block text-sm font-medium text-zinc-700 mb-1.5">
-          Descrição <span className="ml-1.5 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
+          Descrição <span className="ml-1 text-[10px] font-normal text-zinc-400">opcional</span>
         </label>
         <textarea
           onChange={(e) => handleData({ description: e.target.value })}
           value={data?.description ?? ""}
-          required
           placeholder="Descreva o produto em detalhes: o que inclui, tamanhos, materiais..."
-          className="w-full px-3 py-2.5 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all resize-y min-h-[120px]"
-          rows={4}
+          className="w-full px-3 py-3 border border-zinc-200 rounded-lg text-sm leading-6 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all resize-y min-h-[260px] sm:min-h-[170px]"
+          rows={8}
         />
         <div className="flex justify-end mt-1">
           <span className={`text-xs ${descLen > 500 ? "text-amber-500" : "text-zinc-400"}`}>

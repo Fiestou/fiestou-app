@@ -1,5 +1,6 @@
+import Image from "next/image";
 import { AttributeType, ProductType } from "@/src/models/product";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { shortId, realMoneyNumber, getImage } from "@/src/helper";
 import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical, ImageIcon, X, Smile, Type, Upload, CircleDot, CheckSquare, Hash, Palette, Sparkles } from "lucide-react";
 import Api from "@/src/services/api";
@@ -372,25 +373,28 @@ function ImagePicker({
     <div className="relative shrink-0" ref={ref}>
       {thumb ? (
         <div className="relative group">
-          <img
+          <Image
             src={thumb}
             alt=""
+            width={40}
+            height={40}
+            unoptimized
             onClick={() => setOpen(!open)}
-            className="w-8 h-8 rounded-md object-cover cursor-pointer border border-zinc-200 hover:border-yellow-400 transition-colors"
+            className="h-10 w-10 rounded-md object-cover cursor-pointer border border-zinc-200 hover:border-yellow-400 transition-colors"
           />
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onChange(null); }}
-            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
           >
-            <X size={8} />
+            <X size={10} />
           </button>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className={`w-8 h-8 rounded-md border border-dashed border-zinc-300 hover:border-yellow-500 hover:bg-yellow-50 flex items-center justify-center transition-colors ${uploading ? "opacity-50" : ""}`}
+          className={`h-10 w-10 rounded-md border border-dashed border-zinc-300 hover:border-yellow-500 hover:bg-yellow-50 flex items-center justify-center transition-colors ${uploading ? "opacity-50" : ""}`}
           title="Adicionar imagem"
           disabled={uploading}
         >
@@ -403,7 +407,7 @@ function ImagePicker({
       )}
 
       {open && (
-        <div className="absolute z-20 top-10 left-0 bg-white rounded-lg shadow-lg border border-zinc-200 p-2 w-52">
+        <div className="absolute z-20 top-12 left-0 w-60 max-w-[calc(100vw-3rem)] rounded-lg border border-zinc-200 bg-white p-2 shadow-lg">
           {gallery.length > 0 && (
             <div className="grid grid-cols-4 gap-1.5 mb-2">
               {gallery.map((m) => (
@@ -418,7 +422,14 @@ function ImagePicker({
                     Number(m.id) === Number(selectedId) ? "border-yellow-400" : "border-transparent hover:border-zinc-300"
                   }`}
                 >
-                  <img src={getImage(m, "thumb")} alt="" className="w-full h-full object-cover" />
+                  <Image
+                    src={getImage(m, "thumb")}
+                    alt=""
+                    width={40}
+                    height={40}
+                    unoptimized
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -474,7 +485,7 @@ function EmojiPicker({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
+        className={`h-9 w-9 rounded-md flex items-center justify-center transition-colors ${
           open ? "bg-yellow-100 text-yellow-700" : "hover:bg-yellow-50 text-yellow-700 hover:text-yellow-800"
         }`}
         title="Inserir emoji"
@@ -483,7 +494,7 @@ function EmojiPicker({
       </button>
 
       {open && (
-        <div className="absolute z-30 top-9 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl border border-zinc-200 w-64">
+        <div className="absolute z-30 top-10 left-1/2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-zinc-200 bg-white shadow-xl">
           <div className="flex border-b border-zinc-100 px-1 pt-1 gap-0.5 overflow-x-auto">
             {EMOJI_CATEGORIES.map((cat, i) => (
               <button
@@ -498,13 +509,13 @@ function EmojiPicker({
               </button>
             ))}
           </div>
-          <div className="p-2 grid grid-cols-8 gap-0.5 max-h-36 overflow-y-auto">
+          <div className="grid max-h-40 grid-cols-6 gap-1 overflow-y-auto p-2 sm:grid-cols-8">
             {EMOJI_CATEGORIES[tab].emojis.map((emoji) => (
               <button
                 key={emoji}
                 type="button"
                 onClick={() => { onSelect(emoji); setOpen(false); }}
-                className="w-7 h-7 flex items-center justify-center text-base hover:bg-zinc-100 rounded-md transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-base transition-colors hover:bg-zinc-100"
               >
                 {emoji}
               </button>
@@ -549,7 +560,7 @@ function ColorPicker({
         className={
           buttonClassName
             ? `${buttonClassName} ${open ? "ring-2 ring-yellow-300" : ""}`
-            : `w-8 h-8 rounded-md flex items-center justify-center transition-colors ${
+            : `h-9 w-9 rounded-md flex items-center justify-center transition-colors ${
                 open
                   ? "bg-yellow-100 text-yellow-700"
                   : "hover:bg-yellow-50 text-yellow-700 hover:text-yellow-800"
@@ -561,8 +572,8 @@ function ColorPicker({
       </button>
 
       {open && (
-        <div className="absolute z-30 top-9 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl border border-zinc-200 w-64 p-3">
-          <div className="grid grid-cols-5 gap-2">
+        <div className="absolute z-30 top-10 left-1/2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-zinc-200 bg-white p-3 shadow-xl">
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
             {COLOR_OPTIONS.map((color) => (
               <button
                 key={color.hex}
@@ -591,7 +602,7 @@ export default function Variable({
   product: ProductType;
   emitAttributes: (attrs: AttributeType[] | string) => void;
 }) {
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
   const [attributes, setAttributes] = useState<AttributeType[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -607,8 +618,8 @@ export default function Variable({
   const [wizardAdditionalPrice, setWizardAdditionalPrice] = useState("10,00");
   const [wizardQuantityLabel, setWizardQuantityLabel] = useState("Unidade");
   const [wizardQuantityPrice, setWizardQuantityPrice] = useState("5,00");
-  const [wizardQuantityMin, setWizardQuantityMin] = useState(0);
-  const [wizardQuantityMax, setWizardQuantityMax] = useState(0);
+  const [wizardQuantityMin, setWizardQuantityMin] = useState("");
+  const [wizardQuantityMax, setWizardQuantityMax] = useState("");
   const [wizardColorHexes, setWizardColorHexes] = useState<string[]>(["#ffffff", "#000000"]);
   const [wizardColorWithPrice, setWizardColorWithPrice] = useState(false);
   const [wizardCustomPlaceholder, setWizardCustomPlaceholder] = useState("");
@@ -623,17 +634,20 @@ export default function Variable({
       });
       setGalleryMedia(res?.data ?? []);
     } catch {}
-  }, [product?.id]);
+  }, [api, product?.id]);
 
   useEffect(() => {
     fetchGallery();
-  }, [product?.id]);
+  }, [fetchGallery]);
 
+  const lastProductAttrsRef = useRef<string | null>(null);
   useEffect(() => {
-    const next = normalizeAttributes(product?.attributes ?? []);
-    if (JSON.stringify(next) !== JSON.stringify(attributes)) {
-      setAttributes(next);
-    }
+    const serialized = product?.attributes != null
+      ? (typeof product.attributes === "string" ? product.attributes : JSON.stringify(product.attributes))
+      : null;
+    if (serialized === lastProductAttrsRef.current) return;
+    lastProductAttrsRef.current = serialized;
+    setAttributes(normalizeAttributes(product?.attributes ?? []));
   }, [product?.attributes]);
 
   const emit = (attrs: AttributeType[]) => {
@@ -695,8 +709,8 @@ export default function Variable({
     setWizardAdditionalPrice("10,00");
     setWizardQuantityLabel("Unidade");
     setWizardQuantityPrice("5,00");
-    setWizardQuantityMin(0);
-    setWizardQuantityMax(0);
+    setWizardQuantityMin("");
+    setWizardQuantityMax("");
     setWizardColorHexes(["#ffffff", "#000000"]);
     setWizardColorWithPrice(false);
     setWizardCustomPlaceholder("");
@@ -727,8 +741,8 @@ export default function Variable({
       setWizardGroupTitle("Quantidade extra");
       setWizardQuantityLabel("Unidade");
       setWizardQuantityPrice("5,00");
-      setWizardQuantityMin(0);
-      setWizardQuantityMax(0);
+      setWizardQuantityMin("");
+      setWizardQuantityMax("");
       setWizardColorWithPrice(false);
     }
 
@@ -888,30 +902,32 @@ export default function Variable({
   return (
     <div className="space-y-3">
       {hasChanges && (
-        <div className="sticky top-0 z-10 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="sticky top-0 z-10 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
             <span className="text-sm font-medium text-amber-800">Você tem alterações não salvas</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full justify-center px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 sm:w-auto"
+            >
+              {saving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-zinc-700 border-t-transparent rounded-full animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Salvar Alterações"
+              )}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {saving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-zinc-700 border-t-transparent rounded-full animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              "Salvar Alterações"
-            )}
-          </button>
         </div>
       )}
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+      <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
         <div>
           <p className="text-lg font-semibold text-zinc-900">Variações e adicionais</p>
           <p className="text-base text-zinc-600 mt-1">
@@ -919,11 +935,11 @@ export default function Variable({
           </p>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <button
             type="button"
             onClick={openWizard}
-            className="rounded-xl border border-yellow-300 bg-yellow-50 hover:bg-yellow-100 px-4 py-3 text-left transition-colors"
+            className="rounded-xl border border-yellow-300 bg-yellow-50 px-4 py-4 text-left transition-colors hover:bg-yellow-100"
           >
             <div className="flex items-center gap-2 text-amber-700 font-semibold text-base">
               <Sparkles size={17} />
@@ -937,7 +953,7 @@ export default function Variable({
           <button
             type="button"
             onClick={addAttribute}
-            className="rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 px-4 py-3 text-left transition-colors"
+            className="rounded-xl border border-zinc-200 bg-white px-4 py-4 text-left transition-colors hover:bg-zinc-50"
           >
             <div className="flex items-center gap-2 text-zinc-900 font-semibold text-base">
               <Plus size={18} />
@@ -957,7 +973,7 @@ export default function Variable({
         size="lg"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {WIZARD_STEPS.map((item) => {
               const isDone = wizardStep > item.step;
               const isActive = wizardStep === item.step;
@@ -983,7 +999,7 @@ export default function Variable({
               <p className="text-sm text-zinc-600">
                 Selecione um modelo para iniciar.
               </p>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {QUICK_ATTRIBUTE_TEMPLATES.map((template) => {
                   const active = wizardTemplateId === template.id;
                   return (
@@ -1029,7 +1045,7 @@ export default function Variable({
               </div>
 
               {wizardTemplateId === "additional-yes-no" && (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
                       Texto da opção positiva
@@ -1051,7 +1067,7 @@ export default function Variable({
                         type="text"
                         value={wizardAdditionalPrice}
                         onChange={(e) => setWizardAdditionalPrice(realMoneyNumber(e.target.value))}
-                        className="w-28 px-2 py-2 border border-zinc-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-yellow-400 outline-none"
+                        className="w-full px-2 py-2 border border-zinc-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-yellow-400 outline-none sm:w-28"
                       />
                     </div>
                   </div>
@@ -1060,7 +1076,7 @@ export default function Variable({
 
               {wizardTemplateId === "quantity" && (
                 <div className="space-y-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                       <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
                         Nome da opção
@@ -1087,7 +1103,7 @@ export default function Variable({
                       </div>
                     </div>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                       <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
                         Quantidade mínima
@@ -1095,7 +1111,7 @@ export default function Variable({
                       <input
                         type="number"
                         value={wizardQuantityMin}
-                        onChange={(e) => setWizardQuantityMin(Number(e.target.value) || 0)}
+                        onChange={(e) => setWizardQuantityMin(e.target.value)}
                         min={0}
                         className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
                       />
@@ -1107,7 +1123,7 @@ export default function Variable({
                       <input
                         type="number"
                         value={wizardQuantityMax}
-                        onChange={(e) => setWizardQuantityMax(Number(e.target.value) || 0)}
+                        onChange={(e) => setWizardQuantityMax(e.target.value)}
                         min={0}
                         className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
                       />
@@ -1120,7 +1136,7 @@ export default function Variable({
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm font-semibold text-zinc-700 mb-1.5">Cores iniciais</p>
-                    <div className="grid grid-cols-7 gap-2">
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
                       {COLOR_OPTIONS.map((color) => {
                         const selected = wizardColorHexes.some(
                           (hex) => hex.toLowerCase() === color.hex.toLowerCase()
@@ -1157,7 +1173,7 @@ export default function Variable({
               )}
 
               {(wizardTemplateId === "customer-name" || wizardTemplateId === "customer-image") && (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
                       Texto de ajuda
@@ -1240,11 +1256,11 @@ export default function Variable({
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-100">
+          <div className="flex flex-col-reverse gap-2 border-t border-zinc-100 pt-2 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={() => (wizardStep === 1 ? closeWizard() : setWizardStep((prev) => (prev - 1) as 1 | 2 | 3))}
-              className="px-3 py-2 text-sm font-medium rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50"
+              className="w-full px-3 py-2 text-sm font-medium rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 sm:w-auto"
             >
               {wizardStep === 1 ? "Cancelar" : "Voltar"}
             </button>
@@ -1254,7 +1270,7 @@ export default function Variable({
                 type="button"
                 onClick={() => setWizardStep((prev) => (prev + 1) as 1 | 2 | 3)}
                 disabled={(wizardStep === 1 && !canAdvanceToConfig) || (wizardStep === 2 && !canAdvanceToReview)}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-yellow-400 hover:bg-yellow-500 disabled:bg-zinc-200 disabled:text-zinc-500 disabled:cursor-not-allowed text-zinc-900"
+                className="w-full px-4 py-2 text-sm font-semibold rounded-lg bg-yellow-400 hover:bg-yellow-500 disabled:bg-zinc-200 disabled:text-zinc-500 disabled:cursor-not-allowed text-zinc-900 sm:w-auto"
               >
                 Continuar
               </button>
@@ -1262,7 +1278,7 @@ export default function Variable({
               <button
                 type="button"
                 onClick={createAttributeFromWizard}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white"
+                className="w-full px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white sm:w-auto"
               >
                 Criar grupo
               </button>
@@ -1296,15 +1312,15 @@ export default function Variable({
             }`}
           >
             <div
-              className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
+              className="flex items-start gap-3 px-4 py-3 cursor-pointer select-none sm:items-center"
               onClick={() => setOpenId(isOpen ? null : attr.id)}
             >
               <GripVertical size={16} className="text-yellow-700 shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-base text-zinc-900 truncate">
+                <div className="font-semibold text-base text-zinc-900 break-words">
                   {attr.title || "Grupo sem nome"}
                 </div>
-                <div className="text-sm text-zinc-600">
+                <div className="mt-0.5 text-sm leading-5 text-zinc-600 break-words">
                   {(attr.selectType === "text" || attr.selectType === "image") ? (
                     selectTypeLabel
                   ) : (
@@ -1316,20 +1332,20 @@ export default function Variable({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-center">
                 {confirmDelete === attr.id ? (
                   <>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
-                      className="px-2.5 py-1 text-xs font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-md transition-colors"
+                      className="px-2.5 py-1.5 text-xs font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-md transition-colors"
                     >
                       Cancelar
                     </button>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); removeAttribute(attr.id); }}
-                      className="px-2.5 py-1 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors"
+                      className="px-2.5 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors"
                     >
                       Excluir
                     </button>
@@ -1338,9 +1354,9 @@ export default function Variable({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setConfirmDelete(attr.id); }}
-                    className="p-1.5 text-yellow-700 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 text-yellow-700 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={15} />
                   </button>
                 )}
                 {isOpen ? (
@@ -1357,7 +1373,7 @@ export default function Variable({
                   <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
                     Nome do grupo <span className="ml-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
                   </label>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <input
                       type="text"
                       value={attr.title ?? ""}
@@ -1365,17 +1381,19 @@ export default function Variable({
                       placeholder="Ex: Tamanho, Sabor, Adicional de balões..."
                       className="flex-1 px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none bg-white"
                     />
-                    <EmojiPicker onSelect={(emoji) => updateAttribute(attr.id, { title: (attr.title ?? "") + emoji })} />
+                    <div className="sm:self-auto self-end">
+                      <EmojiPicker onSelect={(emoji) => updateAttribute(attr.id, { title: (attr.title ?? "") + emoji })} />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-3">
                     <label className="block text-base font-semibold text-zinc-800">
                       Como o cliente vai escolher
                     </label>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {PRIMARY_SELECT_TYPES.map((st) => {
                         const active = attr.selectType === st.value;
                         return (
@@ -1411,7 +1429,7 @@ export default function Variable({
                           Texto e imagem
                         </span>
                       </summary>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {ADVANCED_SELECT_TYPES.map((st) => {
                           const active = attr.selectType === st.value;
                           return (
@@ -1459,7 +1477,7 @@ export default function Variable({
                       <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
                         {attr.selectType === "color" ? "Preço nas cores" : "Preço nas opções"}
                       </label>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <button
                           type="button"
                           onClick={() => updateAttribute(attr.id, { priceType: "on" })}
@@ -1504,14 +1522,14 @@ export default function Variable({
                         <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
                           Taxa de personalização <span className="font-normal text-zinc-500">opcional</span>
                         </label>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
                           <span className="text-sm text-zinc-500">R$</span>
                           <input
                             type="text"
                             value={(attr as any).customPrice ?? ""}
                             onChange={(e) => updateAttribute(attr.id, { customPrice: realMoneyNumber(e.target.value) } as any)}
                             placeholder="0,00"
-                            className="w-28 px-2 py-2 text-sm text-right border border-zinc-200 rounded-lg focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                            className="w-full sm:w-28 px-2 py-2 text-sm text-right border border-zinc-200 rounded-lg focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
                           />
                         </div>
                       </div>
@@ -1534,14 +1552,14 @@ export default function Variable({
 
                 {attr.selectType !== "text" && attr.selectType !== "image" && (
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <label className="text-sm font-semibold text-zinc-700">
                       {attr.selectType === "color" ? "Cores" : "Opções"} ({varCount})
                     </label>
                     <button
                       type="button"
                       onClick={() => addVariation(attr.id)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors"
+                      className="inline-flex w-full items-center justify-center gap-1 px-2.5 py-2 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors sm:w-auto"
                     >
                       <Plus size={14} />
                       {attr.selectType === "color" ? "Adicionar cor" : "Adicionar opção"}
@@ -1564,161 +1582,191 @@ export default function Variable({
                   {varCount > 0 && (
                     <div className="space-y-2">
                       {(attr.variations || []).map((v: any, vi: number) => (
-                        <div key={v.id ?? vi} className="flex items-center gap-2 bg-white rounded-lg border border-zinc-200 px-3 py-2">
+                        <div
+                          key={v.id ?? vi}
+                          className="rounded-xl border border-zinc-200 bg-white px-3 py-3 shadow-sm"
+                        >
+                          <div className="mb-3 flex items-center justify-between gap-3 border-b border-zinc-100 pb-3">
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-zinc-900">
+                                {attr.selectType === "color" ? `Cor ${vi + 1}` : `Opção ${vi + 1}`}
+                              </div>
+                              <div className="text-xs text-zinc-500">
+                                {attr.selectType === "quantity"
+                                  ? "Defina nome, limites e valor por unidade."
+                                  : attr.selectType === "checkbox"
+                                  ? "Esta opção pode ser marcada com outras."
+                                  : attr.selectType === "color"
+                                  ? "Escolha a cor e o nome exibido para o cliente."
+                                  : "Edite o nome, a imagem e o preço desta opção."}
+                              </div>
+                            </div>
+
+                            {confirmDeleteVar === v.id ? (
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteVar(null)}
+                                  className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-500"
+                                >
+                                  Não
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeVariation(attr.id, v.id)}
+                                  className="rounded-md bg-red-500 px-2 py-1 text-xs font-medium text-white"
+                                >
+                                  Excluir
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteVar(v.id)}
+                                className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 shrink-0"
+                                aria-label={`Excluir opção ${vi + 1}`}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
+
                           {attr.selectType === "color" ? (
-                            <>
-                              <ColorPicker
-                                onSelect={(name, hex) =>
-                                  updateVariation(attr.id, v.id, { title: name, color: hex })
-                                }
-                                buttonClassName="w-9 h-9 rounded-md border-2 border-zinc-300 shrink-0 overflow-hidden transition-colors hover:border-yellow-400"
-                                title="Selecionar cor"
-                                trigger={
-                                  <span
-                                    className="relative block w-full h-full"
-                                    style={{ backgroundColor: v.color || "#ffffff" }}
-                                  >
-                                    {String(v.color || "#ffffff").toLowerCase() === "#ffffff" && (
-                                      <span className="absolute inset-0 border border-zinc-300" />
-                                    )}
-                                  </span>
-                                }
-                              />
-                              <input
-                                type="text"
-                                value={v.title ?? ""}
-                                onChange={(e) => updateVariation(attr.id, v.id, { title: e.target.value })}
-                                placeholder="Nome da cor (ex: Vermelho, Azul...)"
-                                className="flex-1 px-2 py-1 text-sm border-0 focus:ring-0 outline-none bg-transparent min-w-0"
-                              />
-                            </>
-                          ) : (
-                            <>
-                              <ImagePicker
-                                value={v.image}
-                                gallery={galleryMedia}
-                                productId={product?.id}
-                                onChange={(imgId, newMedia) => {
-                                  const selectedMedia =
-                                    newMedia ??
-                                    (imgId !== null && imgId !== undefined
-                                      ? galleryMedia.find((m) => Number(m.id) === Number(imgId))
-                                      : undefined);
-
-                                  const normalizedImage =
-                                    selectedMedia
-                                      ? normalizeVariationImageValue(selectedMedia)
-                                      : imgId ?? "";
-
-                                  updateVariation(attr.id, v.id, { image: normalizedImage });
-
-                                  if (
-                                    selectedMedia &&
-                                    !galleryMedia.find((m) => Number(m.id) === Number(selectedMedia.id))
-                                  ) {
-                                    setGalleryMedia((prev) => [...prev, selectedMedia]);
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                Cor
+                              </label>
+                              <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5">
+                                <ColorPicker
+                                  onSelect={(name, hex) =>
+                                    updateVariation(attr.id, v.id, { title: name, color: hex })
                                   }
-                                }}
-                              />
-                              <input
-                                type="text"
-                                value={v.title ?? ""}
-                                onChange={(e) => updateVariation(attr.id, v.id, { title: e.target.value })}
-                                placeholder="Nome da opção (ex: Sim, Não, P, M, G...)"
-                                className="flex-1 px-2 py-1 text-sm border-0 focus:ring-0 outline-none bg-transparent min-w-0"
-                              />
-                              <EmojiPicker onSelect={(emoji) => updateVariation(attr.id, v.id, { title: (v.title ?? "") + emoji })} />
-                            </>
+                                  buttonClassName="h-11 w-11 overflow-hidden rounded-xl border-2 border-zinc-300 shrink-0 transition-colors hover:border-yellow-400"
+                                  title="Selecionar cor"
+                                  trigger={
+                                    <span
+                                      className="relative block h-full w-full"
+                                      style={{ backgroundColor: v.color || "#ffffff" }}
+                                    >
+                                      {String(v.color || "#ffffff").toLowerCase() === "#ffffff" && (
+                                        <span className="absolute inset-0 border border-zinc-300" />
+                                      )}
+                                    </span>
+                                  }
+                                />
+                                <input
+                                  type="text"
+                                  value={v.title ?? ""}
+                                  onChange={(e) => updateVariation(attr.id, v.id, { title: e.target.value })}
+                                  placeholder="Nome da cor (ex: Vermelho, Azul...)"
+                                  className="min-w-0 flex-1 rounded-md border-0 bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                Nome da opção
+                              </label>
+                          <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 sm:flex-row sm:items-start">
+                                <ImagePicker
+                                  value={v.image}
+                                  gallery={galleryMedia}
+                                  productId={product?.id}
+                                  onChange={(imgId, newMedia) => {
+                                    const selectedMedia =
+                                      newMedia ??
+                                      (imgId !== null && imgId !== undefined
+                                        ? galleryMedia.find((m) => Number(m.id) === Number(imgId))
+                                        : undefined);
+
+                                    const normalizedImage =
+                                      selectedMedia
+                                        ? normalizeVariationImageValue(selectedMedia)
+                                        : imgId ?? "";
+
+                                    updateVariation(attr.id, v.id, { image: normalizedImage });
+
+                                    if (
+                                      selectedMedia &&
+                                      !galleryMedia.find((m) => Number(m.id) === Number(selectedMedia.id))
+                                    ) {
+                                      setGalleryMedia((prev) => [...prev, selectedMedia]);
+                                    }
+                                  }}
+                                />
+                                <input
+                                  type="text"
+                                  value={v.title ?? ""}
+                                  onChange={(e) => updateVariation(attr.id, v.id, { title: e.target.value })}
+                                  placeholder="Nome da opção (ex: Sim, Não, P, M, G...)"
+                                  className="min-w-0 flex-1 rounded-md border-0 bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
+                                />
+                                <div className="self-end shrink-0 sm:self-auto">
+                                  <EmojiPicker onSelect={(emoji) => updateVariation(attr.id, v.id, { title: (v.title ?? "") + emoji })} />
+                                </div>
+                              </div>
+                            </div>
                           )}
 
+                          <div className="mt-3 grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:items-center">
                           {attr.selectType === "checkbox" && (
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span className="text-xs text-zinc-400">Min:</span>
+                            <div className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 sm:justify-start sm:border-0 sm:bg-transparent sm:p-0 shrink-0">
+                              <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Mín.</span>
                               <input
+                                key={`${v.id}-min-${v.minQuantity}`}
                                 type="number"
-                                value={v.minQuantity ?? 0}
-                                onChange={(e) => updateVariation(attr.id, v.id, { minQuantity: Number(e.target.value) || 0 })}
+                                defaultValue={v.minQuantity ?? 0}
+                                onBlur={(e) => updateVariation(attr.id, v.id, { minQuantity: Math.max(0, parseInt(e.target.value) || 0) })}
                                 placeholder="0"
                                 min={0}
-                                className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                                className="w-20 sm:w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
                               />
                             </div>
                           )}
 
                           {attr.selectType === "quantity" && (
-                            <div className="flex items-center gap-2 shrink-0">
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-zinc-400">Min:</span>
+                            <div className="grid grid-cols-1 gap-2 shrink-0 sm:grid-cols-2">
+                              <div className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 sm:justify-start sm:border-0 sm:bg-transparent sm:p-0">
+                                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Mín.</span>
                                 <input
+                                  key={`${v.id}-min-${v.minQuantity}`}
                                   type="number"
-                                  value={v.minQuantity ?? 0}
-                                  onChange={(e) =>
-                                    updateVariation(attr.id, v.id, {
-                                      minQuantity: Number(e.target.value) || 0,
-                                    })
-                                  }
+                                  defaultValue={v.minQuantity ?? 0}
+                                  onBlur={(e) => updateVariation(attr.id, v.id, { minQuantity: Math.max(0, parseInt(e.target.value) || 0) })}
                                   placeholder="0"
                                   min={0}
-                                  className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                                  className="w-20 sm:w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
                                 />
                               </div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-zinc-400">Max:</span>
+                              <div className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 sm:justify-start sm:border-0 sm:bg-transparent sm:p-0">
+                                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Máx.</span>
                                 <input
+                                  key={`${v.id}-max-${v.maxQuantity}`}
                                   type="number"
-                                  value={v.maxQuantity ?? 0}
-                                  onChange={(e) =>
-                                    updateVariation(attr.id, v.id, {
-                                      maxQuantity: Number(e.target.value) || 0,
-                                    })
-                                  }
+                                  defaultValue={v.maxQuantity ?? 0}
+                                  onBlur={(e) => updateVariation(attr.id, v.id, { maxQuantity: Math.max(0, parseInt(e.target.value) || 0) })}
                                   placeholder="0"
                                   min={0}
-                                  className="w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                                  className="w-20 sm:w-14 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
                                 />
                               </div>
                             </div>
                           )}
 
                           {attr.priceType === "on" && (
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span className="text-xs text-zinc-400">R$</span>
+                            <div className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 sm:justify-start sm:border-0 sm:bg-transparent sm:p-0 shrink-0">
+                              <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Preço</span>
                               <input
                                 type="text"
                                 value={v.price ?? ""}
                                 onChange={(e) => updateVariation(attr.id, v.id, { price: realMoneyNumber(e.target.value) })}
                                 placeholder="0,00"
-                                className="w-20 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
+                                className="w-24 sm:w-20 px-2 py-1 text-sm text-right border border-zinc-200 rounded-md focus:ring-2 focus:ring-yellow-400 outline-none bg-white"
                               />
                             </div>
                           )}
-
-                          {confirmDeleteVar === v.id ? (
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => setConfirmDeleteVar(null)}
-                                className="px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 bg-zinc-100 rounded"
-                              >
-                                Não
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeVariation(attr.id, v.id)}
-                                className="px-1.5 py-0.5 text-[10px] font-medium text-white bg-red-500 rounded"
-                              >
-                                Sim
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteVar(v.id)}
-                              className="p-1 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors shrink-0"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
 import axios from "axios";
 import {
   FileText,
-  Image,
+  Image as ImageIconLucide,
   DollarSign,
   Package,
   Layers,
@@ -19,6 +19,8 @@ import {
   Save,
   Eye,
   EyeOff,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 import Api from "@/src/services/api";
@@ -40,6 +42,7 @@ import ProductFeatures from "../components/product-features/ProductFeatures";
 import TransportSection from "../components/transport-section/TransportSection";
 import ProductBundle from "@/src/components/pages/painel/produtos/product-bundle/ProductBundle";
 import { PainelLayout, PageHeader } from "@/src/components/painel";
+import usePainelPageMode from "@/src/components/painel/usePainelPageMode";
 
 function SectionCard({
   icon,
@@ -47,22 +50,65 @@ function SectionCard({
   iconColor = "bg-amber-50 text-amber-600",
   children,
   className = "",
+  collapsible = false,
+  open = true,
+  onToggle,
+  summary,
 }: {
   icon: React.ReactNode;
   title: string;
   iconColor?: string;
   children: React.ReactNode;
   className?: string;
+  collapsible?: boolean;
+  open?: boolean;
+  onToggle?: () => void;
+  summary?: string;
 }) {
   return (
-    <div className={`min-w-0 bg-white rounded-xl border border-zinc-200 shadow-sm ${className}`}>
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconColor}`}>
-          {icon}
+    <div className={`min-w-0 w-full max-w-full bg-white rounded-2xl border border-zinc-200 shadow-sm ${className}`}>
+      {collapsible ? (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex w-full items-center gap-3 px-4 py-3.5 text-left sm:px-5 sm:py-4"
+        >
+          <div
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColor}`}
+          >
+            {icon}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold text-zinc-900 sm:text-base">
+              {title}
+            </h3>
+            {!!summary && (
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500 sm:text-sm">
+                {summary}
+              </p>
+            )}
+          </div>
+          <div className="shrink-0 text-zinc-400">
+            {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </div>
+        </button>
+      ) : (
+        <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3.5 sm:px-5 sm:py-4">
+          <div
+            className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconColor}`}
+          >
+            {icon}
+          </div>
+          <h3 className="text-sm font-semibold text-zinc-900 sm:text-base">
+            {title}
+          </h3>
         </div>
-        <h3 className="text-base font-semibold text-zinc-900">{title}</h3>
-      </div>
-      <div className="p-5">{children}</div>
+      )}
+      {(!collapsible || open) && (
+        <div className={collapsible ? "border-t border-zinc-100 p-4 sm:p-5" : "p-4 sm:p-5"}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -73,19 +119,26 @@ const formInitial = {
   dropdown: 0,
 };
 
+const REQUIRED_PRODUCT_SECTION_IDS = ["basic", "gallery", "pricing"] as const;
+
 export default function CreateProduct() {
   const router = useRouter();
   const { id } = router.query;
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
+  const panelMode = usePainelPageMode();
 
   const [loadingContent, setLoadingContent] = useState(true);
   const [subimitStatus, setSubimitStatus] = useState("");
   const [placeholder, setPlaceholder] = useState(true);
   const [form, setForm] = useState(formInitial);
+  const [submitError, setSubmitError] = useState("");
   const [productsFind, setProductsFind] = useState<RelationType[]>([]);
   const [colors, setColors] = useState<string[]>([]);
   const [wizardMode, setWizardMode] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
+  const [editorModeReady, setEditorModeReady] = useState(false);
+  const [mobileViewport, setMobileViewport] = useState(false);
+  const [mobileFullSection, setMobileFullSection] = useState("basic");
   const [data, setData] = useState({
     suggestions: true,
     status: 1,
@@ -97,6 +150,26 @@ export default function CreateProduct() {
   };
 
   const routeProductId = toPositiveNumber(Array.isArray(id) ? id[0] : id);
+  const isNewProduct = !routeProductId;
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const media = window.matchMedia("(max-width: 767px)");
+    const syncViewport = () => setMobileViewport(media.matches);
+
+    syncViewport();
+
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", syncViewport);
+      return () => media.removeEventListener("change", syncViewport);
+    }
+
+    media.addListener(syncViewport);
+    return () => media.removeListener(syncViewport);
+  }, []);
 
   const getPublicProductLink = (slug?: string, productId?: number | null) => {
     const safeSlug = (slug || "").toString().trim();
@@ -186,6 +259,7 @@ export default function CreateProduct() {
   };
 
   const handleData = useCallback((value: Record<string, any>) => {
+    setSubmitError("");
     setData((prev) => {
       if (!value || typeof value !== "object" || Array.isArray(value))
         return prev;
@@ -269,7 +343,7 @@ export default function CreateProduct() {
     return [];
   };
 
-  const getProduct = async () => {
+  const getProduct = useCallback(async () => {
     if (!routeProductId) return;
     try {
       const request: any = await api.bridge({
@@ -303,8 +377,9 @@ export default function CreateProduct() {
       );
     } finally {
       setPlaceholder(false);
+      setLoadingContent(false);
     }
-  };
+  }, [api, routeProductId]);
 
   useEffect(() => {
     if (!routeProductId) {
@@ -313,9 +388,8 @@ export default function CreateProduct() {
       return;
     }
 
-    setLoadingContent(false);
     getProduct();
-  }, [routeProductId]);
+  }, [getProduct, routeProductId]);
 
   useEffect(() => {
     if (!router.isReady || typeof window === "undefined") {
@@ -327,16 +401,25 @@ export default function CreateProduct() {
       ? queryModeRaw[0]
       : queryModeRaw;
     const savedMode = localStorage.getItem("fiestou.product.editor.mode");
+    const queryModeValue = String(queryMode || "").toLowerCase();
+    const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches;
     const shouldUseWizard =
-      String(queryMode || "").toLowerCase() === "assistido" ||
-      String(queryMode || "").toLowerCase() === "wizard" ||
-      savedMode === "wizard";
+      queryModeValue === "assistido" ||
+      queryModeValue === "wizard" ||
+      ((queryModeValue !== "completo" && queryModeValue !== "full") &&
+        panelMode === "simple") ||
+      (queryModeValue !== "completo" &&
+        queryModeValue !== "full" &&
+        (isMobileViewport
+          ? (isNewProduct || savedMode !== "full")
+          : savedMode === "wizard"));
 
     setWizardMode(shouldUseWizard);
-  }, [router.isReady, router.query.modo]);
+    setEditorModeReady(true);
+  }, [isNewProduct, panelMode, router.isReady, router.query.modo]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined" || !editorModeReady) {
       return;
     }
     localStorage.setItem(
@@ -346,17 +429,40 @@ export default function CreateProduct() {
     if (!wizardMode) {
       setWizardStep(0);
     }
-  }, [wizardMode]);
+  }, [editorModeReady, wizardMode]);
+
+  useEffect(() => {
+    if (!mobileViewport || wizardMode) {
+      return;
+    }
+    setMobileFullSection("basic");
+  }, [mobileViewport, wizardMode]);
+
+  const isMobileAccordion = mobileViewport && !wizardMode;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.loading) return;
 
     try {
+      const payload = buildPayload();
+      const productTitle = String(payload?.title || "").trim();
+
+      setSubmitError("");
+
+      if (!productTitle) {
+        setSubimitStatus("register_failed");
+        setSubmitError("Preencha o nome do produto para salvar.");
+        if (wizardMode) {
+          setWizardStep(0);
+        } else {
+          setMobileFullSection("basic");
+        }
+        return;
+      }
+
       setFormValue({ loading: true });
       setSubimitStatus("register_content");
-
-      const payload = buildPayload();
 
       const request: any = await api.bridge({
         method: "post",
@@ -366,6 +472,23 @@ export default function CreateProduct() {
 
       if (!request?.success) {
         setSubimitStatus("register_failed");
+        setFormValue({ loading: false });
+        const titleError =
+          request?.errors?.title?.[0] ||
+          request?.data?.errors?.title?.[0] ||
+          null;
+        setSubmitError(
+          titleError
+            ? "Preencha o nome do produto para salvar."
+            : request?.message || "Não foi possível salvar o produto agora."
+        );
+        if (titleError) {
+          if (wizardMode) {
+            setWizardStep(0);
+          } else {
+            setMobileFullSection("basic");
+          }
+        }
         return;
       }
 
@@ -390,9 +513,11 @@ export default function CreateProduct() {
       setTimeout(() => {
         router.push({ pathname: "/painel/produtos" });
       }, 500);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setSubimitStatus("register_failed");
+      setFormValue({ loading: false });
+      setSubmitError(err?.message || "Não foi possível salvar o produto agora.");
     }
   };
 
@@ -402,8 +527,14 @@ export default function CreateProduct() {
   const basicSection = (
     <SectionCard
       icon={<FileText size={20} />}
-      title="Informações Básicas"
+      title="Informações principais"
       iconColor="bg-amber-50 text-amber-600"
+      collapsible={isMobileAccordion}
+      open={!isMobileAccordion || mobileFullSection === "basic"}
+      onToggle={() =>
+        setMobileFullSection((prev) => (prev === "basic" ? "" : "basic"))
+      }
+      summary={panelMode === "simple" ? undefined : "Nome, descrição e visibilidade."}
     >
       <NameAndDescription
         data={data}
@@ -438,20 +569,32 @@ export default function CreateProduct() {
 
   const gallerySection = (
     <SectionCard
-      icon={<Image size={20} />}
-      title="Imagens do Produto"
+      icon={<ImageIconLucide size={20} />}
+      title="Imagens do produto"
       iconColor="bg-amber-50 text-amber-600"
+      collapsible={isMobileAccordion}
+      open={!isMobileAccordion || mobileFullSection === "gallery"}
+      onToggle={() =>
+        setMobileFullSection((prev) => (prev === "gallery" ? "" : "gallery"))
+      }
+      summary={panelMode === "simple" ? undefined : "Galeria principal e fotos complementares."}
     >
       <ProductGallery data={data} handleData={handleData} />
     </SectionCard>
   );
 
   const pricingSection = (
-    <div className="grid lg:grid-cols-2 gap-5">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <SectionCard
         icon={<DollarSign size={20} />}
         title="Preço"
         iconColor="bg-amber-50 text-amber-600"
+        collapsible={isMobileAccordion}
+        open={!isMobileAccordion || mobileFullSection === "pricing"}
+        onToggle={() =>
+          setMobileFullSection((prev) => (prev === "pricing" ? "" : "pricing"))
+        }
+        summary={panelMode === "simple" ? undefined : "Valor, promoção e tipo comercial."}
       >
         <ProductPrice data={data} handleData={handleData} />
         <div className="mt-4">
@@ -463,6 +606,12 @@ export default function CreateProduct() {
         icon={<Package size={20} />}
         title="Estoque"
         iconColor="bg-amber-50 text-amber-600"
+        collapsible={isMobileAccordion}
+        open={!isMobileAccordion || mobileFullSection === "stock"}
+        onToggle={() =>
+          setMobileFullSection((prev) => (prev === "stock" ? "" : "stock"))
+        }
+        summary={panelMode === "simple" ? undefined : "Disponibilidade e quantidade."}
       >
         <ProductStock
           data={data}
@@ -478,8 +627,16 @@ export default function CreateProduct() {
     <div id="variacoes-section">
       <SectionCard
         icon={<Layers size={20} />}
-        title="Variações e Adicionais"
+        title="Personalizações e extras"
         iconColor="bg-amber-50 text-amber-600"
+        collapsible={isMobileAccordion}
+        open={!isMobileAccordion || mobileFullSection === "attributes"}
+        onToggle={() =>
+          setMobileFullSection((prev) =>
+            prev === "attributes" ? "" : "attributes"
+          )
+        }
+        summary={panelMode === "simple" ? undefined : "Opções, extras e escolhas do cliente."}
       >
         <Variable
           product={data}
@@ -494,8 +651,14 @@ export default function CreateProduct() {
   const featuresSection = (
     <SectionCard
       icon={<Palette size={20} />}
-      title="Características"
+      title="Categorias e vitrine"
       iconColor="bg-amber-50 text-amber-600"
+      collapsible={isMobileAccordion}
+      open={!isMobileAccordion || mobileFullSection === "features"}
+      onToggle={() =>
+        setMobileFullSection((prev) => (prev === "features" ? "" : "features"))
+      }
+      summary={panelMode === "simple" ? undefined : "Público, categorias e tags."}
     >
       <ProductFeatures data={data} handleData={handleData} />
 
@@ -540,8 +703,16 @@ export default function CreateProduct() {
   const logisticsSection = (
     <SectionCard
       icon={<Truck size={20} />}
-      title="Logística e Transporte"
+      title="Entrega, transporte e medidas"
       iconColor="bg-amber-50 text-amber-600"
+      collapsible={isMobileAccordion}
+      open={!isMobileAccordion || mobileFullSection === "logistics"}
+      onToggle={() =>
+        setMobileFullSection((prev) =>
+          prev === "logistics" ? "" : "logistics"
+        )
+      }
+      summary={panelMode === "simple" ? undefined : "Dimensões, montagem e transporte."}
     >
       <ProductDimensions data={data} handleData={handleData} />
       <div className="mt-4">
@@ -557,8 +728,16 @@ export default function CreateProduct() {
   const unavailableSection = (
     <SectionCard
       icon={<Layers size={20} />}
-      title="Períodos de Indisponibilidade"
+      title="Datas indisponíveis"
       iconColor="bg-amber-50 text-amber-600"
+      collapsible={isMobileAccordion}
+      open={!isMobileAccordion || mobileFullSection === "unavailable"}
+      onToggle={() =>
+        setMobileFullSection((prev) =>
+          prev === "unavailable" ? "" : "unavailable"
+        )
+      }
+      summary={panelMode === "simple" ? undefined : "Bloqueie datas em que o produto não pode ser reservado."}
     >
       <UnavailablePeriods data={data} handleData={handleData} productId={data.id} />
     </SectionCard>
@@ -567,8 +746,14 @@ export default function CreateProduct() {
   const bundleSection = (
     <SectionCard
       icon={<Link2 size={20} />}
-      title="Venda Combinada"
+      title="Produtos para vender junto"
       iconColor="bg-amber-50 text-amber-600"
+      collapsible={isMobileAccordion}
+      open={!isMobileAccordion || mobileFullSection === "bundle"}
+      onToggle={() =>
+        setMobileFullSection((prev) => (prev === "bundle" ? "" : "bundle"))
+      }
+      summary={panelMode === "simple" ? undefined : "Sugestões relacionadas para aumentar o pedido."}
     >
       <ProductBundle
         data={data}
@@ -582,58 +767,96 @@ export default function CreateProduct() {
   const productSections = [
     {
       id: "basic",
-      title: "Informações Básicas",
+      title: "Informações principais",
       description: "Nome, descrição e visibilidade",
+      required: true,
       content: basicSection,
     },
     {
       id: "gallery",
       title: "Imagens",
       description: "Galeria principal do produto",
+      required: true,
       content: gallerySection,
     },
     {
       id: "pricing",
       title: "Preço e Estoque",
       description: "Defina valor e disponibilidade",
+      required: true,
       content: pricingSection,
     },
     {
       id: "attributes",
-      title: "Variações e Adicionais",
-      description: "Monte grupos de escolha do cliente",
+      title: "Personalizações e extras",
+      description: "Opções, extras e escolhas do cliente",
+      required: false,
       content: attributesSection,
     },
     {
       id: "features",
-      title: "Características",
-      description: "Categorias e posicionamento",
+      title: "Categorias e vitrine",
+      description: "Público, categorias e tags",
+      required: false,
       content: featuresSection,
     },
     {
       id: "logistics",
-      title: "Logística",
-      description: "Transporte e dimensões",
+      title: "Entrega, transporte e medidas",
+      description: "Dimensões, montagem e transporte",
+      required: false,
       content: logisticsSection,
     },
     {
       id: "unavailable",
-      title: "Indisponibilidade",
-      description: "Bloqueie períodos não disponíveis",
+      title: "Datas indisponíveis",
+      description: "Bloqueie datas sem atendimento",
+      required: false,
       content: unavailableSection,
     },
     {
       id: "bundle",
-      title: "Venda Combinada",
-      description: "Produtos relacionados para oferta",
+      title: "Produtos para vender junto",
+      description: "Sugestões relacionadas para aumentar o pedido",
+      required: false,
       content: bundleSection,
     },
   ];
 
   const safeWizardStep = Math.min(wizardStep, productSections.length - 1);
   const currentWizard = productSections[safeWizardStep];
+  const requiredSections = productSections.filter((section) => section.required);
+  const optionalSections = productSections.filter((section) => !section.required);
+  const firstOptionalSectionIndex = productSections.findIndex(
+    (section) => !section.required,
+  );
+  const isOptionalWizardStep = !currentWizard.required;
+  const requiredWizardStepPosition = Math.max(
+    0,
+    requiredSections.findIndex((section) => section.id === currentWizard.id) + 1,
+  );
+  const essentialProgressPercent = isOptionalWizardStep
+    ? 100
+    : Math.max(
+        0,
+        (requiredWizardStepPosition / REQUIRED_PRODUCT_SECTION_IDS.length) * 100,
+      );
   const isFirstWizardStep = safeWizardStep === 0;
   const isLastWizardStep = safeWizardStep === productSections.length - 1;
+  const editorSummaryCards = [
+    {
+      label: "Essencial",
+      value: `${requiredSections.length} etapa(s)`,
+    },
+    {
+      label: "Opcional",
+      value: `${optionalSections.length} ajuste(s)`,
+    },
+    {
+      label: "Modo",
+      value: wizardMode ? "Assistente" : "Completo",
+    },
+  ];
 
   if (loadingContent) {
     return (
@@ -649,14 +872,14 @@ export default function CreateProduct() {
     <PainelLayout>
       <PageHeader
         title={pageTitle}
-        description={isEditing ? "Altere as informações do seu produto" : "Preencha os dados para criar um novo produto"}
+        description={isEditing ? "Edite o produto." : "Preencha o essencial."}
         actions={
           <div className="flex flex-wrap items-center gap-3">
             {isEditing && (data?.slug || data?.id) && (
               <Link
                 href={getPublicProductLink(data?.slug, data?.id)}
                 target="_blank"
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-base font-semibold text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2.5 text-sm sm:text-base font-semibold text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
               >
                 <ExternalLink size={16} />
                 Ver produto
@@ -664,7 +887,7 @@ export default function CreateProduct() {
             )}
             <Link
               href="/painel/produtos"
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-base font-semibold text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2.5 text-sm sm:text-base font-semibold text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
             >
               <ArrowLeft size={16} />
               Voltar
@@ -673,9 +896,82 @@ export default function CreateProduct() {
         }
       />
 
-      <form onSubmit={handleSubmit}>
+      {panelMode === "simple" && (
+        <div className="mb-5 space-y-4">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {editorSummaryCards.map((card) => (
+                <div
+                  key={card.label}
+                  className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3"
+                >
+                  <p className="text-xs font-medium text-zinc-400">{card.label}</p>
+                  <p className="mt-1 text-sm font-semibold text-zinc-900">
+                    {card.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {requiredSections.map((section, index) => (
+              <button
+                key={`simple-required-section-${section.id}`}
+                type="button"
+                onClick={() => {
+                  setWizardMode(true);
+                  setWizardStep(index);
+                }}
+                className={`rounded-2xl border px-4 py-4 text-left transition-colors ${
+                  currentWizard.id === section.id && wizardMode
+                    ? "border-yellow-300 bg-yellow-50"
+                    : "border-zinc-200 bg-white hover:border-yellow-200 hover:bg-yellow-50/40"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-zinc-900">
+                    {section.title}
+                  </p>
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                    Essencial
+                  </span>
+                </div>
+              </button>
+            ))}
+
+            {optionalSections.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setWizardMode(true);
+                  setWizardStep(Math.max(firstOptionalSectionIndex, 0));
+                }}
+                className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-left transition-colors hover:border-yellow-200 hover:bg-yellow-50/40"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Ajustes opcionais
+                  </p>
+                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-600">
+                    {optionalSections.length}
+                  </span>
+                </div>
+              </button>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <p className="text-sm font-semibold text-emerald-900">
+              Salve com nome, imagens e preço.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="min-w-0 w-full">
         {placeholder ? (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {[1, 2, 3, 4, 5].map((key) => (
               <div
                 key={key}
@@ -684,18 +980,20 @@ export default function CreateProduct() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-5 min-w-0">
-            <div className="min-w-0 bg-white border border-zinc-200 rounded-xl p-4">
+          <div className="grid grid-cols-1 gap-5 min-w-0 w-full">
+            <div className="min-w-0 w-full max-w-full bg-white border border-zinc-200 rounded-xl p-4 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-base font-semibold text-zinc-900">
-                    Modo de cadastro
+                    {panelMode === "simple" ? "Modo" : "Modo de edição"}
                   </p>
-                  <p className="text-sm text-zinc-600">
-                    Use o modo completo ou o assistente guiado para preencher etapa por etapa.
-                  </p>
+                  {panelMode !== "simple" && (
+                    <p className="text-sm text-zinc-600">
+                      Use o assistente ou abra tudo de uma vez.
+                    </p>
+                  )}
                 </div>
-                <div className="grid w-full sm:w-auto grid-cols-1 sm:grid-cols-2 rounded-xl border border-zinc-200 p-1 bg-zinc-50 gap-1 min-w-0">
+                <div className="grid w-full grid-cols-2 rounded-xl border border-zinc-200 bg-zinc-50 p-1 min-w-0 sm:w-auto">
                   <button
                     type="button"
                     onClick={() => setWizardMode(false)}
@@ -723,64 +1021,200 @@ export default function CreateProduct() {
                   </button>
                 </div>
               </div>
+              {panelMode !== "simple" && (
+                <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-emerald-900">
+                    Nome, imagens e preço já bastam para salvar.
+                  </p>
+                </div>
+              )}
             </div>
+
+            {!!submitError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {submitError}
+              </div>
+            )}
 
             {wizardMode ? (
               <>
-                <div className="min-w-0 bg-white border border-zinc-200 rounded-xl p-4">
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-yellow-700">
-                        Etapa {safeWizardStep + 1} de {productSections.length}
-                      </p>
-                      <h3 className="text-lg font-semibold text-zinc-900">
-                        {currentWizard.title}
-                      </h3>
-                      <p className="text-sm text-zinc-600">{currentWizard.description}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 h-2 bg-zinc-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-yellow-400 transition-all"
-                      style={{
-                        width: `${((safeWizardStep + 1) / productSections.length) * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1 max-w-full min-w-0">
-                    {productSections.map((section, index) => (
-                      <button
-                        key={section.id}
-                        type="button"
-                        onClick={() => setWizardStep(index)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap border transition-colors ${
-                          index === safeWizardStep
-                            ? "bg-yellow-50 border-yellow-300 text-yellow-800"
-                            : "bg-white border-zinc-200 text-zinc-600 hover:text-zinc-900"
-                        }`}
-                      >
-                        {index + 1}. {section.title}
-                      </button>
-                    ))}
-                  </div>
+                <div className="min-w-0 w-full max-w-full bg-white border border-zinc-200 rounded-xl p-4 sm:p-5">
+                  {isOptionalWizardStep ? (
+                    <>
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                          <CheckCircle2 size={22} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+                            Cadastro essencial concluído
+                          </p>
+                          <h3 className="text-lg font-semibold text-zinc-900">
+                            Produto pronto para salvar
+                          </h3>
+                          <p className="mt-1 text-sm text-zinc-600">
+                            Se quiser, ajuste extras, categorias, entrega e agenda.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                          Etapas essenciais concluídas
+                        </p>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                          {requiredSections.map((section) => (
+                            <button
+                              key={section.id}
+                              type="button"
+                              onClick={() =>
+                                setWizardStep(
+                                  productSections.findIndex((item) => item.id === section.id),
+                                )
+                              }
+                              className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-left text-sm font-medium text-zinc-800"
+                            >
+                              <CheckCircle2 size={16} className="text-emerald-600" />
+                              <span>{section.title}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                          Ajustes opcionais
+                        </p>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          {optionalSections.map((section) => {
+                            const sectionIndex = productSections.findIndex(
+                              (item) => item.id === section.id,
+                            );
+                            const isCurrent = section.id === currentWizard.id;
+
+                            return (
+                              <button
+                                key={section.id}
+                                type="button"
+                                onClick={() => setWizardStep(sectionIndex)}
+                                className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                                  isCurrent
+                                    ? "border-yellow-300 bg-yellow-50"
+                                    : "border-zinc-200 bg-white hover:border-zinc-300"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="text-sm font-semibold text-zinc-900">
+                                    {section.title}
+                                  </div>
+                                  <span
+                                    className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                      isCurrent
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-zinc-100 text-zinc-600"
+                                    }`}
+                                  >
+                                    {isCurrent ? "Aberto" : "Opcional"}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-yellow-700">
+                            Etapa essencial {requiredWizardStepPosition} de {requiredSections.length}
+                          </p>
+                          <h3 className="text-lg font-semibold text-zinc-900">
+                            {currentWizard.title}
+                          </h3>
+                        </div>
+                      </div>
+                      <div className="mt-3 h-2 bg-zinc-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-yellow-400 transition-all"
+                          style={{ width: `${essentialProgressPercent}%` }}
+                        />
+                      </div>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                        {requiredSections.map((section, index) => {
+                          const sectionIndex = productSections.findIndex(
+                            (item) => item.id === section.id,
+                          );
+                          const isActive = section.id === currentWizard.id;
+                          const isDone = index + 1 < requiredWizardStepPosition;
+
+                          return (
+                            <button
+                              key={section.id}
+                              type="button"
+                              onClick={() => setWizardStep(sectionIndex)}
+                              className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                                isActive
+                                  ? "border-yellow-300 bg-yellow-50 text-yellow-800"
+                                  : isDone
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                                  : "border-zinc-200 bg-white text-zinc-600"
+                              }`}
+                            >
+                              {index + 1}. {section.title}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {currentWizard.content}
 
-                <div className="z-20 min-w-0 bg-white border border-zinc-200 rounded-xl shadow-lg p-4 flex flex-wrap items-center justify-between gap-3 md:sticky md:bottom-4">
+                <div className="sticky bottom-3 z-20 min-w-0 w-full max-w-full rounded-xl border border-zinc-200 bg-white p-4 shadow-lg supports-[padding:max(0px)]:pb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={() =>
                       setWizardStep((prev) => Math.max(0, prev - 1))
                     }
                     disabled={isFirstWizardStep}
-                    className="px-5 py-2.5 text-sm font-semibold text-zinc-700 border border-zinc-200 rounded-lg hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold text-zinc-700 border border-zinc-200 rounded-lg hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Etapa anterior
                   </button>
 
-                  <div className="flex items-center gap-2 ml-auto">
-                    {!isLastWizardStep ? (
+                  <div className="flex w-full sm:w-auto items-center gap-2 sm:ml-auto">
+                    {isOptionalWizardStep ? (
+                      <>
+                        {!isLastWizardStep && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setWizardStep((prev) =>
+                                Math.min(productSections.length - 1, prev + 1)
+                              )
+                            }
+                            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-2.5 border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 font-semibold text-sm rounded-lg transition-colors"
+                          >
+                            Próximo ajuste
+                          </button>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={form.loading}
+                          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-semibold text-sm rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {form.loading ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <Save size={18} />
+                          )}
+                          {form.loading ? "Salvando..." : "Salvar produto"}
+                        </button>
+                      </>
+                    ) : !isLastWizardStep ? (
                       <button
                         type="button"
                         onClick={() =>
@@ -788,15 +1222,17 @@ export default function CreateProduct() {
                             Math.min(productSections.length - 1, prev + 1)
                           )
                         }
-                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-semibold text-sm rounded-lg transition-colors"
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-semibold text-sm rounded-lg transition-colors"
                       >
-                        Próxima etapa
+                        {safeWizardStep === firstOptionalSectionIndex - 1
+                          ? "Ver ajustes opcionais"
+                          : "Próxima etapa"}
                       </button>
                     ) : (
                       <button
                         type="submit"
                         disabled={form.loading}
-                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-semibold text-sm rounded-lg transition-colors disabled:opacity-50"
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-semibold text-sm rounded-lg transition-colors disabled:opacity-50"
                       >
                         {form.loading ? (
                           <Loader2 size={18} className="animate-spin" />
@@ -815,17 +1251,17 @@ export default function CreateProduct() {
                   <React.Fragment key={section.id}>{section.content}</React.Fragment>
                 ))}
 
-                <div className="z-20 min-w-0 bg-white border border-zinc-200 rounded-xl shadow-lg p-4 flex flex-wrap items-center justify-between gap-3 md:sticky md:bottom-4">
+                <div className="sticky bottom-3 z-20 min-w-0 w-full max-w-full rounded-xl border border-zinc-200 bg-white p-4 shadow-lg supports-[padding:max(0px)]:pb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3">
                   <Link
                     href="/painel/produtos"
-                    className="px-6 py-2.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition-colors"
+                    className="w-full sm:w-auto px-6 py-2.5 text-center text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition-colors"
                   >
                     Cancelar
                   </Link>
                   <button
                     type="submit"
                     disabled={form.loading}
-                    className="inline-flex items-center gap-2 px-8 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-semibold text-sm rounded-lg transition-colors disabled:opacity-50"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-8 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-semibold text-sm rounded-lg transition-colors disabled:opacity-50"
                   >
                     {form.loading ? (
                       <Loader2 size={18} className="animate-spin" />
@@ -861,7 +1297,9 @@ export default function CreateProduct() {
               {subimitStatus === "register_complete" ? (
                 <CheckCircle2 size={40} className="text-emerald-500 mx-auto" />
               ) : subimitStatus === "register_failed" ? (
-                <div className="text-red-500 text-sm">Tente novamente</div>
+                <div className="text-red-500 text-sm">
+                  {submitError || "Tente novamente"}
+                </div>
               ) : (
                 <Loader2 size={40} className="animate-spin text-yellow-500 mx-auto" />
               )}

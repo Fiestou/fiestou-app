@@ -24,7 +24,7 @@ const ProductPrice: React.FC<ProductPriceProps> = ({ data, handleData }) => {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-1.5">
             Preço de venda/aluguel <span className="ml-1.5 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
@@ -37,7 +37,7 @@ const ProductPrice: React.FC<ProductPriceProps> = ({ data, handleData }) => {
               required
               type="text"
               placeholder="0,00"
-              className="w-full pl-10 pr-3 py-2.5 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
+              className="w-full pl-10 pr-3 py-3 border border-zinc-200 rounded-lg text-base focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
             />
           </div>
         </div>
@@ -53,7 +53,7 @@ const ProductPrice: React.FC<ProductPriceProps> = ({ data, handleData }) => {
               value={formatCurrency(data?.priceSale)}
               type="text"
               placeholder="0,00"
-              className="w-full pl-10 pr-3 py-2.5 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
+              className="w-full pl-10 pr-3 py-3 border border-zinc-200 rounded-lg text-base focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
             />
           </div>
           {hasSale && discount > 0 && (

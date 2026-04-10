@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Upload, FileSpreadsheet, ArrowLeft, Check, AlertTriangle, X, ChevronDown } from "lucide-react";
 import Api from "@/src/services/api";
@@ -51,7 +51,7 @@ type ImportResult = {
 };
 
 export default function ImportarProdutos() {
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>("upload");
@@ -102,7 +102,7 @@ export default function ImportarProdutos() {
       setError(err?.data?.message || err?.message || "Erro ao fazer upload");
     }
     setLoading(false);
-  }, []);
+  }, [api]);
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -181,16 +181,17 @@ export default function ImportarProdutos() {
 
   return (
     <PainelLayout>
-      <div className="flex items-center gap-3 mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <Link
           href="/painel/produtos"
-          className="p-2 rounded-lg hover:bg-zinc-100 transition-colors"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-100"
         >
           <ArrowLeft size={20} className="text-zinc-600" />
         </Link>
         <PageHeader
           title="Importar Produtos"
           description="Importe produtos em lote via planilha CSV ou Excel"
+          className="mb-0"
         />
       </div>
 
@@ -204,15 +205,24 @@ export default function ImportarProdutos() {
         </div>
       )}
 
-      <div className="flex items-center gap-4 mb-8">
+      <div className="mb-8 grid gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
         {["upload", "preview", "result"].map((s, i) => {
           const labels = ["Upload", "Mapeamento", "Resultado"];
           const isActive = step === s;
           const isDone = ["upload", "preview", "result"].indexOf(step) > i;
           return (
-            <div key={s} className="flex items-center gap-2">
+            <div
+              key={s}
+              className={`flex items-center gap-3 rounded-xl border px-4 py-3 sm:border-none sm:px-0 sm:py-0 ${
+                isActive
+                  ? "border-yellow-200 bg-yellow-50"
+                  : isDone
+                    ? "border-emerald-200 bg-emerald-50/70"
+                    : "border-zinc-200 bg-white"
+              }`}
+            >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${
                   isActive
                     ? "bg-yellow-500 text-white"
                     : isDone
@@ -222,19 +232,23 @@ export default function ImportarProdutos() {
               >
                 {isDone ? <Check size={14} /> : i + 1}
               </div>
-              <span className={`text-sm font-medium ${isActive ? "text-zinc-900" : "text-zinc-400"}`}>
+              <span
+                className={`text-sm font-medium ${
+                  isActive ? "text-zinc-900" : isDone ? "text-emerald-800" : "text-zinc-500"
+                }`}
+              >
                 {labels[i]}
               </span>
-              {i < 2 && <div className="w-12 h-px bg-zinc-200 mx-1" />}
+              {i < 2 && <div className="mx-1 hidden h-px w-12 bg-zinc-200 sm:block" />}
             </div>
           );
         })}
       </div>
 
       {step === "upload" && (
-        <div className="bg-white rounded-xl border border-zinc-200 p-8">
+        <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-8">
           <div
-            className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
+            className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors sm:p-12 ${
               dragActive
                 ? "border-yellow-400 bg-yellow-50"
                 : "border-zinc-300 hover:border-zinc-400"
@@ -243,15 +257,15 @@ export default function ImportarProdutos() {
             onDragLeave={() => setDragActive(false)}
             onDrop={onDrop}
           >
-            <div className="flex justify-center mb-4">
+            <div className="mb-4 flex justify-center">
               <div className="p-4 bg-zinc-100 rounded-full">
                 <Upload size={32} className="text-zinc-400" />
               </div>
             </div>
-            <h3 className="text-lg font-bold text-zinc-900 mb-2">
+            <h3 className="mb-2 text-lg font-bold text-zinc-900 sm:text-xl">
               Arraste seu arquivo aqui
             </h3>
-            <p className="text-sm text-zinc-500 mb-6">
+            <p className="mb-6 text-sm leading-6 text-zinc-500">
               ou clique para selecionar. Formatos: CSV, XLSX, XLS (max 10MB)
             </p>
             <button
@@ -271,7 +285,7 @@ export default function ImportarProdutos() {
             />
           </div>
 
-          <div className="mt-8 border-t border-zinc-100 pt-6">
+          <div className="mt-8 border-t border-zinc-100 pt-5 sm:pt-6">
             <h4 className="text-sm font-bold text-zinc-900 mb-3">Plataformas compativeis</h4>
             <p className="text-sm text-zinc-500 mb-4">
               O sistema reconhece automaticamente planilhas exportadas das principais plataformas:
@@ -288,7 +302,59 @@ export default function ImportarProdutos() {
               A planilha deve ter uma linha de cabecalho com os nomes das colunas.
               O sistema tenta mapear automaticamente as colunas.
             </p>
-            <div className="overflow-x-auto">
+            <div className="grid gap-3 sm:hidden">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                <p className="text-sm font-semibold text-zinc-900">Exemplo 1</p>
+                <dl className="mt-3 grid gap-2 text-sm text-zinc-600">
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Nome</dt>
+                    <dd>Kit Festa Infantil</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Preço</dt>
+                    <dd>89,90</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Estoque</dt>
+                    <dd>15</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Descrição</dt>
+                    <dd>Kit completo para festa</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Categoria</dt>
+                    <dd>Festas</dd>
+                  </div>
+                </dl>
+              </div>
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                <p className="text-sm font-semibold text-zinc-900">Exemplo 2</p>
+                <dl className="mt-3 grid gap-2 text-sm text-zinc-600">
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Nome</dt>
+                    <dd>Mesa Decorada</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Preço</dt>
+                    <dd>150,00</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Estoque</dt>
+                    <dd>8</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Descrição</dt>
+                    <dd>Mesa decorada premium</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Categoria</dt>
+                    <dd>Decoracao</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
               <table className="text-xs border border-zinc-200 rounded-lg">
                 <thead>
                   <tr className="bg-zinc-50">
@@ -323,8 +389,8 @@ export default function ImportarProdutos() {
 
       {step === "preview" && previewData && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-zinc-200 p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-6">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-base font-bold text-zinc-900">
                 Mapeamento de colunas
               </h3>
@@ -366,7 +432,7 @@ export default function ImportarProdutos() {
               <select
                 value={comercialType}
                 onChange={(e) => setComercialType(e.target.value)}
-                className="w-full max-w-xs px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none bg-white"
+                className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none bg-white sm:max-w-xs"
               >
                 {COMERCIAL_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -375,7 +441,7 @@ export default function ImportarProdutos() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-zinc-200 p-6">
+          <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-6">
             <h3 className="text-base font-bold text-zinc-900 mb-4">
               Preview (primeiras 5 linhas)
             </h3>
@@ -407,11 +473,11 @@ export default function ImportarProdutos() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={reset}
-              className="px-4 py-2 text-sm font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
+              className="w-full px-4 py-2.5 text-sm font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors sm:w-auto"
             >
               Voltar
             </button>
@@ -419,7 +485,7 @@ export default function ImportarProdutos() {
               type="button"
               onClick={handleImport}
               disabled={loading}
-              className="px-6 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+              className="w-full px-6 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg transition-colors disabled:opacity-50 sm:w-auto"
             >
               {loading ? "Importando..." : `Importar ${previewData.totalRows} produtos`}
             </button>
@@ -429,7 +495,7 @@ export default function ImportarProdutos() {
 
       {step === "result" && result && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-zinc-200 p-8 text-center">
+          <div className="bg-white rounded-xl border border-zinc-200 p-5 text-center sm:p-8">
             <div className="flex justify-center mb-4">
               <div className={`p-4 rounded-full ${result.errors.length === 0 ? "bg-emerald-100" : "bg-amber-100"}`}>
                 {result.errors.length === 0 ? (
@@ -446,7 +512,7 @@ export default function ImportarProdutos() {
               {result.imported} de {result.total} produtos importados com sucesso
             </p>
 
-            <div className="flex justify-center gap-6 mb-6">
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:flex sm:justify-center sm:gap-6">
               <div className="text-center">
                 <div className="text-2xl font-bold text-emerald-600">{result.imported}</div>
                 <div className="text-xs text-zinc-500">Importados</div>
@@ -459,17 +525,17 @@ export default function ImportarProdutos() {
               )}
             </div>
 
-            <div className="flex justify-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button
                 type="button"
                 onClick={reset}
-                className="px-4 py-2 text-sm font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
+                className="w-full px-4 py-2.5 text-sm font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors sm:w-auto"
               >
                 Importar novamente
               </button>
               <Link
                 href="/painel/produtos"
-                className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 rounded-lg transition-colors"
+                className="w-full px-4 py-2.5 text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600 rounded-lg transition-colors sm:w-auto"
               >
                 Ver produtos
               </Link>
@@ -477,7 +543,7 @@ export default function ImportarProdutos() {
           </div>
 
           {result.errors.length > 0 && (
-            <div className="bg-white rounded-xl border border-zinc-200 p-6">
+            <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-6">
               <h4 className="text-sm font-bold text-zinc-900 mb-3">
                 Erros na importacao ({result.errors.length})
               </h4>
