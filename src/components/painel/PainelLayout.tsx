@@ -7,6 +7,8 @@ import Img from "@/src/components/utils/ImgBase";
 import { User } from "lucide-react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
+import SimplePanelNav from "./SimplePanelNav";
+import { PanelModeProvider } from "./PanelModeContext";
 
 const HEADER_H = "h-12";
 const HEADER_H_PX = "48px";
@@ -45,12 +47,18 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
   const [user, setUser] = useState<UserType>({} as UserType);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [panelMode, setPanelMode] = useState<"simple" | "full">("simple");
 
   useEffect(() => {
     setUser(getUser());
 
     const saved = localStorage.getItem("painel_sidebar");
     if (saved === "collapsed") setSidebarCollapsed(true);
+
+    const savedMode = localStorage.getItem("painel_mode");
+    if (savedMode === "full" || savedMode === "simple") {
+      setPanelMode(savedMode);
+    }
   }, []);
 
   const toggleSidebar = () => {
@@ -59,28 +67,52 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
     localStorage.setItem("painel_sidebar", next ? "collapsed" : "expanded");
   };
 
+  const togglePanelMode = () => {
+    const next = panelMode === "simple" ? "full" : "simple";
+    setPanelMode(next);
+    localStorage.setItem("painel_mode", next);
+    window.dispatchEvent(new CustomEvent("painel-mode-change", { detail: next }));
+    if (next === "simple") {
+      setMobileMenuOpen(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-100">
       <GlobalHeader user={user} />
 
       <div style={{ paddingTop: HEADER_H_PX }}>
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          onToggle={toggleSidebar}
-          mobileOpen={mobileMenuOpen}
-          onMobileClose={() => setMobileMenuOpen(false)}
-        />
+        {panelMode === "full" && (
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onToggle={toggleSidebar}
+            mobileOpen={mobileMenuOpen}
+            onMobileClose={() => setMobileMenuOpen(false)}
+          />
+        )}
 
         <div
           className={`transition-all duration-300 ${
-            sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[260px]"
+            panelMode === "full"
+              ? sidebarCollapsed
+                ? "lg:ml-[72px]"
+                : "lg:ml-[260px]"
+              : "lg:ml-0"
           }`}
         >
-          <TopBar user={user} onMenuClick={() => setMobileMenuOpen(true)} />
+          <PanelModeProvider mode={panelMode}>
+            <TopBar
+              user={user}
+              panelMode={panelMode}
+              onTogglePanelMode={togglePanelMode}
+              onMenuClick={() => setMobileMenuOpen(true)}
+            />
 
-          <main className="p-3 sm:p-4 lg:p-8">
-            {children}
-          </main>
+            <main className="p-3 sm:p-4 lg:p-8">
+              {panelMode === "simple" && <SimplePanelNav />}
+              {children}
+            </main>
+          </PanelModeProvider>
         </div>
       </div>
     </div>

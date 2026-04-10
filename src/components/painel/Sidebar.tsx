@@ -7,17 +7,19 @@ import {
   Users,
   Wallet,
   Store,
-  UserCircle,
   ChevronLeft,
   ChevronRight,
   X,
-  CreditCard,
 } from "lucide-react";
 
 type NavItem = {
   label: string;
   href: string;
   icon: React.ReactNode;
+  children?: Array<{
+    label: string;
+    href: string;
+  }>;
 };
 
 type NavGroup = {
@@ -32,7 +34,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: "PRINCIPAL",
     items: [
       {
-        label: "Dashboard",
+        label: "Painel de vendas",
         href: "/painel",
         icon: <LayoutDashboard size={iconSize} />,
       },
@@ -60,11 +62,20 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Financeiro",
         href: "/painel/financeiro",
         icon: <Wallet size={iconSize} />,
-      },
-      {
-        label: "Dados do Recebedor",
-        href: "/painel/dados_do_recebedor",
-        icon: <CreditCard size={iconSize} />,
+        children: [
+          {
+            label: "Visão geral",
+            href: "/painel/financeiro",
+          },
+          {
+            label: "Cadastro financeiro",
+            href: "/painel/dados_do_recebedor",
+          },
+          {
+            label: "Conta bancária",
+            href: "/painel/conta",
+          },
+        ],
       },
     ],
   },
@@ -75,11 +86,6 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Minha Loja",
         href: "/painel/loja",
         icon: <Store size={iconSize} />,
-      },
-      {
-        label: "Minha Conta",
-        href: "/painel/conta",
-        icon: <UserCircle size={iconSize} />,
       },
     ],
   },
@@ -133,25 +139,49 @@ export default function Sidebar({
             <div className="space-y-1">
               {group.items.map((item) => {
                 const active = isActive(pathname, item.href);
+                const showChildren = !collapsed && Array.isArray(item.children) && item.children.length > 0;
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onMobileClose}
-                    className={`group flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-all duration-200
-                      ${active
-                        ? "bg-yellow-50 text-yellow-800 shadow-sm border border-yellow-200"
-                        : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
-                      }
-                      ${collapsed ? "justify-center" : ""}
-                    `}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <span className={active ? "text-yellow-600" : "text-yellow-600 group-hover:text-yellow-700"}>
-                      {item.icon}
-                    </span>
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                  </Link>
+                  <div key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={onMobileClose}
+                      className={`group flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-all duration-200
+                        ${active
+                          ? "bg-yellow-50 text-yellow-800 shadow-sm border border-yellow-200"
+                          : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
+                        }
+                        ${collapsed ? "justify-center" : ""}
+                      `}
+                      title={collapsed ? item.label : undefined}
+                    >
+                      <span className={active ? "text-yellow-600" : "text-yellow-600 group-hover:text-yellow-700"}>
+                        {item.icon}
+                      </span>
+                      {!collapsed && <span className="truncate">{item.label}</span>}
+                    </Link>
+
+                    {showChildren && (
+                      <div className="mt-1 ml-4 space-y-1 border-l border-zinc-200 pl-3">
+                        {item.children!.map((child) => {
+                          const childActive = isActive(pathname, child.href);
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={onMobileClose}
+                              className={`flex items-center rounded-lg px-3 py-2 text-sm transition-colors ${
+                                childActive
+                                  ? "bg-zinc-900 text-white"
+                                  : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                              }`}
+                            >
+                              <span className="truncate">{child.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -188,7 +218,10 @@ export default function Sidebar({
           ${collapsed ? "lg:w-[72px]" : "lg:w-[260px]"}
           w-[88vw] max-w-[320px]
         `}
-        style={{ height: "calc(100vh - 48px)" }}
+        style={{
+          height: "calc(100dvh - 48px)",
+          maxHeight: "calc(100dvh - 48px)",
+        }}
       >
         {sidebarContent}
       </aside>

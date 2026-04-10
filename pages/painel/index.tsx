@@ -25,6 +25,7 @@ import { getFinancialOverview } from "@/src/services/financial";
 import { RecipientStatusResponse, RecipientType } from "@/src/models/Recipient";
 import RecipientModal from "@/src/components/pages/painel/meus-dados/RecipientModal";
 import OnboardingProgress from "@/src/components/shared/OnboardingProgress";
+import usePainelPageMode from "@/src/components/painel/usePainelPageMode";
 import {
   PainelLayout,
   PageHeader,
@@ -56,17 +57,19 @@ const PERIOD_OPTIONS = [
 const QUICK_ACTIONS = [
   {
     title: "Novo Produto",
-    description: "Cadastrar um produto na sua loja",
+    description: "Cadastrar um item novo na sua loja",
     href: "/painel/produtos/novo",
     icon: Plus,
     color: "bg-yellow-50 text-yellow-600",
+    priority: "primary",
   },
   {
     title: "Ver Pedidos",
-    description: "Acompanhar todos os pedidos",
+    description: "Acompanhar os pedidos da sua loja",
     href: "/painel/pedidos",
     icon: ClipboardList,
     color: "bg-blue-50 text-blue-600",
+    priority: "primary",
   },
   {
     title: "Importar Produtos",
@@ -74,13 +77,15 @@ const QUICK_ACTIONS = [
     href: "/painel/produtos/importar",
     icon: Download,
     color: "bg-emerald-50 text-emerald-600",
+    priority: "secondary",
   },
   {
-    title: "Config Loja",
-    description: "Personalizar sua loja",
+    title: "Minha Loja",
+    description: "Ajustar vitrine, horários e regras",
     href: "/painel/loja",
     icon: Settings,
     color: "bg-purple-50 text-purple-600",
+    priority: "secondary",
   },
 ];
 
@@ -254,6 +259,7 @@ function exportOrdersCsv(orders: any[]) {
 
 export default function Parceiro() {
   const api = new Api();
+  const panelMode = usePainelPageMode();
   const [user, setUser] = useState({} as UserType);
   const [store, setStore] = useState<any>(null);
   const [balance, setBalance] = useState({} as BalanceType);
@@ -271,6 +277,11 @@ export default function Parceiro() {
     delayedDeliveries: 0,
     urgentOrders: [],
   });
+  const primaryQuickActions = QUICK_ACTIONS.filter((action) => action.priority === "primary");
+  const secondaryQuickActions = QUICK_ACTIONS.filter((action) => action.priority === "secondary");
+  const simpleQuickActions = QUICK_ACTIONS.filter((action) =>
+    ["/painel/pedidos", "/painel/produtos/novo", "/painel/financeiro", "/painel/loja"].includes(action.href)
+  );
 
   const getBalance = async () => {
     const applyLegacyBalance = async () => {
@@ -438,7 +449,7 @@ export default function Parceiro() {
 
   const handleRecipientCompleted = (data: RecipientType) => {
     setRecipientStatus({
-      completed: true,
+      completed: Boolean(data?.code),
       recipient: data,
     });
   };
@@ -548,7 +559,7 @@ export default function Parceiro() {
   const orderColumns: Column[] = [
     {
       key: "id",
-      label: "#",
+      label: "Pedido #",
       sortable: true,
       className: "w-16",
       render: (row: any) => (
@@ -622,21 +633,206 @@ export default function Parceiro() {
   ];
 
   const periodLabel = PERIOD_OPTIONS.find(p => p.value === period)?.label || "";
+  const simpleRecentOrders = recentOrders.slice(0, 3);
+
+  if (panelMode === "simple") {
+    return (
+      <PainelLayout>
+        <div className="mb-6">
+          <PageHeader
+            title="Painel de vendas"
+            description="Veja o que precisa da sua atenção agora"
+            className="mb-0"
+          />
+        </div>
+
+        <OnboardingProgress onOpenPagarme={() => setRecipientModalOpen(true)} />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <StatsCard
+            icon={<ShoppingBag size={20} />}
+            iconColor="bg-cyan-50 text-cyan-600"
+            value={loadingStats ? "..." : (stats?.ordersCount ?? balance.orders ?? 0)}
+            label="Pedidos"
+          />
+          <StatsCard
+            icon={<DollarSign size={20} />}
+            iconColor="bg-emerald-50 text-emerald-600"
+            value={loadingStats ? "..." : formatCurrency(stats?.totalRevenue ?? 0)}
+            label="Receita"
+          />
+          <StatsCard
+            icon={<Package size={20} />}
+            iconColor="bg-yellow-50 text-yellow-600"
+            value={productCount}
+            label="Produtos"
+          />
+          <StatsCard
+            icon={<AlertTriangle size={20} />}
+            iconColor="bg-amber-50 text-amber-600"
+            value={loadingOperations ? "..." : operations.pendingConfirmation}
+            label="A confirmar"
+          />
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-zinc-900 font-display">Atalhos principais</h2>
+                <p className="mt-1 text-sm text-zinc-500">
+                  Abra o que você mais usa no dia a dia.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {simpleQuickActions.map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="group flex items-center gap-4 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 transition-all hover:border-yellow-300 hover:bg-white hover:shadow-sm"
+                >
+                  <div className={`rounded-xl p-3 ${action.color}`}>
+                    <action.icon size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-zinc-900 transition-colors group-hover:text-yellow-700">
+                      {action.title}
+                    </div>
+                    <div className="mt-1 text-xs leading-relaxed text-zinc-500">
+                      {action.description}
+                    </div>
+                  </div>
+                  <ArrowRight size={16} className="ml-auto shrink-0 text-zinc-400 transition-colors group-hover:text-yellow-700" />
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-zinc-900 font-display">Prioridades</h2>
+                <p className="mt-1 text-sm text-zinc-500">
+                  O que vale olhar primeiro hoje.
+                </p>
+              </div>
+              <Link
+                href="/painel/pedidos"
+                className="text-sm font-medium text-yellow-700 hover:text-yellow-800"
+              >
+                Ver pedidos
+              </Link>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <Link
+                href="/painel/pedidos?quick=pending-confirmation"
+                className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 hover:border-yellow-300 transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Pedidos a confirmar</p>
+                  <p className="text-xs text-zinc-500">Pagamentos ainda sem confirmação.</p>
+                </div>
+                <span className="text-lg font-bold text-zinc-900">
+                  {loadingOperations ? "..." : operations.pendingConfirmation}
+                </span>
+              </Link>
+
+              <Link
+                href="/painel/pedidos?quick=deliveries-today"
+                className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 hover:border-yellow-300 transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Entregas de hoje</p>
+                  <p className="text-xs text-zinc-500">Pedidos com agenda para hoje.</p>
+                </div>
+                <span className="text-lg font-bold text-zinc-900">
+                  {loadingOperations ? "..." : operations.deliveriesToday}
+                </span>
+              </Link>
+
+              <Link
+                href="/painel/pedidos?quick=delayed"
+                className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 hover:border-red-300 transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Pedidos atrasados</p>
+                  <p className="text-xs text-zinc-500">Pedidos com data vencida e não entregues.</p>
+                </div>
+                <span className="text-lg font-bold text-zinc-900">
+                  {loadingOperations ? "..." : operations.delayedDeliveries}
+                </span>
+              </Link>
+            </div>
+          </section>
+        </div>
+
+        <section className="mt-6 rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-zinc-900 font-display">Últimos pedidos</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Veja os pedidos mais recentes sem abrir a lista completa.
+              </p>
+            </div>
+            <Link
+              href="/painel/pedidos"
+              className="text-sm font-medium text-yellow-700 hover:text-yellow-800"
+            >
+              Abrir lista
+            </Link>
+          </div>
+
+          {simpleRecentOrders.length === 0 && !loadingStats ? (
+            <div className="mt-4">
+              <EmptyState
+                icon={<ShoppingBag size={28} />}
+                title="Nenhum pedido ainda"
+                description="Quando seus clientes fizerem pedidos, eles vão aparecer aqui."
+              />
+            </div>
+          ) : (
+            <div className="mt-4">
+              <DataTable
+                columns={orderColumns}
+                data={simpleRecentOrders}
+                pageSize={3}
+                loading={loadingStats}
+                emptyMessage="Nenhum pedido encontrado"
+              />
+            </div>
+          )}
+        </section>
+
+        <RecipientModal
+          open={recipientModalOpen}
+          onClose={() => setRecipientModalOpen(false)}
+          status={recipientStatus}
+          onCompleted={handleRecipientCompleted}
+          user={user}
+          store={store}
+        />
+      </PainelLayout>
+    );
+  }
 
   return (
     <PainelLayout>
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+      <div className="mb-6 flex flex-col gap-3">
         <PageHeader
-          title="Dashboard"
+          title="Painel de vendas"
           description="Resumo da sua loja"
+          className="mb-0"
         />
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap">
           {PERIOD_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               type="button"
               onClick={() => setPeriod(opt.value)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+              className={`shrink-0 whitespace-nowrap rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                 period === opt.value
                   ? "border-yellow-400 bg-yellow-50 text-zinc-900"
                   : "border-zinc-200 text-zinc-500 hover:border-zinc-300"
@@ -679,7 +875,7 @@ export default function Parceiro() {
       </div>
 
       <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm p-5 mb-8">
-        <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-zinc-900 font-display">Central de Operação</h2>
             <p className="text-sm text-zinc-500">Priorize os pedidos críticos e agilize o atendimento.</p>
@@ -741,7 +937,7 @@ export default function Parceiro() {
             {operations.urgentOrders.map((order) => (
               <div
                 key={`urgent-${order.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-zinc-100 last:border-b-0"
+                className="flex flex-col gap-3 px-4 py-3 border-b border-zinc-100 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-zinc-900">
@@ -751,7 +947,7 @@ export default function Parceiro() {
                     {order.customerName} • {order.createdAt ? getExtenseData(order.createdAt) : "Data não informada"}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <Badge
                     variant={
                       order.reason === "delayed"
@@ -786,21 +982,21 @@ export default function Parceiro() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-bold text-zinc-900 font-display">Últimos pedidos</h2>
-              <div className="flex items-center gap-3">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-3">
                 <button
                   type="button"
                   onClick={handleExport}
                   disabled={loadingExport}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors disabled:opacity-50"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors disabled:opacity-50"
                 >
                   <FileSpreadsheet size={14} />
                   {loadingExport ? "Exportando..." : "Exportar CSV"}
                 </button>
                 <Link
                   href="/painel/pedidos"
-                  className="text-sm text-yellow-600 hover:text-yellow-700 font-medium transition-colors"
+                  className="inline-flex w-full sm:w-auto items-center justify-center text-sm text-yellow-600 hover:text-yellow-700 font-medium transition-colors"
                 >
                   Ver todos
                 </Link>
@@ -851,23 +1047,54 @@ export default function Parceiro() {
             </div>
           )}
 
-          <div>
-            <h2 className="text-lg font-bold text-zinc-900 font-display mb-4">Ações rápidas</h2>
+          <div className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-zinc-900 font-display">Atalhos do dia a dia</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Acesse rápido o que você mais usa.
+              </p>
+            </div>
+
             <div className="grid gap-3">
-              {QUICK_ACTIONS.map((action) => (
+              {primaryQuickActions.map((action) => (
                 <Link
                   key={action.href}
                   href={action.href}
-                  className="bg-white rounded-xl border border-zinc-200/80 shadow-sm p-4 flex items-center gap-4 hover:border-yellow-300 hover:shadow-md transition-all group"
+                  className="group flex items-center gap-4 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 transition-all hover:border-yellow-300 hover:bg-white hover:shadow-sm"
                 >
-                  <div className={`p-2.5 rounded-lg ${action.color}`}>
+                  <div className={`rounded-xl p-3 ${action.color}`}>
                     <action.icon size={18} />
                   </div>
-                  <div>
-                    <div className="font-semibold text-zinc-900 text-sm group-hover:text-yellow-700 transition-colors">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-zinc-900 transition-colors group-hover:text-yellow-700">
                       {action.title}
                     </div>
-                    <div className="text-xs text-zinc-500">{action.description}</div>
+                    <div className="mt-1 text-xs leading-relaxed text-zinc-500">
+                      {action.description}
+                    </div>
+                  </div>
+                  <ArrowRight size={16} className="ml-auto shrink-0 text-zinc-400 transition-colors group-hover:text-yellow-700" />
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {secondaryQuickActions.map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="group flex items-center gap-3 rounded-lg border border-zinc-200/80 px-3 py-3 text-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+                >
+                  <div className={`rounded-lg p-2 ${action.color}`}>
+                    <action.icon size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-zinc-900 transition-colors group-hover:text-yellow-700">
+                      {action.title}
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-zinc-500">
+                      {action.description}
+                    </div>
                   </div>
                 </Link>
               ))}
@@ -877,10 +1104,10 @@ export default function Parceiro() {
           {recipientStatus?.completed && (
             <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4">
               <div className="text-sm font-medium text-emerald-700">
-                Recebedor ativo
+                Cadastro financeiro pronto
               </div>
               <div className="text-xs text-emerald-600 mt-1">
-                Código: {(recipientStatus?.recipient as any)?.code ||
+                Código do cadastro: {(recipientStatus?.recipient as any)?.code ||
                   (typeof recipientStatus?.recipient === 'string' ? recipientStatus.recipient : null) ||
                   "N/A"}
               </div>
