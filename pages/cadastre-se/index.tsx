@@ -1,30 +1,47 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
 import Link from "next/link";
-import { decode as base64_decode } from "base-64";
+import { useRouter } from "next/router";
+import { useEffect, useMemo, useState } from "react";
+import { decode as base64Decode } from "base-64";
+import { getSession } from "next-auth/react";
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 import Api from "@/src/services/api";
 import Template from "@/src/template";
 import Icon from "@/src/icons/fontAwesome/FIcon";
+import { SocialAuth } from "@/src/components/pages/acesso/NextAuth";
 import { Button, Input, Label } from "@/src/components/ui/form";
 import { PasswordRules } from "@/src/components/ui/PasswordRules";
 import { RecaptchaNotice } from "@/src/components/ui/RecaptchaNotice";
-import { usePasswordValidation } from "@/src/hooks/usePasswordValidation";
-import { useEmailValidation } from "@/src/hooks/useEmailValidation";
 import { registerClient } from "@/src/services/auth";
-import { formatName, formatPhone } from "@/src/components/utils/FormMasks";
+import { useEmailValidation } from "@/src/hooks/useEmailValidation";
+import { usePasswordValidation } from "@/src/hooks/usePasswordValidation";
+import { formatName } from "@/src/components/utils/FormMasks";
 
-export async function getServerSideProps() {
+export async function getServerSideProps(ctx: any) {
   const api = new Api();
+  const session: any = await getSession(ctx);
 
-  const request: any = await api.content({ method: "get", url: "register" });
+  if (!!session?.user?.email) {
+    return {
+      redirect: {
+        destination: "/auth",
+        permanent: false,
+      },
+    };
+  }
+
+  const [defaultRequest, registerRequest] = await Promise.all([
+    api.content({ method: "get", url: "default" }),
+    api.content({ method: "get", url: "register" }),
+  ]);
 
   return {
     props: {
-      Register: request?.data?.Register ?? {},
-      DataSeo: request?.data?.DataSeo ?? {},
-      Scripts: request?.data?.Scripts ?? {},
+      Register: registerRequest?.data?.Register ?? {},
+      DataSeo:
+        registerRequest?.data?.DataSeo ?? defaultRequest?.data?.DataSeo ?? {},
+      Scripts:
+        registerRequest?.data?.Scripts ?? defaultRequest?.data?.Scripts ?? {},
     },
   };
 }
@@ -40,67 +57,93 @@ function CadastreSeContent({ Register, DataSeo, Scripts }: Props) {
   const router = useRouter();
   const { executeRecaptcha } = useGoogleReCaptcha();
 
-  // Hooks de validação
-  const emailValidation = useEmailValidation();
+  const emailValidation = useEmailValidation({ checkAvailability: false });
   const passwordValidation = usePasswordValidation();
+  const email = emailValidation.email;
+  const setEmail = emailValidation.setEmail;
 
-  // Estado do form
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  // Inicializa email se veio por query
-  const refEmail = base64_decode((router.query.ref as string) ?? "");
-  if (refEmail && !emailValidation.email) {
-    emailValidation.setEmail(refEmail);
-  }
+  const refEmail = useMemo(() => {
+    const value = (router.query.ref as string) ?? "";
+    if (!value) {
+      return "";
+    }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    try {
+      return base64Decode(value);
+    } catch {
+      return "";
+    }
+  }, [router.query.ref]);
+
+  useEffect(() => {
+    if (refEmail && !email) {
+      setEmail(refEmail);
+    }
+  }, [email, refEmail, setEmail]);
+
+  const fullName = `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
+
+  const canSubmit =
+    firstName.trim().length > 1 &&
+    lastName.trim().length > 1 &&
+    emailValidation.isValid &&
+    passwordValidation.isValid &&
+    !loading;
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!emailValidation.isValid) return;
-    if (!passwordValidation.isValid) return;
+    if (!canSubmit) {
+      return;
+    }
+
     if (!executeRecaptcha) {
-      console.error("reCAPTCHA não carregado");
+      setSubmitError("Não foi possível validar a segurança agora. Tente novamente.");
       return;
     }
 
     setLoading(true);
+    setSubmitError("");
 
-    const recaptchaToken = await executeRecaptcha("register");
+    try {
+      const recaptchaToken = await executeRecaptcha("register");
 
-    const result = await registerClient(api, {
-      name,
-      email: emailValidation.email,
-      phone,
-      password: passwordValidation.password,
-      re_password: passwordValidation.repeat,
-      recaptcha_token: recaptchaToken,
-    });
+      const result = await registerClient(api, {
+        name: fullName,
+        email,
+        password: passwordValidation.password,
+        re_password: passwordValidation.repeat,
+        recaptcha_token: recaptchaToken,
+        type: "client",
+      });
 
-    setLoading(false);
+      if (result.response) {
+        window.location.href = "/acesso?modal=register";
+        return;
+      }
 
-    if (result.response) {
-      window.location.href = "/acesso?modal=register";
+      setSubmitError(result.message || result.error || "Não foi possível criar sua conta.");
+    } catch {
+      setSubmitError("Não foi possível criar sua conta agora. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
   };
-
-  const canSubmit =
-    name.trim() &&
-    emailValidation.isValid &&
-    passwordValidation.isValid &&
-    phone.replace(/\D/g, "").length >= 10;
 
   return (
     <Template
       scripts={Scripts}
-      metaPage={{ title: `Cadastre-se | ${DataSeo?.site_text}`, url: "cadastre-se" }}
+      metaPage={{ title: `Criar conta | ${DataSeo?.site_text}`, url: "cadastre-se" }}
       header={{ template: "clean", position: "solid" }}
       footer={{ template: "clean" }}
     >
       <div className="container-medium">
         <div className="relative py-6 md:py-20">
-          {/* Voltar */}
           <div className="mb-10 lg:-mb-5">
             <Link href="/acesso" className="flex items-center gap-2 text-zinc-900 md:text-lg">
               <Icon icon="fa-long-arrow-left" />
@@ -108,111 +151,125 @@ function CadastreSeContent({ Register, DataSeo, Scripts }: Props) {
             </Link>
           </div>
 
-          <div className="max-w-md mx-auto">
-            <form onSubmit={handleSubmit}>
-              {/* Header */}
-              <div className="text-center mb-8 md:mb-10">
-                <h3 className="font-title text-zinc-900 font-bold text-4xl">Bem vindo ao Fiestou</h3>
-                <p className="pt-2">Entre na sua conta ou faça seu cadastro</p>
+          <div className="mx-auto max-w-md">
+            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+              <div className="text-center">
+                <span className="inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-green-700">
+                  Cadastro de cliente
+                </span>
+                <h1 className="mt-4 font-title text-3xl font-bold text-zinc-900 md:text-4xl">
+                  Crie sua conta em minutos
+                </h1>
+                <p className="mt-3 text-sm leading-relaxed text-zinc-600 md:text-base">
+                  Use seu e-mail e senha ou, se preferir, continue com Google.
+                </p>
               </div>
 
-              {/* Nome */}
-              <div className="form-group">
-                <Label>Nome</Label>
-                <Input
-                  value={name}
-                  onChange={(e: any) => setName(formatName(e.target.value))}
-                  placeholder="Seu nome completo"
-                  required
-                />
-              </div>
+              <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="form-group">
+                    <Label>Nome</Label>
+                    <Input
+                      value={firstName}
+                      onChange={(e: any) => setFirstName(formatName(e.target.value))}
+                      placeholder="Seu nome"
+                      autoComplete="given-name"
+                      required
+                    />
+                  </div>
 
-              {/* Email */}
-              <div className="form-group">
-                <Label>E-mail</Label>
-                <Input
-                  value={emailValidation.email}
-                  onChange={(e: any) => emailValidation.setEmail(e.target.value)}
-                  type="email"
-                  placeholder="Informe seu melhor e-mail"
-                  required
-                />
-                {emailValidation.error && (
-                  <span className="text-red-500 text-sm">{emailValidation.error}</span>
-                )}
-              </div>
+                  <div className="form-group">
+                    <Label>Sobrenome</Label>
+                    <Input
+                      value={lastName}
+                      onChange={(e: any) => setLastName(formatName(e.target.value))}
+                      placeholder="Seu sobrenome"
+                      autoComplete="family-name"
+                      required
+                    />
+                  </div>
+                </div>
 
-              {/* Telefone */}
-              <div className="form-group">
-                <Label>Celular</Label>
-                <Input
-                  value={phone}
-                  onChange={(e: any) => setPhone(formatPhone(e.target.value))}
-                  placeholder="(00) 9 0000-0000"
-                  required
-                />
-                <span className="text-sm">* Usaremos seu contato apenas para notificações de pedidos.</span>
-              </div>
+                <div className="form-group">
+                  <Label>E-mail</Label>
+                  <Input
+                    value={email}
+                    onChange={(e: any) => setEmail(e.target.value)}
+                    type="email"
+                    placeholder="voce@icloud.com"
+                    autoComplete="email"
+                    required
+                  />
+                  {emailValidation.error && (
+                    <span className="text-sm text-red-500">{emailValidation.error}</span>
+                  )}
+                </div>
 
-              {/* Senha */}
-              <div className="form-group">
-                <Label>Senha</Label>
-                <Input
-                  value={passwordValidation.password}
-                  onChange={(e: any) => passwordValidation.setPassword(e.target.value)}
-                  type="password"
-                  placeholder="Crie sua senha"
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <Label>Senha</Label>
+                  <Input
+                    value={passwordValidation.password}
+                    onChange={(e: any) => passwordValidation.setPassword(e.target.value)}
+                    type="password"
+                    placeholder="Crie sua senha"
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
 
-              {/* Confirmar senha */}
-              <div className="form-group">
-                <Label>Repita a senha</Label>
-                <Input
-                  value={passwordValidation.repeat}
-                  onChange={(e: any) => passwordValidation.setRepeat(e.target.value)}
-                  type="password"
-                  placeholder="Confirme sua senha"
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <Label>Confirmar senha</Label>
+                  <Input
+                    value={passwordValidation.repeat}
+                    onChange={(e: any) => passwordValidation.setRepeat(e.target.value)}
+                    type="password"
+                    placeholder="Digite a senha novamente"
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
 
-              {/* Regras de senha */}
-              <div className="form-group">
                 <PasswordRules
                   rules={passwordValidation.rules}
                   errors={passwordValidation.errors}
                   completed={passwordValidation.completed}
                 />
-              </div>
 
-              {/* Termos */}
-              {Register?.terms_text && (
-                <div
-                  className="mt-4 text-xs leading-tight"
-                  dangerouslySetInnerHTML={{ __html: Register.terms_text }}
-                />
-              )}
+                {Register?.terms_text && (
+                  <div
+                    className="text-xs leading-relaxed text-zinc-500"
+                    dangerouslySetInnerHTML={{ __html: Register.terms_text }}
+                  />
+                )}
 
-              <RecaptchaNotice />
+                <RecaptchaNotice />
 
-              {/* Submit */}
-              <div className="form-group">
+                {submitError && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-600">
+                    {submitError}
+                  </div>
+                )}
+
                 <Button disable={!canSubmit} loading={loading}>
-                  Cadastrar agora
+                  Criar minha conta
                 </Button>
+              </form>
+
+              <div className="my-6 flex items-center gap-4 text-sm text-zinc-400">
+                <div className="h-px w-full bg-zinc-200" />
+                <span>ou</span>
+                <div className="h-px w-full bg-zinc-200" />
               </div>
 
-              {/* Link login */}
-              <div className="text-center pt-4 text-sm">
-                Já possui cadastro na plataforma?
-                <br />
-                <Link href="/acesso" className="underline text-zinc-900">
-                  Fazer Login
+              <SocialAuth googleLabel="Continuar com Google" />
+
+              <div className="pt-6 text-center text-sm text-zinc-600">
+                Já tem uma conta?{" "}
+                <Link className="font-semibold text-zinc-900 underline" href="/acesso">
+                  Fazer login
                 </Link>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>

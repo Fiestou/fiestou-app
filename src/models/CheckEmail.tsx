@@ -1,15 +1,13 @@
+export interface CheckMailUser {
+  hash?: string;
+  name?: string;
+  email?: string;
+}
+
 export interface CheckMail {
-    response: boolean
-    user: User
-    redirect: string
-  }
-  
-  export interface User {
-    hash: string
-    name: string
-    email: string
-    phone: string
-    type: string
-    person?: string
-    status: number
-  }
+  response: boolean;
+  exists?: boolean;
+  user?: CheckMailUser;
+  redirect?: string;
+  message?: string;
+}

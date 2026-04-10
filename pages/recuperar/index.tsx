@@ -109,12 +109,11 @@ function RecuperarContent({ DataSeo, Scripts }: RecuperarProps) {
                 <>
                   <div className="text-center mb-8 md:mb-10">
                     <h3 className="font-title text-zinc-900 font-bold text-2xl md:text-3xl text-center">
-                      Recuperação enviada
+                      Link enviado
                     </h3>
                     <div className="pt-4 text-sm md:text-base">
-                      Enviamos um link de redefinir senha
-                      <br /> para o seu e-mail. Basta acessá-lo para iniciar a
-                      redefinição.
+                      Se o e-mail informado existir na base, você receberá um
+                      link para redefinir sua senha.
                     </div>
                   </div>
                 </>
@@ -127,10 +126,10 @@ function RecuperarContent({ DataSeo, Scripts }: RecuperarProps) {
                 >
                   <div className="text-center mb-8 md:mb-10">
                     <h3 className="font-title text-zinc-900 font-bold text-3xl md:text-4xl text-center">
-                      Recuperar de senha
+                      Recuperar senha
                     </h3>
                     <div className="pt-2 text-sm md:text-base">
-                      Informe o e-mail usado no seu cadastro.
+                      Informe o e-mail da sua conta para receber o link de redefinição.
                     </div>
                   </div>
 
@@ -142,12 +141,14 @@ function RecuperarContent({ DataSeo, Scripts }: RecuperarProps) {
                       }}
                       type="email"
                       name="email"
+                      placeholder="voce@exemplo.com"
+                      autoComplete="email"
                       required
                     />
                   </div>
 
                   <div className="form-group">
-                    <Button loading={form.loading}>Enviar</Button>
+                    <Button loading={form.loading}>Enviar link</Button>
                   </div>
                 </form>
               )}

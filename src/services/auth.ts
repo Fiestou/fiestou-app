@@ -4,7 +4,7 @@ import Api from "@/src/services/api";
 export interface RegisterData {
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   password: string;
   re_password: string;
   type?: "client" | "partner";
@@ -29,8 +29,52 @@ export interface PreRegisterData {
 
 export interface CheckEmailResponse {
   response: boolean;
-  user?: { email: string; name: string };
+  exists?: boolean;
   redirect?: string;
+  message?: string;
+}
+
+function normalizeBridgeResponse(response: any, fallbackMessage: string): RegisterResponse {
+  if (!response?.error) {
+    return response;
+  }
+
+  return {
+    response: false,
+    message: response?.data?.message || fallbackMessage,
+    error: response?.data?.message || fallbackMessage,
+  };
+}
+
+function trimTrailingSlash(value: string) {
+  return value.replace(/\/+$/, "");
+}
+
+function getPublicBridgeBase() {
+  const explicitBase = String(
+    process.env.NEXT_PUBLIC_API_REST ?? process.env.API_REST ?? "",
+  ).trim();
+
+  if (explicitBase) {
+    return trimTrailingSlash(explicitBase);
+  }
+
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  if (window.location.hostname === "teste.fiestou.com.br") {
+    return "https://testeapi.fiestou.com.br/api/app";
+  }
+
+  if (
+    window.location.hostname === "fiestou.com.br" ||
+    window.location.hostname === "www.fiestou.com.br"
+  ) {
+    return "https://api.fiestou.com.br/api/app";
+  }
+
+  return `${window.location.origin}/api/app`;
 }
 
 // Registra novo cliente
@@ -39,19 +83,42 @@ export async function registerClient(
   data: RegisterData
 ): Promise<RegisterResponse> {
   try {
-    const phoneClean = data.phone.replace(/\D/g, "");
+    const phoneClean = (data.phone ?? "").replace(/\D/g, "");
+    const payload = {
+      ...data,
+      type: data.type ?? "client",
+      ...(phoneClean ? { phone: phoneClean } : {}),
+    };
+
+    if (typeof window !== "undefined") {
+      const response = await fetch(`${getPublicBridgeBase()}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const responseData = await response.json().catch(() => null);
+
+      if (responseData?.response) {
+        return responseData;
+      }
+
+      return {
+        response: false,
+        message: responseData?.message || "Erro ao cadastrar",
+        error: responseData?.message || "Erro ao cadastrar",
+      };
+    }
 
     const response = await api.bridge<RegisterResponse>({
       method: "post",
       url: "auth/register",
-      data: {
-        ...data,
-        phone: phoneClean,
-        type: data.type ?? "client",
-      },
+      data: payload,
     });
 
-    return response;
+    return normalizeBridgeResponse(response, "Erro ao cadastrar");
   } catch (error: any) {
     return {
       response: false,
@@ -77,7 +144,7 @@ export async function preRegister(
       },
     });
 
-    return response;
+    return normalizeBridgeResponse(response, "Erro no pré-registro");
   } catch (error: any) {
     return {
       response: false,
@@ -93,9 +160,9 @@ export async function checkEmail(
 ): Promise<CheckEmailResponse> {
   try {
     const response = await api.bridge<CheckEmailResponse>({
-      method: "post",
-      url: "auth/checkin",
-      data: { ref: email },
+      method: "get",
+      url: "auth/emailvalidate",
+      data: { email },
     });
 
     return response;
@@ -117,7 +184,7 @@ export async function recoveryPassword(
       data: { email, recaptcha_token: recaptchaToken },
     });
 
-    return response;
+    return normalizeBridgeResponse(response, "Erro ao recuperar senha");
   } catch (error: any) {
     return {
       response: false,

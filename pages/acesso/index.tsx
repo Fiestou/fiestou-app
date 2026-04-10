@@ -63,7 +63,7 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   const setFormValue = (value: any) => {
-    setForm({ ...form, ...value });
+    setForm((current) => ({ ...current, ...value }));
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -93,9 +93,10 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
   useEffect(() => {
     if (form.alert) {
       const timeout = setTimeout(() => {
-        setFormValue({
+        setForm((current) => ({
+          ...current,
           alert: "",
-        });
+        }));
       }, 3000);
       return () => clearTimeout(timeout);
     }
@@ -153,10 +154,10 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
               >
                 <div className="text-center mb-8 md:mb-10">
                   <h3 className="font-title text-zinc-900 font-bold text-3xl md:text-4xl text-center">
-                    Bem-vindo a Fiestou
+                    Entre na sua conta
                   </h3>
                   <div className="pt-2 text-sm md:text-base">
-                    Entre na sua conta ou faça seu cadastro
+                    Use seu e-mail e senha ou continue com Google.
                   </div>
                 </div>
 
@@ -204,7 +205,7 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
                   </Link>
                 </div>
                 <div className="form-group">
-                  <Button loading={form.loading}>Fazer Login</Button>
+                  <Button loading={form.loading}>Entrar</Button>
                 </div>
 
                 {form.alert && (
@@ -220,7 +221,7 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
                 </div>
 
                 <div className="form-group">
-                  <SocialAuth showFacebook={true} />
+                  <SocialAuth googleLabel="Continuar com Google" />
                 </div>
 
                 <div className="hidden form-group text-center text-sm pt-4">
@@ -233,13 +234,12 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
                   </Link>
                 </div>
                 <div className="text-center pt-4 text-sm">
-                  Não possui cadastro?
+                  Ainda não tem conta?{" "}
                   <Link
                     className="underline text-yellow-600 font-bold"
                     href="/cadastre-se"
                   >
-                    {" "}
-                    Cadastre-se
+                    Criar conta
                   </Link>
                 </div>
               </form>
@@ -271,24 +271,24 @@ function AcessoContent({ modal, DataSeo, Scripts }: AcessoProps) {
             <div className="pt-2">
               {modalType == "register" ? (
                 <>
-                  Para fazer seu primeiro acesso, confirme seu cadastro através da
-                  mensagem que enviamos no e-mail cadastrado.
+                  Enviamos um e-mail para confirmar seu cadastro. Depois disso,
+                  você já pode entrar na sua conta.
                 </>
               ) : modalType == "await" ? (
                 <>
-                  Nossa equipe está analisando seu cadastro. Responderemos por
-                  e-mail em breve.
+                  Nossa equipe está analisando seu cadastro. Você receberá uma
+                  resposta por e-mail.
                 </>
               ) : (
                 <>
-                  Não recebeu o link? Verifique sua caixa de spam, lixeira ou
+                  Não recebeu o link? Verifique spam e lixeira ou
                   <Link
                     href="/recuperar"
                     className="text-cyan-500 underline px-2"
                   >
-                    recupere sua senha
+                    peça um novo link
                   </Link>
-                  para receber o link novamente
+                  para continuar.
                 </>
               )}
             </div>

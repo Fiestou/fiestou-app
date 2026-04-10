@@ -4,11 +4,30 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import { getSession } from "next-auth/react";
 import { useContext, useEffect, useState } from "react";
 import Api from "@/src/services/api";
-import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
 import { AuthContext } from "@/src/contexts/AuthContext";
-import { CheckMail } from "@/src/models/CheckEmail";
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { setUserCookie } from "@/src/services/authCookies";
+import { formatName } from "@/src/components/utils/FormMasks";
+
+function splitFullName(fullName: string) {
+  const normalized = String(fullName ?? "").trim().replace(/\s+/g, " ");
+
+  if (!normalized) {
+    return { firstName: "", lastName: "" };
+  }
+
+  const parts = normalized.split(" ");
+
+  return {
+    firstName: parts[0] ?? "",
+    lastName: parts.slice(1).join(" "),
+  };
+}
+
+function joinFullName(firstName: string, lastName: string) {
+  return `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
+}
 
 export async function getServerSideProps(ctx: any) {
   const session: any = await getSession(ctx);
@@ -33,8 +52,6 @@ function CompletarContent({ auth }: any) {
   const { UserLogout } = useContext(AuthContext);
   const { executeRecaptcha } = useGoogleReCaptcha();
 
-  const expires = { expires: 14 };
-
   const api = new Api();
 
   const [loading, setLoading] = useState(false as boolean);
@@ -43,6 +60,8 @@ function CompletarContent({ auth }: any) {
   const handleData = (value: any) => {
     setData({ ...data, ...value });
   };
+  const { firstName, lastName } = splitFullName(data.name ?? auth?.name ?? "");
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
@@ -56,24 +75,18 @@ function CompletarContent({ auth }: any) {
     // Gera o token reCAPTCHA v3
     const recaptchaToken = await executeRecaptcha("complete_registration");
 
-    const checkmail: CheckMail = await api.bridge({
-      method: "post",
-      url: "auth/checkin",
-      data: { ref: data.email},
-    }) as CheckMail;
-
     delete data["image"];
 
     const request: any = await api.bridge({
       method: 'post',
       url: "users/update",
-      data: { ...data, origin: "complete", type: checkmail.user.type, recaptcha_token: recaptchaToken },
+      data: { ...data, origin: "complete", recaptcha_token: recaptchaToken },
     });
 
     if (!!request.response) {
       const user: UserType = request.data;
 
-      Cookies.set("fiestou.user", JSON.stringify(user), expires);
+      setUserCookie(user);
 
       window.location.href = "/painel";
     } else {
@@ -116,29 +129,59 @@ function CompletarContent({ auth }: any) {
               >
                 <div className="text-center mb-8 md:mb-10">
                   <h3 className="font-title text-zinc-900 font-bold text-4xl text-center">
-                    Complete seu cadastro
+                    Falta pouco
                   </h3>
                   <div className="pt-2">
-                    Insira as informações que faltam para o seu cadastro
+                    Confirme seus dados para continuar.
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <Label>Nome</Label>
-                  <Input
-                    defaultValue={data.name}
-                    onChange={(e: any) => handleData({ name: e.target.value })}
-                    type="text"
-                    name="nome"
-                    placeholder="Seu nome completo"
-                    required
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="form-group">
+                    <Label>Nome</Label>
+                    <Input
+                      value={firstName}
+                      onChange={(e: any) =>
+                        handleData({
+                          name: joinFullName(
+                            formatName(e.target.value),
+                            lastName,
+                          ),
+                        })
+                      }
+                      type="text"
+                      name="nome"
+                      placeholder="Seu nome"
+                      autoComplete="given-name"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <Label>Sobrenome</Label>
+                    <Input
+                      value={lastName}
+                      onChange={(e: any) =>
+                        handleData({
+                          name: joinFullName(
+                            firstName,
+                            formatName(e.target.value),
+                          ),
+                        })
+                      }
+                      type="text"
+                      name="sobrenome"
+                      placeholder="Seu sobrenome"
+                      autoComplete="family-name"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <Label>E-mail</Label>
                   <Input
-                    defaultValue={data.email}
+                    value={data.email ?? ""}
                     type="email"
                     name="email"
                     readOnly
@@ -148,14 +191,14 @@ function CompletarContent({ auth }: any) {
                 <div className="form-group">
                   <Label>Celular</Label>
                   <Input
-                    defaultValue={data.phone}
+                    value={data.phone ?? ""}
                     onChange={(e: any) => handleData({ phone: e.target.value })}
                     type="text"
                     name="celular"
                     required
                   />
                   <div className="text-sm">
-                    * Usaremos seu contato apenas para notificações de pedidos.
+                    Usaremos esse número apenas para avisos sobre pedidos.
                   </div>
                 </div>
 
@@ -173,7 +216,7 @@ function CompletarContent({ auth }: any) {
 
                 <div className="form-group">
                   <Button loading={loading}>
-                    Cadastrar agora
+                    Concluir cadastro
                   </Button>
                 </div>
               </form>

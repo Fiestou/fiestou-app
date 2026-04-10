@@ -69,36 +69,34 @@ export default function Senha({
 
   useEffect(() => {
     if (password) {
-      let handleErrors = errors;
-      let handleComplete = complete;
+      let handleErrors: Array<string> = [];
+      let handleComplete: Array<string> = [];
 
       if (password == repeat) {
-        handleErrors = handleErrors.filter((role) => role != "equal");
         handleComplete = [...handleComplete, "equal"];
       } else {
         handleErrors = [...handleErrors, "equal"];
-        handleComplete = handleComplete.filter((role) => role != "equal");
       }
 
       if (/\d/.test(password)) {
-        handleErrors = handleErrors.filter((role) => role != "number");
         handleComplete = [...handleComplete, "number"];
       } else {
         handleErrors = [...handleErrors, "number"];
-        handleComplete = handleComplete.filter((role) => role != "number");
       }
 
       if (password.length >= 6) {
-        handleErrors = handleErrors.filter((role) => role != "min");
         handleComplete = [...handleComplete, "min"];
       } else {
         handleErrors = [...handleErrors, "min"];
-        handleComplete = handleComplete.filter((role) => role != "min");
       }
 
       setErrors(handleErrors);
       setComplete(handleComplete);
+      return;
     }
+
+    setErrors([]);
+    setComplete([]);
   }, [password, repeat]);
 
   const handleSubmit = async (e: any) => {
@@ -170,7 +168,7 @@ export default function Senha({
                     Redefinir senha
                   </h3>
                   <div className="pt-2 text-sm md:text-base">
-                    Escolha uma senha segura para seguir
+                    Escolha sua nova senha para continuar.
                   </div>
                 </div>
 
@@ -182,18 +180,22 @@ export default function Senha({
                     }}
                     type="password"
                     name="password"
+                    placeholder="Digite sua nova senha"
+                    autoComplete="new-password"
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <Label>Repita a senha</Label>
+                  <Label>Confirmar nova senha</Label>
                   <Input
                     onChange={(e: any) => {
                       setRepeat(e.target.value);
                     }}
                     type="password"
                     name="re_password"
+                    placeholder="Digite a senha novamente"
+                    autoComplete="new-password"
                     required
                   />
                 </div>
@@ -227,7 +229,7 @@ export default function Senha({
                     disable={!!errors.length && !!complete.length}
                     loading={form.loading}
                   >
-                    Enviar
+                    Salvar nova senha
                   </Button>
                 </div>
               </form>

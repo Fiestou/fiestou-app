@@ -3,10 +3,18 @@ import Api, { api } from "@/src/services/api";
 import Router from "next/router";
 import Cookies from "js-cookie";
 import { UserType } from "@/src/models/user";
-import { signOut } from "next-auth/react";
 import { isCEPInRegion } from "../helper";
-import { CheckMail } from "../models/CheckEmail";
 import { clearCartCookies, getCartFromCookies } from "@/src/services/cart";
+import {
+  clearAuthCookies,
+  readAuthToken,
+  readStoreCookie,
+  readUserCookie,
+  setAuthTokenCookie,
+  setRegionCookie,
+  setStoreCookie,
+  setUserCookie,
+} from "@/src/services/authCookies";
 
 // Helper para determinar tipo do usuário com fallback para campo person (legado)
 export function getUserType(user: UserType | any): string {
@@ -28,20 +36,19 @@ type AuthContextType = {
 export const AuthContext = createContext({} as AuthContextType);
 
 export function getUser() {
-  if (!!Cookies.get("fiestou.authtoken")) {
-    let cookie = Cookies.get("fiestou.user") ?? JSON.stringify([]);
-    let user = JSON.parse(cookie);
-
-    return user as UserType;
+  if (!!readAuthToken()) {
+    const user = readUserCookie();
+    if (user) {
+      return user as UserType;
+    }
   }
 
   return {} as UserType;
 }
 
 export function getStore() {
-  if (!!Cookies.get("fiestou.authtoken")) {
-    const teste= Cookies.get("fiestou.store") ?? "";
-    return Cookies.get("fiestou.store");
+  if (!!readAuthToken()) {
+    return readStoreCookie();
   }
 }
 
@@ -75,27 +82,10 @@ export const AuthCheck = () => {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const request = new Api();
 
-  const isAuthenticated = !!Cookies.get("fiestou.authtoken");
+  const isAuthenticated = !!readAuthToken();
 
   async function SignIn({ email, password, recaptcha_token }: SignInData) {
-    // Cookie expira em 365 dias (1 ano) - mesmo tempo do JWT_TTL no backend
-    const expires = { expires: 365 };
-
-    Cookies.remove("fiestou.authtoken");
-    Cookies.remove("fiestou.user");
-
-    const checkEmail: CheckMail = await request.bridge({
-      method: "post",
-      url: "auth/checkin",
-      data: { ref: email },
-    }) as CheckMail;
-
-    if (checkEmail.response && !checkEmail.user){
-      return {
-        status: 422,
-        error: "Ops! O email não foi encontrado.",
-      };
-    }
+    clearAuthCookies();
 
     const data: any = await request.bridge({
       method: 'post',
@@ -110,10 +100,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data && data.token) {
       const user: UserType = data.user;
 
-      Cookies.set("fiestou.authtoken", data.token, expires);
-      Cookies.set("fiestou.user", JSON.stringify(user), expires);
+      setAuthTokenCookie(data.token);
+      setUserCookie(user);
 
-      if (!!data?.store) Cookies.set("fiestou.store", data.store, expires);
+      if (!!data?.store) {
+        setStoreCookie(data.store);
+      }
 
       if ((user?.address ?? []).some((item: any) => !!item.zipCode)) {
         for (const item of user.address?.filter(
@@ -124,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             validate: isCEPInRegion(item.zipCode),
           };
 
-          Cookies.set("fiestou.region", JSON.stringify(handle), expires);
+          setRegionCookie(handle);
           if (item.main) break;
         }
       }
@@ -164,12 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 async function UserLogout() {
   clearCartCookies({ syncApi: false, reason: "clear" });
-  // Remova todos os cookies de autenticação
-  Cookies.remove("fiestou.authtoken");
-  Cookies.remove("fiestou.user");
-  Cookies.remove("fiestou.store");
-  Cookies.remove("fiestou.region");
-  // Adicione outros cookies que você usa, se necessário
+  clearAuthCookies();
 
   // Redirecione para a página de logout ou home
     if (!!window) {

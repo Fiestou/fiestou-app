@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Api from "@/src/services/api";
 import { validateEmail } from "@/src/components/utils/FormMasks";
 
@@ -8,7 +8,7 @@ interface UseEmailValidationOptions {
 }
 
 export function useEmailValidation(options?: UseEmailValidationOptions) {
-  const { debounceMs = 300, checkAvailability = true } = options ?? {};
+  const { debounceMs = 300, checkAvailability = false } = options ?? {};
 
   const [email, setEmail] = useState("");
   const [isValidFormat, setIsValidFormat] = useState(true);
@@ -50,12 +50,12 @@ export function useEmailValidation(options?: UseEmailValidationOptions) {
       try {
         const api = new Api();
         const data: any = await api.bridge({
-          method: "post",
-          url: "auth/checkin",
-          data: { ref: debouncedEmail },
+          method: "get",
+          url: "auth/emailvalidate",
+          data: { email: debouncedEmail },
         });
 
-        if (data.response && data.user) {
+        if (data?.exists) {
           setIsAvailable(false);
           setError("O email já está vinculado a um usuário.");
         } else {
@@ -81,9 +81,13 @@ export function useEmailValidation(options?: UseEmailValidationOptions) {
 
   const isValid = isValidFormat && isAvailable && !isChecking;
 
+  const setNormalizedEmail = useCallback((value: string) => {
+    setEmail(value.toLowerCase().trim());
+  }, []);
+
   return {
     email,
-    setEmail: (value: string) => setEmail(value.toLowerCase().trim()),
+    setEmail: setNormalizedEmail,
     isValidFormat,
     isAvailable,
     isChecking,

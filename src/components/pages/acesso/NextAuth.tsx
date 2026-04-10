@@ -1,4 +1,5 @@
 import { signIn } from "next-auth/react";
+import { useEffect, useMemo, useState } from "react";
 
 export const GoogleIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -15,46 +16,100 @@ export const FacebookIcon = () => (
   </svg>
 );
 
-export function GoogleAuthButton() {
+interface GoogleAuthButtonProps {
+  label?: string;
+}
+
+export function GoogleAuthButton({
+  label = "Continuar com Google",
+}: GoogleAuthButtonProps) {
   return (
     <button
       type="button"
       onClick={() => signIn("google")}
       className="w-full rounded flex items-center gap-4 justify-center border py-[.85rem] transition-colors border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-900"
     >
-      <GoogleIcon /> Continuar com Google
+      <GoogleIcon /> {label}
     </button>
   );
 }
 
-export function FacebookAuthButton() {
-  const disabled = true;
+interface FacebookAuthButtonProps {
+  label?: string;
+}
+
+export function FacebookAuthButton({
+  label = "Continuar com Facebook",
+}: FacebookAuthButtonProps) {
   return (
     <button
       type="button"
-      onClick={() => !disabled && signIn("facebook")}
-      disabled={disabled}
-      className={`w-full rounded flex items-center gap-4 justify-center border py-[.85rem] transition-colors ${
-        disabled
-          ? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed"
-          : "border-[#1877F2] bg-[#1877F2] hover:bg-[#166FE5] text-white"
-      }`}
-      title={disabled ? "Em breve" : undefined}
+      onClick={() => signIn("facebook")}
+      className="w-full rounded flex items-center gap-4 justify-center border py-[.85rem] transition-colors border-[#1877F2] bg-[#1877F2] hover:bg-[#166FE5] text-white"
     >
-      <FacebookIcon /> Continuar com Facebook
+      <FacebookIcon /> {label}
     </button>
   );
 }
 
 interface SocialAuthProps {
   showFacebook?: boolean;
+  googleLabel?: string;
+  facebookLabel?: string;
 }
 
-export function SocialAuth({ showFacebook = true }: SocialAuthProps) {
+export function SocialAuth({
+  showFacebook,
+  googleLabel,
+  facebookLabel,
+}: SocialAuthProps) {
+  const [providerFlags, setProviderFlags] = useState({
+    google: true,
+    facebook: false,
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProviders = async () => {
+      try {
+        const response = await fetch("/api/auth/providers");
+        const data = await response.json();
+
+        if (!active) {
+          return;
+        }
+
+        setProviderFlags({
+          google: !!data?.google,
+          facebook: !!data?.facebook,
+        });
+      } catch {
+        if (active) {
+          setProviderFlags((current) => ({ ...current, facebook: false }));
+        }
+      }
+    };
+
+    loadProviders();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const shouldShowFacebook = useMemo(() => {
+    if (showFacebook === false) {
+      return false;
+    }
+
+    return providerFlags.facebook;
+  }, [providerFlags.facebook, showFacebook]);
+
   return (
     <div className="flex flex-col gap-3">
-      <GoogleAuthButton />
-      {showFacebook && <FacebookAuthButton />}
+      <GoogleAuthButton label={googleLabel} />
+      {shouldShowFacebook && <FacebookAuthButton label={facebookLabel} />}
     </div>
   );
 }

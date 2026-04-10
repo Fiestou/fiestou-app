@@ -1,14 +1,17 @@
-import { AuthContext, getUserType } from "@/src/contexts/AuthContext";
+import { getUserType } from "@/src/contexts/AuthContext";
 import Api, { api } from "@/src/services/api";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import { getSession } from "next-auth/react";
-import { useContext, useEffect } from "react";
-import Cookies from "js-cookie";
+import { useEffect } from "react";
 import { UserType } from "@/src/models/user";
+import {
+  clearAuthCookies,
+  setAuthTokenCookie,
+  setStoreCookie,
+  setUserCookie,
+} from "@/src/services/authCookies";
 
 export async function getServerSideProps(ctx: any) {
-  const { res }: any = ctx;
-
   const session: any = await getSession(ctx);
 
   if (!session) {
@@ -29,6 +32,12 @@ export async function getServerSideProps(ctx: any) {
       method: "post",
       url: "auth/external-auth",
       data: { email: user.email, name: user.name },
+      opts: {
+        headers: {
+          "X-Fiestou-Auth-Bridge":
+            process.env.INTERNAL_AUTH_BRIDGE_SECRET ?? process.env.TOKEN ?? "",
+        },
+      },
     },
     ctx
   );
@@ -50,44 +59,39 @@ export async function getServerSideProps(ctx: any) {
 }
 
 export default function Auth({ auth }: any) {
-  const expires = { expires: 14 };
-
-  Cookies.remove("fiestou.authtoken");
-  Cookies.remove("fiestou.user");
-
-  const setAuth = async () => {
-    if (!!auth.token) {
-      const user: UserType = auth.user;
-
-      Cookies.set("fiestou.authtoken", auth.token, expires);
-      Cookies.set("fiestou.user", JSON.stringify(user), expires);
-
-      if (!!auth.store) Cookies.set("fiestou.store", auth.store, expires);
-
-      api.defaults.headers["Authorization"] = `Bearer ${auth.token}`;
-
-      const userType = getUserType(user);
-      if (!auth.user.status) {
-        window.location.href = "/cadastre-se/completar";
-      } else if (userType === "master") {
-        window.location.href = "/admin";
-      } else if (userType === "partner") {
-        window.location.href = "/painel";
-      } else if (userType === "delivery") {
-        window.location.href = "/entregador";
-      } else {
-        window.location.href = "/dashboard";
-      }
-    } else {
-      window.location.href = "/acesso";
-    }
-  };
+  clearAuthCookies();
 
   useEffect(() => {
     if (!!window) {
-      setAuth();
+      if (!!auth.token) {
+        const user: UserType = auth.user;
+
+        setAuthTokenCookie(auth.token);
+        setUserCookie(user);
+
+        if (!!auth.store) {
+          setStoreCookie(auth.store);
+        }
+
+        api.defaults.headers["Authorization"] = `Bearer ${auth.token}`;
+
+        const userType = getUserType(user);
+        if (!auth.user.status) {
+          window.location.href = "/cadastre-se/completar";
+        } else if (userType === "master") {
+          window.location.href = "/admin";
+        } else if (userType === "partner") {
+          window.location.href = "/painel";
+        } else if (userType === "delivery") {
+          window.location.href = "/entregador";
+        } else {
+          window.location.href = "/dashboard";
+        }
+      } else {
+        window.location.href = "/acesso";
+      }
     }
-  }, []);
+  }, [auth]);
 
   return (
     <>
