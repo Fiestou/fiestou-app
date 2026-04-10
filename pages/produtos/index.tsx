@@ -169,8 +169,8 @@ export default function Produtos() {
         content: HeaderFooter,
       }}
     >
-      <section className="bg-gradient-to-br from-cyan-500 to-blue-600 pt-20 md:pt-28 pb-8 md:pb-12">
-        <div className="container-medium">
+      <section className="bg-cyan-500 pt-24 md:pt-32 pb-8 md:pb-12 relative">
+        <div className="container-medium relative">
           <div className="mb-4">
             <Breadcrumbs links={[{ url: "/produtos", name: "Produtos" }]} />
           </div>
