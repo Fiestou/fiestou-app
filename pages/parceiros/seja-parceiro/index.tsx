@@ -1,6 +1,6 @@
 import Api from "@/src/services/api";
 import Template from "@/src/template";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Img from "@/src/components/utils/ImgBase";
 import { Button, Input, Label } from "@/src/components/ui/form";
@@ -15,6 +15,7 @@ import { formatPhone } from "@/pages/cadastre-se/components/FormMasks";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { formatName, validateEmail } from "@/src/components/utils/FormMasks";
+import { preRegisterPartner, completePartnerRegister } from "@/src/services/partner";
 
 export async function getStaticProps(ctx: any) {
     const api = new Api();
@@ -39,14 +40,7 @@ export async function getStaticProps(ctx: any) {
 const FormInitialType = {
     sended: false,
     loading: false,
-    redirect: "/parceiros/cadastro",
 };
-
-interface EmailValidateResponse {
-    status?: number;
-    response?: boolean | object;
-    message?: string;
-}
 
 export default function SejaParceiro({
     Partner,
@@ -61,7 +55,6 @@ export default function SejaParceiro({
     DataSeo: any;
     Scripts: any;
 }) {
-    const api = new Api();
     const router = useRouter();
     const [collapseFaq, setCollapseFaq] = useState(0);
 
@@ -76,7 +69,7 @@ export default function SejaParceiro({
     const [errorMail, setErrorMail] = useState<string | null>(null);
 
 
-    const validatePassword = (pwd: string): string[] => {
+    const validatePassword = useCallback((pwd: string): string[] => {
         const errors: string[] = [];
 
 
@@ -94,9 +87,9 @@ export default function SejaParceiro({
         }
 
         return errors;
-    };
+    }, []);
 
-    const validateAndSetPasswordErrors = (currentPassword: string, currentRepeat: string): boolean => {
+    const validateAndSetPasswordErrors = useCallback((currentPassword: string, currentRepeat: string): boolean => {
         const errors = validatePassword(currentPassword);
 
         if (currentPassword !== currentRepeat && currentRepeat.length > 0) {
@@ -105,20 +98,16 @@ export default function SejaParceiro({
 
         setPasswordErrors(errors);
         return errors.length === 0;
-    };
+    }, [validatePassword]);
 
-    const checkFormValidity = () => {
+    useEffect(() => {
         const arePasswordsValid = validateAndSetPasswordErrors(password, repeat);
         const isNameValid = name.trim() !== "";
         const isEmailValid = email.trim() !== "" && validateEmail(email);
         const isPhoneValid = phone.replace(/\D/g, '').length >= 11;
 
         setIsFormValid(arePasswordsValid && isNameValid && isEmailValid && isPhoneValid);
-    };
-
-    useEffect(() => {
-        checkFormValidity();
-    }, [name, email, phone, password, repeat, errorMail]);
+    }, [email, name, password, phone, repeat, validateAndSetPasswordErrors]);
 
 
     useEffect(() => {
@@ -128,22 +117,6 @@ export default function SejaParceiro({
             }, 30000)
         }
     }, [errorMail])
-
-    const savePreCadastro = (payload: {
-        name: string;
-        email: string;
-        phone: string;
-        password?: string;
-    }) => {
-        if (typeof window === 'undefined') return;
-        try {
-            sessionStorage.setItem('preCadastro', JSON.stringify({
-                ts: Date.now(),
-                ...payload,
-            }));
-        } catch { }
-    };
-
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -156,6 +129,8 @@ export default function SejaParceiro({
         setForm((prev) => ({ ...prev, loading: true }));
         setErrorMail(null);
 
+        const api = new Api();
+
         try {
             const cleanedPhone = phone.replace(/\D/g, '');
             if (cleanedPhone.length < 11) {
@@ -163,42 +138,47 @@ export default function SejaParceiro({
                 return;
             }
 
-            const resp = await api.bridge<EmailValidateResponse>({
-                method: 'get',
-                url: 'auth/emailvalidate',
-                data: { email: email.trim().toLowerCase() },
-                noAppPrefix: false,
+            const emailClean = email.trim().toLowerCase();
+            const nameTrim = name.trim();
+
+            // Pré-registro do usuário
+            const preResp = await preRegisterPartner(api, {
+                name: nameTrim,
+                email: emailClean,
+                phone: cleanedPhone,
+                password,
             });
 
-            const status = resp.status ?? 200;
-
-            if (status === 404) {
-                savePreCadastro({
-                    name,
-                    email,
-                    phone: cleanedPhone,
-                    password,
-                });
-
-                toast.success("Pré-cadastro realizado com sucesso!");
-
-                router.push({ pathname: form.redirect });
+            if (!preResp?.response && (preResp as any)?.code !== "email_already_registered") {
+                toast.error(preResp?.message || preResp?.error || "Não foi possível criar sua conta.");
                 return;
             }
 
-            if (status == 200) {
-                savePreCadastro({
-                    name,
-                    email,
-                    phone: cleanedPhone,
-                    password,
-                });
+            // Criação da loja com dados mínimos — restante preenchido no painel
+            const storeResp = await completePartnerRegister(api, {
+                name: nameTrim,
+                email: emailClean,
+                phone: cleanedPhone,
+                password,
+                personType: "pf",
+                document: "",
+                companyName: nameTrim,
+                hasDelivery: false,
+                street: "",
+                number: "",
+                neighborhood: "",
+                complement: "",
+                state: "",
+                city: "",
+                zipcode: "",
+            });
 
-                toast.info("E-mail já existe");
-                return;
+            if (storeResp?.response) {
+                toast.success("Cadastro realizado! Entre com seu e-mail e senha.");
+                router.push("/acesso");
+            } else {
+                toast.error(storeResp?.error || "Erro ao finalizar cadastro. Tente novamente.");
             }
-
-            toast.error("Ocorreu um erro ao processar sua solicitação.");
         } catch (error: any) {
             toast.error(error?.message || "Ocorreu um erro ao processar sua solicitação.");
         } finally {
@@ -316,7 +296,6 @@ export default function SejaParceiro({
                                                 <Input
                                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                         setPhone(formatPhone(e.target.value));
-                                                        checkFormValidity();
                                                     }}
                                                     name="phone"
                                                     placeholder="(00) 00000-0000"
@@ -330,7 +309,6 @@ export default function SejaParceiro({
                                                     onChange={(e: any) => {
                                                         setPassword(e.target.value);
                                                         validateAndSetPasswordErrors(e.target.value, repeat);
-                                                        checkFormValidity();
                                                     }}
                                                     type="password"
                                                     name="senha"
@@ -346,7 +324,6 @@ export default function SejaParceiro({
                                                     onChange={(e: any) => {
                                                         setRepeat(e.target.value);
                                                         validateAndSetPasswordErrors(password, e.target.value);
-                                                        checkFormValidity();
                                                     }}
                                                     type="password"
                                                     name="confirm_senha"
@@ -369,8 +346,9 @@ export default function SejaParceiro({
                                                     </li>
                                                 </ul>
                                             </div>
-                                            <div className="form-group text-zinc-500 py-1 text-sm leading-tight"
-                                            >Termos de uso - Preencha o formulário e espere a nossa resposta</div>
+                                            <div className="form-group text-zinc-500 py-1 text-sm leading-tight">
+                                                Ao cadastrar você concorda com os nossos termos de uso.
+                                            </div>
 
                                             <div className="form-group">
                                                 <Button loading={form.loading}

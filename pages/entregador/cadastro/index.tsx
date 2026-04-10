@@ -23,13 +23,15 @@ export async function getServerSideProps(ctx: any) {
     let user = {};
 
     const data: any = await api.bridge({
-      method: "post",
-      url: "auth/checkin",
-      data: { ref: ref },
+      method: "get",
+      url: `auth/pre-register/${ref}`,
     });
 
-    if (data.response && !!data.user) {
-      user = data.user;
+    if (data.response && !!data.preUser) {
+      user = {
+        hash: ref,
+        ...data.preUser,
+      };
 
       return {
         props: {
@@ -78,6 +80,7 @@ export default function Cadastro({ user }: any) {
         name: name,
         email: email,
         person: "delivery",
+        type: "delivery",
         details: {
           phone: phone,
           cpf: cpf,
