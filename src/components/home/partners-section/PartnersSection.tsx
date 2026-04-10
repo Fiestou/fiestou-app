@@ -73,7 +73,7 @@ export default function PartnersSection({
                         className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold text-white transition-all duration-300
                         ${showForm ? "bg-zinc-700 hover:bg-zinc-800" : "bg-cyan-500 hover:bg-cyan-600"}`}
                     >
-                        <Icon icon={showForm ? "fa-xmark" : "fa-store"} type="far" />
+                        <Icon icon={showForm ? "fa-times" : "fa-store"} type="far" />
                         {showForm ? "Fechar formulário" : "Eu quero ser parceiro"}
                     </button>
                 </div>
