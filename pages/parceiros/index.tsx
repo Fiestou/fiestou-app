@@ -72,7 +72,12 @@ export default function Parceiros({
                 />
               </div>
               <h1 className="font-title font-bold text-4xl md:text-5xl mb-4">Lojas parceiras</h1>
-              <div className="text-lg md:text-2xl font-semibold">Os melhores são parceiros Fiestou!</div>
+              <div className="text-lg md:text-2xl font-semibold mb-8">Os melhores são parceiros Fiestou!</div>
+              <div>
+                 <a href="/parceiros/seja-parceiro" className="inline-flex items-center justify-center gap-2 bg-yellow-400 text-zinc-900 font-bold px-8 py-3.5 rounded-full hover:bg-yellow-500 transition-colors shadow-md">
+                   Quero ser parceiro
+                 </a>
+              </div>
             </div>
           </div>
         </div>
