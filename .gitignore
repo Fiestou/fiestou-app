@@ -10,6 +10,7 @@ dist/
 .next.bad.*/
 .env
 .env.*
+.runtime/
 
 public/robots.txt
 public/sitemap-0.xml
