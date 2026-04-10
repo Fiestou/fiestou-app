@@ -53,13 +53,12 @@ export default function Senha({
   };
 
   const roles = [
-    {
-      code: "number",
-      label: "É necessário que a senha possua pelo menos um número.",
-    },
     { code: "min", label: "A senha precisa ter pelo menos 6 caracteres." },
     { code: "equal", label: "As senhas precisam ser iguais." },
   ];
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeat, setShowRepeat] = useState(false);
 
   const [errors, setErrors] = useState([] as Array<string>);
   const [complete, setComplete] = useState([] as Array<string>);
@@ -76,12 +75,6 @@ export default function Senha({
         handleComplete = [...handleComplete, "equal"];
       } else {
         handleErrors = [...handleErrors, "equal"];
-      }
-
-      if (/\d/.test(password)) {
-        handleComplete = [...handleComplete, "number"];
-      } else {
-        handleErrors = [...handleErrors, "number"];
       }
 
       if (password.length >= 6) {
@@ -174,30 +167,48 @@ export default function Senha({
 
                 <div className="form-group">
                   <Label>Nova senha</Label>
-                  <Input
-                    onChange={(e: any) => {
-                      setPassword(e.target.value);
-                    }}
-                    type="password"
-                    name="password"
-                    placeholder="Digite sua nova senha"
-                    autoComplete="new-password"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      onChange={(e: any) => {
+                        setPassword(e.target.value);
+                      }}
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      placeholder="Digite sua nova senha"
+                      autoComplete="new-password"
+                      required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                    >
+                        <Icon icon={showPassword ? "fa-eye-slash" : "fa-eye"} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <Label>Confirmar nova senha</Label>
-                  <Input
-                    onChange={(e: any) => {
-                      setRepeat(e.target.value);
-                    }}
-                    type="password"
-                    name="re_password"
-                    placeholder="Digite a senha novamente"
-                    autoComplete="new-password"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      onChange={(e: any) => {
+                        setRepeat(e.target.value);
+                      }}
+                      type={showRepeat ? "text" : "password"}
+                      name="re_password"
+                      placeholder="Digite a senha novamente"
+                      autoComplete="new-password"
+                      required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowRepeat(!showRepeat)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                    >
+                        <Icon icon={showRepeat ? "fa-eye-slash" : "fa-eye"} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group">

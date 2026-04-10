@@ -8,6 +8,7 @@ import { formatName, validateEmail } from "@/src/components/utils/FormMasks";
 import { preRegisterPartner, completePartnerRegister } from "@/src/services/partner";
 import { maskCPF, partialCPFOk, maskCNPJ, partialCNPJOk } from "@/src/components/utils/masks";
 import Api from "@/src/services/api";
+import Icon from "@/src/icons/fontAwesome/FIcon";
 
 const FormInitialType = {
     sended: false,
@@ -26,16 +27,16 @@ export default function SellerRegistrationForm() {
     const [personType, setPersonType] = useState<"pf" | "pj">("pf");
     const [document, setDocument] = useState("");
     
+    const [showPassword, setShowPassword] = useState(false);
+    const [showRepeat, setShowRepeat] = useState(false);
+    
     const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
     const [isFormValid, setIsFormValid] = useState(false);
     const [errorMail, setErrorMail] = useState<string | null>(null);
 
     const validatePassword = useCallback((pwd: string): string[] => {
         const errors: string[] = [];
-        if (pwd.length < 8) errors.push("Mínimo de 8 caracteres");
-        if (!/[A-Z]/.test(pwd)) errors.push("Pelo menos uma letra maiúscula");
-        if (!/[0-9]/.test(pwd)) errors.push("Pelo menos um número");
-        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/.test(pwd)) errors.push("Pelo menos um caractere especial");
+        if (pwd.length < 6) errors.push("Mínimo de 6 caracteres");
         return errors;
     }, []);
 
@@ -223,38 +224,53 @@ export default function SellerRegistrationForm() {
                     </div>
                     <div className="form-group text-left">
                         <Label style="light">Senha</Label>
-                        <Input
-                            onChange={(e: any) => {
-                                setPassword(e.target.value);
-                                validateAndSetPasswordErrors(e.target.value, repeat);
-                            }}
-                            type="password"
-                            name="senha"
-                            placeholder="Crie sua senha de acesso"
-                            required
-                            value={password}
-                        />
+                        <div className="relative">
+                            <Input
+                                onChange={(e: any) => {
+                                    setPassword(e.target.value);
+                                    validateAndSetPasswordErrors(e.target.value, repeat);
+                                }}
+                                type={showPassword ? "text" : "password"}
+                                name="senha"
+                                placeholder="Crie sua senha de acesso"
+                                required
+                                value={password}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                            >
+                                <Icon icon={showPassword ? "fa-eye-slash" : "fa-eye"} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="form-group text-left">
                         <Label style="light">Repita a senha</Label>
-                        <Input
-                            onChange={(e: any) => {
-                                setRepeat(e.target.value);
-                                validateAndSetPasswordErrors(password, e.target.value);
-                            }}
-                            type="password"
-                            name="confirm_senha"
-                            placeholder="Confirme sua senha"
-                            required
-                            value={repeat}
-                        />
+                        <div className="relative">
+                            <Input
+                                onChange={(e: any) => {
+                                    setRepeat(e.target.value);
+                                    validateAndSetPasswordErrors(password, e.target.value);
+                                }}
+                                type={showRepeat ? "text" : "password"}
+                                name="confirm_senha"
+                                placeholder="Confirme sua senha"
+                                required
+                                value={repeat}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowRepeat(!showRepeat)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                            >
+                                <Icon icon={showRepeat ? "fa-eye-slash" : "fa-eye"} />
+                            </button>
+                        </div>
 
                         <ul className="text-xs text-red-500 mt-1 list-disc list-inside">
-                            <li className={password.length >= 8 ? 'text-green-600' : ''}>Mínimo de 8 caracteres</li>
-                            <li className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>Pelo menos uma letra maiúscula</li>
-                            <li className={/[0-9]/.test(password) ? 'text-green-600' : ''}>Pelo menos um número</li>
-                            <li className={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/.test(password) ? 'text-green-600' : ''}>Pelo menos um caractere especial</li>
+                            <li className={password.length >= 6 ? 'text-green-600' : ''}>Mínimo de 6 caracteres</li>
                             <li className={
                                 password === repeat && password.length > 0 && repeat.length > 0
                                     ? 'text-green-600'

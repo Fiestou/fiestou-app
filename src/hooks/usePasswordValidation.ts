@@ -8,11 +8,6 @@ export type PasswordRule = {
 
 const DEFAULT_RULES: PasswordRule[] = [
   {
-    code: "number",
-    label: "É necessário que a senha possua pelo menos um número.",
-    validate: (pwd) => /\d/.test(pwd),
-  },
-  {
     code: "min",
     label: "A senha precisa ter pelo menos 6 caracteres.",
     validate: (pwd) => pwd.length >= 6,

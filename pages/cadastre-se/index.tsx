@@ -66,6 +66,8 @@ function CadastreSeContent({ Register, DataSeo, Scripts }: Props) {
   const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeat, setShowRepeat] = useState(false);
 
   const refEmail = useMemo(() => {
     const value = (router.query.ref as string) ?? "";
@@ -207,26 +209,44 @@ function CadastreSeContent({ Register, DataSeo, Scripts }: Props) {
 
                 <div className="form-group">
                   <Label>Senha</Label>
-                  <Input
-                    value={passwordValidation.password}
-                    onChange={(e: any) => passwordValidation.setPassword(e.target.value)}
-                    type="password"
-                    placeholder="Crie sua senha"
-                    autoComplete="new-password"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      value={passwordValidation.password}
+                      onChange={(e: any) => passwordValidation.setPassword(e.target.value)}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Crie sua senha"
+                      autoComplete="new-password"
+                      required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                    >
+                        <Icon icon={showPassword ? "fa-eye-slash" : "fa-eye"} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <Label>Confirmar senha</Label>
-                  <Input
-                    value={passwordValidation.repeat}
-                    onChange={(e: any) => passwordValidation.setRepeat(e.target.value)}
-                    type="password"
-                    placeholder="Digite a senha novamente"
-                    autoComplete="new-password"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      value={passwordValidation.repeat}
+                      onChange={(e: any) => passwordValidation.setRepeat(e.target.value)}
+                      type={showRepeat ? "text" : "password"}
+                      placeholder="Digite a senha novamente"
+                      autoComplete="new-password"
+                      required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowRepeat(!showRepeat)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                    >
+                        <Icon icon={showRepeat ? "fa-eye-slash" : "fa-eye"} />
+                    </button>
+                  </div>
                 </div>
 
                 <PasswordRules
