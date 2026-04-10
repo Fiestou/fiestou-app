@@ -16,6 +16,12 @@ import {
 import { getOrderStatusPresentation } from "@/src/services/order-status";
 import type { OrderStatusKey } from "@/src/services/order-status";
 import { getCartFromCookies, saveCartToCookies } from "@/src/services/cart";
+import {
+  buildAccessRedirect,
+  buildRoleRedirect,
+  isCustomerUser,
+  resolveAuthenticatedPageUser,
+} from "@/src/server/ssr-auth";
 
 interface PedidosProps {
   orders: OrderType[];
@@ -788,6 +794,16 @@ export const getServerSideProps: GetServerSideProps<PedidosProps> = async (ctx) 
   const api = new Api();
 
   try {
+    const user = await resolveAuthenticatedPageUser(ctx);
+
+    if (!user) {
+      return buildAccessRedirect();
+    }
+
+    if (!isCustomerUser(user)) {
+      return buildRoleRedirect(user);
+    }
+
     const query = ctx.query ?? {};
     const q = typeof query.q === "string" ? query.q.trim() : "";
     const from = typeof query.from === "string" ? query.from : "";

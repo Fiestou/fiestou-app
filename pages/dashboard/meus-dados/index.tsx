@@ -9,35 +9,26 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import Link from "next/link";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useEffect, useState } from "react";
+import {
+  buildAccessRedirect,
+  buildRoleRedirect,
+  isCustomerUser,
+  resolveAuthenticatedPageUser,
+} from "@/src/server/ssr-auth";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
-  let request: any = {};
+  const user = await resolveAuthenticatedPageUser(ctx);
 
-  let cookieUser: any = {};
-  try {
-    cookieUser = JSON.parse(ctx?.req?.cookies?.["fiestou.user"] ?? "{}");
-  } catch {
-    cookieUser = {};
+  if (!user) {
+    return buildAccessRedirect();
   }
 
-  if (cookieUser?.email) {
-    request = await api.bridge(
-      {
-        method: "get",
-        url: "users/get",
-        data: {
-          ref: cookieUser.email,
-          person: "client",
-        },
-      },
-      ctx
-    );
+  if (!isCustomerUser(user)) {
+    return buildRoleRedirect(user);
   }
 
-  const user = request?.data ?? cookieUser ?? {};
-
-  request = await api.content({
+  const request: any = await api.content({
     method: "get",
     url: "account/user",
   });

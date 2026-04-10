@@ -8,27 +8,26 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Cookies from "js-cookie";
 import Product from "@/src/components/common/Product";
+import {
+  buildAccessRedirect,
+  buildRoleRedirect,
+  isCustomerUser,
+  resolveAuthenticatedPageUser,
+} from "@/src/server/ssr-auth";
 
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
-  let request: any = {};
+  const user = await resolveAuthenticatedPageUser(ctx);
 
-  let user = JSON.parse(ctx.req.cookies["fiestou.user"]);
+  if (!user) {
+    return buildAccessRedirect();
+  }
 
-  request = await api.bridge(
-    {
-      method: "get",
-      url: "users/get",
-      data: {
-        ref: user.email,
-      },
-    },
-    ctx
-  );
+  if (!isCustomerUser(user)) {
+    return buildRoleRedirect(user);
+  }
 
-  user = request?.data ?? {};
-
-  request = await api.content({
+  const request: any = await api.content({
     method: "get",
     url: "account/user",
   });

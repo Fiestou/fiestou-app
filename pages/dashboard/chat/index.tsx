@@ -3,6 +3,28 @@ import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
+import {
+  buildAccessRedirect,
+  buildRoleRedirect,
+  isCustomerUser,
+  resolveAuthenticatedPageUser,
+} from "@/src/server/ssr-auth";
+
+export async function getServerSideProps(ctx: any) {
+  const user = await resolveAuthenticatedPageUser(ctx);
+
+  if (!user) {
+    return buildAccessRedirect();
+  }
+
+  if (!isCustomerUser(user)) {
+    return buildRoleRedirect(user);
+  }
+
+  return {
+    props: {},
+  };
+}
 
 export default function Chat() {
   return (

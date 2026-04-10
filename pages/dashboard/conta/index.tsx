@@ -11,26 +11,28 @@ import { UserType } from "@/src/models/user";
 import Img from "@/src/components/utils/ImgBase";
 import FileInput from "@/src/components/ui/form/FileInputUI";
 import { getExtenseData } from "@/src/helper";
+import {
+  buildAccessRedirect,
+  buildRoleRedirect,
+  isCustomerUser,
+  resolveAuthenticatedPageUser,
+} from "@/src/server/ssr-auth";
 
 export async function getServerSideProps(req: any, res: any) {
   const api = new Api();
+  const user = await resolveAuthenticatedPageUser(req);
 
-  let user = JSON.parse(req.req.cookies["fiestou.user"]);
+  if (!user) {
+    return buildAccessRedirect();
+  }
 
-  const request: any = await api.bridge(
-    {
-      method: "get",
-      url: "users/get",
-      data: {
-        ref: user.email,
-      },
-    },
-    req
-  );
+  if (!isCustomerUser(user)) {
+    return buildRoleRedirect(user);
+  }
 
   return {
     props: {
-      user: request?.data ?? {},
+      user,
     },
   };
 }

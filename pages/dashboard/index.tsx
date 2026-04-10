@@ -1,14 +1,19 @@
 import Link from "next/link";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import Template from "@/src/template";
-import { AuthContext, getUser } from "@/src/contexts/AuthContext";
-import { useContext, useEffect, useState } from "react";
+import { AuthContext } from "@/src/contexts/AuthContext";
+import { useContext } from "react";
 import { getFirstName, replaceWord } from "@/src/helper";
 import { UserType } from "@/src/models/user";
 import Api from "@/src/services/api";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { Button } from "@/src/components/ui/form";
-import { GetStaticPropsContext } from "next";
+import {
+  buildAccessRedirect,
+  buildRoleRedirect,
+  isCustomerUser,
+  resolveAuthenticatedPageUser,
+} from "@/src/server/ssr-auth";
 
 interface MenuItem {
   title: string;
@@ -17,7 +22,17 @@ interface MenuItem {
   endpoint: string;
 }
 
-export async function getStaticProps(ctx: GetStaticPropsContext) {
+export async function getServerSideProps(ctx: any) {
+  const user = await resolveAuthenticatedPageUser(ctx);
+
+  if (!user) {
+    return buildAccessRedirect();
+  }
+
+  if (!isCustomerUser(user)) {
+    return buildRoleRedirect(user);
+  }
+
   const api = new Api();
 
   /* TO DO - TIPAR E ARRANCAR any */
@@ -29,6 +44,7 @@ export async function getStaticProps(ctx: GetStaticPropsContext) {
 
   return {
     props: {
+      user,
       HeaderFooter: HeaderFooter,
       DataSeo: DataSeo,
       Dashboard: Dashboard,
@@ -64,16 +80,8 @@ export const menuDashboard: MenuItem[] = [
 ];
 
 /* TO DO - TIPAR E ARRANCAR any */
-export default function Dashboard({ HeaderFooter, Dashboard }: any) {
+export default function Dashboard({ HeaderFooter, Dashboard, user }: any) {
   const { UserLogout } = useContext(AuthContext);
-
-  const [user, setUser] = useState({} as UserType);
-
-  useEffect(() => {
-    if (!!window) {
-      setUser(getUser);
-    }
-  }, []);
 
   const getDescription = (field: string) => {
     return Dashboard[field];

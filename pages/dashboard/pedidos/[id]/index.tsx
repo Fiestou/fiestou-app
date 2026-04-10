@@ -17,6 +17,12 @@ import {
   RatingModal,
   CancelOrderModal,
 } from "@/src/components/order";
+import {
+  buildAccessRedirect,
+  buildRoleRedirect,
+  isCustomerUser,
+  resolveAuthenticatedPageUser,
+} from "@/src/server/ssr-auth";
 
 const formInitial = {
   edit: "",
@@ -54,6 +60,16 @@ function groupItemsByStore(items: any[]): StoreGroup[] {
 }
 
 export async function getServerSideProps(ctx: any) {
+  const user = await resolveAuthenticatedPageUser(ctx);
+
+  if (!user) {
+    return buildAccessRedirect();
+  }
+
+  if (!isCustomerUser(user)) {
+    return buildRoleRedirect(user);
+  }
+
   const api = new Api();
   const params = ctx.params;
 

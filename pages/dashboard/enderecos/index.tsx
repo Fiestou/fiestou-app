@@ -7,11 +7,25 @@ import { Button } from "@/src/components/ui/form";
 import Api from "@/src/services/api";
 import { UserType } from "@/src/models/user";
 import { getZipCode } from "@/src/helper";
-import { AddressType } from "@/src/models/address";
+import {
+  AddressKind,
+  AddressType,
+  getAddressKind,
+  getAddressKindIcon,
+  getAddressKindLabel,
+  isSchoolAddress,
+  normalizeAddressShape,
+} from "@/src/models/address";
 import HelpCard from "@/src/components/common/HelpCard";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { formatCep } from "@/src/components/utils/FormMasks";
 import { toast } from "react-toastify";
+import {
+  buildAccessRedirect,
+  buildRoleRedirect,
+  isCustomerUser,
+  resolveAuthenticatedPageUser,
+} from "@/src/server/ssr-auth";
 
 const INPUT_BASE_CLASS =
   "w-full rounded-md border border-zinc-300 px-4 py-3 font-sans text-base leading-relaxed text-zinc-900 placeholder:font-sans placeholder:text-base placeholder:leading-relaxed placeholder:text-zinc-400 focus:border-zinc-800 hover:border-zinc-400";
@@ -28,32 +42,37 @@ const AddressInput = React.forwardRef<HTMLInputElement, AddressInputProps>(
 
 AddressInput.displayName = "AddressInput";
 
+const ADDRESS_KIND_OPTIONS: Array<{
+  value: AddressKind;
+  title: string;
+  description: string;
+  icon: string;
+}> = [
+  {
+    value: "school",
+    title: "Locais de Evento",
+    description: "Escolas e locais de evento.",
+    icon: "fa-school",
+  },
+  {
+    value: "home",
+    title: "Casa",
+    description: "Endereço residencial.",
+    icon: "fa-home",
+  },
+];
+
 export async function getServerSideProps(ctx: any) {
   const api = new Api();
+  const user = await resolveAuthenticatedPageUser(ctx);
 
-  let cookieUser: any = {};
-  try {
-    cookieUser = JSON.parse(ctx?.req?.cookies?.["fiestou.user"] ?? "{}");
-  } catch {
-    cookieUser = {};
+  if (!user) {
+    return buildAccessRedirect();
   }
 
-  let userRequest: any = {};
-  if (cookieUser?.email) {
-    userRequest = await api.bridge(
-      {
-        method: "get",
-        url: "users/get",
-        data: {
-          ref: cookieUser.email,
-          person: "client",
-        },
-      },
-      ctx
-    );
+  if (!isCustomerUser(user)) {
+    return buildRoleRedirect(user);
   }
-
-  const user = userRequest?.data ?? cookieUser ?? {};
 
   const contentRequest = await api.content({
     method: "get",
@@ -87,19 +106,15 @@ function emptyAddress(): AddressType {
     state: "",
     country: "Brasil",
     main: false,
+    addressKind: "home",
+    locationName: "",
   };
 }
 
 function normalizeAddress(address: AddressType): AddressType {
   return {
+    ...normalizeAddressShape(address),
     zipCode: formatCep(String(address?.zipCode ?? "")).trim(),
-    street: String(address?.street ?? "").trim(),
-    number: String(address?.number ?? "").trim(),
-    neighborhood: String(address?.neighborhood ?? "").trim(),
-    complement: String(address?.complement ?? "").trim(),
-    city: String(address?.city ?? "").trim(),
-    state: String(address?.state ?? "").trim().toUpperCase(),
-    country: String(address?.country ?? "Brasil").trim() || "Brasil",
     main: !!address?.main,
   };
 }
@@ -113,6 +128,7 @@ function hasAnyAddressData(address: AddressType): boolean {
     address?.city,
     address?.state,
     address?.complement,
+    address?.locationName,
   ].some((value) => String(value ?? "").trim().length > 0);
 }
 
@@ -141,6 +157,9 @@ function validateAddress(address: AddressType): string | null {
   if (!address.number) return "Informe o número.";
   if (!address.neighborhood) return "Informe o bairro.";
   if (!address.city) return "Informe a cidade.";
+  if (isSchoolAddress(address) && !String(address.locationName ?? "").trim()) {
+    return "Informe o nome do local para endereço do evento.";
+  }
 
   const uf = String(address.state ?? "").toUpperCase();
   if (!/^[A-Z]{2}$/.test(uf)) {
@@ -152,6 +171,7 @@ function validateAddress(address: AddressType): string | null {
 
 function addressSummary(address: AddressType): string[] {
   return [
+    `${getAddressKindLabel(address)}${address.locationName ? ` | ${address.locationName}` : ""}`,
     `${address.street || "Rua não informada"}${address.number ? `, ${address.number}` : ""}`,
     address.neighborhood || "Bairro não informado",
     `CEP: ${address.zipCode || "Não informado"}`,
@@ -547,6 +567,65 @@ export default function Enderecos({
                     </div>
 
                     <div className="grid gap-4">
+                      <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3">
+                        <p className="text-sm font-semibold text-zinc-900">
+                          A Fiestou entrega em qualquer local de João Pessoa.
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+                          Escolha entre <strong>Locais de Evento</strong> e <strong>Casa</strong>.
+                          Ao informar o CEP, a plataforma tenta preencher rua, bairro, cidade e UF
+                          automaticamente.
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-3 sm:p-4">
+                        <div>
+                          <p className="text-sm font-semibold text-zinc-900">Onde será a entrega?</p>
+                          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                            Use Locais de Evento para salões, parques, escolinhas e outros locais do
+                            evento.
+                          </p>
+                        </div>
+
+                        <div className="mt-3 grid gap-2 md:grid-cols-2">
+                        {ADDRESS_KIND_OPTIONS.map((option) => {
+                          const selected = getAddressKind(draft) === option.value;
+
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => setDraftField({ addressKind: option.value })}
+                              className={`rounded-xl border px-3 py-3 text-left transition-all duration-200 ${
+                                selected
+                                  ? "border-yellow-400 bg-yellow-50 shadow-sm"
+                                  : "border-zinc-200 bg-zinc-50 hover:border-yellow-200 hover:bg-yellow-50/70"
+                              }`}
+                              aria-pressed={selected}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`flex h-10 w-10 items-center justify-center rounded-full border ${
+                                    selected
+                                      ? "border-yellow-200 bg-yellow-100 text-yellow-700"
+                                      : "border-yellow-100 bg-white text-yellow-600"
+                                  }`}
+                                >
+                                  <Icon icon={option.icon} className="text-base" />
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-semibold text-zinc-900">{option.title}</div>
+                                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
+                                    {option.description}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      </div>
+
                       <div className="grid md:grid-cols-[1fr,auto] gap-3 items-start">
                         <AddressInput
                           name="zipCode"
@@ -613,9 +692,23 @@ export default function Enderecos({
                         />
                       </div>
 
+                      {isSchoolAddress(draft) && (
+                        <AddressInput
+                          name="locationName"
+                          placeholder="Nome do local. Ex: Escola ABC, Parque da Lagoa, Shopping XPTO..."
+                          value={draft.locationName ?? ""}
+                          onChange={(event) => setDraftField({ locationName: event.target.value })}
+                          autoComplete="off"
+                        />
+                      )}
+
                       <AddressInput
                         name="complement"
-                        placeholder="Complemento (opcional)"
+                        placeholder={
+                          isSchoolAddress(draft)
+                            ? "Complemento. Ex: bloco, portão, recepção, quadra..."
+                            : "Complemento (opcional)"
+                        }
                         value={draft.complement ?? ""}
                         onChange={(event) => setDraftField({ complement: event.target.value })}
                         autoComplete="off"
@@ -655,10 +748,18 @@ export default function Enderecos({
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
                               <div className="flex flex-wrap items-center gap-2">
-                                <h4 className="text-lg font-semibold text-zinc-900">Endereço {index + 1}</h4>
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-yellow-100 bg-yellow-50 text-yellow-700">
+                                  <Icon icon={getAddressKindIcon(address)} className="text-sm" />
+                                </div>
+                                <h4 className="text-lg font-semibold text-zinc-900">{getAddressKindLabel(address)}</h4>
                                 {address.main && (
                                   <span className="inline-flex items-center rounded-full bg-cyan-100 text-cyan-700 px-2.5 py-1 text-xs font-semibold">
                                     Principal
+                                  </span>
+                                )}
+                                {!!address.locationName && (
+                                  <span className="inline-flex items-center rounded-full bg-zinc-100 text-zinc-700 px-2.5 py-1 text-xs font-semibold">
+                                    {address.locationName}
                                   </span>
                                 )}
                               </div>
@@ -739,6 +840,7 @@ export default function Enderecos({
                   <h3 className="text-sm font-semibold text-zinc-900">Dicas para preencher rápido</h3>
                   <ul className="mt-2 text-sm text-zinc-600 grid gap-1.5">
                     <li>Digite o CEP completo para preencher automaticamente.</li>
+                    <li>Use Locais de Evento para o endereço da festa e Casa para o endereço residencial.</li>
                     <li>Use um endereço principal para reduzir passos no checkout.</li>
                     <li>Quando necessário, use o botão Reutilizar e ajuste só o número.</li>
                   </ul>
