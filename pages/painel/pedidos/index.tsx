@@ -2,11 +2,21 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/router";
-import { ShoppingBag, Eye, SlidersHorizontal, Store } from "lucide-react";
+import {
+  ShoppingBag,
+  Eye,
+  SlidersHorizontal,
+  Store,
+  ArrowRight,
+  BadgeDollarSign,
+  Clock3,
+  Ban,
+} from "lucide-react";
 import { getExtenseData, moneyFormat, getImage } from "@/src/helper";
 import { OrderStatusBadge } from "@/src/components/order";
 import { getMyOrders, OrderFilters } from "@/src/services/order";
 import Api from "@/src/services/api";
+import usePainelPageMode from "@/src/components/painel/usePainelPageMode";
 import {
   PainelLayout,
   PageHeader,
@@ -48,6 +58,12 @@ type ProductPreview = {
   image: string;
   quantity: number;
 };
+
+function getOrderNetAmount(order: any): number | null {
+  const amount = Number(order?.paying);
+  if (!Number.isFinite(amount) || amount < 0) return null;
+  return amount;
+}
 
 function getProductPreviews(
   row: any,
@@ -234,6 +250,7 @@ function matchesQuickFilter(
 
 export default function Pedidos() {
   const router = useRouter();
+  const panelMode = usePainelPageMode();
   const [orders, setOrders] = useState<Array<any>>([]);
   const [resolvedGalleryByProductId, setResolvedGalleryByProductId] = useState<
     Record<number, any[]>
@@ -461,6 +478,7 @@ export default function Pedidos() {
     const customerEmail = row.customer?.email || row.user?.email || "";
     const displayOrderId = row.mainOrderId || row.id;
     const primaryPreview = previews[0]?.title || "Sem prévia disponível";
+    const netAmount = getOrderNetAmount(row);
 
     return (
       <article
@@ -559,11 +577,21 @@ export default function Pedidos() {
           </div>
         </div>
 
-        <div className="mt-3 border-t border-zinc-100 pt-3 flex items-center justify-between gap-2">
-          <span className="text-sm text-zinc-500">Total</span>
-          <span className="text-base font-semibold text-zinc-900">
-            R$ {moneyFormat(row.total)}
-          </span>
+        <div className="mt-3 border-t border-zinc-100 pt-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm text-zinc-500">Total</span>
+            <span className="text-base font-semibold text-zinc-900">
+              R$ {moneyFormat(row.total)}
+            </span>
+          </div>
+          {netAmount !== null && (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm text-zinc-500">Você recebe</span>
+              <span className="text-sm font-semibold text-emerald-700">
+                R$ {moneyFormat(netAmount)}
+              </span>
+            </div>
+          )}
         </div>
 
         <Link
@@ -580,7 +608,7 @@ export default function Pedidos() {
   const columns: Column<any>[] = [
     {
       key: "id",
-      label: "Pedido",
+      label: "Pedido #",
       sortable: true,
       className: "w-24",
       render: (row) => (
@@ -710,11 +738,21 @@ export default function Pedidos() {
       label: "Total",
       sortable: true,
       className: "w-32",
-      render: (row) => (
-        <span className="font-semibold text-zinc-900">
-          R$ {moneyFormat(row.total)}
-        </span>
-      ),
+      render: (row) => {
+        const netAmount = getOrderNetAmount(row);
+        return (
+          <div className="text-right">
+            <div className="font-semibold text-zinc-900">
+              R$ {moneyFormat(row.total)}
+            </div>
+            {netAmount !== null && (
+              <div className="text-xs text-emerald-700">
+                Você recebe R$ {moneyFormat(netAmount)}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "payment_method",
@@ -770,6 +808,305 @@ export default function Pedidos() {
       ),
     },
   ];
+
+  const summary = useMemo(() => {
+    let paid = 0;
+    let open = 0;
+    let canceled = 0;
+
+    for (const order of visibleOrders) {
+      if (isOrderCanceled(order)) {
+        canceled += 1;
+        continue;
+      }
+
+      if (isOrderPaid(order)) {
+        paid += 1;
+      } else {
+        open += 1;
+      }
+    }
+
+    return {
+      total: visibleOrders.length,
+      paid,
+      open,
+      canceled,
+    };
+  }, [visibleOrders]);
+
+  const ordersListContent =
+    !loading && visibleOrders.length === 0 ? (
+      <div className="bg-white rounded-xl border border-zinc-200">
+        <EmptyState
+          icon={<ShoppingBag size={32} />}
+          title="Nenhum pedido encontrado"
+          description={
+            search || activeFilterCount > 0 || !!quickFilter
+              ? "Tente ajustar os filtros ou a busca"
+              : "Quando seus clientes fizerem pedidos, eles vão aparecer aqui"
+          }
+        />
+      </div>
+    ) : (
+      <>
+        <div className="sm:hidden space-y-3">
+          {loading ? (
+            <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-500 flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-zinc-300 border-t-yellow-400 rounded-full animate-spin" />
+              Carregando pedidos...
+            </div>
+          ) : (
+            <>
+              {mobileOrders.map(renderMobileOrderCard)}
+              {visibleOrders.length > mobileVisibleCount && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMobileVisibleCount((prev) => prev + MOBILE_PAGE_SIZE)
+                  }
+                  className="w-full rounded-lg border border-zinc-300 bg-white py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+                >
+                  Carregar mais pedidos
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="hidden sm:block">
+          <DataTable
+            columns={columns}
+            data={visibleOrders}
+            keyField="id"
+            pageSize={15}
+            loading={loading}
+            emptyMessage="Nenhum pedido encontrado"
+          />
+        </div>
+      </>
+    );
+
+  if (panelMode === "simple") {
+    return (
+      <PainelLayout>
+        <PageHeader
+          title="Pedidos"
+          description="Acompanhe seus pedidos."
+        />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                Total
+              </div>
+              <ShoppingBag size={16} className="text-zinc-400" />
+            </div>
+            <div className="mt-2 text-2xl font-bold text-zinc-900">{summary.total}</div>
+          </div>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                Pagos
+              </div>
+              <BadgeDollarSign size={16} className="text-emerald-700" />
+            </div>
+            <div className="mt-2 text-2xl font-bold text-zinc-900">{summary.paid}</div>
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-700">
+                Em aberto
+              </div>
+              <Clock3 size={16} className="text-amber-700" />
+            </div>
+            <div className="mt-2 text-2xl font-bold text-zinc-900">{summary.open}</div>
+          </div>
+          <div className="rounded-xl border border-red-200 bg-red-50/70 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-red-700">
+                Cancelados
+              </div>
+              <Ban size={16} className="text-red-700" />
+            </div>
+            <div className="mt-2 text-2xl font-bold text-zinc-900">{summary.canceled}</div>
+          </div>
+        </div>
+
+        <section className="mt-6 rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-5">
+          <div>
+            <h2 className="text-lg font-bold text-zinc-900">Buscar</h2>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Link
+              href="/painel/pedidos?quick=pending-confirmation"
+              className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 transition-colors hover:border-yellow-300"
+            >
+              <div>
+                <p className="text-sm font-semibold text-zinc-900">A confirmar</p>
+              </div>
+              <ArrowRight size={16} className="text-zinc-400" />
+            </Link>
+
+            <Link
+              href="/painel/pedidos?quick=deliveries-today"
+              className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 transition-colors hover:border-yellow-300"
+            >
+              <div>
+                <p className="text-sm font-semibold text-zinc-900">Entregas de hoje</p>
+              </div>
+              <ArrowRight size={16} className="text-zinc-400" />
+            </Link>
+
+            <Link
+              href="/painel/pedidos?quick=delayed"
+              className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 transition-colors hover:border-red-300"
+            >
+              <div>
+                <p className="text-sm font-semibold text-zinc-900">Atrasados</p>
+              </div>
+              <ArrowRight size={16} className="text-zinc-400" />
+            </Link>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <SearchInput
+              placeholder="Buscar pedido ou cliente..."
+              value={search}
+              onChange={setSearch}
+              className="w-full"
+            />
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <FilterDropdown
+                label="Status"
+                options={STATUS_OPTIONS}
+                value={statusFilter}
+                onChange={setStatusFilter}
+                className="w-full"
+              />
+              <button
+                type="button"
+                onClick={() => setShowFilters((prev) => !prev)}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  showFilters || activeFilterCount > 0
+                    ? "border-yellow-400 bg-yellow-50 text-zinc-900"
+                    : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                }`}
+              >
+                <SlidersHorizontal size={15} />
+                Filtros
+              </button>
+            </div>
+
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-left text-xs font-medium text-red-500 hover:text-red-700"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
+        </section>
+
+        {showFilters && (
+          <section className="mt-6 rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">
+                  Data início
+                </label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">
+                  Data fim
+                </label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">
+                  Preço mínimo
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                    R$
+                  </span>
+                  <input
+                    type="number"
+                    value={priceMin}
+                    onChange={(e) => setPriceMin(e.target.value)}
+                    placeholder="0"
+                    min={0}
+                    className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">
+                  Preço máximo
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                    R$
+                  </span>
+                  <input
+                    type="number"
+                    value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    placeholder="0"
+                    min={0}
+                    className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {quickFilterMeta && (
+          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-amber-900">
+                Filtro: {quickFilterMeta.label}
+              </p>
+            </div>
+            <span className="text-xs font-medium text-amber-700">
+              {visibleOrders.length} pedido(s)
+            </span>
+            <button
+              type="button"
+              onClick={clearQuickFilter}
+              className="text-xs font-medium text-amber-800 hover:text-amber-950"
+            >
+              Remover filtro rápido
+            </button>
+          </div>
+        )}
+
+        <section className="mt-6 rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-zinc-900">Pedidos</h2>
+          </div>
+          {ordersListContent}
+        </section>
+      </PainelLayout>
+    );
+  }
 
   return (
     <PainelLayout>
@@ -827,7 +1164,7 @@ export default function Pedidos() {
 
           {showFilters && (
             <div className="px-4 pb-4 border-t border-zinc-100 pt-3">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1">
                     Data início
@@ -912,56 +1249,7 @@ export default function Pedidos() {
           </div>
         )}
 
-        {!loading && visibleOrders.length === 0 ? (
-          <div className="bg-white rounded-xl border border-zinc-200">
-            <EmptyState
-              icon={<ShoppingBag size={32} />}
-              title="Nenhum pedido encontrado"
-              description={
-                search || activeFilterCount > 0 || !!quickFilter
-                  ? "Tente ajustar os filtros ou a busca"
-                  : "Quando seus clientes fizerem pedidos, eles vão aparecer aqui"
-              }
-            />
-          </div>
-        ) : (
-          <>
-            <div className="sm:hidden space-y-3">
-              {loading ? (
-                <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-500 flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-zinc-300 border-t-yellow-400 rounded-full animate-spin" />
-                  Carregando pedidos...
-                </div>
-              ) : (
-                <>
-                  {mobileOrders.map(renderMobileOrderCard)}
-                  {visibleOrders.length > mobileVisibleCount && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setMobileVisibleCount((prev) => prev + MOBILE_PAGE_SIZE)
-                      }
-                      className="w-full rounded-lg border border-zinc-300 bg-white py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-                    >
-                      Carregar mais pedidos
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="hidden sm:block">
-              <DataTable
-                columns={columns}
-                data={visibleOrders}
-                keyField="id"
-                pageSize={15}
-                loading={loading}
-                emptyMessage="Nenhum pedido encontrado"
-              />
-            </div>
-          </>
-        )}
+        {ordersListContent}
       </div>
     </PainelLayout>
   );

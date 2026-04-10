@@ -1,18 +1,24 @@
 import Link from "next/link";
-import Image from "next/image";
 import Api from "@/src/services/api";
-import { OrderType } from "@/src/models/order";
+import { getOrderCustomerNotes, OrderType } from "@/src/models/order";
+import {
+  getAddressKindLabel,
+  isSchoolAddress,
+  normalizeAddressShape,
+} from "@/src/models/address";
 import {
   getExtenseData,
   moneyFormat,
   getOrderDeliveryInfo,
   getImage,
 } from "@/src/helper";
+import Img from "@/src/components/utils/ImgBase";
 import { Select } from "@/src/components/ui/form";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/router";
 import { deliveryTypes } from "@/src/models/delivery";
 import { OrderStatusBadge } from "@/src/components/order";
+import usePainelPageMode from "@/src/components/painel/usePainelPageMode";
 import {
   ArrowLeft,
   Send,
@@ -27,6 +33,7 @@ import {
   Download,
   Archive,
   ExternalLink,
+  MessageSquare,
 } from "lucide-react";
 import { PainelLayout, Badge } from "@/src/components/painel";
 
@@ -90,6 +97,12 @@ function safeParseJSON(value: any, fallback: any = {}) {
     }
   }
   return value;
+}
+
+function getNetAmount(value: any): number | null {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) return null;
+  return amount;
 }
 
 function toNumber(value: any): number {
@@ -343,9 +356,35 @@ function getPaymentStatusVariant(
   return "neutral";
 }
 
+function DetailField({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: ReactNode;
+  tone?: "default" | "muted";
+}) {
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+        {label}
+      </div>
+      <div
+        className={`mt-1 text-sm leading-relaxed break-words ${
+          tone === "muted" ? "text-zinc-600" : "font-medium text-zinc-900"
+        }`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export default function Pedido() {
   const api = useMemo(() => new Api(), []);
   const router = useRouter();
+  const panelMode = usePainelPageMode();
 
   const [order, setOrder] = useState({} as OrderType);
   const [resolvedGalleryByProductId, setResolvedGalleryByProductId] = useState<
@@ -439,6 +478,7 @@ export default function Pedido() {
       delivery_status: orderData?.deliveryStatus ?? orderData?.delivery_status,
       total: toNumber(orderData?.total),
       subtotal: toNumber(orderData?.subtotal),
+      paying: toNumber(orderData?.paying),
       delivery_price: toNumber(
         orderData?.deliveryPrice ?? orderData?.delivery_price,
       ),
@@ -812,6 +852,7 @@ export default function Pedido() {
     () => groupedItemsByStore.reduce((sum, group) => sum + group.freight, 0),
     [groupedItemsByStore],
   );
+  const netAmount = useMemo(() => getNetAmount((order as any)?.paying), [order]);
 
   const notifyDelivery = async (e: any) => {
     e.preventDefault();
@@ -864,6 +905,14 @@ export default function Pedido() {
     order?.metadata?.paid_at || (order as any)?.payment?.paid_at || null;
 
   const deliveryInfo = getOrderDeliveryInfo(order as any);
+  const deliveryAddress = normalizeAddressShape(order?.delivery?.address);
+  const customerNotes = getOrderCustomerNotes(order);
+  const customerName = (order as any)?.user?.name || "Cliente não identificado";
+  const totalOrderAmount = order.total || subtotalByGroups + freightByGroups;
+  const deliverySummary =
+    deliveryInfo?.date && deliveryInfo?.time
+      ? `${deliveryInfo.date} · ${deliveryInfo.time}`
+      : deliveryInfo?.date || deliveryInfo?.time || "Sem agenda definida";
 
   return (
     <PainelLayout>
@@ -891,6 +940,60 @@ export default function Pedido() {
         </div>
       </div>
 
+      {panelMode === "simple" && !loadingOrder && !!order?.id && (
+        <div className="mb-6 space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs font-medium text-zinc-400">Cliente</p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 break-words">
+                {customerName}
+              </p>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs font-medium text-zinc-400">Pagamento</p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900">
+                {paymentMethodLabel}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">{paymentStatusLabel}</p>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs font-medium text-zinc-400">Entrega</p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 break-words">
+                {deliverySummary}
+              </p>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs font-medium text-zinc-400">Você recebe</p>
+              <p className="mt-1 text-sm font-semibold text-emerald-700">
+                {netAmount !== null ? `R$ ${moneyFormat(netAmount)}` : "Ainda sem repasse"}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs font-medium text-zinc-400">Andamento</p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900">
+                {currentDeliveryType?.name || "Pagamento"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs font-medium text-zinc-400">Itens</p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900">
+                {totalItems} item(ns)
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">{totalQuantity} unidade(s)</p>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs font-medium text-zinc-400">Total</p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900">
+                R$ {moneyFormat(totalOrderAmount)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loadingOrder ? (
         <div className="bg-white rounded-xl border border-zinc-200 p-6 sm:p-8 flex items-center justify-center gap-3 text-zinc-500">
           <div className="w-5 h-5 border-2 border-zinc-300 border-t-yellow-400 rounded-full animate-spin" />
@@ -915,22 +1018,33 @@ export default function Pedido() {
               </p>
             </div>
             <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
-                Subtotal
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-wide text-zinc-500">
+                  Subtotal
+                </p>
+                <CreditCard size={16} className="text-emerald-600" />
+              </div>
               <p className="mt-1 text-xl sm:text-2xl font-bold text-zinc-900">
                 R$ {moneyFormat(subtotalByGroups || order.subtotal || 0)}
               </p>
               <p className="text-xs text-zinc-500">Sem frete</p>
             </div>
             <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 sm:col-span-2 lg:col-span-1">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
-                Total
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-wide text-zinc-500">
+                  Total
+                </p>
+                <Truck size={16} className="text-amber-500" />
+              </div>
               <p className="mt-1 text-xl sm:text-2xl font-bold text-zinc-900">
                 R${" "}
                 {moneyFormat(order.total || subtotalByGroups + freightByGroups)}
               </p>
+              {netAmount !== null && (
+                <p className="mt-1 text-sm font-semibold text-emerald-700">
+                  Você recebe R$ {moneyFormat(netAmount)}
+                </p>
+              )}
               <p className="text-xs text-zinc-500 break-words">
                 Pedido criado em {getExtenseData(order.createdAt)}
               </p>
@@ -940,15 +1054,12 @@ export default function Pedido() {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-6 min-w-0">
               <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-6 overflow-hidden">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="mb-6 flex items-center gap-2">
                   <Package size={18} className="text-zinc-400" />
                   <h2 className="text-lg font-semibold text-zinc-900">
                     Itens do pedido
                   </h2>
                 </div>
-                <p className="text-sm text-zinc-500 mb-6">
-                  Organizado por loja
-                </p>
 
                 {groupedItemsByStore.length > 0 ? (
                   groupedItemsByStore.map((group) => (
@@ -985,12 +1096,10 @@ export default function Pedido() {
                               <div className="flex flex-col sm:flex-row items-start gap-3">
                                 <div className="w-16 h-16 rounded-lg overflow-hidden border border-zinc-200 bg-zinc-100 flex-shrink-0 flex items-center justify-center">
                                   {imageUrl ? (
-                                    <Image
+                                    <Img
                                       src={imageUrl}
                                       alt={item.title}
-                                      width={64}
-                                      height={64}
-                                      unoptimized
+                                      size="xs"
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
@@ -1153,14 +1262,17 @@ export default function Pedido() {
 
                                                     {!!imageUrl && (
                                                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                                                        <img
-                                                          src={imageUrl}
-                                                          alt={
-                                                            variationLabel ||
-                                                            "Imagem enviada pelo cliente"
-                                                          }
-                                                          className="h-16 w-16 rounded-md border border-zinc-200 object-cover bg-white"
-                                                        />
+                                                        <div className="relative h-16 w-16 overflow-hidden rounded-md border border-zinc-200 bg-white">
+                                                          <Img
+                                                            src={imageUrl}
+                                                            alt={
+                                                              variationLabel ||
+                                                              "Imagem enviada pelo cliente"
+                                                            }
+                                                            size="xs"
+                                                            className="h-full w-full object-cover"
+                                                          />
+                                                        </div>
 
                                                         {!!downloadUrl && (
                                                           <a
@@ -1246,6 +1358,12 @@ export default function Pedido() {
                       )}
                     </span>
                   </div>
+                  {netAmount !== null && (
+                    <div className="flex justify-between text-sm text-emerald-700">
+                      <span>Você recebe</span>
+                      <span>R$ {moneyFormat(netAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-lg sm:text-xl font-bold text-zinc-900">
                       Total
@@ -1262,87 +1380,201 @@ export default function Pedido() {
             </div>
 
             <div className="space-y-4 min-w-0">
-              <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <User size={16} className="text-zinc-400" />
-                  <h3 className="font-semibold text-zinc-900">
-                    Dados do cliente
-                  </h3>
+              <div className="rounded-2xl border border-yellow-200 bg-gradient-to-br from-yellow-50 via-white to-white p-4 sm:p-5">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-yellow-100 p-2.5 text-yellow-700">
+                    <Send size={16} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-zinc-900">
+                          Status de processo
+                        </h3>
+                      </div>
+                      <Badge variant="warning" dot>
+                        {currentDeliveryType?.name || "Pagamento"}
+                      </Badge>
+                    </div>
+                    <form onSubmit={notifyDelivery} className="mt-4 space-y-3">
+                      <Select
+                        name="status_entrega"
+                        onChange={(e: any) => setDeliveryStatus(e.target.value)}
+                        value={deliveryStatus ?? "pending"}
+                        options={deliveryTypes}
+                      />
+                      {currentDeliveryType && (
+                        <div className="rounded-xl border border-yellow-200 bg-white px-3 py-2 text-xs leading-relaxed text-zinc-600">
+                          {currentDeliveryType.description}
+                        </div>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={form.loading}
+                        className="w-full bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Send size={14} />
+                        {form.loading ? "Enviando..." : "Atualizar e notificar"}
+                      </button>
+                    </form>
+                  </div>
                 </div>
-                <div className="text-sm text-zinc-600 space-y-1">
-                  <div className="font-medium text-zinc-900 break-words">
-                    {(order as any).user?.name || "Não informado"}
+              </div>
+
+              <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5">
+                <div className="flex items-center justify-between mb-3 gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Truck size={16} className="text-zinc-400" />
+                    <h3 className="font-semibold text-zinc-900">Entrega</h3>
                   </div>
-                  <div className="break-all">
-                    {(order as any).user?.email || "E-mail não informado"}
-                  </div>
-                  <div className="break-words">
-                    {(order as any).user?.phone || "Telefone não informado"}
-                  </div>
-                  {(order as any).user?.cpf && (
-                    <div>CPF: {(order as any).user?.cpf}</div>
+                  {toNumber(order?.delivery?.price) > 0 ? (
+                    <Badge variant="neutral">
+                      R$ {moneyFormat(order.delivery?.price || 0)}
+                    </Badge>
+                  ) : (
+                    <Badge variant="success">Gratuita</Badge>
                   )}
-                  {(order as any).user?.id && (
-                    <div className="text-xs text-zinc-500 pt-1">
-                      Cliente ID: {(order as any).user.id}
+                </div>
+
+                <div className="grid gap-3">
+                  {deliveryInfo?.to && (
+                    <DetailField label="Instrução de entrega" value={deliveryInfo.to} tone="muted" />
+                  )}
+
+                  {(deliveryInfo?.date || deliveryInfo?.time) && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {deliveryInfo?.date && (
+                        <DetailField
+                          label="Data"
+                          value={
+                            <span className="inline-flex items-center gap-2">
+                              <Calendar size={14} className="text-amber-600" />
+                              <span>{deliveryInfo.date}</span>
+                            </span>
+                          }
+                        />
+                      )}
+                      {deliveryInfo?.time && (
+                        <DetailField
+                          label="Horário"
+                          value={
+                            <span className="inline-flex items-center gap-2">
+                              <Clock size={14} className="text-amber-600" />
+                              <span>{deliveryInfo.time}</span>
+                            </span>
+                          }
+                        />
+                      )}
                     </div>
                   )}
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-dashed border-zinc-200">
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-1.5">
+                    <MapPin size={12} />
+                    Endereço de entrega
+                  </div>
+                  <div className="space-y-2 rounded-xl border border-zinc-100 bg-zinc-50/80 p-3 text-sm text-zinc-600">
+                    <div className="font-medium text-zinc-900 break-words">
+                      {getAddressKindLabel(deliveryAddress)}
+                      {deliveryAddress.locationName
+                        ? ` | ${deliveryAddress.locationName}`
+                        : ""}
+                    </div>
+                    <div className="break-words">
+                      {deliveryAddress.street || "Rua não informada"}
+                      {deliveryAddress.number
+                        ? `, ${deliveryAddress.number}`
+                        : ""}
+                      {deliveryAddress.neighborhood
+                        ? ` - ${deliveryAddress.neighborhood}`
+                        : ""}
+                    </div>
+                    <div className="break-words">
+                      CEP:{" "}
+                      {deliveryAddress.zipCode || "Não informado"}
+                      {deliveryAddress.complement &&
+                        ` - ${deliveryAddress.complement}`}
+                    </div>
+                    <div className="break-words">
+                      {deliveryAddress.city || "Cidade não informada"}
+                      {deliveryAddress.state
+                        ? ` | ${deliveryAddress.state}`
+                        : ""}
+                    </div>
+                    {isSchoolAddress(deliveryAddress) &&
+                      !deliveryAddress.locationName && (
+                        <div className="break-words text-zinc-500">
+                          Nome do local não informado
+                        </div>
+                      )}
+                  </div>
                 </div>
               </div>
 
               {!!order.metadata && (
                 <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CreditCard size={16} className="text-zinc-400" />
-                    <h3 className="font-semibold text-zinc-900">Pagamento</h3>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CreditCard size={16} className="text-zinc-400" />
+                      <h3 className="font-semibold text-zinc-900">Pagamento</h3>
+                    </div>
+                    <Badge variant={paymentStatusVariant} dot>
+                      {paymentStatusLabel}
+                    </Badge>
                   </div>
 
-                  <div className="text-sm space-y-3">
-                    <div>
-                      <p className="font-medium text-zinc-900">
-                        {paymentMethodLabel}
-                        {paymentMethod === "credit_card" &&
-                          paymentInstallments > 1 && (
-                            <span> em {paymentInstallments}x</span>
-                          )}
-                      </p>
-                      <div className="mt-2">
-                        <Badge variant={paymentStatusVariant} dot>
-                          {paymentStatusLabel}
-                        </Badge>
-                      </div>
-                    </div>
+                  <div className="grid gap-3">
+                    <DetailField
+                      label="Método"
+                      value={
+                        <>
+                          {paymentMethodLabel}
+                          {paymentMethod === "credit_card" &&
+                            paymentInstallments > 1 && (
+                              <span> em {paymentInstallments}x</span>
+                            )}
+                        </>
+                      }
+                    />
 
                     {paidAt && (
-                      <p className="text-xs text-zinc-500">
-                        Pago em {formatDateTime(paidAt)}
-                      </p>
+                      <DetailField
+                        label="Confirmação"
+                        value={`Pago em ${formatDateTime(paidAt)}`}
+                        tone="muted"
+                      />
                     )}
 
                     {(paymentUrl || paymentPdf) && (
-                      <div className="pt-2 border-t border-zinc-100 space-y-1">
-                        {!!paymentUrl && (
-                          <a
-                            href={paymentUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                          >
-                            Abrir link de pagamento <ExternalLink size={12} />
-                          </a>
-                        )}
-                        {!!paymentPdf && (
-                          <a
-                            href={paymentPdf}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                          >
-                            Abrir boleto (PDF) <ExternalLink size={12} />
-                          </a>
-                        )}
+                      <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-3">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                          Acesso rápido
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          {!!paymentUrl && (
+                            <a
+                              href={paymentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                            >
+                              Abrir link de pagamento <ExternalLink size={12} />
+                            </a>
+                          )}
+                          {!!paymentPdf && (
+                            <a
+                              href={paymentPdf}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                            >
+                              Abrir boleto (PDF) <ExternalLink size={12} />
+                            </a>
+                          )}
+                        </div>
                         {!!paymentLine && (
-                          <p className="text-xs text-zinc-500 break-all">
+                          <p className="mt-2 text-xs text-zinc-500 break-all">
                             Linha digitável: {paymentLine}
                           </p>
                         )}
@@ -1358,18 +1590,22 @@ export default function Pedido() {
                       if (storeRecipients.length === 0) return null;
 
                       return (
-                        <div className="text-xs text-zinc-500 pt-2 border-t border-zinc-100">
-                          <p className="font-medium text-zinc-700 mb-1">
+                        <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 text-xs text-zinc-600">
+                          <p className="font-semibold uppercase tracking-[0.14em] text-zinc-400">
                             Recebedor{storeRecipients.length > 1 ? "es" : ""}
                           </p>
-                          {storeRecipients.map((s: any, idx: number) => (
-                            <p key={`recipient-${idx}`}>
-                              {s.recipient?.name || "N/A"}{" "}
-                              <span className="text-zinc-400">
-                                ({s.recipient?.id || "-"})
-                              </span>
-                            </p>
-                          ))}
+                          <div className="mt-2 space-y-1.5">
+                            {storeRecipients.map((s: any, idx: number) => (
+                              <p key={`recipient-${idx}`}>
+                                <span className="font-medium text-zinc-800">
+                                  {s.recipient?.name || "N/A"}
+                                </span>{" "}
+                                <span className="text-zinc-400">
+                                  ({s.recipient?.id || "-"})
+                                </span>
+                              </p>
+                            ))}
+                          </div>
                         </div>
                       );
                     })()}
@@ -1378,79 +1614,67 @@ export default function Pedido() {
               )}
 
               <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Truck size={16} className="text-zinc-400" />
-                    <h3 className="font-semibold text-zinc-900">Entrega</h3>
-                  </div>
-                  {toNumber(order?.delivery?.price) > 0 ? (
-                    <Badge variant="neutral">
-                      R$ {moneyFormat(order.delivery?.price || 0)}
-                    </Badge>
-                  ) : (
-                    <Badge variant="success">Gratuita</Badge>
+                <div className="flex items-center gap-2 mb-3">
+                  <User size={16} className="text-zinc-400" />
+                  <h3 className="font-semibold text-zinc-900">
+                    Dados do cliente
+                  </h3>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DetailField
+                    label="Nome"
+                    value={(order as any).user?.name || "Não informado"}
+                  />
+                  <DetailField
+                    label="E-mail"
+                    value={(order as any).user?.email || "E-mail não informado"}
+                    tone="muted"
+                  />
+                  <DetailField
+                    label="Telefone"
+                    value={(order as any).user?.phone || "Telefone não informado"}
+                    tone="muted"
+                  />
+                  {(order as any).user?.cpf && (
+                    <DetailField
+                      label="CPF"
+                      value={(order as any).user?.cpf}
+                      tone="muted"
+                    />
                   )}
                 </div>
-
-                <div className="text-sm space-y-3">
-                  {deliveryInfo?.to && (
-                    <div className="flex items-center gap-2 text-zinc-600 min-w-0">
-                      <Truck size={14} className="text-zinc-400" />
-                      <span className="break-words">{deliveryInfo.to}</span>
-                    </div>
-                  )}
-                  {(deliveryInfo?.date || deliveryInfo?.time) && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                      {deliveryInfo?.date && (
-                        <div className="flex items-center gap-2">
-                          <Calendar size={14} className="text-amber-600" />
-                          <span className="font-medium text-amber-800">
-                            {deliveryInfo.date}
-                          </span>
-                        </div>
-                      )}
-                      {deliveryInfo?.time && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <Clock size={14} className="text-amber-600" />
-                          <span className="text-amber-700">
-                            {deliveryInfo.time}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-dashed border-zinc-200">
-                  <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-1.5">
-                    <MapPin size={12} />
-                    Endereço de entrega
+                {(order as any).user?.id && (
+                  <div className="mt-3 text-xs text-zinc-500">
+                    Cliente ID: {(order as any).user.id}
                   </div>
-                  <div className="text-sm text-zinc-600 space-y-0.5">
-                    <div className="break-words">
-                      {order?.delivery?.address?.street || "Rua não informada"}
-                      {order?.delivery?.address?.number
-                        ? `, ${order.delivery.address.number}`
-                        : ""}
-                      {order?.delivery?.address?.neighborhood
-                        ? ` - ${order.delivery.address.neighborhood}`
-                        : ""}
-                    </div>
-                    <div className="break-words">
-                      CEP:{" "}
-                      {order?.delivery?.address?.zipCode || "Não informado"}
-                      {order?.delivery?.address?.complement &&
-                        ` - ${order.delivery.address.complement}`}
-                    </div>
-                    <div className="break-words">
-                      {order?.delivery?.address?.city || "Cidade não informada"}
-                      {order?.delivery?.address?.state
-                        ? ` | ${order.delivery.address.state}`
-                        : ""}
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
+
+              {customerNotes.length > 0 && (
+                <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare size={16} className="text-emerald-600" />
+                    <h3 className="font-semibold text-zinc-900">
+                      Observações da compra
+                    </h3>
+                  </div>
+                  <div className="grid gap-3">
+                    {customerNotes.map((entry, index) => (
+                      <div
+                        key={`seller-order-note-${entry.storeId || entry.orderId || index}`}
+                        className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-zinc-700"
+                      >
+                        {!!entry.storeName && (
+                          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                            {entry.storeName}
+                          </div>
+                        )}
+                        <div className="whitespace-pre-line">{entry.note}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {groupedItemsByStore.length > 1 && (
                 <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5">
@@ -1464,17 +1688,17 @@ export default function Pedido() {
                     {groupedItemsByStore.map((group) => (
                       <div
                         key={`summary-store-${group.storeId}`}
-                        className="flex items-center justify-between border border-zinc-100 rounded-lg px-3 py-2"
+                        className="flex flex-col gap-2 border border-zinc-100 rounded-lg px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                       >
-                        <div>
-                          <p className="font-medium text-zinc-900">
+                        <div className="min-w-0">
+                          <p className="font-medium text-zinc-900 break-words">
                             {group.storeName}
                           </p>
                           <p className="text-xs text-zinc-500">
                             {group.items.length} item(ns)
                           </p>
                         </div>
-                        <p className="font-semibold text-zinc-900">
+                        <p className="font-semibold text-zinc-900 sm:text-right">
                           R$ {moneyFormat(group.total)}
                         </p>
                       </div>
@@ -1482,33 +1706,6 @@ export default function Pedido() {
                   </div>
                 </div>
               )}
-
-              <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5">
-                <h3 className="font-semibold text-zinc-900 mb-3">
-                  Status de processo
-                </h3>
-                <form onSubmit={notifyDelivery} className="space-y-3">
-                  <Select
-                    name="status_entrega"
-                    onChange={(e: any) => setDeliveryStatus(e.target.value)}
-                    value={deliveryStatus ?? "pending"}
-                    options={deliveryTypes}
-                  />
-                  {currentDeliveryType && (
-                    <p className="text-xs text-zinc-400">
-                      {currentDeliveryType.description}
-                    </p>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={form.loading}
-                    className="w-full bg-yellow-400 hover:bg-yellow-500 text-zinc-900 font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
-                  >
-                    <Send size={14} />
-                    {form.loading ? "Enviando..." : "Atualizar e notificar"}
-                  </button>
-                </form>
-              </div>
             </div>
           </div>
         </div>
