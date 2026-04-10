@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { formatName, validateEmail } from "@/src/components/utils/FormMasks";
 import { preRegisterPartner, completePartnerRegister } from "@/src/services/partner";
+import { maskCPF, partialCPFOk, maskCNPJ, partialCNPJOk } from "@/src/components/utils/masks";
 
 export async function getStaticProps(ctx: any) {
     const api = new Api();
@@ -64,38 +65,27 @@ export default function SejaParceiro({
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [repeat, setRepeat] = useState("");
+    const [personType, setPersonType] = useState<"pf" | "pj">("pf");
+    const [document, setDocument] = useState("");
+    
     const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
     const [isFormValid, setIsFormValid] = useState(false);
     const [errorMail, setErrorMail] = useState<string | null>(null);
 
-
     const validatePassword = useCallback((pwd: string): string[] => {
         const errors: string[] = [];
-
-
-        if (pwd.length < 8) {
-            errors.push("Mínimo de 8 caracteres");
-        }
-        if (!/[A-Z]/.test(pwd)) {
-            errors.push("Pelo menos uma letra maiúscula");
-        }
-        if (!/[0-9]/.test(pwd)) {
-            errors.push("Pelo menos um número");
-        }
-        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/.test(pwd)) {
-            errors.push("Pelo menos um caractere especial");
-        }
-
+        if (pwd.length < 8) errors.push("Mínimo de 8 caracteres");
+        if (!/[A-Z]/.test(pwd)) errors.push("Pelo menos uma letra maiúscula");
+        if (!/[0-9]/.test(pwd)) errors.push("Pelo menos um número");
+        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/.test(pwd)) errors.push("Pelo menos um caractere especial");
         return errors;
     }, []);
 
     const validateAndSetPasswordErrors = useCallback((currentPassword: string, currentRepeat: string): boolean => {
         const errors = validatePassword(currentPassword);
-
         if (currentPassword !== currentRepeat && currentRepeat.length > 0) {
             errors.push("As senhas devem ser iguais!");
         }
-
         setPasswordErrors(errors);
         return errors.length === 0;
     }, [validatePassword]);
@@ -105,16 +95,15 @@ export default function SejaParceiro({
         const isNameValid = name.trim() !== "";
         const isEmailValid = email.trim() !== "" && validateEmail(email);
         const isPhoneValid = phone.replace(/\D/g, '').length >= 11;
+        const documentLen = document.replace(/\D/g, "").length;
+        const isDocumentValid = personType === "pf" ? documentLen === 11 : documentLen === 14;
 
-        setIsFormValid(arePasswordsValid && isNameValid && isEmailValid && isPhoneValid);
-    }, [email, name, password, phone, repeat, validateAndSetPasswordErrors]);
-
+        setIsFormValid(arePasswordsValid && isNameValid && isEmailValid && isPhoneValid && isDocumentValid);
+    }, [email, name, password, phone, repeat, personType, document, validateAndSetPasswordErrors]);
 
     useEffect(() => {
         if (errorMail) {
-            setTimeout(() => {
-                setErrorMail("");
-            }, 30000)
+            setTimeout(() => { setErrorMail(""); }, 30000)
         }
     }, [errorMail])
 
@@ -128,6 +117,7 @@ export default function SejaParceiro({
 
         setForm((prev) => ({ ...prev, loading: true }));
         setErrorMail(null);
+        let localError = false;
 
         const api = new Api();
 
@@ -135,13 +125,13 @@ export default function SejaParceiro({
             const cleanedPhone = phone.replace(/\D/g, '');
             if (cleanedPhone.length < 11) {
                 toast.error("Número de telefone inválido");
+                localError = true;
                 return;
             }
 
             const emailClean = email.trim().toLowerCase();
             const nameTrim = name.trim();
 
-            // Pré-registro do usuário
             const preResp = await preRegisterPartner(api, {
                 name: nameTrim,
                 email: emailClean,
@@ -151,19 +141,21 @@ export default function SejaParceiro({
 
             if (!preResp?.response && (preResp as any)?.code !== "email_already_registered") {
                 toast.error(preResp?.message || preResp?.error || "Não foi possível criar sua conta.");
+                localError = true;
                 return;
             }
 
-            // Criação da loja com dados mínimos — restante preenchido no painel
             const storeResp = await completePartnerRegister(api, {
                 name: nameTrim,
                 email: emailClean,
                 phone: cleanedPhone,
                 password,
-                personType: "pf",
-                document: "",
+                personType: personType,
+                document: document.replace(/\D/g, ""),
                 companyName: nameTrim,
                 hasDelivery: false,
+                segment: "",
+                segmentId: undefined,
                 street: "",
                 number: "",
                 neighborhood: "",
@@ -178,10 +170,15 @@ export default function SejaParceiro({
                 router.push("/acesso");
             } else {
                 toast.error(storeResp?.error || "Erro ao finalizar cadastro. Tente novamente.");
+                localError = true;
             }
         } catch (error: any) {
             toast.error(error?.message || "Ocorreu um erro ao processar sua solicitação.");
+            localError = true;
         } finally {
+            if (!localError) {
+                try { sessionStorage.removeItem("preCadastro"); } catch {}
+            }
             setForm((prev) => ({ ...prev, loading: false }));
         }
     };
@@ -190,10 +187,8 @@ export default function SejaParceiro({
         <Template
             scripts={Scripts}
             metaPage={{
-                title: `Seja um parceiro | ${DataSeo?.site_text}`,
-                image: !!getImage(Partner?.main_cover)
-                    ? getImage(Partner?.main_cover)
-                    : "",
+                title: `Seja um parceiro | ${DataSeo?.site_text || "Fiestou"}`,
+                image: !!getImage(Partner?.main_cover) ? getImage(Partner?.main_cover) : "",
                 description: clean(Partner?.main_description),
                 url: `parceiros/seja-parceiro/`,
             }}
@@ -208,27 +203,11 @@ export default function SejaParceiro({
                 content: HeaderFooter,
             }}
         >
-            {/* Cadastro */}
-            <section
-                className="bg-cyan-500 pt-16 md:pt-24 relative"
-                style={{ backgroundColor: "#2dc3ff" }}
-            >
+            <section className="bg-cyan-500 pt-16 md:pt-24 relative" style={{ backgroundColor: "#2dc3ff" }}>
                 {getImage(Partner?.main_cover, "default") && (
                     <>
-                        {!!Partner?.main_cover && (
-                            <Img
-                                size="7xl"
-                                src={getImage(Partner?.main_cover, "default")}
-                                className="hidden md:block absolute w-full bottom-0 left-0"
-                            />
-                        )}
-                        {!!Partner?.main_cover_mobile && (
-                            <Img
-                                size="7xl"
-                                src={getImage(Partner?.main_cover_mobile, "default")}
-                                className="md:hidden absolute w-full bottom-0 left-0"
-                            />
-                        )}
+                        {!!Partner?.main_cover && <Img size="7xl" src={getImage(Partner?.main_cover, "default")} className="hidden md:block absolute w-full bottom-0 left-0" />}
+                        {!!Partner?.main_cover_mobile && <Img size="7xl" src={getImage(Partner?.main_cover_mobile, "default")} className="md:hidden absolute w-full bottom-0 left-0" />}
                     </>
                 )}
 
@@ -236,67 +215,83 @@ export default function SejaParceiro({
                     <div className="container-medium relative py-4 md:py-14 text-white">
                         <div className="grid gap-4 md:flex">
                             <div className="w-full">
-                                <h1 className="font-title text-underline font-bold text-4xl lg:text-6xl mb-2 md:mb-4"
-                                >Clicou, Cadastrou, Faturou!</h1>
-                                <span className="text-lg text-underline md:text-3xl md:max-w-xl"
-                                >Não perca tempo! Entre na plataforma.</span>
+                                <h1 className="font-title text-underline font-bold text-4xl lg:text-6xl mb-2 md:mb-4">Clicou, Cadastrou, Faturou!</h1>
+                                <span className="text-lg text-underline md:text-3xl md:max-w-xl">Não perca tempo! Entre na plataforma.</span>
                             </div>
                             <div className="w-full md:max-w-[26rem] mb-32 md:mb-10">
-                                <form
-                                    onSubmit={(e) => {
-                                        handleSubmit(e);
-                                    }}
-                                    name="seja-parceiro"
-                                    id="seja-parceiro"
-                                    method="POST"
-                                >
-                                    <div className="bg-white text-zinc-900 rounded-2xl p-4 md:p-8 grid gap-4">
+                                <form onSubmit={handleSubmit} name="seja-parceiro" id="seja-parceiro" method="POST">
+                                    <div className="bg-white text-zinc-900 rounded-2xl p-4 md:p-8 grid gap-4 shadow-sm">
                                         <div>
-                                            <h2 className="font-bold font-title text-2xl md:text-3xl text-center md:pb-4"
-                                            >Cadastre seu negócio</h2>
+                                            <h2 className="font-bold font-title text-2xl md:text-3xl text-center md:pb-4">Cadastre seu negócio</h2>
+                                            
+                                            <div className="form-group pb-2">
+                                                <Label style="light">Tipo de Negócio</Label>
+                                                <div className="flex gap-6 mt-1.5 ml-1">
+                                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                                        <input type="radio" className="accent-cyan-500" value="pf" checked={personType === "pf"} onChange={() => { setPersonType("pf"); setDocument(""); }} />
+                                                        <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900">Pessoa Física</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                                        <input type="radio" className="accent-cyan-500" value="pj" checked={personType === "pj"} onChange={() => { setPersonType("pj"); setDocument(""); }} />
+                                                        <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900">Pessoa Jurídica</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
                                             <div className="form-group">
-                                                <Label style="light">Nome</Label>
+                                                <Label style="light">{personType === "pf" ? "Nome Completo" : "Nome / Razão Social"}</Label>
                                                 <Input
-                                                    onChange={(e: any) => {
-                                                        setName(formatName(e.target.value));
-                                                    }}
+                                                    onChange={(e: any) => setName(formatName(e.target.value))}
                                                     name="nome"
-                                                    placeholder="Digite o nome completo"
+                                                    placeholder="Digite o nome completo da loja ou empresa"
                                                     value={name}
                                                     required
                                                 />
                                             </div>
+                                            
+                                            <div className="form-group">
+                                                <Label style="light">{personType === "pf" ? "CPF" : "CNPJ"}</Label>
+                                                <Input
+                                                    onChange={(e: any) => {
+                                                        const val = e.target.value;
+                                                        if (personType === "pf") {
+                                                            const masked = maskCPF(val);
+                                                            if (partialCPFOk(masked)) setDocument(masked);
+                                                        } else {
+                                                            const masked = maskCNPJ(val);
+                                                            if (partialCNPJOk(masked)) setDocument(masked);
+                                                        }
+                                                    }}
+                                                    name="document"
+                                                    placeholder={personType === "pf" ? "000.000.000-00" : "00.000.000/0000-00"}
+                                                    value={document}
+                                                    inputMode="numeric"
+                                                    required
+                                                />
+                                            </div>
+
                                             <div className="form-group">
                                                 <Label style="light">E-mail</Label>
                                                 <Input
                                                     onChange={(e: any) => {
                                                         const newValue = e.target.value.toLowerCase();
                                                         setEmail(newValue);
-
-                                                        if (newValue.trim() === "") {
-                                                            setErrorMail(null);
-                                                        } else if (!validateEmail(newValue)) {
-                                                            setErrorMail("Formato de e-mail inválido");
-                                                        } else {
-                                                            setErrorMail(null);
-                                                        }
+                                                        if (newValue.trim() === "") setErrorMail(null);
+                                                        else if (!validateEmail(newValue)) setErrorMail("Formato de e-mail inválido");
+                                                        else setErrorMail(null);
                                                     }}
                                                     value={email}
                                                     type="email"
                                                     name="email"
-                                                    placeholder="Informe seu melhor e-mail"
+                                                    placeholder="Informe seu melhor e-mail para acesso"
                                                     required
                                                 />
-                                                {errorMail && (
-                                                    <label className="text-red-500">{errorMail}</label>
-                                                )}
+                                                {errorMail && <label className="text-red-500">{errorMail}</label>}
                                             </div>
                                             <div className="form-group">
                                                 <Label style="light">Celular (com DDD)</Label>
                                                 <Input
-                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                                        setPhone(formatPhone(e.target.value));
-                                                    }}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(formatPhone(e.target.value))}
                                                     name="phone"
                                                     placeholder="(00) 00000-0000"
                                                     value={phone}
@@ -312,7 +307,7 @@ export default function SejaParceiro({
                                                     }}
                                                     type="password"
                                                     name="senha"
-                                                    placeholder="Crie sua senha"
+                                                    placeholder="Crie sua senha de acesso"
                                                     required
                                                     value={password}
                                                 />
@@ -347,13 +342,12 @@ export default function SejaParceiro({
                                                 </ul>
                                             </div>
                                             <div className="form-group text-zinc-500 py-1 text-sm leading-tight">
-                                                Ao cadastrar você concorda com os nossos termos de uso.
+                                                Ao cadastrar você concorda com os nossos termos e fica pronto para completar o perfil na plataforma.
                                             </div>
 
-                                            <div className="form-group">
-                                                <Button loading={form.loading}
-                                                    disable={!isFormValid}>
-                                                    {Partner?.form_button}
+                                            <div className="form-group mt-2">
+                                                <Button loading={form.loading} disable={!isFormValid}>
+                                                    Finalizar Cadastro
                                                 </Button>
                                             </div>
                                         </div>
@@ -364,7 +358,8 @@ export default function SejaParceiro({
                     </div>
                 </div>
             </section>
-            {/* A parceria certa para o seu negócio */}
+            
+            {/* Swiper Sec */}
             <section className="py-8 md:pt-20 relative overflow-hidden">
                 <div className="container-medium">
                     <div className="max-w-3xl mx-auto text-center pb-6 md:pb-14">
@@ -389,95 +384,48 @@ export default function SejaParceiro({
                             <SwiperSlide>
                                 <div className="border h-full rounded-lg p-6 md:p-10">
                                     <div className="p-8 text-yellow-400 relative">
-                                        <Icon
-                                            icon="fa-bags-shopping"
-                                            className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
-                                        />
-                                        <Icon
-                                            icon="fa-bags-shopping"
-                                            type="fa"
-                                            className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
-                                        />
+                                        <Icon icon="fa-bags-shopping" className="text-6xl absolute top-1/2 left-0 -translate-y-1/2" />
+                                        <Icon icon="fa-bags-shopping" type="fa" className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2" />
                                     </div>
                                     <div className="pt-6">
-                                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
-                                            Venda Online
-                                        </h3>
-                                        <span className="text-gray-600 text-justify">
-                                            Tenha a sua propiá loja virtual focada para o setor de festa. Alcance mais clientes.
-                                        </span>
+                                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">Venda Online</h3>
+                                        <span className="text-gray-600 text-justify">Tenha a sua propiá loja virtual focada para o setor de festa. Alcance mais clientes.</span>
                                     </div>
                                 </div>
                             </SwiperSlide>
-
                             <SwiperSlide>
                                 <div className="border h-full rounded-lg p-6 md:p-10">
                                     <div className="p-8 text-yellow-400 relative">
-                                        <Icon
-                                            icon="fa-analytics"
-                                            className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
-                                        />
-                                        <Icon
-                                            icon="fa-analytics"
-                                            type="fa"
-                                            className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
-                                        />
+                                        <Icon icon="fa-analytics" className="text-6xl absolute top-1/2 left-0 -translate-y-1/2" />
+                                        <Icon icon="fa-analytics" type="fa" className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2" />
                                     </div>
                                     <div className="pt-6">
-                                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
-                                            Tenha acesso aos dados
-                                        </h3>
-                                        <span className="text-gray-600 text-justify">
-                                            Relatórios de resultado de vendas. Porcentagem de cada categoria vendida e muito mais.
-                                        </span>
+                                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">Tenha acesso aos dados</h3>
+                                        <span className="text-gray-600 text-justify">Relatórios de resultado de vendas. Porcentagem de cada categoria vendida e muito mais.</span>
                                     </div>
                                 </div>
                             </SwiperSlide>
-
                             <SwiperSlide>
                                 <div className="border h-full rounded-lg p-6 md:p-10">
                                     <div className="p-8 text-yellow-400 relative">
-                                        <Icon
-                                            icon="fa-box-alt"
-                                            className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
-                                        />
-                                        <Icon
-                                            icon="fa-box-alt"
-                                            type="fa"
-                                            className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
-                                        />
+                                        <Icon icon="fa-box-alt" className="text-6xl absolute top-1/2 left-0 -translate-y-1/2" />
+                                        <Icon icon="fa-box-alt" type="fa" className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2" />
                                     </div>
                                     <div className="pt-6">
-                                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
-                                            Acompanhe os pedidos
-                                        </h3>
-                                        <span className="text-gray-600 text-justify">
-                                            Siga cada etapa de entrega do seu produto. Notifique o cliente também para acompanhar a entrega.
-                                        </span>
+                                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">Acompanhe os pedidos</h3>
+                                        <span className="text-gray-600 text-justify">Siga cada etapa de entrega do seu produto. Notifique o cliente também para acompanhar a entrega.</span>
                                     </div>
                                 </div>
                             </SwiperSlide>
-
                             <SwiperSlide>
                                 <div className="border h-full rounded-lg p-6 md:p-10">
                                     <div className="p-8 text-yellow-400 relative">
-                                        <Icon
-                                            icon="fa-headset"
-                                            className="text-6xl absolute top-1/2 left-0 -translate-y-1/2"
-                                        />
-                                        <Icon
-                                            icon="fa-headset"
-                                            type="fa"
-                                            className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2"
-                                        />
+                                        <Icon icon="fa-headset" className="text-6xl absolute top-1/2 left-0 -translate-y-1/2" />
+                                        <Icon icon="fa-headset" type="fa" className="text-5xl mt-1 opacity-20 absolute top-1/2 left-0 -translate-y-1/2" />
                                     </div>
                                     <div className="pt-6">
-                                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">
-                                            Suporte
-                                        </h3>
-                                        <span className="text-gray-600 text-justify">
-                                            Estamos disponível para tirara suas dúvidas, pode nos enviar e-mail, ligar que estamos pronto para tirar as dúvidas.
-                                        </span>
+                                        <h3 className="font-title text-zinc-900 text-2xl font-bold pb-4">Suporte</h3>
+                                        <span className="text-gray-600 text-justify">Estamos disponível para tirara suas dúvidas, pode nos enviar e-mail, ligar que estamos pronto para tirar as dúvidas.</span>
                                     </div>
                                 </div>
                             </SwiperSlide>
@@ -486,144 +434,64 @@ export default function SejaParceiro({
                 </div>
             </section>
 
-            {/* Escolha o plano ideal para você */}
             <section className="md:py-14 relative overflow-hidden">
                 <div className="max-w-[88rem] pb-6 pt-14 md:p-14 md:py-20 mx-auto bg-zinc-100">
                     <div className="container-medium">
                         <div className="max-w-xl mx-auto text-center pb-10 md:pb-14">
-                            <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2"
-                            >Conheça os nossas opções</h2>
+                            <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-2">Conheça os nossas opções</h2>
                         </div>
                         <div className="grid md:flex gap-6 md:gap-16">
                             <div className="bg-white w-full flex flex-col gap-7 p-6 md:p-10 rounded-xl">
                                 <div className="text-zinc-900 w-full h-fit grid gap-1 md:gap-3 border-b pb-7">
                                     <div className="font-bold">Plano Simples</div>
-                                    <div className="font-title font-bold text-3xl md:text-5xl">
-                                        R$ 0,00/mês
-                                    </div>
-                                    <div className="text-sm">
-                                        Plataforma para empresas independentes do tamanho, vender os produtos e serviços de festa.
-                                    </div>
+                                    <div className="font-title font-bold text-3xl md:text-5xl">R$ 0,00/mês</div>
+                                    <div className="text-sm">Plataforma para empresas independentes do tamanho, vender os produtos e serviços de festa.</div>
                                 </div>
                                 <div className="w-full h-full">
                                     <div className="grid gap-4">
                                         <div className="flex gap-3">
-                                            <div>
-                                                <Icon icon="fa-check" className="text-green-500" />
-                                            </div>
+                                            <div><Icon icon="fa-check" className="text-green-500" /></div>
                                             <span className="w-full">
-                                                10% em cada venda realizada na plataforma do Fiestou Customização da página Sem limites em números de produtos cadastrados.
-                                                Transferência automática nos pagamentos. Ou seja, recebe o dinheiro da venda na hora.
+                                                10% em cada venda realizada na plataforma do Fiestou Customização da página Sem limites em números de produtos cadastrados. Transferência automática nos pagamentos. Ou seja, recebe o dinheiro da venda na hora.
                                             </span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="text-center mt-4 grid">
-                                    <Button href="/parceiros/seja-parceiro/">
-                                        Selecionar
-                                    </Button>
-                                </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </section>
 
-            {/* Entenda como funciona */}
             <section className="pt-10 md:py-14">
                 <div className="container-medium">
                     <div className="grid lg:flex justify-center">
                         <div className="w-full">
                             <div className="max-w-xl pb-4 md:pb-14 flex flex-wrap justify-center">
-                                <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4"
-                                >Entenda como funciona</h2>
-                                <Img
-                                    src="/images/default-arrow.png"
-                                    className="w-auto mt-8 rotate-45 md:rotate-0"
-                                />
+                                <h2 className="font-title text-zinc-900 font-bold text-4xl md:text-5xl mt-4">Entenda como funciona</h2>
+                                <Img src="/images/default-arrow.png" className="w-auto mt-8 rotate-45 md:rotate-0" />
                             </div>
                         </div>
                         <div className="w-full lg:max-w-[40rem] flex flex-col justify-end">
-                            {/* Pergunta 1 */}
                             <div className="border-b py-4">
-                                <div
-                                    onClick={() =>
-                                        setCollapseFaq(collapseFaq !== 0 ? 0 : -1)
-                                    }
-                                    className="flex font-bold text-zinc-900 text-lg cursor-pointer"
-                                >
+                                <div onClick={() => setCollapseFaq(collapseFaq !== 0 ? 0 : -1)} className="flex font-bold text-zinc-900 text-lg cursor-pointer">
                                     <span className="w-full">Já posso me cadastrar?</span>
-                                    <div>
-                                        <Icon
-                                            icon="fa-chevron-down"
-                                            type="far"
-                                            className="text-sm"
-                                        />
-                                    </div>
+                                    <div><Icon icon="fa-chevron-down" type="far" className="text-sm" /></div>
                                 </div>
-                                {collapseFaq === 0 && (
-                                    <div className="pt-4 text-sm leading-normal">
-                                        Pode, mas ainda não começamos a dar o acesso. Mas com o cadastro vamos notificar quando estivermos pronto
-                                    </div>
-                                )}
+                                {collapseFaq === 0 && <div className="pt-4 text-sm leading-normal">Pode, mas ainda não começamos a dar o acesso. Mas com o cadastro vamos notificar quando estivermos pronto</div>}
                             </div>
-
-                            {/* Pergunta 2 */}
                             <div className="border-b py-4">
-                                <div
-                                    onClick={() =>
-                                        setCollapseFaq(collapseFaq !== 1 ? 1 : -1)
-                                    }
-                                    className="flex font-bold text-zinc-900 text-lg cursor-pointer"
-                                >
+                                <div onClick={() => setCollapseFaq(collapseFaq !== 1 ? 1 : -1)} className="flex font-bold text-zinc-900 text-lg cursor-pointer">
                                     <span className="w-full">O que é o Fiestou?</span>
-                                    <div>
-                                        <Icon
-                                            icon="fa-chevron-down"
-                                            type="far"
-                                            className="text-sm"
-                                        />
-                                    </div>
+                                    <div><Icon icon="fa-chevron-down" type="far" className="text-sm" /></div>
                                 </div>
-                                {collapseFaq === 1 && (
-                                    <div className="pt-4 text-sm leading-normal">
-                                        É uma plataforma que permite empresas do setor de festas, vender os produtos e serviços na internet.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </section>
-
-            {/* Pronto para começar? */}
-            <section>
-                <div className="container-medium py-10 md:py-20">
-                    <div className="bg-zinc-100 rounded-xl grid lg:flex items-center relative overflow-hidden">
-                        <div className="w-full grid gap-6 p-6 md:p-16 text-zinc-900">
-                            <h4 className="font-title font-bold max-w-[30rem] text-4xl"
-                            >Chegou a hora de aumentar o seu negócio</h4>
-                            <span className="max-w-[24rem]"
-                            >Entre no mundo digital e modernize o seu negócio</span>
-                            <div className="pt-2">
-                                <Button href="/parceiros/seja-parceiro/">Cadastrar agora</Button>
-                            </div>
-                        </div>
-                        <div className="w-full">
-                            <div className="aspect-square relative">
-                                <Img
-                                    className="w-full h-full object-contain"
-                                    src="/images/Faca-parte-do-Fiestou.png"
-                                    alt="Faça parte do Fiestou"
-                                    title="Faça parte do Fiestou"
-                                />
+                                {collapseFaq === 1 && <div className="pt-4 text-sm leading-normal">É uma plataforma que permite empresas do setor de festas, vender os produtos e serviços na internet.</div>}
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
+
         </Template>
     );
 }
