@@ -84,6 +84,28 @@ export function normalizeProductsFilters(params: Record<string, any>): Record<st
   );
   if (categories?.length) normalized.category = categories;
 
+  const comercialTypes = toArray(
+    params.comercialType ??
+      params.comercialTypes ??
+      params.tipo_comercial,
+  );
+  if (comercialTypes?.length) normalized.comercialType = comercialTypes;
+
+  const saleOnly =
+    params.sale_only ??
+    params.saleOnly ??
+    params.promocao ??
+    params.promotion;
+
+  if (
+    saleOnly === true ||
+    saleOnly === "1" ||
+    saleOnly === 1 ||
+    saleOnly === "true"
+  ) {
+    normalized.sale_only = "1";
+  }
+
   return normalized;
 }
 

@@ -59,6 +59,23 @@ export default function Listagem({
   DataSeo: any;
   Scripts: any;
 }) {
+  const normalizeCommercialTypes = (value: unknown): string[] | undefined => {
+    if (!Array.isArray(value)) return undefined;
+
+    const normalized = value
+      .map((item) => String(item || "").trim().toLowerCase())
+      .map((item) => {
+        if (item === "renting" || item === "aluguel") return "aluguel";
+        if (item === "selling" || item === "venda") return "venda";
+        if (item === "comestivel") return "comestivel";
+        if (item === "servicos") return "servicos";
+        return "";
+      })
+      .filter(Boolean);
+
+    return normalized.length ? Array.from(new Set(normalized)) : undefined;
+  };
+
   const router = useRouter();
   const api = useMemo(() => new Api(), []);
 
@@ -74,6 +91,7 @@ export default function Listagem({
     categories: { name: string; icon?: string }[];
     tags: string[];
   }>({ colors: [], categories: [], tags: [] });
+  const [availableCommercialTypes, setAvailableCommercialTypes] = useState<string[] | undefined>(undefined);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const activeRequest = useRef(0);
   const observerRef = useRef<HTMLDivElement | null>(null);
@@ -115,6 +133,9 @@ export default function Listagem({
         const colorsFromApi = (response?.colors ?? []) as string[];
         const categoriesFromApi = (response?.categories ?? []) as { name: string; icon?: string }[];
         const tagsFromApi = (response?.tags ?? []) as string[];
+        const commercialTypesFromApi = normalizeCommercialTypes(
+          response?.availableCommercialTypes
+        );
 
         setProducts((prev) =>
           replace ? items : mergeUniqueProducts(prev, items),
@@ -128,6 +149,8 @@ export default function Listagem({
             tags: tagsFromApi,
           });
         }
+
+        setAvailableCommercialTypes(commercialTypesFromApi);
 
         const total = Number(response?.metadata?.count ?? response?.total ?? 0);
         const nextHasMore = hasMoreByResult(
@@ -266,7 +289,10 @@ export default function Listagem({
             <div className="animate-pulse py-8 rounded-lg overflow-hidden bg-zinc-200"></div>
           </div>
         ) : (
-          <Filter {...filters} />
+          <Filter
+            {...filters}
+            availableCommercialTypes={availableCommercialTypes}
+          />
         )}
       </div>
 

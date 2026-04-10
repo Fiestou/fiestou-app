@@ -42,6 +42,22 @@ export interface Product {
 const PAGE_SIZE = 16;
 
 const toNullable = (value: any) => (value === undefined ? null : value);
+const normalizeCommercialTypes = (value: unknown): string[] | undefined => {
+  if (!Array.isArray(value)) return undefined;
+
+  const normalized = value
+    .map((item) => String(item || "").trim().toLowerCase())
+    .map((item) => {
+      if (item === "renting" || item === "aluguel") return "aluguel";
+      if (item === "selling" || item === "venda") return "venda";
+      if (item === "comestivel") return "comestivel";
+      if (item === "servicos") return "servicos";
+      return "";
+    })
+    .filter(Boolean);
+
+  return normalized.length ? Array.from(new Set(normalized)) : undefined;
+};
 
 const slimImagePayload = (image: any) => {
   if (!image) return null;
@@ -214,6 +230,9 @@ export default function Store({
   const [loading, setLoading] = useState(false as boolean);
   const [handleParams, setHandleParams] = useState({} as FilterQueryType);
   const [mounted, setMounted] = useState(false);
+  const [availableCommercialTypes, setAvailableCommercialTypes] = useState<string[] | undefined>(
+    () => normalizeCommercialTypes(products.map((item) => item?.comercialType))
+  );
 
   const mapToProductCard = (item: any) => {
     if (!item) return null;
@@ -316,6 +335,9 @@ export default function Store({
       pageSize: PAGE_SIZE,
       pages: Math.ceil((total || 1) / PAGE_SIZE),
       hasMore: nextHasMore,
+      availableCommercialTypes: normalizeCommercialTypes(
+        request?.availableCommercialTypes
+      ),
     };
   };
 
@@ -325,6 +347,9 @@ export default function Store({
     setListProducts(Array.isArray(data?.items) ? data.items : []);
     setPage(typeof data?.page === "number" ? data.page : 0);
     setHasMore(Boolean(data?.hasMore));
+    setAvailableCommercialTypes(
+      normalizeCommercialTypes(data?.availableCommercialTypes)
+    );
   };
 
   const getProducts = async (reset = false, params = handleParams, pageNumber = page) => {
@@ -370,6 +395,9 @@ export default function Store({
     } else {
       setListProducts((prev) => mergeUniqueProducts(prev, handle));
     }
+    setAvailableCommercialTypes(
+      normalizeCommercialTypes(request?.availableCommercialTypes)
+    );
     setHasMore(nextHasMore);
     setPage(number);
 
@@ -616,6 +644,7 @@ export default function Store({
           context="store"
           fetchProducts={fetchProducts}
           onResults={handleFilterResults}
+          availableCommercialTypes={availableCommercialTypes}
         />
       </div>
 

@@ -8,34 +8,47 @@ export default function GroupChips({
 }: { groups: Group[]; selectedIds: number[]; onClick: (c: Categorie) => void; }) {
   return (
     <>
-      {(groups ?? []).map((group, idx0) => (
+      {(groups ?? []).map((group) => (
         <div key={group.id} className="pb-6">
           <Label>{group.name}</Label>
-          <div className="flex -mx-4 px-4 md:grid relative overflow-x-auto scrollbar-hide">
-            <div className={`flex md:flex-wrap gap-2 ${group.id === groups[0]?.id ? "space-x-2" : ""}`}>
+          <div className="pt-1">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
               {group.categories.map((el) => (
-                <div
+                <button
+                  type="button"
                   key={el.id}
                   className={`border cursor-pointer ease relative rounded
                     ${selectedIds.includes(el.id) ? "border-zinc-800 hover:border-zinc-500" : "hover:border-zinc-300"}
-                    flex flex-col items-center p-2 w-auto`}
+                    flex min-h-[92px] w-full min-w-0 items-center justify-center p-2.5 text-center transition-colors md:min-h-[96px] md:p-3 md:text-left`}
                   onClick={() => onClick(el)}
                 >
-                  <div className={`flex items-center gap-2 ${group.id === groups[0]?.id ? "flex-col" : "flex-row whitespace-nowrap"}`}>
+                  <div
+                    className="flex min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-start md:justify-start md:gap-3 md:text-left"
+                  >
                     {el.icon && (
                       <Img
                         src={el.icon}
-                        className={`object-contain ${group.id === groups[0]?.id ? "h-[40px] w-[40px]" : "h-[20px] w-[20px] flex-shrink-0"}`}
+                        className={`object-contain ${
+                          group.id === groups[0]?.id
+                            ? "h-[40px] w-[40px] shrink-0 md:h-[38px] md:w-[38px]"
+                            : "h-[34px] w-[34px] shrink-0 md:h-[26px] md:w-[26px]"
+                        }`}
                       />
                     )}
-                    <div className={`text-sm md:text-base ${group.id === groups[0]?.id ? "text-center font-medium" : "font-normal whitespace-nowrap"}`}>
+                    <div
+                      className={`min-w-0 whitespace-normal break-words [overflow-wrap:anywhere] text-center text-[13px] leading-4 md:text-left md:text-sm md:leading-5 ${
+                        group.id === groups[0]?.id
+                          ? "font-medium"
+                          : "font-normal"
+                      }`}
+                    >
                       {el.name}
                     </div>
                     {selectedIds.includes(el.id) && (
                       <input type="checkbox" name="categoria[]" value={el.name} defaultChecked className="absolute opacity-0 z-[-1]" />
                     )}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>

@@ -16,9 +16,10 @@ export default function AudienceChips({
   return (
     <div className="pb-6">
       <Label>Público-Alvo</Label>
-      <div className="flex gap-2 pt-1 pb-2 flex-wrap">
+      <div className="grid grid-cols-2 gap-2 pt-1 pb-2 md:grid-cols-3 xl:grid-cols-4">
         {list.map((c) => (
-          <div
+          <button
+            type="button"
             key={c.id}
             className={`border cursor-pointer ease relative rounded
               ${
@@ -26,16 +27,21 @@ export default function AudienceChips({
                   ? "border-zinc-800 hover:border-zinc-500"
                   : "hover:border-zinc-300"
               }
-              flex flex-col items-center p-2 w-auto`}
+              flex min-h-[92px] w-full min-w-0 items-center justify-center p-2.5 text-center transition-colors md:min-h-[96px] md:p-3 md:text-left`}
             onClick={() => onClick(c)}
           >
-            {c.icon && (
-              <Img src={c.icon} className="object-contain h-[40px] w-[40px]" />
-            )}
-            <div className="text-sm md:text-base text-center font-medium">
-              {c.name}
+            <div className="flex min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-start md:justify-start md:gap-3 md:text-left">
+              {c.icon && (
+                <Img
+                  src={c.icon}
+                  className="h-[40px] w-[40px] shrink-0 object-contain md:h-[38px] md:w-[38px]"
+                />
+              )}
+              <div className="min-w-0 whitespace-normal break-words text-center text-[13px] font-medium leading-4 [overflow-wrap:anywhere] md:text-left md:text-sm md:leading-5">
+                {c.name}
+              </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>

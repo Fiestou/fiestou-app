@@ -1,7 +1,9 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import Modal from "../../../utils/Modal";
 import SortSelect from "./sections/SortSelect";
 import PriceRange from "./sections/PriceRange";
+import CommercialTypeFilter from "./sections/CommercialTypeFilter";
+import PromotionToggle from "./sections/PromotionToggle";
 import ColorPicker from "./sections/ColorPicker";
 import AudienceChips from "./sections/AudienceChips";
 import GroupChips from "./sections/GroupChips";
@@ -19,6 +21,7 @@ export interface ModalFilterProps {
   onSubmit?: () => void;
   store?: number;
   storeView?: boolean;
+  availableCommercialTypes?: string[];
 }
 
 export default function ModalFilter({
@@ -30,22 +33,80 @@ export default function ModalFilter({
   onSubmit,
   store,
   storeView,
+  availableCommercialTypes,
 }: ModalFilterProps) {
   const { loading, allGroups, pblcAlvo } = useFiltersData(open);
-  const { localGroups, appendRelatedGroup, removeRelatedOf, resetFirstGroup } =
+  const {
+    localGroups,
+    appendRelatedGroup,
+    removeRelatedOf,
+    resetFirstGroup,
+    syncFromSelectedIds,
+  } =
     useCascadingGroups(allGroups);
+
+  const categoriesById = useMemo(
+    () =>
+      new Map(
+        allGroups.flatMap((group) => group.categories.map((category) => [category.id, category] as const))
+      ),
+    [allGroups]
+  );
+
+  const collectDescendantIds = useCallback(
+    (element: Categorie) => {
+      const collected = new Set<number>();
+      const queue = [...(element.element_related_id ?? [])];
+
+      while (queue.length) {
+        const currentId = queue.shift();
+
+        if (!currentId || collected.has(currentId)) {
+          continue;
+        }
+
+        collected.add(currentId);
+
+        const currentCategory = categoriesById.get(currentId);
+        const nextIds = currentCategory?.element_related_id ?? [];
+
+        for (const nextId of nextIds) {
+          if (!collected.has(nextId)) {
+            queue.push(nextId);
+          }
+        }
+      }
+
+      return collected;
+    },
+    [categoriesById]
+  );
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    syncFromSelectedIds(query.categories);
+  }, [open, query.categories, syncFromSelectedIds]);
 
   const onClickCategorie = useCallback(
     (element: Categorie) => {
       const isSelected = query.categories.includes(element.id);
+
       const updated = isSelected
-        ? query.categories.filter((id) => id !== element.id)
+        ? query.categories.filter((id) => !new Set([element.id, ...collectDescendantIds(element)]).has(id))
         : [...query.categories, element.id];
+
       onChange({ categories: updated });
-      if (isSelected) removeRelatedOf(element, updated);
-      else appendRelatedGroup(element);
+
+      if (isSelected) {
+        removeRelatedOf(element, updated);
+      } else {
+        appendRelatedGroup(element, updated);
+      }
     },
-    [query.categories, onChange, appendRelatedGroup, removeRelatedOf]
+    [query.categories, onChange, appendRelatedGroup, collectDescendantIds, removeRelatedOf]
   );
 
   if (!open) return null;
@@ -56,7 +117,23 @@ export default function ModalFilter({
       title={`Filtros${loading ? " (carregando…)" : ""}`}
       status={open}
       close={onClose}
-      className="bg-red-400"
+      footer={
+        <Footer
+          count={count}
+          onSubmit={onSubmit}
+          onClear={() => {
+            onChange({
+              categories: [],
+              colors: [],
+              range: 1000,
+              order: "desc",
+              comercialTypes: [],
+              saleOnly: false,
+            });
+            resetFirstGroup();
+          }}
+        />
+      }
     >
       <SortSelect
         order={query.order}
@@ -65,6 +142,15 @@ export default function ModalFilter({
       <PriceRange
         value={query.range}
         onChange={(range) => onChange({ range })}
+      />
+      <PromotionToggle
+        checked={query.saleOnly}
+        onChange={(saleOnly) => onChange({ saleOnly })}
+      />
+      <CommercialTypeFilter
+        value={query.comercialTypes}
+        onChange={(comercialTypes) => onChange({ comercialTypes })}
+        availableTypes={availableCommercialTypes}
       />
       <ColorPicker
         value={query.colors}
@@ -79,14 +165,6 @@ export default function ModalFilter({
         groups={localGroups}
         selectedIds={query.categories}
         onClick={onClickCategorie}
-      />
-      <Footer
-        count={count}
-        onSubmit={onSubmit}
-        onClear={() => {
-          onChange({ categories: [], colors: [], range: 1000, order: "desc" });
-          resetFirstGroup();
-        }}
       />
     </Modal>
   );

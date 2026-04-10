@@ -10,6 +10,8 @@ export interface FilterQueryType {
   colors: string[];
   range: number;
   order: string;
+  comercialTypes: string[];
+  saleOnly: boolean;
 }
 
 export interface ResponseRegister {

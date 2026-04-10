@@ -11,7 +11,7 @@ import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import Filter from "@/src/components/common/filters/Filter";
 import { useRouter } from "next/router";
 import CartPreview from "@/src/components/common/CartPreview";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   hasMoreByResult,
   mergeUniqueProducts,
@@ -29,7 +29,6 @@ export default function Produtos() {
   const [DataSeo, setDataSeo] = useState<any>({});
   const [Scripts, setScripts] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(true);
-  const [showFilters, setShowFilters] = useState<boolean>(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
   const activeRequest = useRef(0);
   const loadMoreLock = useRef(false);
@@ -186,27 +185,14 @@ export default function Produtos() {
               </p>
             </div>
 
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden flex items-center gap-2 px-4 py-2.5 bg-white text-cyan-600 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              <SlidersHorizontal size={18} />
-              Filtros
-            </button>
           </div>
         </div>
       </section>
 
       <section className="container-medium py-6 md:py-8">
-        <div className="hidden md:block mb-6">
+        <div className="mb-6">
           <Filter />
         </div>
-
-        {showFilters && (
-          <div className="md:hidden mb-6 bg-white rounded-lg shadow-lg p-4 border border-zinc-200">
-            <Filter />
-          </div>
-        )}
 
         {isInitialLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">

@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterQueryType } from "@/src/types/filtros";
 import ModalFilter from "./filter/ModalFilter";
 import InputSearchStore, {
@@ -24,6 +24,7 @@ export interface FilterProps<T = any> {
   context?: "home" | "store" | "panel";
   fetchProducts?: (params: Record<string, any>) => Promise<ProductPage<T>>;
   onResults?: (data: ProductPage<T>, params: Record<string, any>) => void;
+  availableCommercialTypes?: string[];
 }
 
 export default function Filter<T = any>({
@@ -33,15 +34,18 @@ export default function Filter<T = any>({
   context = "home",
   fetchProducts,
   onResults,
+  availableCommercialTypes,
 }: FilterProps<T>) {
   const router = useRouter();
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
 
   const [query, setQuery] = useState<FilterQueryType>({
     categories: [],
     colors: [],
     range: 1000,
     order: "desc",
+    comercialTypes: [],
+    saleOnly: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -52,18 +56,24 @@ export default function Filter<T = any>({
   const filterArea = useRef<HTMLDivElement>(null);
   const searchRef = useRef<InputSearchStoreRef>(null);
 
-  const startQueryHandle = () => {
+  const startQueryHandle = useCallback(() => {
     const routerQuery = router.query as {
       categorias?: string | string[];
       "categoria[]"?: string | string[];
       colors?: string | string[];
       range?: string;
       order?: string;
+      comercialType?: string | string[];
+      comercialTypes?: string | string[];
+      sale_only?: string;
+      saleOnly?: string;
     };
 
     setQuery((prev) => {
       const next: Partial<FilterQueryType> = {
         categories: prev.categories ?? [],
+        comercialTypes: prev.comercialTypes ?? [],
+        saleOnly: prev.saleOnly ?? false,
       };
 
       if (routerQuery?.colors?.length) {
@@ -81,9 +91,26 @@ export default function Filter<T = any>({
         next.order = routerQuery.order;
       }
 
+      const comercialTypeValue =
+        routerQuery?.comercialType ?? routerQuery?.comercialTypes;
+      if (comercialTypeValue) {
+        next.comercialTypes = Array.isArray(comercialTypeValue)
+          ? comercialTypeValue.map(String)
+          : [String(comercialTypeValue)];
+      }
+
+      const saleOnlyValue = routerQuery?.sale_only ?? routerQuery?.saleOnly;
+      if (
+        saleOnlyValue === "1" ||
+        saleOnlyValue === "true" ||
+        saleOnlyValue === "yes"
+      ) {
+        next.saleOnly = true;
+      }
+
       return { ...prev, ...next };
     });
-  };
+  }, [router.query]);
 
   useEffect(() => {
     let handle = 0;
@@ -91,6 +118,8 @@ export default function Filter<T = any>({
     handle += query.colors.length;
     handle += query.range < 1000 ? 1 : 0;
     handle += query.order !== "desc" ? 1 : 0;
+    handle += query.comercialTypes.length;
+    handle += query.saleOnly ? 1 : 0;
     setCount(handle);
   }, [query]);
 
@@ -115,23 +144,28 @@ export default function Filter<T = any>({
       startQueryHandle();
       return cleanup;
     }
-  }, [router.query]);
+  }, [startQueryHandle]);
 
-  const buildParams = (overrides?: Record<string, any>) => {
-    const params: Record<string, any> = {
-      ...(busca ? { busca } : {}),
-      order: query.order,
-      range: String(query.range),
-      page: 1,
-      ...overrides,
-    };
+  const buildParams = useCallback(
+    (overrides?: Record<string, any>) => {
+      const params: Record<string, any> = {
+        ...(busca ? { busca } : {}),
+        order: query.order,
+        range: String(query.range),
+        page: 1,
+        ...overrides,
+      };
 
-    if (store) params.store = store;
-    if (query.colors.length) params.colors = query.colors;
-    if (query.categories.length) params.category = query.categories;
+      if (store) params.store = store;
+      if (query.colors.length) params.colors = query.colors;
+      if (query.categories.length) params.category = query.categories;
+      if (query.comercialTypes.length) params.comercialType = query.comercialTypes;
+      if (query.saleOnly) params.sale_only = "1";
 
-    return params;
-  };
+      return params;
+    },
+    [busca, query, store]
+  );
 
   const fetchAndEmit = async (params: Record<string, any>) => {
     if (!fetchProducts || !onResults) return;
@@ -170,41 +204,44 @@ export default function Filter<T = any>({
     setTimeout(() => setFilterModal(false), 0);
   };
 
-  const loadPanelProducts = async (page = 1) => {
-    try {
-      setLoading(true);
-      const params = buildParams({ page });
-      const queryString = buildProductsQuery(params);
-      const res: any = await api.request({
-        method: "get",
-        url:
-          (context === "panel" ? "stores/products?" : "request/products?") +
-          queryString,
-      });
+  const loadPanelProducts = useCallback(
+    async (page = 1) => {
+      try {
+        setLoading(true);
+        const params = buildParams({ page });
+        const queryString = buildProductsQuery(params);
+        const res: any = await api.request({
+          method: "get",
+          url:
+            (context === "panel" ? "stores/products?" : "request/products?") +
+            queryString,
+        });
 
-      const raw = res?.data ?? res ?? {};
-      const items = raw.items ?? raw.data ?? (Array.isArray(raw) ? raw : []);
-      const total = Number(raw.total ?? items.length ?? 0);
-      const currentPage = Number(raw.page ?? page);
-      const pageSize = Number(
-        (raw.pageSize ?? raw.per_page ?? items.length) || 20
-      );
-      const pages = Number(raw.pages ?? Math.ceil(total / (pageSize || 1)));
+        const raw = res?.data ?? res ?? {};
+        const items = raw.items ?? raw.data ?? (Array.isArray(raw) ? raw : []);
+        const total = Number(raw.total ?? items.length ?? 0);
+        const currentPage = Number(raw.page ?? page);
+        const pageSize = Number(
+          (raw.pageSize ?? raw.per_page ?? items.length) || 20
+        );
+        const pages = Number(raw.pages ?? Math.ceil(total / (pageSize || 1)));
 
-      onResults?.(
-        { items, total, page: currentPage, pageSize, pages },
-        { page: currentPage }
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+        onResults?.(
+          { items, total, page: currentPage, pageSize, pages },
+          { page: currentPage }
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api, buildParams, context, onResults]
+  );
 
   useEffect(() => {
     if (context === "panel" && !fetchProducts) {
       loadPanelProducts(1);
     }
-  }, [context, fetchProducts]);
+  }, [context, fetchProducts, loadPanelProducts]);
 
   return (
     <div className="w-full">
@@ -239,6 +276,7 @@ export default function Filter<T = any>({
         onSubmit={handleSeeResults}
         store={store}
         storeView={storeView}
+        availableCommercialTypes={availableCommercialTypes}
       />
     </div>
   );
