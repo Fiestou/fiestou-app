@@ -3,9 +3,7 @@
 // e reutilizar na página de gestão fiscal
 
 import { useState, useCallback } from "react";
-import { FileText, Download, XCircle, RefreshCw, CheckCircle, AlertTriangle, Clock, Loader2 } from "lucide-react";
-import { Button } from "@/src/components/ui/form";
-import Modal from "@/src/components/utils/Modal";
+import { FileText, Download, RefreshCw, CheckCircle, AlertTriangle, Clock, XCircle } from "lucide-react";
 
 interface FiscalSectionProps {
   orderId: number;
@@ -16,7 +14,6 @@ interface FiscalSectionProps {
   nfeChave?: string | null;
   nfeEmitidoEm?: string | null;
   compact?: boolean;
-  onEmit?: () => void;
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -36,47 +33,13 @@ export default function FiscalSection({
   nfeChave,
   nfeEmitidoEm,
   compact = false,
-  onEmit,
 }: FiscalSectionProps) {
   const [loading, setLoading] = useState(false);
-  const [emitting, setEmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [currentStatus, setCurrentStatus] = useState(nfeStatus);
   const [currentNfeId, setCurrentNfeId] = useState(nfeId);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelJustificativa, setCancelJustificativa] = useState("");
-  const [cancelling, setCancelling] = useState(false);
 
-  // Emitir nota
-  const handleEmit = useCallback(async () => {
-    setEmitting(true);
-    setError(null);
-    setSuccess(null);
 
-    try {
-      const resp = await fetch("/api/fiscal/emit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      });
-
-      const data = await resp.json();
-
-      if (data.success) {
-        setCurrentNfeId(data.nfeId);
-        setCurrentStatus(data.status || "processando");
-        setSuccess(`Nota fiscal emitida com sucesso! ID: ${data.nfeId}`);
-        onEmit?.();
-      } else {
-        setError(data.error || data.details || "Falha ao emitir nota fiscal");
-      }
-    } catch (err: any) {
-      setError(err.message || "Erro de conexão");
-    } finally {
-      setEmitting(false);
-    }
-  }, [orderId, onEmit]);
 
   // Consultar status
   const handleRefresh = useCallback(async () => {
@@ -91,46 +54,14 @@ export default function FiscalSection({
       if (data.success) {
         setCurrentStatus(data.status);
       }
-    } catch (err: any) {
+    } catch {
       setError("Erro ao consultar status");
     } finally {
       setLoading(false);
     }
   }, [currentNfeId]);
 
-  // Cancelar
-  const handleCancel = useCallback(async () => {
-    if (!currentNfeId || cancelJustificativa.length < 15) return;
-    setCancelling(true);
-    setError(null);
 
-    try {
-      const resp = await fetch("/api/fiscal/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nfeId: currentNfeId,
-          justificativa: cancelJustificativa,
-          orderId,
-        }),
-      });
-
-      const data = await resp.json();
-
-      if (data.success) {
-        setCurrentStatus("cancelada");
-        setShowCancelModal(false);
-        setCancelJustificativa("");
-        setSuccess("Nota fiscal cancelada com sucesso");
-      } else {
-        setError(data.error || "Falha ao cancelar");
-      }
-    } catch (err: any) {
-      setError("Erro ao cancelar nota fiscal");
-    } finally {
-      setCancelling(false);
-    }
-  }, [currentNfeId, cancelJustificativa, orderId]);
 
   // Download
   const handleDownload = useCallback(
@@ -171,37 +102,13 @@ export default function FiscalSection({
         </div>
       )}
 
-      {success && (
-        <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-          <div className="flex items-center gap-2">
-            <CheckCircle size={14} />
-            {success}
-          </div>
-        </div>
-      )}
-
       {/* Sem nota emitida */}
       {!hasNote && (
         <div className="text-center py-4">
           <FileText size={32} className="mx-auto text-zinc-300 mb-2" />
-          <p className="text-sm text-zinc-500 mb-3">Nenhuma nota fiscal emitida para este pedido</p>
-          <button
-            onClick={handleEmit}
-            disabled={emitting}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 disabled:bg-zinc-300 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
-          >
-            {emitting ? (
-              <>
-                <Loader2 size={14} className="animate-spin" />
-                Emitindo...
-              </>
-            ) : (
-              <>
-                <FileText size={14} />
-                Emitir Nota Fiscal
-              </>
-            )}
-          </button>
+          <p className="text-sm text-zinc-500">
+            A nota fiscal será emitida automaticamente pela Fiestou após a confirmação do pagamento.
+          </p>
         </div>
       )}
 
@@ -230,14 +137,6 @@ export default function FiscalSection({
                 </p>
               </div>
             )}
-            <div>
-              <span className="text-zinc-400 text-xs">Ambiente</span>
-              <p className="font-medium text-zinc-900">
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">
-                  SANDBOX
-                </span>
-              </p>
-            </div>
           </div>
 
           {/* Chave de acesso */}
@@ -279,74 +178,10 @@ export default function FiscalSection({
               <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
               Atualizar
             </button>
-
-            {currentStatus === "autorizada" && (
-              <button
-                onClick={() => setShowCancelModal(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors"
-              >
-                <XCircle size={12} />
-                Cancelar
-              </button>
-            )}
-
-            {(currentStatus === "rejeitada" || currentStatus === "erro") && (
-              <button
-                onClick={handleEmit}
-                disabled={emitting}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded-lg transition-colors"
-              >
-                {emitting ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                Reemitir
-              </button>
-            )}
           </div>
         </div>
       )}
 
-      {/* Modal de cancelamento */}
-      {showCancelModal && (
-        <Modal status={showCancelModal} close={() => setShowCancelModal(false)} size="sm">
-          <div className="p-6">
-            <h4 className="font-title text-lg font-bold text-zinc-900 mb-2">
-              Cancelar Nota Fiscal
-            </h4>
-            <p className="text-sm text-zinc-500 mb-4">
-              Informe o motivo do cancelamento. Mínimo de 15 caracteres.
-            </p>
-
-            <textarea
-              value={cancelJustificativa}
-              onChange={(e) => setCancelJustificativa(e.target.value)}
-              placeholder="Motivo do cancelamento..."
-              rows={3}
-              className="w-full border border-zinc-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none resize-none"
-            />
-
-            <div className="flex items-center justify-between mt-1 mb-4">
-              <span className={`text-xs ${cancelJustificativa.length < 15 ? "text-red-400" : "text-green-500"}`}>
-                {cancelJustificativa.length}/15 caracteres mínimos
-              </span>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
-              >
-                Voltar
-              </button>
-              <button
-                onClick={handleCancel}
-                disabled={cancelling || cancelJustificativa.length < 15}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 disabled:bg-zinc-300 rounded-lg transition-colors"
-              >
-                {cancelling ? "Cancelando..." : "Confirmar Cancelamento"}
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }
