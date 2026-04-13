@@ -10,6 +10,7 @@ import {
   Download,
   Settings,
   FileSpreadsheet,
+  FileText,
   AlertTriangle,
   CalendarClock,
   ShieldAlert,
@@ -85,6 +86,14 @@ const QUICK_ACTIONS = [
     href: "/painel/loja",
     icon: Settings,
     color: "bg-purple-50 text-purple-600",
+    priority: "secondary",
+  },
+  {
+    title: "Notas Fiscais",
+    description: "Acompanhe as notas dos seus pedidos",
+    href: "/painel/fiscal",
+    icon: FileText,
+    color: "bg-sky-50 text-sky-600",
     priority: "secondary",
   },
 ];
@@ -280,7 +289,7 @@ export default function Parceiro() {
   const primaryQuickActions = QUICK_ACTIONS.filter((action) => action.priority === "primary");
   const secondaryQuickActions = QUICK_ACTIONS.filter((action) => action.priority === "secondary");
   const simpleQuickActions = QUICK_ACTIONS.filter((action) =>
-    ["/painel/pedidos", "/painel/produtos/novo", "/painel/financeiro", "/painel/loja"].includes(action.href)
+    ["/painel/pedidos", "/painel/produtos/novo", "/painel/financeiro", "/painel/loja", "/painel/fiscal"].includes(action.href)
   );
 
   const getBalance = async () => {

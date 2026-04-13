@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Landmark, ShieldCheck, Wallet, LucideIcon } from "lucide-react";
+import { Landmark, ShieldCheck, Wallet, FileText, LucideIcon } from "lucide-react";
 
 type FinanceNavItem = {
   label: string;
@@ -27,10 +27,17 @@ const ITEMS: FinanceNavItem[] = [
   },
   {
     label: "Conta bancária",
-    shortLabel: "Conta bancária",
+    shortLabel: "Conta",
     href: "/painel/conta",
     description: "Conta onde sua loja recebe",
     icon: Landmark,
+  },
+  {
+    label: "Notas Fiscais",
+    shortLabel: "Fiscal",
+    href: "/painel/fiscal",
+    description: "Acompanhe suas notas fiscais",
+    icon: FileText,
   },
 ];
 
@@ -55,7 +62,7 @@ export default function FinanceSectionNav() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;
