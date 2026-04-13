@@ -1,3 +1,4 @@
+import FiscalSection from "@/src/components/painel/FiscalSection";
 import Link from "next/link";
 import Api from "@/src/services/api";
 import { getOrderCustomerNotes, OrderType } from "@/src/models/order";
@@ -1676,6 +1677,15 @@ export default function Pedido() {
                 </div>
               )}
 
+
+              {/* Nota Fiscal */}
+              <FiscalSection
+                orderId={order?.id}
+                orderTotal={order?.total || 0}
+                nfeId={order?.metadata?.nuvemfiscal_nfe_id}
+                nfeStatus={order?.metadata?.nuvemfiscal_status}
+                nfeEmitidoEm={order?.metadata?.nuvemfiscal_emitido_em}
+              />
               {groupedItemsByStore.length > 1 && (
                 <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5">
                   <div className="flex items-center gap-2 mb-3">

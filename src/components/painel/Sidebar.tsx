@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  FileText,
 } from "lucide-react";
 
 type NavItem = {
@@ -76,6 +77,11 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/painel/conta",
           },
         ],
+      },
+      {
+        label: "Fiscal",
+        href: "/painel/fiscal",
+        icon: <FileText size={iconSize} />,
       },
     ],
   },
