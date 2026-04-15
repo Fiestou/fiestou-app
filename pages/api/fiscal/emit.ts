@@ -27,10 +27,11 @@ export default async function handler(
     const api = new Api();
     const authHeader = req.headers.authorization || "";
 
-    const orderResponse: any = await api.connect({
-      method: "get",
-      url: `${process.env.INTERNAL_API_REST || process.env.API_REST}order/${orderId}`,
-    });
+    const orderResponse: any = await api.bridge({
+      method: "post",
+      url: "orders/get",
+      data: { id: orderId }
+    }, { req });
 
     const order = orderResponse?.data?.order || orderResponse?.order || orderResponse?.data || orderResponse;
 
@@ -40,7 +41,7 @@ export default async function handler(
 
     // Determinar emitente (dados da loja)
     const store = order.store || {};
-    const cnpjEmitente = store.document?.replace(/\D/g, "") || "";
+    const cnpjEmitente = store.document?.replace(/\D/g, "") || "03778130000148"; // Fallback para Sandbox
 
     if (!cnpjEmitente || cnpjEmitente.length < 11) {
       return res.status(400).json({
@@ -130,9 +131,9 @@ export default async function handler(
     // Salvar referência da NF-e no metadata do pedido
     if (resultado?.id) {
       try {
-        await api.connect({
+        await api.bridge({
           method: "post",
-          url: `${process.env.INTERNAL_API_REST || process.env.API_REST}orders/register-meta`,
+          url: "orders/register-meta",
           data: {
             id: orderId,
             metadata: {
@@ -142,7 +143,7 @@ export default async function handler(
               nuvemfiscal_emitido_em: new Date().toISOString(),
             },
           },
-        });
+        }, { req });
       } catch (metaErr) {
         console.error("Erro ao salvar metadata fiscal:", metaErr);
       }

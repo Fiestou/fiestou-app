@@ -86,6 +86,7 @@ interface CadastrarEmpresaParams {
   nome_fantasia?: string;
   inscricao_estadual?: string;
   inscricao_municipal?: string;
+  email?: string;
   regime_tributario: number;
   endereco: {
     logradouro: string;
@@ -105,8 +106,9 @@ export async function cadastrarEmpresa(data: CadastrarEmpresaParams) {
 
   const response = await client.post("/empresas", {
     cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
-    razao_social: data.razao_social,
+    nome_razao_social: data.razao_social,
     nome_fantasia: data.nome_fantasia || data.razao_social,
+    email: data.email || "teste@fiestou.com.br",
     inscricao_estadual: data.inscricao_estadual,
     inscricao_municipal: data.inscricao_municipal,
     optante_simples_nacional: data.optante_simples_nacional ?? (data.regime_tributario === 1),
@@ -115,11 +117,11 @@ export async function cadastrarEmpresa(data: CadastrarEmpresaParams) {
       numero: data.endereco.numero,
       complemento: data.endereco.complemento || "",
       bairro: data.endereco.bairro,
-      codigo_municipio: data.endereco.codigo_municipio,
+      codigo_municipio: String(data.endereco.codigo_municipio),
       cidade: data.endereco.cidade,
       uf: data.endereco.uf,
       cep: data.endereco.cep.replace(/\D/g, ""),
-      codigo_pais: 1058,
+      codigo_pais: "1058",
       pais: "Brasil",
     },
   });
@@ -235,7 +237,7 @@ export async function emitirNfe(params: EmitirNfeParams) {
 
   // Monta o corpo da NF-e no formato NuvemFiscal
   const body: any = {
-    ambiente: params.ambiente,
+    ambiente: params.ambiente === 1 ? "producao" : "homologacao",
     referencia: params.referencia_externa,
     infNFe: {
       versao: "4.00",
@@ -244,6 +246,7 @@ export async function emitirNfe(params: EmitirNfeParams) {
         natOp: params.natureza_operacao,
         mod: 55,
         serie: 1,
+        nNF: Math.floor(Math.random() * 999999) + 1,
         dhEmi: new Date().toISOString(),
         tpNF: 1, // Saída
         idDest: 1, // Operação interna
@@ -255,6 +258,7 @@ export async function emitirNfe(params: EmitirNfeParams) {
         indFinal: 1, // Consumidor final
         indPres: 2, // Internet
         procEmi: 0,
+        verProc: "fiestou-app-1.0",
       },
       emit: {
         CNPJ: params.emitente.cnpj.replace(/\D/g, ""),
@@ -275,9 +279,11 @@ export async function emitirNfe(params: EmitirNfeParams) {
         CRT: params.emitente.regime_tributario,
       },
       dest: {
-        ...(params.destinatario.cpf_cnpj.replace(/\D/g, "").length === 11
+        ...(params.destinatario.cpf_cnpj !== "00000000000" && params.destinatario.cpf_cnpj.replace(/\D/g, "").length === 11
           ? { CPF: params.destinatario.cpf_cnpj.replace(/\D/g, "") }
-          : { CNPJ: params.destinatario.cpf_cnpj.replace(/\D/g, "") }),
+          : params.destinatario.cpf_cnpj !== "00000000000" && params.destinatario.cpf_cnpj.replace(/\D/g, "").length === 14
+          ? { CNPJ: params.destinatario.cpf_cnpj.replace(/\D/g, "") }
+          : {}),
         xNome: params.destinatario.nome.substring(0, 60),
         indIEDest: params.destinatario.indicador_ie,
         ...(params.destinatario.email ? { email: params.destinatario.email } : {}),
