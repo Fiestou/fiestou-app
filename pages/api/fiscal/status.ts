@@ -1,8 +1,8 @@
 // pages/api/fiscal/status.ts
-// Consulta status de uma NF-e na NuvemFiscal
+// Consulta status de uma NFS-e na Spedy
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { consultarNfe } from "@/src/services/nuvemfiscal";
+import { consultarNfse } from "@/src/services/spedy";
 
 export default async function handler(
   req: NextApiRequest,
@@ -19,7 +19,7 @@ export default async function handler(
   }
 
   try {
-    const resultado = await consultarNfe(nfeId);
+    const resultado = await consultarNfse(nfeId);
 
     return res.status(200).json({
       success: true,
@@ -32,9 +32,10 @@ export default async function handler(
       valorTotal: resultado.valor_total,
       motivoStatus: resultado.motivo_status,
       ambiente: resultado.ambiente,
+      provider: "spedy",
     });
   } catch (error: any) {
-    console.error("Erro ao consultar NF-e:", error?.response?.data || error.message);
+    console.error("Erro ao consultar NFS-e:", error?.response?.data || error.message);
 
     return res.status(500).json({
       success: false,

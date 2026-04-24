@@ -1,11 +1,11 @@
 // pages/api/fiscal/emit.ts
-// Emite NF-e via NuvemFiscal para um pedido específico
+// Emite NFS-e via Spedy para um pedido específico
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
-  emitirNfe,
+  emitirNfse,
   consultarEmpresa,
-} from "@/src/services/nuvemfiscal";
+} from "@/src/services/spedy";
 import Api from "@/src/services/api";
 
 export default async function handler(
@@ -54,81 +54,83 @@ export default async function handler(
     const delivery = order.delivery || {};
     const deliveryAddress = delivery.address || order.delivery_address || {};
 
-    // Montar itens
-    const orderItems = order.items || order.listItems || [];
-    const itensNfe = orderItems.map((item: any, index: number) => {
-      const unitPrice = Number(item.unit_price || item.unitPrice || item.valor_unitario || 0);
-      const qty = Number(item.quantity || item.quantidade || 1);
-      const total = Number(item.total || unitPrice * qty);
+    // Montar valores
+    const valorTotal = Number(order.total || 0);
+    const taxaFiestou = Number(order.fees_amount || order.taxes || (valorTotal * 0.10)); // Fallback 10%
+    
+    const isInternal = store.is_internal_store === true;
+    const ambiente = (process.env.SPEDY_ENVIRONMENT === "production" ? 1 : 2) as 1 | 2;
 
-      return {
-        numero_item: index + 1,
-        codigo_produto: String(item.product_id || item.productId || item.id || index + 1),
-        descricao: String(item.name || item.nome || item.description || "Produto Fiestou").substring(0, 120),
-        ncm: "95051000",     // Artigos para festas (padrão)
-        cfop: 5102,          // Venda dentro do estado (padrão)
-        unidade: "UN",
-        quantidade: qty,
-        valor_unitario: unitPrice,
-        valor_total: total,
+    let nfseParams;
+
+    if (isInternal) {
+      // LOJA INTERNA: Emite NFS-e pro Consumidor, CTISS 772920200, Valor Full
+      nfseParams = {
+        ambiente,
+        referencia: `fiestou-direta-${orderId}`,
+        emitente: {
+          cpf_cnpj: cnpjEmitente,
+        },
+        tomador: {
+          cpf_cnpj: customer.document || customer.cpf || "00000000000",
+          razao_social: customer.name || "Consumidor Final",
+          email: customer.email || undefined,
+          endereco: {
+            logradouro: deliveryAddress.street || deliveryAddress.logradouro || "Não informado",
+            numero: deliveryAddress.number || deliveryAddress.numero || "S/N",
+            complemento: deliveryAddress.complement || deliveryAddress.complemento || "",
+            bairro: deliveryAddress.neighborhood || deliveryAddress.bairro || "Não informado",
+            codigo_municipio: deliveryAddress.cityCode || "2507507",
+            cidade: deliveryAddress.city || deliveryAddress.cidade || "João Pessoa",
+            uf: deliveryAddress.state || deliveryAddress.uf || "PB",
+            cep: (deliveryAddress.zipcode || deliveryAddress.cep || "58000000").replace(/\D/g, ""),
+          }
+        },
+        servico: {
+          valor_servicos: valorTotal,
+          codigo_tributacao_municipio: "772920200", // Aluguel
+          item_lista_servico: "7.02", 
+          discriminacao: `Locação de Equipamentos. Pedido #${orderId}`,
+          codigo_municipio: "2507507",
+        }
       };
-    });
-
-    if (itensNfe.length === 0) {
-      return res.status(400).json({ error: "Pedido não possui itens" });
+    } else {
+      // LOJISTA PARCEIRO: Emite NFS-e pro Lojista, CTISS 749010400, Valor Taxa
+      nfseParams = {
+        ambiente,
+        referencia: `fiestou-taxa-${orderId}`,
+        emitente: {
+          cpf_cnpj: cnpjEmitente, // Fiestou
+        },
+        tomador: {
+          cpf_cnpj: store.document || "00000000000",
+          razao_social: store.companyName || store.title || "Lojista Parceiro",
+          email: store.email || undefined,
+          endereco: {
+            logradouro: store.street || "Não informado",
+            numero: store.number || "S/N",
+            complemento: store.complement || "",
+            bairro: store.neighborhood || "Centro",
+            codigo_municipio: store.cityCode || "2507507",
+            cidade: store.city || "João Pessoa",
+            uf: store.state || "PB",
+            cep: (store.zipCode || store.zipcode || "58000000").replace(/\D/g, ""),
+          }
+        },
+        servico: {
+          valor_servicos: taxaFiestou, // APENAS A COMISSÃO
+          codigo_tributacao_municipio: "749010400", // Agenciamento
+          item_lista_servico: "10.02",
+          discriminacao: `Taxa de Intermediação de Negócios na plataforma Fiestou. Pedido #${orderId}`,
+          codigo_municipio: "2507507",
+        }
+      };
     }
 
-    const valorTotal = Number(order.total || 0);
+    // Emitir NFS-e
+    const resultado = await emitirNfse(nfseParams);
 
-    // Determinar ambiente (sandbox por padrão)
-    const ambiente = (process.env.NUVEMFISCAL_ENVIRONMENT === "production" ? 1 : 2) as 1 | 2;
-
-    // Emitir NF-e
-    const resultado = await emitirNfe({
-      ambiente,
-      emitente: {
-        cnpj: cnpjEmitente,
-        razao_social: store.companyName || store.title || "Empresa Emitente",
-        inscricao_estadual: store.inscricaoEstadual || undefined,
-        regime_tributario: 1, // Simples Nacional (padrão)
-        endereco: {
-          logradouro: store.street || "Rua não informada",
-          numero: store.number || "S/N",
-          complemento: store.complement || "",
-          bairro: store.neighborhood || "Centro",
-          codigo_municipio: 2507507, // João Pessoa (padrão)
-          nome_municipio: store.city || "Joao Pessoa",
-          uf: store.state || "PB",
-          cep: (store.zipCode || store.zipcode || "58000000").replace(/\D/g, ""),
-        },
-      },
-      destinatario: {
-        cpf_cnpj: customer.document || customer.cpf || "00000000000",
-        nome: customer.name || "Consumidor Final",
-        email: customer.email || undefined,
-        indicador_ie: 9, // Não contribuinte
-        endereco: {
-          logradouro: deliveryAddress.street || deliveryAddress.logradouro || "Não informado",
-          numero: deliveryAddress.number || deliveryAddress.numero || "S/N",
-          complemento: deliveryAddress.complement || deliveryAddress.complemento || "",
-          bairro: deliveryAddress.neighborhood || deliveryAddress.bairro || "Não informado",
-          codigo_municipio: deliveryAddress.cityCode || 2507507,
-          nome_municipio: deliveryAddress.city || deliveryAddress.cidade || "Joao Pessoa",
-          uf: deliveryAddress.state || deliveryAddress.uf || "PB",
-          cep: (deliveryAddress.zipcode || deliveryAddress.cep || "58000000").replace(/\D/g, ""),
-        },
-      },
-      itens: itensNfe,
-      frete: {
-        modalidade: 9, // Sem frete (por conta do emitente)
-      },
-      natureza_operacao: "VENDA DE MERCADORIAS",
-      valor_total: valorTotal,
-      informacoes_complementares: `Pedido Fiestou #${orderId}`,
-      referencia_externa: `fiestou-order-${orderId}`,
-    });
-
-    // Salvar referência da NF-e no metadata do pedido
+    // Salvar referência da NFS-e no metadata do pedido
     if (resultado?.id) {
       try {
         await api.bridge({
@@ -137,10 +139,11 @@ export default async function handler(
           data: {
             id: orderId,
             metadata: {
-              nuvemfiscal_nfe_id: resultado.id,
-              nuvemfiscal_status: resultado.status || "processando",
-              nuvemfiscal_ambiente: ambiente,
-              nuvemfiscal_emitido_em: new Date().toISOString(),
+              fiscal_nfse_id: resultado.id,
+              fiscal_status: resultado.status || "processando",
+              fiscal_ambiente: ambiente,
+              fiscal_emitido_em: new Date().toISOString(),
+              fiscal_provider: "spedy",
             },
           },
         }, { req });
@@ -158,7 +161,7 @@ export default async function handler(
       ambiente: ambiente === 1 ? "producao" : "sandbox",
     });
   } catch (error: any) {
-    console.error("Erro ao emitir NF-e:", error?.response?.data || error.message);
+    console.error("Erro ao emitir NFS-e:", error?.response?.data || error.message);
 
     return res.status(500).json({
       success: false,

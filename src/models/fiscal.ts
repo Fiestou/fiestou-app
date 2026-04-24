@@ -1,5 +1,5 @@
 // src/models/fiscal.ts
-// Tipagens para integração NuvemFiscal
+// Tipagens para integração fiscal (Spedy)
 
 export type NfeStatus =
   | "processando"
@@ -30,7 +30,7 @@ export interface FiscalConfig {
   ncmPadrao: string;
   cfopPadrao: number;
   certificadoUploadado: boolean;
-  nuvemfiscalEmpresaId?: string;
+  spedyCompanyId?: string;
   emissaoAutomatica: boolean;
 }
 
@@ -80,20 +80,21 @@ export interface EmitNfePayload {
   ambiente?: 1 | 2; // 1=Produção, 2=Homologação
 }
 
-export interface NuvemFiscalTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-}
-
-export interface NuvemFiscalNfeResponse {
+export interface SpedyInvoiceResponse {
   id: string;
   status: string;
   numero?: number;
-  serie?: number;
+  serie?: string;
   chave?: string;
   data_emissao?: string;
   valor_total?: number;
   motivo_status?: string;
   ambiente?: number;
+  spedy_id?: string;
+  spedy_status?: string;
+  processing_detail?: {
+    status: string;
+    message: string;
+    code: string;
+  };
 }

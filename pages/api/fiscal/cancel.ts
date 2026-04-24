@@ -1,8 +1,8 @@
 // pages/api/fiscal/cancel.ts
-// Cancela uma NF-e via NuvemFiscal
+// Cancela uma NFS-e via Spedy
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { cancelarNfe } from "@/src/services/nuvemfiscal";
+import { cancelarNfse } from "@/src/services/spedy";
 import Api from "@/src/services/api";
 
 export default async function handler(
@@ -26,24 +26,24 @@ export default async function handler(
   }
 
   try {
-    const resultado = await cancelarNfe(nfeId, justificativa);
+    const resultado = await cancelarNfse(nfeId, justificativa);
 
     // Atualizar metadata do pedido se orderId informado
     if (orderId) {
       try {
         const api = new Api();
-        await api.connect({
+        await api.bridge({
           method: "post",
-          url: `${process.env.INTERNAL_API_REST || process.env.API_REST}orders/register-meta`,
+          url: "orders/register-meta",
           data: {
             id: orderId,
             metadata: {
-              nuvemfiscal_status: "cancelada",
-              nuvemfiscal_cancelado_em: new Date().toISOString(),
-              nuvemfiscal_justificativa: justificativa,
+              fiscal_status: "cancelada",
+              fiscal_cancelado_em: new Date().toISOString(),
+              fiscal_justificativa: justificativa,
             },
           },
-        });
+        }, { req });
       } catch (metaErr) {
         console.error("Erro ao atualizar metadata fiscal:", metaErr);
       }
@@ -55,7 +55,7 @@ export default async function handler(
       nfeId,
     });
   } catch (error: any) {
-    console.error("Erro ao cancelar NF-e:", error?.response?.data || error.message);
+    console.error("Erro ao cancelar NFS-e:", error?.response?.data || error.message);
 
     return res.status(500).json({
       success: false,

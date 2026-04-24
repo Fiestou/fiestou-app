@@ -1,8 +1,8 @@
 // pages/api/fiscal/download.ts
-// Faz proxy de download do PDF ou XML da NF-e
+// Faz proxy de download do PDF ou XML da NFS-e via Spedy
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { downloadNfePdf, downloadNfeXml } from "@/src/services/nuvemfiscal";
+import { downloadNfsePdf, downloadNfseXml } from "@/src/services/spedy";
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,19 +22,19 @@ export default async function handler(
 
   try {
     if (tipo === "xml") {
-      const xml = await downloadNfeXml(nfeId);
+      const xml = await downloadNfseXml(nfeId);
       res.setHeader("Content-Type", "application/xml");
-      res.setHeader("Content-Disposition", `attachment; filename=nfe-${nfeId}.xml`);
+      res.setHeader("Content-Disposition", `attachment; filename=nfse-${nfeId}.xml`);
       return res.status(200).send(xml);
     }
 
     // PDF por padrão
-    const pdf = await downloadNfePdf(nfeId);
+    const pdf = await downloadNfsePdf(nfeId);
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=nfe-${nfeId}.pdf`);
+    res.setHeader("Content-Disposition", `attachment; filename=nfse-${nfeId}.pdf`);
     return res.status(200).send(pdf);
   } catch (error: any) {
-    console.error("Erro ao baixar NF-e:", error?.response?.data || error.message);
+    console.error("Erro ao baixar NFS-e:", error?.response?.data || error.message);
 
     return res.status(500).json({
       success: false,

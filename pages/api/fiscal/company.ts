@@ -1,12 +1,12 @@
 // pages/api/fiscal/company.ts
-// Cadastro e consulta de empresa na NuvemFiscal
+// Cadastro e consulta de empresa na Spedy
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
   cadastrarEmpresa,
   consultarEmpresa,
   uploadCertificado,
-} from "@/src/services/nuvemfiscal";
+} from "@/src/services/spedy";
 
 export default async function handler(
   req: NextApiRequest,
@@ -26,7 +26,7 @@ export default async function handler(
     } catch (error: any) {
       const status = error?.response?.status;
       if (status === 404) {
-        return res.status(404).json({ success: false, error: "Empresa não cadastrada na NuvemFiscal" });
+        return res.status(404).json({ success: false, error: "Empresa não cadastrada na Spedy" });
       }
       return res.status(500).json({
         success: false,
@@ -36,22 +36,23 @@ export default async function handler(
     }
   }
 
-  // POST — cadastrar empresa
+  // POST — cadastrar empresa ou upload certificado
   if (req.method === "POST") {
     const { action } = req.body;
 
     // Upload de certificado digital
     if (action === "upload_certificado") {
-      const { cnpj, certificado_base64, senha } = req.body;
+      const { companyId, certificado_base64, senha } = req.body;
 
-      if (!cnpj || !certificado_base64 || !senha) {
+      if (!companyId || !certificado_base64 || !senha) {
         return res.status(400).json({
-          error: "cnpj, certificado_base64 e senha são obrigatórios",
+          error: "companyId, certificado_base64 e senha são obrigatórios",
         });
       }
 
       try {
-        const resultado = await uploadCertificado(cnpj, certificado_base64, senha);
+        const certBuffer = Buffer.from(certificado_base64, "base64");
+        const resultado = await uploadCertificado(companyId, certBuffer, senha);
         return res.status(200).json({ success: true, resultado });
       } catch (error: any) {
         return res.status(500).json({
