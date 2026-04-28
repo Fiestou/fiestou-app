@@ -77,6 +77,12 @@ function ProductCard({ product }: { product: ProductType | any }) {
                   <span>Editável</span>
                 </div>
               )}
+              {product?.fragility === "yes" && (
+                <div className="flex items-center gap-1.5 bg-amber-50 text-amber-700 backdrop-blur-sm rounded-full text-xs font-medium px-3 py-1.5 shadow-sm">
+                  <Icon icon="fa-wine-glass-alt" className="text-xs" type="fas" />
+                  <span>Frágil</span>
+                </div>
+              )}
             </div>
 
             <div className="ml-auto">
