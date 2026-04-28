@@ -3,11 +3,17 @@ import { OrderType } from "@/src/models/order";
 import { ProductOrderType } from "@/src/models/product";
 import axios from "axios";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { isAuthenticatedRequest } from "@/src/server/api-route-auth";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const allowed = await isAuthenticatedRequest(req);
+  if (!allowed) {
+    return res.status(403).json({ response: false, message: "forbidden" });
+  }
+
   const { payment } = req.body;
 
   const headers = {

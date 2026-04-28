@@ -26,10 +26,12 @@ export function Footer(props: FooterType) {
   const [whatsapp, setWhatsapp] = useState(false as boolean);
   const getWhatsapp = () => {
     const url = window.location.href;
+    const currentPath = window.location.pathname || pathname || "";
     const isHidden =
       url.includes("admin") ||
       url.includes("carrinho") ||
-      url.includes("checkout");
+      url.includes("checkout") ||
+      currentPath.startsWith("/produtos");
 
     if (isHidden) return null;
 
@@ -118,7 +120,7 @@ export function Footer(props: FooterType) {
                 </Link>
               </div>
               <div className="flex flex-col items-center text-center gap-4">
-                <span className="text-zinc-900 font-bold">Cadastrar</span>
+                <span className="text-zinc-900 font-bold">Comece na Fiestou</span>
                 <Link
                   href="/parceiros/seja-parceiro"
                   className="hover:text-yellow-500 ease"
@@ -129,7 +131,7 @@ export function Footer(props: FooterType) {
                   href="/cadastre-se"
                   className="hover:text-yellow-500 ease"
                 >
-                  <span>Como cliente</span>
+                  <span>Criar conta de cliente</span>
                 </Link>
                 <Link
                   href="/comunicados/politica-de-privacidade"

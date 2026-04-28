@@ -212,6 +212,91 @@ export interface OrderType {
   }>;
 
   products: Array<ProductOrderType>;
+  orders?: Array<any>;
+}
+
+export function getOrderCustomerNote(order: any): string {
+  const metadata =
+    order && typeof order === "object" && !Array.isArray(order)
+      ? order.metadata ?? {}
+      : {};
+
+  const rawValue =
+    metadata?.customer_note ??
+    metadata?.order_note ??
+    metadata?.customerNote ??
+    metadata?.orderNote ??
+    "";
+
+  return String(rawValue ?? "").trim();
+}
+
+export interface OrderCustomerNoteEntry {
+  orderId?: number | null;
+  storeId?: number | null;
+  storeName?: string | null;
+  note: string;
+}
+
+function parseOrderMetadata(value: any) {
+  if (!value) return {};
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+
+  if (typeof value === "object") {
+    return value;
+  }
+
+  return {};
+}
+
+export function getOrderCustomerNotes(order: any): OrderCustomerNoteEntry[] {
+  const splitOrders = Array.isArray(order?.orders) ? order.orders : [];
+  const notesFromSplitOrders = splitOrders
+    .map((splitOrder: any) => {
+      const metadata = parseOrderMetadata(splitOrder?.metadata);
+      const note = getOrderCustomerNote({ metadata });
+
+      if (!note) {
+        return null;
+      }
+
+      return {
+        orderId: Number(splitOrder?.id ?? 0) || null,
+        storeId: Number(splitOrder?.store?.id ?? splitOrder?.storeId ?? 0) || null,
+        storeName:
+          splitOrder?.store?.companyName ||
+          splitOrder?.store?.title ||
+          splitOrder?.store?.slug ||
+          null,
+        note,
+      } as OrderCustomerNoteEntry;
+    })
+    .filter(Boolean) as OrderCustomerNoteEntry[];
+
+  if (notesFromSplitOrders.length > 0) {
+    return notesFromSplitOrders;
+  }
+
+  const fallbackNote = getOrderCustomerNote(order);
+  if (!fallbackNote) {
+    return [];
+  }
+
+  return [
+    {
+      orderId: Number(order?.id ?? 0) || null,
+      storeId: Number(order?.store?.id ?? order?.storeId ?? 0) || null,
+      storeName:
+        order?.store?.companyName || order?.store?.title || order?.store?.slug || null,
+      note: fallbackNote,
+    },
+  ];
 }
 
 

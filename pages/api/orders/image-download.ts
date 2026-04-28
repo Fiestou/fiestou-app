@@ -1,3 +1,5 @@
+import { isAuthenticatedRequest } from "@/src/server/api-route-auth";
+
 const CRC32_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let i = 0; i < 256; i += 1) {
@@ -141,6 +143,11 @@ function getAllowedHosts(): Set<string> {
 }
 
 export default async function handler(req: any, res: any) {
+  const allowed = await isAuthenticatedRequest(req);
+  if (!allowed) {
+    return res.status(403).json({ response: false, message: "forbidden" });
+  }
+
   if (req.method !== "GET") {
     return res.status(405).json({ response: false, message: "Método não permitido" });
   }

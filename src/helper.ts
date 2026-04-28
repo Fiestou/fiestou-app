@@ -289,12 +289,59 @@ export function shortId(): string {
   return id;
 }
 
+function resolveImageApiBaseUrl() {
+  const explicitBase = String(
+    process.env.NEXT_PUBLIC_BASE_URL ?? process.env.BASE_URL ?? ""
+  )
+    .trim()
+    .replace(/\/+$/, "");
+
+  if (explicitBase) {
+    return explicitBase;
+  }
+
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase();
+    if (host === "teste.fiestou.com.br" || host === "www.teste.fiestou.com.br") {
+      return "https://testeapi.fiestou.com.br";
+    }
+
+    if (host === "fiestou.com.br" || host === "www.fiestou.com.br") {
+      return "https://api.fiestou.com.br";
+    }
+  }
+
+  return "https://api.fiestou.com.br";
+}
+
+export function normalizeImageUrl(input?: string | null) {
+  const raw = String(input || "").trim();
+  if (!raw || raw.startsWith("data:image")) {
+    return raw;
+  }
+
+  const baseUrl = resolveImageApiBaseUrl();
+  const storageBase = `${baseUrl}/storage`;
+  const normalized = raw
+    .replace(/^\/+storage\//i, `${storageBase}/`)
+    .replace(/^storage\//i, `${storageBase}/`)
+    .replace(/^https?:\/\/api\.fiestou\.com(?=\/|$)/i, baseUrl)
+    .replace(/^https?:\/\/(www\.)?fiestou\.com\.br\/storage/i, storageBase)
+    .replace(/^https?:\/\/(www\.)?teste\.fiestou\.com\.br\/storage/i, storageBase);
+
+  if (normalized.startsWith("/storage/")) {
+    return `${storageBase}${normalized.replace(/^\/storage/i, "")}`;
+  }
+
+  return normalized;
+}
+
 export function getImage(image: any, size?: string) {
   if (!image) return "";
 
   // Se recebeu apenas uma URL string, retorna ela diretamente
   if (typeof image === "string") {
-    return image;
+    return normalizeImageUrl(image);
   }
 
   if (!!image?.medias) {
@@ -327,11 +374,13 @@ export function getImage(image: any, size?: string) {
     : (mediaList.find((item) => isMediaObject(item)) as any) ?? {};
 
   if (!looksLikeSingleMedia && !img?.url && !img?.base_url && firstString) {
-    return firstString;
+    return normalizeImageUrl(firstString);
   }
 
   if (img?.extension === ".gif") {
-    return !!img?.base_url ? img.base_url + img.permanent_url : "";
+    return !!img?.base_url
+      ? normalizeImageUrl(img.base_url + img.permanent_url)
+      : "";
   }
 
   // Novo formato: { url: 'http://...', sizes: { thumb: '/path/...', ... } }
@@ -346,22 +395,22 @@ export function getImage(image: any, size?: string) {
       .find((value) => typeof value === "string" && value.trim().length > 0);
 
     if (!selected) {
-      return img.url;
+      return normalizeImageUrl(img.url);
     }
 
     if (String(selected).startsWith("http")) {
-      return selected;
+      return normalizeImageUrl(selected);
     }
 
     const baseUrl = String(img.url).includes("/storage/")
       ? String(img.url).split("/storage/")[0] + "/storage"
       : img?.base_url || "";
 
-    return baseUrl ? `${baseUrl}${selected}` : img.url;
+    return normalizeImageUrl(baseUrl ? `${baseUrl}${selected}` : img.url);
   }
 
   if (img?.url && !img?.sizes) {
-    return img.url;
+    return normalizeImageUrl(img.url);
   }
 
   // Formato antigo: { base_url: '...', details: { sizes: {...} } }
@@ -376,20 +425,22 @@ export function getImage(image: any, size?: string) {
       .find((value) => typeof value === "string" && value.trim().length > 0);
 
     if (selected) {
-      return String(selected).startsWith("http")
-        ? selected
-        : `${img.base_url}${selected}`;
+      return normalizeImageUrl(
+        String(selected).startsWith("http")
+          ? selected
+          : `${img.base_url}${selected}`
+      );
     }
 
     if (img?.permanent_url) {
-      return `${img.base_url}${img.permanent_url}`;
+      return normalizeImageUrl(`${img.base_url}${img.permanent_url}`);
     }
 
     return "";
   }
 
   if (img?.base_url && img?.permanent_url) {
-    return `${img.base_url}${img.permanent_url}`;
+    return normalizeImageUrl(`${img.base_url}${img.permanent_url}`);
   }
 
   return "";
@@ -902,9 +953,12 @@ export function getOrderDeliveryInfo(order: any): { date: string; time: string; 
 
   // Traduzir valores brutos se necessário
   const deliveryToTranslations: Record<string, string> = {
-    'reception': 'Entregar na portaria',
+    'reception': 'Deixar na portaria',
     'door': 'Deixar na porta',
+    'for_me': 'Estarei para receber',
     'wait': 'Estarei para receber',
+    'school_reception': 'Deixar na recepção',
+    'school_room': 'Deixar em sala específica',
   };
   if (deliveryToTranslations[deliveryTo]) {
     deliveryTo = deliveryToTranslations[deliveryTo];

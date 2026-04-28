@@ -22,6 +22,12 @@ import { HeadLine } from "@/src/components/dashboard/pedidos/HeadLine";
 import { OrderDetailsCard } from "@/src/components/dashboard/pedidos/OrderDetailsCard";
 import { OrderItemsList } from "@/src/components/dashboard/pedidos/OrderItemsList";
 import { PaymentPanel } from "@/src/components/dashboard/pedidos/PaymentPanel";
+import {
+  buildAccessRedirect,
+  buildRoleRedirect,
+  isCustomerUser,
+  resolveAuthenticatedPageUser,
+} from "@/src/server/ssr-auth";
 
 const DEFAULT_CONFIRM_INTERVAL_MS = 4000;
 const DEFAULT_GATEWAY_POLL_MS = 12000;
@@ -53,6 +59,16 @@ function parseMoneyValue(value: any): number {
 }
 
 export async function getServerSideProps(ctx: any) {
+  const user = await resolveAuthenticatedPageUser(ctx);
+
+  if (!user) {
+    return buildAccessRedirect();
+  }
+
+  if (!isCustomerUser(user)) {
+    return buildRoleRedirect(user);
+  }
+
   const api = new Api();
   const params = ctx.params;
 
@@ -145,6 +161,8 @@ export default function Pagamento({
   const deliveryTo: string | undefined =
     order?.delivery?.to ?? legacyOrder?.deliveryTo;
   const orderStatusKey = getOrderStatusKey(order);
+  const canSubmitPayment =
+    orderStatusKey === "pending" || Number(order?.status) === -3;
 
 
   const handleCustomer = (value: Partial<UserType>) => {
@@ -535,7 +553,7 @@ export default function Pagamento({
   const submitPayment = async (e: any) => {
     e.preventDefault();
 
-    if (orderStatusKey !== "pending") {
+    if (!canSubmitPayment) {
       handleForm({
         loading: false,
         sended: false,
@@ -824,7 +842,7 @@ export default function Pagamento({
                     order={order}
                     productsCount={products.length}
                     deliveryPrice={deliveryPrice}
-                    allowPayment={orderStatusKey === "pending"}
+                    allowPayment={canSubmitPayment}
                     isConfirmingPayment={isConfirmingPayment}
                     confirmationMessage={confirmationMessage}
                     form={form}

@@ -49,7 +49,7 @@ export interface PhoneType {
 
 /**
  * Shape que o backend devolve (formatRecipient)
- * e que você usa nas telas de edição (GroupConfig*).
+ * e que você usa nas telas de edição do recebedor.
  */
 export interface RecipientType {
   recipient: any;

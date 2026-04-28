@@ -1,5 +1,10 @@
 import { OrderType } from "@/src/models/order";
-import { AddressType } from "@/src/models/address";
+import {
+  AddressType,
+  getAddressKindLabel,
+  isSchoolAddress,
+  normalizeAddressShape,
+} from "@/src/models/address";
 import { dateBRFormat, getShorDate } from "@/src/helper";
 
 interface OrderDetailsCardProps {
@@ -17,6 +22,7 @@ export const OrderDetailsCard = ({
   deliverySchedule,
   deliveryTo,
 }: OrderDetailsCardProps) => {
+  const normalizedDeliveryAddress = normalizeAddressShape(deliveryAddress);
   const start = resume?.startDate ? dateBRFormat(resume.startDate) : "Não informado";
   const end =
     resume?.endDate && resume.endDate !== resume.startDate
@@ -61,17 +67,26 @@ export const OrderDetailsCard = ({
           </div>
           <div>
             <div>
-              {deliveryAddress?.street || "Rua não informada"}
-              {deliveryAddress?.number ? `, ${deliveryAddress.number}` : ""}
-              {deliveryAddress?.neighborhood ? ` - ${deliveryAddress.neighborhood}` : ""}
+              {getAddressKindLabel(normalizedDeliveryAddress)}
+              {normalizedDeliveryAddress.locationName
+                ? ` | ${normalizedDeliveryAddress.locationName}`
+                : ""}
             </div>
             <div>
-              CEP: {deliveryAddress?.zipCode || "Não informado"} | {deliveryAddress?.city || "Cidade não informada"} |{" "}
-              {deliveryAddress?.state || "UF não informada"} - {deliveryAddress?.country || "Brasil"}
+              {normalizedDeliveryAddress.street || "Rua não informada"}
+              {normalizedDeliveryAddress.number ? `, ${normalizedDeliveryAddress.number}` : ""}
+              {normalizedDeliveryAddress.neighborhood ? ` - ${normalizedDeliveryAddress.neighborhood}` : ""}
             </div>
             <div>
-              {deliveryAddress?.complement || "Sem complemento"} | {deliveryTo ?? "Instrução não informada"}
+              CEP: {normalizedDeliveryAddress.zipCode || "Não informado"} | {normalizedDeliveryAddress.city || "Cidade não informada"} |{" "}
+              {normalizedDeliveryAddress.state || "UF não informada"} - {normalizedDeliveryAddress.country || "Brasil"}
             </div>
+            <div>
+              {normalizedDeliveryAddress.complement || "Sem complemento"} | {deliveryTo ?? "Instrução não informada"}
+            </div>
+            {isSchoolAddress(normalizedDeliveryAddress) && !normalizedDeliveryAddress.locationName && (
+              <div>Nome do local não informado</div>
+            )}
           </div>
         </div>
       </div>

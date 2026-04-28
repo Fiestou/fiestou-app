@@ -1,6 +1,7 @@
 import { Button } from "@/src/components/ui/form";
 import { dateBRFormat, getShorDate, moneyFormat } from "@/src/helper";
 import { deliveryToName } from "@/src/models/delivery";
+import { getOrderCustomerNotes } from "@/src/models/order";
 import Icon from "@/src/icons/fontAwesome/FIcon";
 import {
   getOrderStatusKey,
@@ -71,8 +72,9 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
   const total = Number(order.total || 0);
   const deliveryPrice = Number(order.deliveryTotal ?? order.delivery?.price ?? 0);
   const subtotal = Number(order.subtotal ?? Math.max(0, total - deliveryPrice));
+  const customerNotes = getOrderCustomerNotes(order);
   const statusKey = getOrderStatusKey(order);
-  const canPayOrder = statusKey === "pending";
+  const canPayOrder = statusKey === "pending" || Number(order?.status) === -3;
   const rawSchedule = order.delivery?.schedule;
   const scheduleLabel =
     typeof rawSchedule === "string"
@@ -212,6 +214,35 @@ export default function OrderSummary({ order, products, resume }: OrderSummaryPr
 
         {/* Endereço de entrega */}
         <AddressCard address={order.delivery?.address} />
+
+        {customerNotes.length > 0 && (
+          <>
+            <div>
+              <hr className="my-0" />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2 text-zinc-900 font-bold">
+                <Icon icon="fa-comment-dots" className="text-emerald-600 text-sm" />
+                <span>Observações da compra</span>
+              </div>
+              <div className="grid gap-3">
+                {customerNotes.map((entry, index) => (
+                  <div
+                    key={`customer-note-${entry.storeId || entry.orderId || index}`}
+                    className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-zinc-700"
+                  >
+                    {!!entry.storeName && (
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                        {entry.storeName}
+                      </div>
+                    )}
+                    <div className="whitespace-pre-line">{entry.note}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Pagamento */}
         {order.metadata && (

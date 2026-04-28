@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 interface ImageType {
   src?: string | null;
   alt?: string;
@@ -9,6 +10,7 @@ interface ImageType {
   loading?: "lazy" | "eager";
   decoding?: "sync" | "async" | "auto";
   fetchPriority?: "high" | "low" | "auto";
+  onError?: (event: React.SyntheticEvent<HTMLImageElement>) => void;
 }
 
 const SIZE_MAP: Record<string, number> = {
@@ -27,15 +29,25 @@ const SIZE_MAP: Record<string, number> = {
 
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+const brokenImageCache = new Set<string>();
 
 export default function Img(props: ImageType) {
   const resolvedSize = SIZE_MAP[props?.size ?? "xl"] ?? SIZE_MAP.xl;
-  const src = typeof props?.src === "string" && props.src.trim() ? props.src : TRANSPARENT_PIXEL;
+  const rawSrc =
+    typeof props?.src === "string" && props.src.trim()
+      ? props.src.trim()
+      : "";
+  const src =
+    rawSrc && !brokenImageCache.has(rawSrc) ? rawSrc : TRANSPARENT_PIXEL;
 
   const handleError = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    if (rawSrc) {
+      brokenImageCache.add(rawSrc);
+    }
     if (event.currentTarget.src !== TRANSPARENT_PIXEL) {
       event.currentTarget.src = TRANSPARENT_PIXEL;
     }
+    props?.onError?.(event);
   };
 
   return (

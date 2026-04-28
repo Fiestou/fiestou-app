@@ -17,6 +17,13 @@ import Template from "@/src/template";
 import Api from "@/src/services/api";
 import Breadcrumbs from "@/src/components/common/Breadcrumb";
 import { getImage, moneyFormat } from "@/src/helper";
+import {
+  getAddressKindLabel,
+  isSchoolAddress,
+  normalizeAddressShape,
+} from "@/src/models/address";
+import { deliveryToName } from "@/src/models/delivery";
+import { getOrderCustomerNotes } from "@/src/models/order";
 
 interface DeliveryAddress {
   street?: string;
@@ -26,6 +33,8 @@ interface DeliveryAddress {
   state?: string;
   zipCode?: string;
   complement?: string;
+  addressKind?: string;
+  locationName?: string;
 }
 
 interface ProductData {
@@ -352,7 +361,7 @@ export default function AdminOrderDetailsPage() {
     return () => {
       active = false;
     };
-  }, [order?.id, order?.products]);
+  }, [order?.id, order?.items, order?.products, resolvedGalleryByProductId]);
 
   const productsById = useMemo(() => {
     const map = new Map<number, ProductData>();
@@ -397,7 +406,10 @@ export default function AdminOrderDetailsPage() {
   const paymentPdf = order?.payment?.pdf || order?.metadata?.pdf || null;
   const paymentLine = order?.payment?.line || order?.metadata?.line || null;
 
-  const deliveryAddress = normalizeAddress(order?.delivery?.address);
+  const deliveryAddress = normalizeAddressShape(
+    normalizeAddress(order?.delivery?.address)
+  );
+  const customerNotes = getOrderCustomerNotes(order);
   const deliveryZipCode = deliveryAddress.zipCode || (deliveryAddress as any).zip_code || "";
   const deliveryState = deliveryAddress.state || (deliveryAddress as any).uf || "";
   const deliveryStreet = deliveryAddress.street || (deliveryAddress as any).line_1 || "";
@@ -539,7 +551,14 @@ export default function AdminOrderDetailsPage() {
                   </div>
                   <div className="space-y-1 text-sm text-zinc-700">
                     <p>
-                      <span className="text-zinc-500">Tipo:</span> {order.delivery?.to || "Não informado"}
+                      <span className="text-zinc-500">Tipo:</span>{" "}
+                      {deliveryToName[String(order.delivery?.to ?? "")] ||
+                        order.delivery?.to ||
+                        "Não informado"}
+                    </p>
+                    <p>
+                      <span className="text-zinc-500">Local:</span> {getAddressKindLabel(deliveryAddress)}
+                      {deliveryAddress.locationName ? ` | ${deliveryAddress.locationName}` : ""}
                     </p>
                     <p>
                       <span className="text-zinc-500">Status:</span> {order.delivery?.status || "Não informado"}
@@ -578,11 +597,40 @@ export default function AdminOrderDetailsPage() {
                           {deliveryZipCode ? ` - CEP ${deliveryZipCode}` : ""}
                         </p>
                         {!!deliveryAddress.complement && <p>Complemento: {deliveryAddress.complement}</p>}
+                        {isSchoolAddress(deliveryAddress) && !deliveryAddress.locationName && (
+                          <p>Nome do local não informado</p>
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
               </div>
+
+              {customerNotes.length > 0 && (
+                <div className="bg-white border border-zinc-200 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Receipt size={16} className="text-emerald-600" />
+                    <h3 className="font-semibold text-zinc-900">
+                      Observações da compra
+                    </h3>
+                  </div>
+                  <div className="grid gap-3">
+                    {customerNotes.map((entry, index) => (
+                      <div
+                        key={`admin-order-note-${entry.storeId || entry.orderId || index}`}
+                        className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-relaxed text-zinc-700"
+                      >
+                        {!!entry.storeName && (
+                          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                            {entry.storeName}
+                          </div>
+                        )}
+                        <div className="whitespace-pre-line">{entry.note}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {(order.stores || []).length > 0 && (
                 <div className="bg-white border border-zinc-200 rounded-xl p-6">

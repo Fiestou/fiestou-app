@@ -39,7 +39,10 @@ export async function registerRecipientInPagarme(payload: Partial<RecipientEntit
     throw new Error("Resposta sem dados do recebedor");
   }
 
-  return res.data as RecipientType;
+  return {
+    ...(res.data as RecipientType),
+    __message: res.message,
+  } as RecipientType;
 }
 
 export async function createRecipient(payload: RecipientEntity): Promise<RecipientType> {

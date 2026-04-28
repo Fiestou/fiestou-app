@@ -7,6 +7,7 @@ interface ModalProps {
   style?: "success" | "light";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   children?: React.ReactNode;
+  footer?: React.ReactNode;
   close: () => void;
   className?: string;
   /** quando true, mostra como drawer lateral direito (estilo da loja) */
@@ -138,7 +139,7 @@ export default function Modal(attr: ModalProps) {
                   status
                     ? "translate-y-0 scale-100 opacity-100"
                     : "translate-y-4 scale-[0.99] opacity-0"
-                } ${dialogSize[attr.size ?? "xl"]} w-full max-h-[94svh] rounded-2xl bg-white text-zinc-950 shadow-2xl transform-gpu transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden`}
+                } ${dialogSize[attr.size ?? "xl"]} flex w-full max-h-[94svh] flex-col rounded-2xl bg-white text-zinc-950 shadow-2xl transform-gpu transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden`}
               >
                 <div className="flex items-start gap-3 border-b border-zinc-100 px-4 py-3 sm:px-5 sm:py-4">
                   {!!attr?.title && (
@@ -156,12 +157,17 @@ export default function Modal(attr: ModalProps) {
                   </button>
                 </div>
                 <div
-                  className={`overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 ${
+                  className={`min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 ${
                     !!attr?.title ? "" : "pt-5"
                   } ${withStyle}`}
                 >
                   {attr?.children}
                 </div>
+                {!!attr.footer && (
+                  <div className="border-t border-zinc-100 px-4 py-3 sm:px-5 sm:py-4">
+                    {attr.footer}
+                  </div>
+                )}
               </div>
             </div>
           </div>

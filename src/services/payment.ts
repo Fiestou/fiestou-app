@@ -2,16 +2,9 @@
 import axios from "axios";
 import { OrderType } from "@/src/models/order";
 import { loadStripe } from "@stripe/stripe-js";
-
-import Cookies from "js-cookie";
-
-const token = Cookies.get("fiestou.authtoken");
+import { readAuthToken } from "./authCookies";
 
 export const api = axios.create({});
-
-if (token) {
-  api.defaults.headers["Authorization"] = `Bearer ${token}`;
-}
 
 const appUrl = `${process.env.APP_URL}`;
 
@@ -35,12 +28,18 @@ class Payment {
   }
 
   async createSession(data: OrderType, ctx?: any) {
+    const token = readAuthToken();
+    if (token) {
+      api.defaults.headers["Authorization"] = `Bearer ${token}`;
+    }
+
     return await api
       .post("/api/stripe/create-stripe-session", data)
       .then(({ data }: any) => data)
   }
 
   async getSession(session: string, ctx?: any) {
+    const token = readAuthToken();
     if (!!ctx?.req) {
       const authtoken = !!ctx?.req.cookies
         ? ctx.req.cookies["fiestou.authtoken"]

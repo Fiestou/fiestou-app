@@ -6,6 +6,7 @@ import Icon from "@/src/icons/fontAwesome/FIcon";
 import FilterTags from "./FilterTags";
 import { Categorie, Group } from "@/src/types/filtros";
 import Api from "@/src/services/api";
+import Img from "@/src/components/utils/ImgBase";
 
 type Props = {
   /** Aceita id vindo em qualquer formato “torto” (string, json quebrado, array misto, etc.) */
@@ -182,34 +183,41 @@ function CategorieCreateProdutct({
 
   return (
     <div>
-      <div className="flex items-center">
-        <Label>{label}</Label>
-        <div className="text-xs pt-1 pl-2">(máx {max} categorias)</div>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center">
+          <Label>{label}</Label>
+          <div className="pl-2 pt-1 text-xs text-zinc-500">
+            (máx {max} categorias)
+          </div>
+        </div>
+        <div className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600">
+          {selectedElements.length}/{max}
+        </div>
       </div>
 
-      <div className="relative">
-        <div className="w-full form-control pr-28 border-2 border-zinc-200 p-3 relative">
+      <div className="rounded-xl border border-zinc-200 bg-white p-3">
+        <div className="min-h-[72px]">
           {selectedElements.length ? (
-            <div className="flex flex-wrap gap-1 pt-1 w-9/12">
+            <div className="flex flex-wrap gap-2">
               {selectedElements.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-zinc-100 border border-zinc-300 px-4 py-2 rounded-md items-center flex gap-3"
+                  className="flex items-center gap-2 rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-2"
                 >
                   {item.icon && (
-                    <img
+                    <Img
                       src={String(item.icon)}
-                      className="h-[20px] w-[20px] object-contain"
+                      className="h-5 w-5 object-contain"
                       alt={String(item.name ?? item.id)}
                     />
                   )}
-                  <span className="text-sm md:text-base">
+                  <span className="text-sm leading-snug text-zinc-700">
                     {item.name ?? item.title ?? item.id}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleRemove(Number(item.id))}
-                    className="hover:text-zinc-900"
+                    className="rounded-md p-1 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900"
                     aria-label={`Remover ${item.name ?? item.title ?? item.id}`}
                     title="Remover"
                   >
@@ -219,18 +227,20 @@ function CategorieCreateProdutct({
               ))}
             </div>
           ) : (
-            <div className="text-zinc-400 text-sm pt-1">Selecione a categoria</div>
+            <div className="pt-4 text-sm text-zinc-400">
+              Selecione a categoria
+            </div>
           )}
         </div>
 
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4/12">
+        <div className="mt-3 border-t border-zinc-100 pt-3">
           <Button
             type="button"
             style="btn-link"
-            className="px-4"
+            className="w-full justify-center px-4 sm:w-auto"
             onClick={() => setFilterActive(true)}
           >
-            Selecione a Categoria
+            Selecionar categorias
           </Button>
         </div>
       </div>

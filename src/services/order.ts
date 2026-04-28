@@ -291,6 +291,8 @@ export interface RegisterOrderPayload {
   deliverySchedule?: string;
   deliveryStatus?: string;
   deliveryTo?: string;
+  customerNote?: string;
+  customerNotesByStore?: Record<number, string>;
 }
 
 export async function getOrdersByCustomer(customerId: number): Promise<Order[]> {

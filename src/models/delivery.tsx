@@ -81,8 +81,10 @@ export const deliveryTypes = [
 ];
 
 export const deliveryToName: Record<string, string> = {
-  reception: "Entregar na portaria",
+  reception: "Deixar na portaria",
   door: "Deixar na porta",
   for_me: "Estarei para receber",
   inperson: "Estarei para receber",
+  school_reception: "Deixar na recepção",
+  school_room: "Deixar em sala específica",
 };

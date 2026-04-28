@@ -583,8 +583,19 @@ export default function Produto({
           (attr: any) => attr.id === attribute.id
         );
 
+        // Grupo marcado como opcional no painel do lojista
+        if (attribute.required === false) return true;
+
         if (!selected) {
           if (attribute.selectType === "text" || attribute.selectType === "image") return true;
+          if (attribute.selectType === "quantity") {
+            const allOptional = (Array.isArray(attribute.variations) ? attribute.variations : [])
+              .every((v) => {
+                const min = Number(v?.minQuantity ?? 0);
+                return !Number.isFinite(min) || min <= 0;
+              });
+            if (allOptional) return true;
+          }
           return false;
         }
 
@@ -633,9 +644,8 @@ export default function Produto({
             });
           }
 
-          return Array.from(selectedQuantities.values()).some(
-            (quantity) => quantity > 0
-          );
+          // Extra opcional (minimo 0): botao sempre habilitado
+          return true;
         }
 
         return selected.variations.length > 0;
@@ -937,17 +947,6 @@ export default function Produto({
         <Newsletter />
       </LazyRender>
 
-      {layout.isMobile && (
-        <div
-          dangerouslySetInnerHTML={{
-            __html: `<style>
-            #whatsapp-button {
-              margin-bottom: 4.5rem !important;
-            }
-          </style>`,
-          }}
-        />
-      )}
     </Template>
   );
 }

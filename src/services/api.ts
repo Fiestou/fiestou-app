@@ -1,6 +1,27 @@
 import axios, { AxiosResponse } from "axios";
 import Cookies from "js-cookie";
 import { serializeParam } from "../helper";
+import { clearAuthCookies, readAuthToken } from "./authCookies";
+
+const extractErrorMessage = (responseData: any, fallback?: string | null) => {
+  if (typeof responseData?.message === "string" && responseData.message.trim()) {
+    return responseData.message;
+  }
+
+  if (typeof responseData?.error === "string" && responseData.error.trim()) {
+    return responseData.error;
+  }
+
+  const firstFieldError = responseData?.errors && typeof responseData.errors === "object"
+    ? Object.values(responseData.errors).flat().find((value) => typeof value === "string" && value.trim())
+    : null;
+
+  if (typeof firstFieldError === "string" && firstFieldError.trim()) {
+    return firstFieldError;
+  }
+
+  return fallback ?? null;
+};
 
 const trimSlashes = (s: string) => s.replace(/\/+$/, "");
 const trimLeftSlashes = (s: string) => s.replace(/^\/+/, "");
@@ -68,7 +89,7 @@ export const api = axios.create({
 });
 
 // Função para obter token atual (lê dinamicamente do cookie)
-const getAuthToken = () => Cookies.get("fiestou.authtoken");
+const getAuthToken = () => readAuthToken();
 
 // Função para limpar sessão e redirecionar (APENAS quando token realmente expirou)
 const handleSessionExpired = () => {
@@ -84,8 +105,7 @@ const handleSessionExpired = () => {
 
     // Só redireciona se estava em rota protegida e não está em página de auth
     if (isProtectedRoute && !isAuthPage) {
-      Cookies.remove("fiestou.authtoken");
-      Cookies.remove("fiestou.user");
+      clearAuthCookies();
       window.location.href = "/acesso?expired=1";
     }
   }
@@ -201,7 +221,7 @@ class Api {
           data: responseData,
           headers,
           error: true,
-          message: error.message ?? null,
+          message: extractErrorMessage(responseData, error.message ?? null),
         };
       }
 

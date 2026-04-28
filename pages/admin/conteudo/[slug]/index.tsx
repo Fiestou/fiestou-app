@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Template from "@/src/template";
 import { Button, Label, Select } from "@/src/components/ui/form";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Api from "@/src/services/api";
 import { useRouter } from "next/router";
 import HandleField from "@/src/components/ui/form/HandleField";
@@ -45,7 +45,7 @@ export default function Form({
   slug: any;
   formFields: any;
 }) {
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
   const router = useRouter();
 
   const [placeholder, setPlaceholder] = useState(true as boolean);
@@ -55,9 +55,8 @@ export default function Form({
     setForm((form) => ({ ...form, ...value }));
   };
 
-  const [page, setPage] = useState({} as any);
-
   const [content, setContent] = useState({} as any);
+  const publicUrl = formFields?.publicUrl ?? content?.publicUrl ?? "";
 
   const handleContent = (name: any, value: any) => {
     let handle: any = content;
@@ -69,8 +68,9 @@ export default function Form({
 
   const handleCache = async () => {
     try {
-      if (!!page.publicUrl)
-        await axios.get(`/api/cache?route=${page.publicUrl}`);
+      if (!!publicUrl) {
+        await axios.get(`/api/cache?route=${publicUrl}`);
+      }
     } catch (error) {
 
     }
@@ -145,7 +145,7 @@ export default function Form({
     );
   };
 
-  const getPost = async () => {
+  const getPost = useCallback(async () => {
     setPlaceholder(true);
 
     if (slug != "form") {
@@ -164,11 +164,11 @@ export default function Form({
     }
 
     setPlaceholder(false);
-  };
+  }, [api, formFields?.publicUrl, slug]);
 
   useEffect(() => {
     getPost();
-  }, []);
+  }, [getPost]);
 
   return (
     !router.isFallback && (
@@ -186,9 +186,9 @@ export default function Form({
                   { url: `/admin/conteudo/${slug}`, name: formFields?.title || "Editando" },
                 ]}
               />
-              {!!page.publicUrl && (
+              {!!publicUrl && (
                 <Link
-                  href={`/api/cache?route=${page.publicUrl}&redirect=${page.publicUrl}`}
+                  href={`/api/cache?route=${publicUrl}&redirect=${publicUrl}`}
                   target="_blank"
                   className="text-sm text-zinc-500 hover:text-zinc-700"
                 >

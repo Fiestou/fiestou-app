@@ -687,6 +687,7 @@ export default function Variable({
       selectType: "radio",
       limit: 0,
       priceType: "on",
+      required: true,
     };
     const next = [...attributes, newAttr];
     setAttributes(next);
@@ -1327,6 +1328,7 @@ export default function Variable({
                     <>
                       {varCount} {varCount === 1 ? "opção" : "opções"} · {selectTypeLabel}
                       {attr.priceType === "on" ? " · Com preços" : ""}
+                      {attr.required !== false ? "" : " · Opcional"}
                     </>
                   )}
                 </div>
@@ -1371,7 +1373,18 @@ export default function Variable({
               <div className="px-4 pb-4 space-y-4 border-t border-zinc-100">
                 <div className="pt-4">
                   <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
-                    Nome do grupo <span className="ml-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">obrigatório</span>
+                    Nome do grupo{" "}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); updateAttribute(attr.id, { required: !(attr.required !== false) }); }}
+                      className={`ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                        attr.required !== false
+                          ? "text-red-600 bg-red-50 border border-red-200 hover:bg-red-100"
+                          : "text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100"
+                      }`}
+                    >
+                      {attr.required !== false ? "obrigatório" : "opcional"}
+                    </button>
                   </label>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <input

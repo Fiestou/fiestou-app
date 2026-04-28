@@ -33,7 +33,8 @@ export const RegisterUserMail = async (user: any, content: ContentType) => {
       )}" style="width:100%;height:auto;" />`
     : "";
 
-  let html = `${content.html}<p><a href="${process.env.BASE_URL}/api/user-active?token=${user.hash}" style="border-radius: 6px;text-decoration: none;display: inline-block;font-weight:600;color:black;background-color:#ffda4a;padding: .85rem 1.25rem;">Validar email</a></p>`;
+  const activationToken = user?.public_hash || user?.hash || "";
+  let html = `${content.html}<p><a href="${process.env.BASE_URL}/api/user-active?token=${activationToken}" style="border-radius: 6px;text-decoration: none;display: inline-block;font-weight:600;color:black;background-color:#ffda4a;padding: .85rem 1.25rem;">Validar email</a></p>`;
   html = html.replace(/\{user_name\}/g, user.name);
   html = `${image}<div style="padding: 24px 48px 32px;">${html}</div>`;
 

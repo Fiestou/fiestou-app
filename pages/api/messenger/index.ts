@@ -1,11 +1,17 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next";
 import { TemplateMail } from "./template";
+import { isMasterRequest } from "@/src/server/api-route-auth";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const allowed = await isMasterRequest(req);
+  if (!allowed) {
+    return res.status(403).json({ response: false, message: "forbidden" });
+  }
+
   let nodemailer = require("nodemailer");
 
   require("dotenv").config();

@@ -13,7 +13,15 @@ import {
 import { Button } from "@/src/components/ui/form";
 import { useRouter } from "next/router";
 import { UserType } from "@/src/models/user";
-import { AddressType } from "@/src/models/address";
+import {
+  AddressKind,
+  AddressType,
+  getAddressKind,
+  getAddressKindIcon,
+  getAddressKindLabel,
+  isSchoolAddress,
+  normalizeAddressShape,
+} from "@/src/models/address";
 import { ProductOrderType, ProductType } from "@/src/models/product";
 import { StoreType } from "@/src/models/store";
 import Partner from "@/src/components/common/Partner";
@@ -24,7 +32,7 @@ import Link from "next/link";
 import { CartType } from "@/src/models/cart";
 import AddressCheckoutForm from "@/src/components/pages/checkout/AddressCheckoutForm";
 import { formatCep, formatPhone } from "@/src/components/utils/FormMasks";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DeliveryItem } from "@/src/types/filtros";
 import { registerOrder as registerOrderService } from "@/src/services/order";
@@ -58,11 +66,18 @@ const FormInitialType = {
 };
 
 const CHECKOUT_DRAFT_STORAGE_PREFIX = "fiestou.checkout.draft.v1";
+const CHECKOUT_CUSTOMER_NOTE_MAX_LENGTH = 280;
+const ACTIVE_CHECKOUT_ADDRESS_FLOW: CheckoutAddressFlow = "address";
+
+type CheckoutAddressFlow = "address" | "delivery";
 
 type CheckoutDraft = {
   phone?: string;
+  customerNote?: string;
+  customerNotesByStore?: Record<number, string>;
   deliveryTo?: string;
   customLocation?: boolean;
+  saveAddressToProfile?: boolean;
   address?: Partial<AddressType>;
   deliverySchedules?: Record<number, string>;
   pickupSchedules?: Record<number, string>;
@@ -74,16 +89,90 @@ function sanitizeAddressForDraft(address: any): Partial<AddressType> {
   }
 
   return {
-    zipCode: String(address?.zipCode ?? ""),
-    street: String(address?.street ?? ""),
-    number: String(address?.number ?? ""),
-    neighborhood: String(address?.neighborhood ?? ""),
-    city: String(address?.city ?? ""),
-    state: String(address?.state ?? ""),
-    complement: String(address?.complement ?? ""),
-    reference: String(address?.reference ?? ""),
-    country: String(address?.country ?? "Brasil"),
+    ...normalizeAddressShape(address),
   };
+}
+
+function hasAnyAddressData(address?: Partial<AddressType> | null): boolean {
+  if (!address) return false;
+
+  return [
+    address?.zipCode,
+    address?.street,
+    address?.number,
+    address?.neighborhood,
+    address?.city,
+    address?.state,
+    address?.complement,
+    address?.locationName,
+  ].some((value) => String(value ?? "").trim().length > 0);
+}
+
+function sanitizeCustomerNoteValue(value: any): string {
+  return String(value ?? "")
+    .slice(0, CHECKOUT_CUSTOMER_NOTE_MAX_LENGTH)
+    .trim();
+}
+
+function normalizeCustomerNotesByStore(
+  value: any,
+  allowedStoreIds: number[] = []
+): Record<number, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  const allowedIds = new Set(
+    allowedStoreIds
+      .map((storeId) => Number(storeId))
+      .filter((storeId) => Number.isFinite(storeId) && storeId > 0)
+  );
+
+  return Object.entries(value).reduce<Record<number, string>>((acc, [key, rawValue]) => {
+    const storeId = Number(key);
+    if (!Number.isFinite(storeId) || storeId <= 0) {
+      return acc;
+    }
+
+    if (allowedIds.size > 0 && !allowedIds.has(storeId)) {
+      return acc;
+    }
+
+    const normalizedValue = sanitizeCustomerNoteValue(rawValue);
+    if (!normalizedValue) {
+      return acc;
+    }
+
+    acc[storeId] = normalizedValue;
+    return acc;
+  }, {});
+}
+
+function addressesMatch(left?: Partial<AddressType> | null, right?: Partial<AddressType> | null): boolean {
+  const normalizedLeft = normalizeAddressShape(left);
+  const normalizedRight = normalizeAddressShape(right);
+
+  return (
+    normalizedLeft.zipCode === normalizedRight.zipCode &&
+    String(normalizedLeft.street ?? "") === String(normalizedRight.street ?? "") &&
+    String(normalizedLeft.number ?? "") === String(normalizedRight.number ?? "") &&
+    String(normalizedLeft.neighborhood ?? "") === String(normalizedRight.neighborhood ?? "") &&
+    String(normalizedLeft.city ?? "") === String(normalizedRight.city ?? "") &&
+    String(normalizedLeft.state ?? "") === String(normalizedRight.state ?? "") &&
+    String(normalizedLeft.locationName ?? "") === String(normalizedRight.locationName ?? "") &&
+    String(normalizedLeft.addressKind ?? "") === String(normalizedRight.addressKind ?? "")
+  );
+}
+
+function createEmptyAddress(): AddressType {
+  return normalizeAddressShape({
+    country: "Brasil",
+    addressKind: "home",
+  });
+}
+
+function normalizeCheckoutAddressFlow(value: any): CheckoutAddressFlow {
+  return String(value ?? "").toLowerCase() === "delivery" ? "delivery" : "address";
 }
 
 function normalizeSchedulesMap(value: any): Record<number, string> {
@@ -160,6 +249,7 @@ export async function getServerSideProps(ctx: any) {
       CheckoutPageContent: CheckoutPageContent,
       DataSeo: DataSeo ?? {},
       Scripts: Scripts ?? {},
+      addressFlowVariant: ACTIVE_CHECKOUT_ADDRESS_FLOW,
     },
   };
 }
@@ -173,6 +263,7 @@ export default function Checkout({
   CheckoutPageContent,
   DataSeo,
   Scripts,
+  addressFlowVariant,
 }: {
   cart: Array<CartType>;
   user: UserType;
@@ -182,6 +273,7 @@ export default function Checkout({
   CheckoutPageContent: any;
   DataSeo: any;
   Scripts: any;
+  addressFlowVariant: CheckoutAddressFlow;
 }) {
   const api = useMemo(() => new Api(), []);
   const allowedRegionsDescription = getAllowedRegionsDescription();
@@ -224,6 +316,13 @@ export default function Checkout({
   const storesList = useMemo(
     () => Array.from(storesById.values()),
     [storesById]
+  );
+  const checkoutStoreIds = useMemo(
+    () =>
+      storesList
+        .map((store) => Number(store?.id))
+        .filter((storeId) => Number.isFinite(storeId) && storeId > 0),
+    [storesList]
   );
 
   const { deliveryProducts, pickupProducts, deliveryStores, pickupStores } = useMemo(() => {
@@ -278,19 +377,21 @@ export default function Checkout({
   const [rulesModalStore, setRulesModalStore] = useState<any>(null);
   const [customLocation, setCustomLocation] = useState(false as boolean);
   const [locations, setLocations] = useState([] as Array<AddressType>);
+  const [saveAddressToProfile, setSaveAddressToProfile] = useState(false);
   const [phone, setPhone] = useState(user?.phone ?? "");
+  const [customerNotesByStore, setCustomerNotesByStore] = useState<Record<number, string>>({});
   const [initialPhone] = useState(formatPhone(user?.phone || ""));
-  const [address, setAddress] = useState({
-    country: "Brasil",
-  } as AddressType);
+  const [address, setAddress] = useState(createEmptyAddress);
   const checkoutDraftStorageKey = `${CHECKOUT_DRAFT_STORAGE_PREFIX}:${user?.id || "guest"}`;
   const draftRestoredRef = useRef(false);
   const [draftInitialized, setDraftInitialized] = useState(false);
   const handleAddress = (value: any) => {
-    setAddress((prevAddress) => ({
-      ...prevAddress,
-      ...value,
-    }));
+    setAddress((prevAddress) =>
+      normalizeAddressShape({
+        ...(prevAddress ?? { country: "Brasil", addressKind: "home" }),
+        ...value,
+      })
+    );
   };
 
   const isPhoneValid = (phone: string): boolean => {
@@ -576,7 +677,11 @@ export default function Checkout({
     const fetchAddressFromCartZip = async () => {
       const currentZip = justNumber(address?.zipCode ?? "");
 
-      if (currentZip === cartDeliveryZip) {
+      if (customLocation) {
+        return;
+      }
+
+      if (currentZip.length === 8) {
         return;
       }
 
@@ -614,7 +719,7 @@ export default function Checkout({
     };
 
     fetchAddressFromCartZip();
-  }, [cartDeliveryZip, address?.zipCode]);
+  }, [cartDeliveryZip, address?.zipCode, customLocation]);
 
   const [loadingDeliveryPrice, setLoadingDeliveryPrice] = useState(
     false as boolean
@@ -763,8 +868,16 @@ export default function Checkout({
   }, [cartItems, deliverySummary.total]);
 
   useEffect(() => {
-    setLocations(user?.address ?? []);
-    setAddress((user?.address ?? []).filter((addr) => !!addr.main)[0]);
+    const nextLocations = (Array.isArray(user?.address) ? user.address : [])
+      .map((item) => normalizeAddressShape(item))
+      .filter((item) => hasAnyAddressData(item));
+
+    setLocations(nextLocations);
+    setAddress(
+      nextLocations.find((addr) => !!addr.main) ??
+        nextLocations[0] ??
+        createEmptyAddress()
+    );
 
     if (!!window && (!token || !user.id)) {
       Cookies.set("fiestou.redirect", "checkout", { expires: 1 });
@@ -796,6 +909,28 @@ export default function Checkout({
         setPhone(draft.phone);
       }
 
+      const restoredNotesByStore = normalizeCustomerNotesByStore(
+        draft.customerNotesByStore,
+        checkoutStoreIds
+      );
+
+      if (Object.keys(restoredNotesByStore).length > 0) {
+        setCustomerNotesByStore(restoredNotesByStore);
+      } else if (typeof draft.customerNote === "string") {
+        const legacyNote = sanitizeCustomerNoteValue(draft.customerNote);
+        if (legacyNote) {
+          const fallbackNotes = checkoutStoreIds.reduce<Record<number, string>>(
+            (acc, storeId) => {
+              acc[storeId] = legacyNote;
+              return acc;
+            },
+            {}
+          );
+
+          setCustomerNotesByStore(fallbackNotes);
+        }
+      }
+
       if (typeof draft.deliveryTo === "string" && draft.deliveryTo) {
         setDeliveryTo(draft.deliveryTo);
       }
@@ -804,11 +939,17 @@ export default function Checkout({
         setCustomLocation(draft.customLocation);
       }
 
+      if (typeof draft.saveAddressToProfile === "boolean") {
+        setSaveAddressToProfile(draft.saveAddressToProfile);
+      }
+
       if (draft.address) {
-        setAddress((prevAddress) => ({
-          ...(prevAddress || { country: "Brasil" }),
-          ...sanitizeAddressForDraft(draft.address),
-        }));
+        setAddress((prevAddress) =>
+          normalizeAddressShape({
+            ...(prevAddress || createEmptyAddress()),
+            ...sanitizeAddressForDraft(draft.address),
+          })
+        );
       }
 
       if (draft.deliverySchedules) {
@@ -823,7 +964,7 @@ export default function Checkout({
     } finally {
       setDraftInitialized(true);
     }
-  }, [checkoutDraftStorageKey]);
+  }, [checkoutDraftStorageKey, checkoutStoreIds]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -836,8 +977,13 @@ export default function Checkout({
 
     const draft: CheckoutDraft = {
       phone,
+      customerNotesByStore: normalizeCustomerNotesByStore(
+        customerNotesByStore,
+        checkoutStoreIds
+      ),
       deliveryTo,
       customLocation,
+      saveAddressToProfile,
       address: sanitizeAddressForDraft(address),
       deliverySchedules,
       pickupSchedules,
@@ -852,14 +998,23 @@ export default function Checkout({
     checkoutDraftStorageKey,
     draftInitialized,
     phone,
+    customerNotesByStore,
+    checkoutStoreIds,
     deliveryTo,
     customLocation,
+    saveAddressToProfile,
     address,
     deliverySchedules,
     pickupSchedules,
   ]);
 
   const deliveryTotal = deliverySummary.total;
+  const hasDeliveryItems = deliveryProductIds.length > 0;
+  const currentAddressKind = getAddressKind(address);
+  const useGroupedDeliveryFlow =
+    normalizeCheckoutAddressFlow(addressFlowVariant) === "delivery" &&
+    hasDeliveryItems;
+  const shouldRequireLocationName = hasDeliveryItems && isSchoolAddress(address);
   const minimumOrderSummary = useMemo(
     () => buildMinimumOrderSummary(cartItems),
     [cartItems]
@@ -868,7 +1023,68 @@ export default function Checkout({
     (store) => store.enabled && store.minimumValue > 0 && store.missing > 0
   );
 
+  const handleAddressKindFromDelivery = useCallback(
+    (nextKind: AddressKind) => {
+      setAddress((prevAddress) =>
+        normalizeAddressShape({
+          ...(prevAddress ?? createEmptyAddress()),
+          addressKind: nextKind,
+          locationName:
+            nextKind === "home" ? "" : prevAddress?.locationName ?? "",
+        })
+      );
+    },
+    []
+  );
 
+  useEffect(() => {
+    const allowedValues = useGroupedDeliveryFlow
+      ? currentAddressKind === "school"
+        ? ["reception", "school_reception", "school_room"]
+        : ["reception", "door", "for_me"]
+      : ["reception", "door", "for_me"];
+
+    if (!allowedValues.includes(deliveryTo)) {
+      setDeliveryTo("reception");
+    }
+  }, [currentAddressKind, deliveryTo, useGroupedDeliveryFlow]);
+
+
+
+  const persistAddressToDashboard = useCallback(async (addressToSave: AddressType) => {
+    const normalizedAddress = normalizeAddressShape(addressToSave);
+    const currentAddresses = locations
+      .map((item) => normalizeAddressShape(item))
+      .filter((item) => hasAnyAddressData(item));
+
+    if (currentAddresses.some((item) => addressesMatch(item, normalizedAddress))) {
+      return true;
+    }
+
+    const nextAddresses = [
+      ...currentAddresses,
+      {
+        ...normalizedAddress,
+        main: currentAddresses.length === 0 ? true : !!normalizedAddress.main,
+      },
+    ];
+
+    const payload: UserType = {
+      ...(user ?? {}),
+      id: user?.id,
+      address: nextAddresses,
+    } as UserType;
+
+    await api.bridge({
+      method: "post",
+      url: "users/update",
+      data: payload,
+    });
+
+    setLocations(nextAddresses);
+
+    return true;
+  }, [api, locations, user]);
 
   const submitOrder = async (e: any) => {
     e.preventDefault();
@@ -901,11 +1117,14 @@ export default function Checkout({
       return;
     }
 
-    const hasDeliveryItems = deliveryProductIds.length > 0;
-
     if (hasDeliveryItems) {
       if (!formattedAddressZip || !isCEPInRegion(address?.zipCode ?? "")) {
         toast.error("Informe um CEP válido para calcular o frete.");
+        return;
+      }
+
+      if (shouldRequireLocationName && !String(address?.locationName ?? "").trim()) {
+        toast.error("Informe o nome do local para entrega em escola.");
         return;
       }
 
@@ -1019,8 +1238,18 @@ export default function Checkout({
     setForm((prev) => ({ ...prev, loading: true }));
     isSubmittingRef.current = true;
 
+    const normalizedDeliveryAddress = normalizeAddressShape(address);
+    const normalizedCustomerNotesByStore = normalizeCustomerNotesByStore(
+      customerNotesByStore,
+      checkoutStoreIds
+    );
+    const singleStoreCustomerNote =
+      checkoutStoreIds.length === 1
+        ? normalizedCustomerNotesByStore[checkoutStoreIds[0]] ?? ""
+        : "";
+
     const payload = {
-      deliveryAddress: address,
+      deliveryAddress: normalizedDeliveryAddress,
       listItems,
       freights: {
         zipcode: hasDeliveryItems ? justNumber(address?.zipCode ?? "") : "",
@@ -1036,6 +1265,12 @@ export default function Checkout({
       pickupSchedules: pickupSchedules,
       deliveryStatus: "pending",
       deliveryTo,
+      customerNote:
+        singleStoreCustomerNote.length > 0 ? singleStoreCustomerNote : undefined,
+      customerNotesByStore:
+        Object.keys(normalizedCustomerNotesByStore).length > 0
+          ? normalizedCustomerNotesByStore
+          : undefined,
     };
 
     try {
@@ -1043,6 +1278,15 @@ export default function Checkout({
       const firstId = created?.orders?.[0]?.id;
 
       if (firstId) {
+        if (customLocation && saveAddressToProfile && hasAnyAddressData(normalizedDeliveryAddress)) {
+          try {
+            await persistAddressToDashboard(normalizedDeliveryAddress);
+          } catch (error) {
+            console.error("checkout: não foi possível salvar endereço no painel", error);
+            toast.warning("Pedido criado, mas não conseguimos salvar este endereço no seu painel.");
+          }
+        }
+
         try {
           window.localStorage.removeItem(checkoutDraftStorageKey);
         } catch (error) {
@@ -1069,6 +1313,10 @@ export default function Checkout({
       return;
     }
 
+    if (customLocation) {
+      return;
+    }
+
     const regionCookie = Cookies.get("fiestou.region");
     if (!regionCookie) {
       return;
@@ -1082,6 +1330,10 @@ export default function Checkout({
         return;
       }
 
+      if (justNumber(address?.zipCode ?? "").length === 8) {
+        return;
+      }
+
       setAddress((prevAddress) => ({
         ...prevAddress,
         zipCode: formatCep(regionZip),
@@ -1089,7 +1341,7 @@ export default function Checkout({
     } catch (error) {
       console.error("checkout: não foi possível ler fiestou.region", error);
     }
-  }, []);
+  }, [address?.zipCode, customLocation]);
 
   const formattedAddressZip = useMemo(() => {
     const digits = justNumber(address?.zipCode ?? "");
@@ -1180,6 +1432,14 @@ export default function Checkout({
     );
   };
 
+  const incompleteAddress =
+    !address?.complement ||
+    !address?.street ||
+    !address?.number ||
+    !address?.city ||
+    !address?.state ||
+    (isSchoolAddress(address) && !String(address?.locationName ?? "").trim());
+
   const page = !isFallback && !!token ? (
     <Template
       scripts={Scripts}
@@ -1245,19 +1505,15 @@ export default function Checkout({
                     </div>
                   )}
 
-                  {(!address?.complement ||
-                    !address?.street ||
-                    !address?.number ||
-                    !address?.city ||
-                    !address?.state) && (
+                  {incompleteAddress && (
                     <div className="flex items-start bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 sm:px-4 py-3 rounded-lg text-sm">
                       <Icon
                         icon="fa-exclamation-triangle"
                         className="mr-2 mt-0.5 flex-shrink-0"
                       />
                       <span>
-                        Preencha seu endereço corretamente. Não se esqueça de
-                        informar o complemento.
+                        Preencha seu endereço corretamente. Não se esqueça do complemento
+                        {isSchoolAddress(address) ? " e do nome do local." : "."}
                       </span>
                     </div>
                   )}
@@ -1266,30 +1522,45 @@ export default function Checkout({
                     <div className="space-y-3">
                       {locations.map((addr: AddressType, key: any) => (
                         <div
+                          key={key}
                           className={`${
-                            addr == address
+                            addressesMatch(addr, address)
                               ? "border-yellow-400 bg-yellow-50"
                               : "border-gray-200 hover:border-gray-300"
                           } rounded-lg border cursor-pointer transition-all duration-200`}
-                          key={key}
-                          onClick={() => setAddress(addr)}
+                          onClick={() => {
+                            setAddress(normalizeAddressShape(addr));
+                            setCustomLocation(false);
+                            setSaveAddressToProfile(false);
+                          }}
                         >
                           <div className="flex gap-3 p-3 sm:p-4 items-start">
                             <div className="pt-1">
                               <div
                                 className={`${
-                                  addr?.street == address?.street
+                                  addressesMatch(addr, address)
                                     ? "border-yellow-500"
                                     : "border-gray-300"
                                 } w-4 h-4 rounded-full border-2 relative flex-shrink-0`}
                               >
-                                {addr?.street == address?.street && (
+                                {addressesMatch(addr, address) && (
                                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full"></div>
                                 )}
                               </div>
                             </div>
-                            <div className="text-sm sm:text-base leading-relaxed">
-                              <div className="font-medium">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-yellow-100 bg-yellow-50 text-yellow-700">
+                              <Icon icon={getAddressKindIcon(addr)} className="text-base" />
+                            </div>
+                            <div className="text-sm sm:text-base leading-relaxed min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <div className="font-medium text-zinc-900">{getAddressKindLabel(addr)}</div>
+                                {addr.locationName && (
+                                  <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-zinc-700 border border-zinc-200">
+                                    {addr.locationName}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-1 font-medium">
                                 {addr.street}, {addr.number}
                               </div>
                               <div className="text-gray-600">
@@ -1304,7 +1575,11 @@ export default function Checkout({
                       ))}
                       <button
                         type="button"
-                        onClick={() => setCustomLocation(true)}
+                        onClick={() => {
+                          setAddress(createEmptyAddress());
+                          setCustomLocation(true);
+                          setSaveAddressToProfile(true);
+                        }}
                         className="text-sm underline text-zinc-700 hover:text-yellow-600 transition-colors"
                       >
                         Entregar em outro endereço
@@ -1315,7 +1590,15 @@ export default function Checkout({
                   {!!locations.length && !!customLocation && (
                     <button
                       type="button"
-                      onClick={() => setCustomLocation(false)}
+                      onClick={() => {
+                        setAddress(
+                          locations.find((addr) => !!addr.main) ??
+                            locations[0] ??
+                            createEmptyAddress()
+                        );
+                        setCustomLocation(false);
+                        setSaveAddressToProfile(false);
+                      }}
                       className="text-sm underline text-zinc-700 hover:text-yellow-600 transition-colors mb-4"
                     >
                       Selecionar meu endereço
@@ -1326,6 +1609,12 @@ export default function Checkout({
                     <AddressCheckoutForm
                       address={address}
                       onChange={(value: any) => handleAddress(value)}
+                      saveToProfile={saveAddressToProfile}
+                      onChangeSaveToProfile={setSaveAddressToProfile}
+                      kindSelectorMode={
+                        useGroupedDeliveryFlow ? "summary" : "cards"
+                      }
+                      kindSummaryMessage="Você pode trocar entre Locais de Evento e Casa no bloco “Produtos para Entrega” logo abaixo."
                     />
                   )}
                 </div>
@@ -1372,7 +1661,91 @@ export default function Checkout({
                       <strong>Salvar</strong>
                     </Button>
                   </div>
-                  <ToastContainer position="top-right" />
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-zinc-800">
+                      Observações da compra
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Opcional. Se precisar, deixe um recado para ajudar na
+                      entrega ou montagem.
+                    </p>
+                  </div>
+
+                  {storesList.length > 1 && (
+                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                      Cada loja recebe apenas a observação escrita para ela.
+                    </div>
+                  )}
+
+                  <div className="grid gap-4">
+                    {storesList.map((store: any) => {
+                      const storeId = Number(store?.id ?? 0);
+                      const storeName =
+                        store?.companyName ||
+                        store?.title ||
+                        (storeId > 0 ? `Loja #${storeId}` : "Loja parceira");
+                      const noteValue =
+                        storeId > 0 ? customerNotesByStore[storeId] ?? "" : "";
+
+                      return (
+                        <div
+                          key={`checkout-customer-note-${storeId || storeName}`}
+                          className="rounded-2xl border border-zinc-200 bg-white p-4"
+                        >
+                          <div className="mb-3 flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-semibold text-sm text-zinc-900">
+                                {storeName}
+                              </div>
+                              <div className="mt-1 text-xs text-zinc-500">
+                                Só esta loja verá este recado.
+                              </div>
+                            </div>
+                            <div className="rounded-full bg-emerald-50 p-2 text-emerald-600">
+                              <Icon icon="fa-store" className="text-sm" />
+                            </div>
+                          </div>
+
+                          <textarea
+                            name={`customerNote-${storeId}`}
+                            rows={4}
+                            value={noteValue}
+                            onChange={(event) => {
+                              const nextValue = String(event.target.value ?? "").slice(
+                                0,
+                                CHECKOUT_CUSTOMER_NOTE_MAX_LENGTH
+                              );
+
+                              setCustomerNotesByStore((prev) => ({
+                                ...prev,
+                                [storeId]: nextValue,
+                              }));
+                            }}
+                            placeholder={`Ex.: chamar no interfone, entregar após as 14h ou outro detalhe útil para ${storeName}.`}
+                            className="form-control min-h-[7.5rem] resize-y"
+                          />
+                          <div className="mt-3 flex flex-col gap-2 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-start gap-2 text-zinc-600">
+                              <Icon
+                                icon="fa-info-circle"
+                                className="mt-0.5 text-emerald-600"
+                              />
+                              <span>
+                                A loja pode considerar a observação, mas ela não é uma
+                                obrigação do pedido.
+                              </span>
+                            </div>
+                            <span className="text-zinc-400">
+                              {noteValue.length}/{CHECKOUT_CUSTOMER_NOTE_MAX_LENGTH}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {deliveryProducts.length > 0 && (
@@ -1387,6 +1760,9 @@ export default function Checkout({
                     <DeliveryOptions
                       value={deliveryTo}
                       onChange={setDeliveryTo}
+                      layout={useGroupedDeliveryFlow ? "grouped" : "default"}
+                      addressKind={currentAddressKind}
+                      onAddressKindChange={handleAddressKindFromDelivery}
                     />
 
                     {deliveryStores.map((store) => {
@@ -1751,9 +2127,9 @@ export default function Checkout({
                                   <button
                                     type="button"
                                     onClick={() => setRulesModalStore(s)}
-                                    className="text-xs text-yellow-700 hover:text-yellow-800 font-medium mb-3 flex items-center gap-1"
+                                    className="mb-3 inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 hover:text-emerald-800"
                                   >
-                                    <Icon icon="fa-external-link" className="text-[10px]" />
+                                    <Icon icon="fa-external-link" className="text-xs" />
                                     Ver regras completas
                                   </button>
                                 )}

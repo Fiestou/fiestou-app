@@ -25,7 +25,8 @@ const SendSMS = async (data: any) => {
 };
 
 export const RegisterUserSMS = async (user: any, content: MessageType) => {
-  let message = `${content.message} \n\n ${process.env.BASE_URL}/api/user-active?token=${user.hash}`;
+  const activationToken = user?.public_hash || user?.hash || "";
+  let message = `${content.message} \n\n ${process.env.BASE_URL}/api/user-active?token=${activationToken}`;
   message = message.replace(/\{user_name\}/g, user.name);
 
   const data = {

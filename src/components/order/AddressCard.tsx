@@ -1,3 +1,5 @@
+import { getAddressKindLabel, isSchoolAddress, normalizeAddressShape } from "@/src/models/address";
+
 interface AddressCardProps {
   address?: {
     street?: string;
@@ -8,6 +10,8 @@ interface AddressCardProps {
     state?: string;
     country?: string;
     complement?: string;
+    addressKind?: string;
+    locationName?: string;
   };
   title?: string;
 }
@@ -15,23 +19,32 @@ interface AddressCardProps {
 export default function AddressCard({ address, title = "Endereço de entrega" }: AddressCardProps) {
   if (!address) return null;
 
+  const normalizedAddress = normalizeAddressShape(address);
+
   return (
     <div className="grid gap-2">
       <div className="text-zinc-900 font-bold">{title}</div>
       <div className="text-sm">
-        {(address.street || address.number) && (
+        <div>
+          {getAddressKindLabel(normalizedAddress)}
+          {normalizedAddress.locationName ? ` | ${normalizedAddress.locationName}` : ""}
+        </div>
+        {(normalizedAddress.street || normalizedAddress.number) && (
           <div>
-            {address.street}{address.number ? `, ${address.number}` : ''}
+            {normalizedAddress.street}{normalizedAddress.number ? `, ${normalizedAddress.number}` : ''}
           </div>
         )}
-        {address.neighborhood && <div>{address.neighborhood}</div>}
-        {address.zipCode && <div>CEP: {address.zipCode}</div>}
-        {(address.city || address.state) && (
+        {normalizedAddress.neighborhood && <div>{normalizedAddress.neighborhood}</div>}
+        {normalizedAddress.zipCode && <div>CEP: {normalizedAddress.zipCode}</div>}
+        {(normalizedAddress.city || normalizedAddress.state) && (
           <div>
-            {address.city}{address.state ? ` | ${address.state}` : ''}{address.country ? ` - ${address.country}` : ''}
+            {normalizedAddress.city}{normalizedAddress.state ? ` | ${normalizedAddress.state}` : ''}{normalizedAddress.country ? ` - ${normalizedAddress.country}` : ''}
           </div>
         )}
-        {address.complement && <div>complemento: {address.complement}</div>}
+        {normalizedAddress.complement && <div>Complemento: {normalizedAddress.complement}</div>}
+        {isSchoolAddress(normalizedAddress) && !normalizedAddress.locationName && (
+          <div>Nome do local não informado</div>
+        )}
       </div>
     </div>
   );

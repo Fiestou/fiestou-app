@@ -3,9 +3,14 @@ import { AddressType } from "./address";
 export interface BankAccountType {
   title: string;
   agence?: string;
+  agenceDigit?: string;
   accountNumber: string;
+  accountDigit?: string;
   bank?: string;
   operation?: string;
+  holderName?: string;
+  holderDocument?: string;
+  type?: string;
 }
 
 export interface UserType {

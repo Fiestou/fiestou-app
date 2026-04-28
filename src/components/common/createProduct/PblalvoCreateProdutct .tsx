@@ -15,7 +15,7 @@ type Props = {
 };
 
 function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
-  const api = new Api();
+  const api = useMemo(() => new Api(), []);
 
   const [selectedElements, setSelectedElements] = useState<Categorie[]>([]);
   const [allGroups, setAllGroups] = useState<Group[]>([]);
@@ -34,6 +34,11 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
 
   const onToggleRef = useRef<Props["onToggle"]>(onToggle);
   useEffect(() => { onToggleRef.current = onToggle; }, [onToggle]);
+
+  const selectedRef = useRef<Categorie[]>([]);
+  useEffect(() => {
+    selectedRef.current = selectedElements;
+  }, [selectedElements]);
 
   // ===== 1) Carrega grupos (com name/icon)
   useEffect(() => {
@@ -64,7 +69,7 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
       }
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [api]);
 
   // dicionário id->categoria
   const dict = useMemo(() => {
@@ -81,12 +86,12 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
       .slice(0, MAX);
 
     const hydrated: Categorie[] = ids.map((id) => {
-      const curr = selectedElements.find((e) => Number(e.id) === id);
+      const curr = selectedRef.current.find((e) => Number(e.id) === id);
       const meta = dict.get(id);
       return meta ? { ...curr, ...meta } : curr ?? ({ id } as Categorie);
     });
 
-    const curr = selectedElements;
+    const curr = selectedRef.current;
     const shouldUpdate =
       curr.length !== hydrated.length ||
       hydrated.some((e, i) => {
@@ -145,14 +150,22 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
 
   return (
     <div>
-      <div className="flex items-center mb-3">
-        <Label>Público Alvo</Label>
-        <div className="text-xs pt-1 pl-2">(máx {MAX})</div>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center">
+          <Label>Público Alvo</Label>
+          <div className="pl-2 pt-1 text-xs text-zinc-500">(máx {MAX})</div>
+        </div>
+        <div className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600">
+          {selectedElements.length}/{MAX}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-4 max-h-64 overflow-auto pr-1">
+      <div className="space-y-3">
         {allGroups.map((group) => (
-          <div key={group.id}>
+          <div key={group.id} className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
+              {group.name}
+            </div>
             <div className="flex flex-wrap gap-2">
               {group.categories.map((element) => {
                 const id = toNum(element.id);
@@ -166,22 +179,26 @@ function PblalvoCreateProdutctBase({ onChange, onToggle, value }: Props) {
                     disabled={isDisabled}
                     aria-disabled={isDisabled}
                     tabIndex={isDisabled ? -1 : 0}
-                    className={`border rounded p-2 transition
-                      ${isChecked ? "border-zinc-800" : "hover:border-zinc-300"}
-                      ${isDisabled ? "opacity-50 pointer-events-none" : "cursor-pointer"}
+                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition
+                      ${
+                        isChecked
+                          ? "border-amber-300 bg-amber-50 text-zinc-900 shadow-sm"
+                          : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300"
+                      }
+                      ${isDisabled ? "pointer-events-none opacity-50" : "cursor-pointer"}
                     `}
                     onClick={() => handleSelect(element)}
                     title={element.name}
                   >
-                    <div className="px-3 md:px-1 flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                       {!!element.icon && (
                         <Img
                           src={element.icon}
-                          className="h-[20px] w-[20px] object-contain"
+                          className="h-5 w-5 object-contain"
                           alt={element.name}
                         />
                       )}
-                      <div className="h-[20px] whitespace-nowrap text-sm md:text-base flex items-center">
+                      <div className="flex min-h-[20px] items-center whitespace-nowrap text-sm">
                         {element.name}
                       </div>
                       {isChecked && (

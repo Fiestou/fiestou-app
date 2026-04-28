@@ -1,4 +1,6 @@
 import Cors from "cors";
+import type { NextApiRequest, NextApiResponse } from "next";
+import { isMasterRequest } from "@/src/server/api-route-auth";
 
 const cors = Cors({
   methods: ["GET", "HEAD", "POST"],
@@ -16,13 +18,19 @@ function runMiddleware(req: any, res: any, fn: any) {
   });
 }
 
-async function handler(req: any, res: any) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const url = !!req.query?.route ? `${req.query?.route}` : "/";
 
   try {
     // this should be the actual path not a rewritten path
     // e.g. for "/blog/[slug]" this should be "/blog/post-1"
     await runMiddleware(req, res, cors);
+
+    const allowed = await isMasterRequest(req);
+    if (!allowed) {
+      return res.status(403).json({ response: false, message: "forbidden" });
+    }
+
     const response = await res.revalidate(url);
 
     if (url.includes("produtos")) {
