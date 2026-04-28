@@ -1682,9 +1682,9 @@ export default function Pedido() {
               <FiscalSection
                 orderId={order?.id}
                 orderTotal={order?.total || 0}
-                nfeId={order?.metadata?.nuvemfiscal_nfe_id}
-                nfeStatus={order?.metadata?.nuvemfiscal_status}
-                nfeEmitidoEm={order?.metadata?.nuvemfiscal_emitido_em}
+                nfeId={order?.metadata?.fiscal_nfse_id}
+                nfeStatus={order?.metadata?.fiscal_status}
+                nfeEmitidoEm={order?.metadata?.fiscal_emitido_em}
               />
               {groupedItemsByStore.length > 1 && (
                 <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5">
