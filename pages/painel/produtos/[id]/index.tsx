@@ -141,6 +141,7 @@ export default function CreateProduct() {
   const [mobileFullSection, setMobileFullSection] = useState("basic");
   const [data, setData] = useState({
     suggestions: true,
+    fragility: "no",
     status: 1,
   } as ProductType);
 
