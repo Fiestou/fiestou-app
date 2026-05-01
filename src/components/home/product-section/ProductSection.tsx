@@ -23,8 +23,10 @@ export default function ProductSection({ products = [] }: ProductSectionProps) {
         <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6">
           <div className="order-3 md:order-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full relative overflow-hidden">
             {hasProducts ? (
-              products.map((item: any) => (
-                <Product key={item?.id || item?.slug} product={item} />
+              products.map((item: any, index: number) => (
+                <div key={item?.id || item?.slug} className={index === products.length - 1 && products.length % 2 !== 0 ? "hidden md:block" : ""}>
+                  <Product product={item} />
+                </div>
               ))
             ) : (
               <p className="text-center text-gray-500 w-full py-10">
