@@ -210,7 +210,7 @@ export default function Home({
           <Filter />
         </div>
       </div>
-      <ProductSection products={Products.slice(0, 5)} />
+      <ProductSection products={Products} />
 
       <LazyRender
         minHeight={340}
