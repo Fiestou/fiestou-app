@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { PainelLayout } from "@/src/components/painel";
-import { ArrowLeft, Building2, Shield, MapPin, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Building2, Shield, MapPin, Loader2, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { getStore } from "@/src/contexts/AuthContext";
+import Api from "@/src/services/api";
 
 export default function ConfigurarEmpresa() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [prefilling, setPrefilling] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
+  const [prefilledFields, setPrefilledFields] = useState<Set<string>>(new Set());
 
   const [form, setForm] = useState({
     cnpj: "", razaoSocial: "", nomeFantasia: "", inscricaoMunicipal: "",
@@ -18,6 +21,36 @@ export default function ConfigurarEmpresa() {
     street: "", number: "", district: "", postalCode: "", city: "", state: "", cityCode: "",
     federalServiceCode: "7.02", cnaeCode: "",
   });
+
+  // Pré-preencher com dados da loja
+  useEffect(() => {
+    async function prefill() {
+      try {
+        const api = new Api();
+        const resp: any = await api.bridge({ method: "post", url: "stores/form" });
+        const store = resp?.data || resp;
+        if (!store?.id) return;
+
+        const filled = new Set<string>();
+        const updates: Record<string, string> = {};
+
+        if (store.document) { updates.cnpj = store.document; filled.add("cnpj"); }
+        if (store.companyName) { updates.razaoSocial = store.companyName; filled.add("razaoSocial"); }
+        if (store.title) { updates.nomeFantasia = store.title; filled.add("nomeFantasia"); }
+        if (store.street) { updates.street = store.street; filled.add("street"); }
+        if (store.number) { updates.number = store.number; filled.add("number"); }
+        if (store.neighborhood) { updates.district = store.neighborhood; filled.add("district"); }
+        if (store.zipCode) { updates.postalCode = store.zipCode; filled.add("postalCode"); }
+        if (store.city) { updates.city = store.city; filled.add("city"); }
+        if (store.state) { updates.state = store.state; filled.add("state"); }
+
+        setForm(prev => ({ ...prev, ...updates }));
+        setPrefilledFields(filled);
+      } catch (_) {}
+      finally { setPrefilling(false); }
+    }
+    prefill();
+  }, []);
 
   const update = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -28,7 +61,7 @@ export default function ConfigurarEmpresa() {
     const errors: Record<string, string> = {};
     if (s === 0) {
       if (!form.cnpj.replace(/\D/g, "")) errors.cnpj = "CNPJ é obrigatório";
-      else if (form.cnpj.replace(/\D/g, "").length < 14) errors.cnpj = "CNPJ inválido";
+      else if (form.cnpj.replace(/\D/g, "").length < 14) errors.cnpj = "CNPJ inválido (precisa ter 14 dígitos)";
       if (!form.razaoSocial.trim()) errors.razaoSocial = "Razão Social é obrigatória";
     }
     if (s === 1) {
@@ -40,9 +73,7 @@ export default function ConfigurarEmpresa() {
     return Object.keys(errors).length === 0;
   };
 
-  const nextStep = () => {
-    if (validateStep(step)) setStep(s => s + 1);
-  };
+  const nextStep = () => { if (validateStep(step)) setStep(s => s + 1); };
 
   const handleSubmit = async () => {
     if (!validateStep(2)) return;
@@ -80,10 +111,22 @@ export default function ConfigurarEmpresa() {
 
   const inputCls = (field: string) =>
     `w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-colors ${
-      stepErrors[field] ? "border-red-300 bg-red-50/30" : "border-zinc-200"
+      stepErrors[field] ? "border-red-300 bg-red-50/30" : prefilledFields.has(field) ? "border-green-200 bg-green-50/20" : "border-zinc-200"
     }`;
   const labelCls = "block text-sm font-medium text-zinc-700 mb-1";
   const errorCls = "text-xs text-red-500 mt-1";
+  const hintCls = "text-xs text-zinc-400 mt-1";
+
+  if (prefilling) {
+    return (
+      <PainelLayout>
+        <div className="max-w-2xl mx-auto py-12 text-center">
+          <Loader2 size={32} className="mx-auto text-zinc-300 animate-spin mb-3" />
+          <p className="text-sm text-zinc-500">Carregando dados da sua loja...</p>
+        </div>
+      </PainelLayout>
+    );
+  }
 
   if (success) {
     return (
@@ -110,6 +153,8 @@ export default function ConfigurarEmpresa() {
     { icon: Shield, label: "Tributação" },
   ];
 
+  const filledCount = prefilledFields.size;
+
   return (
     <PainelLayout>
       <div className="max-w-2xl mx-auto space-y-6">
@@ -119,6 +164,19 @@ export default function ConfigurarEmpresa() {
           </button>
           <h1 className="font-title text-2xl font-bold text-zinc-900">Configurar Empresa</h1>
         </div>
+
+        {/* Pre-fill notice */}
+        {filledCount > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+            <div className="flex gap-3">
+              <CheckCircle size={18} className="text-green-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-green-800">
+                {filledCount} campos foram preenchidos automaticamente com os dados da sua loja.
+                Confira e complete o que faltar.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Steps */}
         <div className="flex gap-2">
@@ -189,7 +247,7 @@ export default function ConfigurarEmpresa() {
             <div>
               <label className={labelCls}>Código IBGE do Município</label>
               <input className={inputCls("cityCode")} placeholder="Ex: 2507507" value={form.cityCode} onChange={e => update("cityCode", e.target.value)} />
-              <p className="text-xs text-zinc-400 mt-1">Consulte em ibge.gov.br se não souber</p>
+              <p className={hintCls}>Consulte em ibge.gov.br se não souber</p>
             </div>
           </>)}
 
@@ -206,7 +264,7 @@ export default function ConfigurarEmpresa() {
             <div>
               <label className={labelCls}>Código Serviço Federal (LC 116)</label>
               <input className={inputCls("federalServiceCode")} placeholder="Ex: 7.02" value={form.federalServiceCode} onChange={e => update("federalServiceCode", e.target.value)} />
-              <p className="text-xs text-zinc-400 mt-1">7.02 = Locação de bens. Consulte seu contador se necessário</p>
+              <p className={hintCls}>7.02 = Locação de bens. Consulte seu contador se necessário</p>
             </div>
             <div>
               <label className={labelCls}>CNAE (opcional)</label>
