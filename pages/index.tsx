@@ -76,6 +76,7 @@ const slimProductForCard = (product: any) => {
     title: toNullable(product?.title),
     slug: toNullable(product?.slug),
     comercialType: toNullable(product?.comercialType),
+    fragility: toNullable(product?.fragility),
     rate: toNullable(product?.rate),
     price: toNullable(product?.price),
     priceSale: toNullable(product?.priceSale),
@@ -209,7 +210,7 @@ export default function Home({
           <Filter />
         </div>
       </div>
-      <ProductSection products={Products} />
+      <ProductSection products={Products.slice(0, 5)} />
 
       <LazyRender
         minHeight={340}
