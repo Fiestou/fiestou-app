@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { PainelLayout } from "@/src/components/painel";
-import { ArrowLeft, Building2, Shield, Hash, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Building2, Shield, MapPin, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { getStore } from "@/src/contexts/AuthContext";
 
 export default function ConfigurarEmpresa() {
@@ -10,17 +10,42 @@ export default function ConfigurarEmpresa() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
     cnpj: "", razaoSocial: "", nomeFantasia: "", inscricaoMunicipal: "",
     regimeTributario: "simplesNacional",
-    street: "", number: "", district: "", postalCode: "", city: "", state: "PB", cityCode: "2507507",
+    street: "", number: "", district: "", postalCode: "", city: "", state: "", cityCode: "",
     federalServiceCode: "7.02", cnaeCode: "",
   });
 
-  const update = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
+  const update = (field: string, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    setStepErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
+  };
+
+  const validateStep = (s: number): boolean => {
+    const errors: Record<string, string> = {};
+    if (s === 0) {
+      if (!form.cnpj.replace(/\D/g, "")) errors.cnpj = "CNPJ é obrigatório";
+      else if (form.cnpj.replace(/\D/g, "").length < 14) errors.cnpj = "CNPJ inválido";
+      if (!form.razaoSocial.trim()) errors.razaoSocial = "Razão Social é obrigatória";
+    }
+    if (s === 1) {
+      if (!form.street.trim()) errors.street = "Rua é obrigatória";
+      if (!form.city.trim()) errors.city = "Cidade é obrigatória";
+      if (!form.state.trim()) errors.state = "UF é obrigatória";
+    }
+    setStepErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const nextStep = () => {
+    if (validateStep(step)) setStep(s => s + 1);
+  };
 
   const handleSubmit = async () => {
+    if (!validateStep(2)) return;
     setLoading(true);
     setError("");
     try {
@@ -29,7 +54,7 @@ export default function ConfigurarEmpresa() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          storeId: storeId,
+          storeId,
           cnpj: form.cnpj,
           razaoSocial: form.razaoSocial,
           nomeFantasia: form.nomeFantasia,
@@ -44,7 +69,7 @@ export default function ConfigurarEmpresa() {
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || data.details || "Erro ao cadastrar");
+      if (!data.success) throw new Error(data.details || data.error || "Erro ao cadastrar");
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || "Erro ao cadastrar empresa");
@@ -53,8 +78,12 @@ export default function ConfigurarEmpresa() {
     }
   };
 
-  const inputCls = "w-full px-3 py-2.5 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400";
+  const inputCls = (field: string) =>
+    `w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-colors ${
+      stepErrors[field] ? "border-red-300 bg-red-50/30" : "border-zinc-200"
+    }`;
   const labelCls = "block text-sm font-medium text-zinc-700 mb-1";
+  const errorCls = "text-xs text-red-500 mt-1";
 
   if (success) {
     return (
@@ -62,9 +91,13 @@ export default function ConfigurarEmpresa() {
         <div className="max-w-lg mx-auto py-12 text-center">
           <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
           <h2 className="text-2xl font-bold text-zinc-900 mb-2">Empresa cadastrada!</h2>
-          <p className="text-zinc-500 mb-6">Sua empresa foi registrada. Agora envie o certificado digital A1 pelo painel da Spedy para ativar a emissao.</p>
-          <button onClick={() => router.push("/painel/fiscal/emissao")} className="px-6 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800">
-            Voltar para Emissao
+          <p className="text-zinc-500 mb-6">
+            Sua empresa foi registrada no sistema fiscal. Para ativar a emissão,
+            envie o certificado digital A1 pelo painel da Spedy.
+          </p>
+          <button onClick={() => router.push("/painel/fiscal/emissao")}
+            className="px-6 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 transition-colors">
+            Voltar para Emissão
           </button>
         </div>
       </PainelLayout>
@@ -73,15 +106,15 @@ export default function ConfigurarEmpresa() {
 
   const steps = [
     { icon: Building2, label: "Dados da Empresa" },
-    { icon: Hash, label: "Endereco" },
-    { icon: Shield, label: "Tributacao" },
+    { icon: MapPin, label: "Endereço" },
+    { icon: Shield, label: "Tributação" },
   ];
 
   return (
     <PainelLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/painel/fiscal/emissao")} className="p-1.5 hover:bg-zinc-100 rounded-lg">
+          <button onClick={() => router.push("/painel/fiscal/emissao")} className="p-1.5 hover:bg-zinc-100 rounded-lg transition-colors">
             <ArrowLeft size={20} className="text-zinc-500" />
           </button>
           <h1 className="font-title text-2xl font-bold text-zinc-900">Configurar Empresa</h1>
@@ -90,9 +123,9 @@ export default function ConfigurarEmpresa() {
         {/* Steps */}
         <div className="flex gap-2">
           {steps.map((s, i) => (
-            <button key={i} onClick={() => setStep(i)}
+            <button key={i} onClick={() => { if (i < step) setStep(i); }}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                i === step ? "bg-zinc-900 text-white" : i < step ? "bg-green-50 text-green-700" : "bg-zinc-100 text-zinc-400"
+                i === step ? "bg-zinc-900 text-white" : i < step ? "bg-green-50 text-green-700 cursor-pointer hover:bg-green-100" : "bg-zinc-100 text-zinc-400 cursor-default"
               }`}>
               <s.icon size={14} /> {s.label}
             </button>
@@ -101,50 +134,102 @@ export default function ConfigurarEmpresa() {
 
         <div className="bg-white border border-zinc-200 rounded-xl p-6 space-y-4">
           {step === 0 && (<>
-            <div><label className={labelCls}>CNPJ *</label><input className={inputCls} placeholder="00.000.000/0001-00" value={form.cnpj} onChange={e => update("cnpj", e.target.value)} /></div>
-            <div><label className={labelCls}>Razao Social *</label><input className={inputCls} value={form.razaoSocial} onChange={e => update("razaoSocial", e.target.value)} /></div>
-            <div><label className={labelCls}>Nome Fantasia</label><input className={inputCls} value={form.nomeFantasia} onChange={e => update("nomeFantasia", e.target.value)} /></div>
-            <div><label className={labelCls}>Inscricao Municipal</label><input className={inputCls} value={form.inscricaoMunicipal} onChange={e => update("inscricaoMunicipal", e.target.value)} /></div>
+            <div>
+              <label className={labelCls}>CNPJ *</label>
+              <input className={inputCls("cnpj")} placeholder="00.000.000/0001-00" value={form.cnpj} onChange={e => update("cnpj", e.target.value)} />
+              {stepErrors.cnpj && <p className={errorCls}>{stepErrors.cnpj}</p>}
+            </div>
+            <div>
+              <label className={labelCls}>Razão Social *</label>
+              <input className={inputCls("razaoSocial")} value={form.razaoSocial} onChange={e => update("razaoSocial", e.target.value)} />
+              {stepErrors.razaoSocial && <p className={errorCls}>{stepErrors.razaoSocial}</p>}
+            </div>
+            <div>
+              <label className={labelCls}>Nome Fantasia</label>
+              <input className={inputCls("nomeFantasia")} value={form.nomeFantasia} onChange={e => update("nomeFantasia", e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>Inscrição Municipal</label>
+              <input className={inputCls("inscricaoMunicipal")} value={form.inscricaoMunicipal} onChange={e => update("inscricaoMunicipal", e.target.value)} />
+            </div>
           </>)}
 
           {step === 1 && (<>
             <div className="grid grid-cols-3 gap-4">
-              <div className="col-span-2"><label className={labelCls}>Rua</label><input className={inputCls} value={form.street} onChange={e => update("street", e.target.value)} /></div>
-              <div><label className={labelCls}>Numero</label><input className={inputCls} value={form.number} onChange={e => update("number", e.target.value)} /></div>
+              <div className="col-span-2">
+                <label className={labelCls}>Rua *</label>
+                <input className={inputCls("street")} value={form.street} onChange={e => update("street", e.target.value)} />
+                {stepErrors.street && <p className={errorCls}>{stepErrors.street}</p>}
+              </div>
+              <div>
+                <label className={labelCls}>Número</label>
+                <input className={inputCls("number")} value={form.number} onChange={e => update("number", e.target.value)} />
+              </div>
             </div>
-            <div><label className={labelCls}>Bairro</label><input className={inputCls} value={form.district} onChange={e => update("district", e.target.value)} /></div>
+            <div>
+              <label className={labelCls}>Bairro</label>
+              <input className={inputCls("district")} value={form.district} onChange={e => update("district", e.target.value)} />
+            </div>
             <div className="grid grid-cols-3 gap-4">
-              <div><label className={labelCls}>CEP</label><input className={inputCls} value={form.postalCode} onChange={e => update("postalCode", e.target.value)} /></div>
-              <div><label className={labelCls}>Cidade</label><input className={inputCls} value={form.city} onChange={e => update("city", e.target.value)} /></div>
-              <div><label className={labelCls}>UF</label><input className={inputCls} value={form.state} onChange={e => update("state", e.target.value)} /></div>
+              <div>
+                <label className={labelCls}>CEP</label>
+                <input className={inputCls("postalCode")} placeholder="00000-000" value={form.postalCode} onChange={e => update("postalCode", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Cidade *</label>
+                <input className={inputCls("city")} value={form.city} onChange={e => update("city", e.target.value)} />
+                {stepErrors.city && <p className={errorCls}>{stepErrors.city}</p>}
+              </div>
+              <div>
+                <label className={labelCls}>UF *</label>
+                <input className={inputCls("state")} maxLength={2} placeholder="PB" value={form.state} onChange={e => update("state", e.target.value.toUpperCase())} />
+                {stepErrors.state && <p className={errorCls}>{stepErrors.state}</p>}
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Código IBGE do Município</label>
+              <input className={inputCls("cityCode")} placeholder="Ex: 2507507" value={form.cityCode} onChange={e => update("cityCode", e.target.value)} />
+              <p className="text-xs text-zinc-400 mt-1">Consulte em ibge.gov.br se não souber</p>
             </div>
           </>)}
 
           {step === 2 && (<>
             <div>
-              <label className={labelCls}>Regime Tributario</label>
-              <select className={inputCls} value={form.regimeTributario} onChange={e => update("regimeTributario", e.target.value)}>
+              <label className={labelCls}>Regime Tributário</label>
+              <select className={inputCls("regimeTributario")} value={form.regimeTributario} onChange={e => update("regimeTributario", e.target.value)}>
                 <option value="simplesNacional">Simples Nacional</option>
                 <option value="lucroPresumido">Lucro Presumido</option>
                 <option value="lucroReal">Lucro Real</option>
                 <option value="mei">MEI</option>
               </select>
             </div>
-            <div><label className={labelCls}>Codigo Servico Federal (LC 116)</label><input className={inputCls} placeholder="Ex: 7.02" value={form.federalServiceCode} onChange={e => update("federalServiceCode", e.target.value)} /></div>
-            <div><label className={labelCls}>CNAE (opcional)</label><input className={inputCls} placeholder="Ex: 7490104" value={form.cnaeCode} onChange={e => update("cnaeCode", e.target.value)} /></div>
+            <div>
+              <label className={labelCls}>Código Serviço Federal (LC 116)</label>
+              <input className={inputCls("federalServiceCode")} placeholder="Ex: 7.02" value={form.federalServiceCode} onChange={e => update("federalServiceCode", e.target.value)} />
+              <p className="text-xs text-zinc-400 mt-1">7.02 = Locação de bens. Consulte seu contador se necessário</p>
+            </div>
+            <div>
+              <label className={labelCls}>CNAE (opcional)</label>
+              <input className={inputCls("cnaeCode")} placeholder="Ex: 7490104" value={form.cnaeCode} onChange={e => update("cnaeCode", e.target.value)} />
+            </div>
           </>)}
 
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{error}</p>}
+          {error && (
+            <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+              <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+              <p>{error}</p>
+            </div>
+          )}
 
           <div className="flex justify-between pt-2">
             {step > 0 ? (
-              <button onClick={() => setStep(s => s - 1)} className="px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 rounded-lg">Voltar</button>
+              <button onClick={() => setStep(s => s - 1)} className="px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors">Voltar</button>
             ) : <div />}
             {step < 2 ? (
-              <button onClick={() => setStep(s => s + 1)} className="px-6 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800">Proximo</button>
+              <button onClick={nextStep} className="px-6 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 transition-colors">Próximo</button>
             ) : (
-              <button onClick={handleSubmit} disabled={loading || !form.cnpj || !form.razaoSocial}
-                className="px-6 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 disabled:opacity-50 flex items-center gap-2">
+              <button onClick={handleSubmit} disabled={loading}
+                className="px-6 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 disabled:opacity-50 flex items-center gap-2 transition-colors">
                 {loading && <Loader2 size={14} className="animate-spin" />} Cadastrar Empresa
               </button>
             )}

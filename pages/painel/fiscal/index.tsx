@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import { PainelLayout } from "@/src/components/painel";
-import { FileText, Download, CheckCircle, AlertTriangle, Clock, Info, Building2, Send } from "lucide-react";
+import { FileText, Download, CheckCircle, AlertTriangle, Clock, Info, Building2, Send, RefreshCw } from "lucide-react";
 import { getStore } from "@/src/contexts/AuthContext";
 
 type Invoice = {
@@ -22,21 +22,36 @@ const statusMap: Record<string, { label: string; cls: string }> = {
   cancelled: { label: "Cancelada", cls: "bg-zinc-50 text-zinc-500 border-zinc-200" },
 };
 
+function extractOrderId(integrationId: string): string {
+  const match = integrationId?.match(/order[\-]?(\d+)/i);
+  return match ? `#${match[1]}` : "-";
+}
+
 export default function FiscalPage() {
-  const [tab, setTab] = useState<"fiestou" | "emissao">("fiestou");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const loadInvoices = useCallback(async () => {
     try {
       setLoading(true);
+      setError("");
       const storeId = getStore();
-      const res = await fetch(`/api/fiscal/store-invoices?storeId=${storeId || ""}`);
+      if (!storeId) {
+        setError("Loja não identificada. Faça login novamente.");
+        return;
+      }
+      const res = await fetch(`/api/fiscal/store-invoices?storeId=${storeId}`);
       const data = await res.json();
-      if (data.success) setInvoices(data.invoices || []);
+      if (data.success) {
+        setInvoices(data.invoices || []);
+      } else {
+        setError(data.error || "Erro ao carregar notas.");
+      }
     } catch (err) {
       console.error("Erro ao carregar notas:", err);
+      setError("Não foi possível conectar ao servidor fiscal.");
     } finally {
       setLoading(false);
     }
@@ -54,26 +69,31 @@ export default function FiscalPage() {
   return (
     <PainelLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-title text-2xl sm:text-3xl font-bold text-zinc-900">Notas Fiscais</h1>
-          <p className="text-sm text-zinc-500 mt-1">Gerencie as notas fiscais da sua loja</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-title text-2xl sm:text-3xl font-bold text-zinc-900">Notas Fiscais</h1>
+            <p className="text-sm text-zinc-500 mt-1">Gerencie as notas fiscais da sua loja</p>
+          </div>
+          <button
+            onClick={loadInvoices}
+            disabled={loading}
+            className="p-2 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors disabled:opacity-50"
+            title="Atualizar"
+          >
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+          </button>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-1 bg-zinc-100 rounded-xl p-1">
-          <button
-            onClick={() => setTab("fiestou")}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              tab === "fiestou" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
-            }`}
-          >
+          <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white text-zinc-900 shadow-sm transition-all">
             <Building2 size={16} /> Notas da Fiestou
           </button>
           <button
             onClick={() => router.push("/painel/fiscal/emissao")}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-zinc-500 hover:text-zinc-700 transition-all"
           >
-            <Send size={16} /> Minha Emissao
+            <Send size={16} /> Minha Emissão
           </button>
         </div>
 
@@ -82,7 +102,7 @@ export default function FiscalPage() {
           <div className="flex gap-3">
             <Info size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-blue-800">
-              A Fiestou emite nota fiscal de intermediacao (comissao) para cada pedido pago no marketplace.
+              A Fiestou emite nota fiscal de intermediação (comissão) para cada pedido pago no marketplace.
               Essas notas aparecem aqui automaticamente.
             </p>
           </div>
@@ -114,13 +134,26 @@ export default function FiscalPage() {
           </div>
         )}
 
+        {/* Error */}
+        {!loading && error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex gap-3">
+              <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-800">{error}</p>
+                <button onClick={loadInvoices} className="text-sm text-red-600 underline mt-1">Tentar novamente</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Empty */}
-        {!loading && invoices.length === 0 && (
+        {!loading && !error && invoices.length === 0 && (
           <div className="bg-white border border-zinc-200 rounded-xl p-8 text-center">
             <FileText size={48} className="mx-auto text-zinc-200 mb-3" />
             <h3 className="text-lg font-semibold text-zinc-700 mb-1">Nenhuma nota fiscal emitida</h3>
             <p className="text-sm text-zinc-500 max-w-sm mx-auto">
-              As notas fiscais de comissao aparecerao aqui conforme pedidos forem pagos.
+              As notas fiscais de comissão aparecerão aqui conforme pedidos forem pagos.
             </p>
           </div>
         )}
@@ -131,13 +164,14 @@ export default function FiscalPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-100">
-                    <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">No</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">Tomador</th>
+                  <tr className="border-b border-zinc-100 bg-zinc-50/50">
+                    <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">Nº</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">Pedido</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">Descrição</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">Status</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">Valor</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">Data</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">Acoes</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -146,13 +180,14 @@ export default function FiscalPage() {
                     return (
                       <tr key={nota.id} className="border-b border-zinc-50 hover:bg-zinc-50/50">
                         <td className="px-4 py-3 font-medium text-zinc-900">{nota.numero || "-"}</td>
-                        <td className="px-4 py-3 text-zinc-700">{nota.receiver?.name || "-"}</td>
+                        <td className="px-4 py-3 text-zinc-600 font-mono text-xs">{extractOrderId(nota.integrationId)}</td>
+                        <td className="px-4 py-3 text-zinc-600 text-xs max-w-[200px] truncate">{nota.description || "-"}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium border ${badge.cls}`}>
                             {badge.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-zinc-700">
+                        <td className="px-4 py-3 text-zinc-700 font-medium">
                           {nota.amount ? `R$ ${nota.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}
                         </td>
                         <td className="px-4 py-3 text-zinc-500">
