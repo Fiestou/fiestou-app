@@ -7,6 +7,7 @@ import { getImage, moneyFormat } from "@/src/helper";
 export default function Partner({ params }: { params: StoreType & { previewProducts?: any[] } }) {
   const products = (params?.previewProducts || []).slice(0, 3);
   const location = [params?.city, params?.state].filter(Boolean).join(", ");
+  const segment = params?.segment && !Number(params.segment) ? params.segment : null;
 
   return (
     <div className="border border-zinc-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 bg-white">
@@ -25,9 +26,11 @@ export default function Partner({ params }: { params: StoreType & { previewProdu
             <h6 className="font-title font-bold text-sm text-zinc-900 truncate leading-tight">
               {params?.title ?? params?.companyName}
             </h6>
-            {location && (
-              <p className="text-[11px] text-zinc-400 truncate mt-0.5">{location}</p>
-            )}
+            <p className="text-[11px] text-zinc-400 truncate mt-0.5">
+              {segment && <span className="text-cyan-600 font-medium">{segment}</span>}
+              {segment && location && <span className="mx-1">&bull;</span>}
+              {location && <span>{location}</span>}
+            </p>
           </div>
         </div>
       </Link>
