@@ -10,6 +10,7 @@ interface ProductSectionProps {
 
 export default function ProductSection({ products = [] }: ProductSectionProps) {
   const hasProducts = Array.isArray(products) && products.length > 0;
+  const isOddCount = products.length % 2 !== 0;
 
   return (
     <section className="py-14">
@@ -21,10 +22,10 @@ export default function ProductSection({ products = [] }: ProductSectionProps) {
         </div>
 
         <div className="flex flex-wrap md:flex-nowrap items-center md:pt-6">
-          <div className="order-3 md:order-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full relative overflow-hidden">
+          <div className={`order-3 md:order-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full relative overflow-hidden${isOddCount ? " home-products-odd" : ""}`}>
             {hasProducts ? (
-              products.map((item: any, index: number) => (
-                <div key={item?.id || item?.slug} className={index === products.length - 1 && products.length % 2 !== 0 ? "hidden md:block" : ""}>
+              products.map((item: any) => (
+                <div key={item?.id || item?.slug} className="home-product-item">
                   <Product product={item} />
                 </div>
               ))
@@ -44,6 +45,14 @@ export default function ProductSection({ products = [] }: ProductSectionProps) {
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        @media (max-width: 767px) {
+          .home-products-odd .home-product-item:last-child {
+            display: none;
+          }
+        }
+      `}</style>
     </section>
   );
 }
