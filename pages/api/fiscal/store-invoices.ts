@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import Api from "@/src/services/api";
 import axios from "axios";
 
 const SPEDY_API_KEY = process.env.SPEDY_API_KEY || "";
@@ -13,6 +14,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!storeId) return res.status(400).json({ error: "storeId obrigatorio" });
 
   try {
+    const api = new Api();
+    let storeCnpj = "";
+
+    try {
+      const storeResp: any = await api.request({
+        method: "get",
+        url: "request/store",
+        data: { id: storeId },
+      });
+      const doc = storeResp?.data?.document || storeResp?.document || "";
+      storeCnpj = doc.replace(/\D/g, "");
+    } catch (_) {}
+
     const response = await axios.get(`${SPEDY_BASE}/service-invoices`, {
       headers: { "X-Api-Key": SPEDY_API_KEY },
       params: { pageSize: 50 },
@@ -20,10 +34,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const allInvoices = response.data?.items || [];
 
-    // Filter invoices that match this store by integrationId pattern
-    // Our integrationId format: "fiestou-taxa-{orderId}"
-    // We return all for now since we only have Fiestou as emitter
-    const invoices = allInvoices.map((inv: any) => ({
+    const filtered = storeCnpj
+      ? allInvoices.filter((inv: any) => {
+          const rcnpj = (inv.receiver?.federalTaxNumber || "").replace(/\D/g, "");
+          return rcnpj === storeCnpj;
+        })
+      : [];
+
+    const invoices = filtered.map((inv: any) => ({
       id: inv.id,
       integrationId: inv.integrationId,
       status: inv.status,
@@ -31,13 +49,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       amount: inv.amount,
       description: inv.description,
       issuedOn: inv.issuedOn,
-      effectiveDate: inv.effectiveDate,
       receiver: {
         name: inv.receiver?.name,
         federalTaxNumber: inv.receiver?.federalTaxNumber,
       },
       authorization: inv.authorization,
-      processingDetail: inv.processingDetail,
     }));
 
     return res.status(200).json({ success: true, invoices });

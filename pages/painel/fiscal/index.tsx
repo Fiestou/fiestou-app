@@ -31,8 +31,8 @@ export default function FiscalPage() {
   const loadInvoices = useCallback(async () => {
     try {
       setLoading(true);
-      const store = getStore();
-      const res = await fetch(`/api/fiscal/store-invoices?storeId=${store?.id || ""}`);
+      const storeId = getStore();
+      const res = await fetch(`/api/fiscal/store-invoices?storeId=${storeId || ""}`);
       const data = await res.json();
       if (data.success) setInvoices(data.invoices || []);
     } catch (err) {

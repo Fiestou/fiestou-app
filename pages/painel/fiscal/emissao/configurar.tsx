@@ -24,12 +24,12 @@ export default function ConfigurarEmpresa() {
     setLoading(true);
     setError("");
     try {
-      const store = getStore();
+      const storeId = getStore();
       const res = await fetch("/api/fiscal/store-config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          storeId: store?.id,
+          storeId: storeId,
           cnpj: form.cnpj,
           razaoSocial: form.razaoSocial,
           nomeFantasia: form.nomeFantasia,
