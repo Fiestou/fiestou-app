@@ -106,6 +106,27 @@ export default function DeliveryRadiusMap({
     onUpdateRef.current(coords[0], coords[1], radius);
   };
 
+  // Enter = seleciona primeiro resultado ou busca imediata
+  const handleKeyDown = async (e: React.KeyboardEvent) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (suggestions.length > 0) {
+      selectCity(suggestions[0].coords, suggestions[0].name);
+      return;
+    }
+
+    if (cityQuery.length >= 2) {
+      setSearching(true);
+      const coords = await geocodeQuery(cityQuery + ", Brasil");
+      setSearching(false);
+      if (coords) {
+        selectCity(coords, cityQuery);
+      }
+    }
+  };
+
   const handleCenterChange = useCallback((newLat: number, newLng: number) => {
     setCenter([newLat, newLng]);
     onUpdateRef.current(newLat, newLng, radius);
@@ -135,6 +156,7 @@ export default function DeliveryRadiusMap({
                 value={cityQuery}
                 onChange={e => handleSearchInput(e.target.value)}
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                onKeyDown={handleKeyDown}
                 placeholder="Ex: João Pessoa, Recife, São Paulo..."
                 className="w-full pl-9 pr-3 py-2.5 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:border-cyan-400"
                 autoComplete="off"
@@ -176,6 +198,7 @@ export default function DeliveryRadiusMap({
               onChange={e => handleSearchInput(e.target.value)}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              onKeyDown={handleKeyDown}
               placeholder="Buscar outra cidade..."
               className="w-full pl-8 pr-3 py-2 text-xs border border-zinc-200 rounded-lg bg-zinc-50 focus:outline-none focus:ring-1 focus:ring-cyan-300"
               autoComplete="off"
