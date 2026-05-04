@@ -133,6 +133,11 @@ export default function Loja() {
       handle.zipcode_cities_ranges?.map((item: any) => item.zipcode_cities_range_id),
     );
 
+    // Delivery radius from DB
+    handle.delivery_lat = handle.delivery_lat || null;
+    handle.delivery_lng = handle.delivery_lng || null;
+    handle.delivery_radius_km = handle.delivery_radius_km || 0;
+
     if (typeof handle.rental_rules === "string") {
       try { handle.rental_rules = JSON.parse(handle.rental_rules); } catch { handle.rental_rules = null; }
     }
@@ -358,6 +363,9 @@ export default function Loja() {
       const payload = {
         ...store,
         deliveryRegions: normalizedDeliveryRegions,
+        delivery_lat: store?.delivery_lat || null,
+        delivery_lng: store?.delivery_lng || null,
+        delivery_radius_km: store?.delivery_radius_km || 0,
         metadata: { ...(store.metadata || {}), social_links: store.social_links },
         default_delivery_fee: moneyBRToNumber(store?.default_delivery_fee),
         minimum_order: { enabled: store?.minimum_order?.enabled ? 1 : 0, value: moneyBRToNumber(store?.minimum_order?.value) },
@@ -955,7 +963,30 @@ export default function Loja() {
                     </p>
                     )}
                   </div>
+                                    {/* Raio de entrega visual */}
                   <div className="rounded-xl border border-zinc-200 bg-white p-4">
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-zinc-700 mb-1.5">Raio de entrega</label>
+                      <p className="text-xs leading-5 text-zinc-500">
+                        Arraste o pin ou clique no mapa para ajustar o centro. Use o slider para definir o raio.
+                      </p>
+                    </div>
+                    <DeliveryRadiusMap
+                      lat={store?.delivery_lat}
+                      lng={store?.delivery_lng}
+                      radiusKm={store?.delivery_radius_km || 15}
+                      storeCep={store?.zipCode}
+                      storeCity={store?.city}
+                      storeState={store?.state}
+                      onUpdate={(lat, lng, radiusKm) => handleStore({
+                        delivery_lat: lat,
+                        delivery_lng: lng,
+                        delivery_radius_km: radiusKm,
+                      })}
+                    />
+                  </div>
+
+<div className="rounded-xl border border-zinc-200 bg-white p-4">
                     <div className="mb-3">
                       <label className="block text-sm font-medium text-zinc-700 mb-1.5">Região de atendimento</label>
                       {panelMode !== "simple" && (
