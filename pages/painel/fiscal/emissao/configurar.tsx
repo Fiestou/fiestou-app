@@ -19,7 +19,7 @@ export default function ConfigurarEmpresa() {
     cnpj: "", razaoSocial: "", nomeFantasia: "", inscricaoMunicipal: "",
     regimeTributario: "simplesNacional",
     street: "", number: "", district: "", postalCode: "", city: "", state: "", cityCode: "",
-    federalServiceCode: "7.02", cnaeCode: "",
+    federalServiceCode: "7.02", cnaeCode: "", issWithheld: "false", issRate: "0.02",
   });
 
   // Pré-preencher com dados da loja
@@ -265,6 +265,21 @@ export default function ConfigurarEmpresa() {
               <label className={labelCls}>Código Serviço Federal (LC 116)</label>
               <input className={inputCls("federalServiceCode")} placeholder="Ex: 7.02" value={form.federalServiceCode} onChange={e => update("federalServiceCode", e.target.value)} />
               <p className={hintCls}>7.02 = Locação de bens. Consulte seu contador se necessário</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>ISS a reter?</label>
+                <select className={inputCls("issWithheld")} value={form.issWithheld} onChange={e => update("issWithheld", e.target.value)}>
+                  <option value="false">Não - ISS não retido</option>
+                  <option value="true">Sim - ISS retido na fonte</option>
+                </select>
+                <p className={hintCls}>Define se o ISS será retido pelo tomador</p>
+              </div>
+              <div>
+                <label className={labelCls}>Alíquota ISS (%)</label>
+                <input className={inputCls("issRate")} placeholder="Ex: 2" value={form.issRate} onChange={e => update("issRate", e.target.value)} />
+                <p className={hintCls}>Normalmente entre 2% e 5%</p>
+              </div>
             </div>
             <div>
               <label className={labelCls}>CNAE (opcional)</label>
