@@ -57,8 +57,8 @@ function AutoFit({ center, radiusMeters }: { center: [number, number]; radiusMet
     const shouldFit = isFirstRender.current || radiusDiff > lastRadius.current * 0.3;
 
     if (shouldFit) {
-      const circle = L.circle(center, { radius: radiusMeters });
-      map.fitBounds(circle.getBounds(), { padding: [30, 30], animate: true });
+      const bounds = L.latLng(center[0], center[1]).toBounds(radiusMeters * 2);
+      map.fitBounds(bounds, { padding: [30, 30], animate: true });
       lastRadius.current = radiusMeters;
       isFirstRender.current = false;
     } else {
