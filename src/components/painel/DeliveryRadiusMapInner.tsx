@@ -83,6 +83,7 @@ export default function DeliveryRadiusMapInner({ center, radiusMeters, onCenterC
       style={{ height: "100%", width: "100%" }}
       zoomControl={true}
       scrollWheelZoom={true}
+      tap={false}
     >
       <TileLayer
         attribution={'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}

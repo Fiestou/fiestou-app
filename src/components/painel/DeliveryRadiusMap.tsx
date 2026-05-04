@@ -53,12 +53,12 @@ export default function DeliveryRadiusMap({
           onUpdateRef.current(newCenter[0], newCenter[1], radius);
         } else {
           setCenter([-7.115, -34.861]);
-          setGeocodeError("Endere\u00e7o n\u00e3o encontrado. Ajuste o pin manualmente.");
+          setGeocodeError("Endereço não encontrado. Ajuste o pin manualmente.");
         }
       } catch {
         if (cancelled) return;
         setCenter([-7.115, -34.861]);
-        setGeocodeError("Erro ao buscar localiza\u00e7\u00e3o. Ajuste o pin.");
+        setGeocodeError("Erro ao buscar localização. Ajuste o pin manualmente.");
       }
       setLoading(false);
     };
@@ -82,7 +82,7 @@ export default function DeliveryRadiusMap({
     return (
       <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-8 text-center">
         <div className="animate-spin w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-2" />
-        <p className="text-sm text-zinc-500">Localizando seu endere\u00e7o...</p>
+        <p className="text-sm text-zinc-500">Localizando seu endereço...</p>
       </div>
     );
   }
@@ -95,7 +95,7 @@ export default function DeliveryRadiusMap({
         </div>
       )}
 
-      <div className="rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100" style={{ height: 340 }}>
+      <div className="rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100" style={{ height: "min(340px, 50vh)" }}>
         {center && (
           <MapInner
             center={center}

@@ -986,7 +986,7 @@ export default function Loja() {
                     />
                   </div>
 
-<div className="rounded-xl border border-zinc-200 bg-white p-4">
+                  <div className="rounded-xl border border-zinc-200 bg-white p-4">
                     <div className="mb-3">
                       <label className="block text-sm font-medium text-zinc-700 mb-1.5">Região de atendimento</label>
                       {panelMode !== "simple" && (
