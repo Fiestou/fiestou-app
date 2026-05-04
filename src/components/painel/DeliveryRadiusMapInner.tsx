@@ -1,9 +1,8 @@
-import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Circle, Marker, useMapEvents } from "react-leaflet";
+import { useEffect, useRef, useState } from "react";
+import { MapContainer, TileLayer, Circle, Marker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Fix default marker icon
 const defaultIcon = L.icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -47,13 +46,26 @@ function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => v
   return null;
 }
 
-function FitBounds({ center, radiusMeters }: { center: [number, number]; radiusMeters: number }) {
-  const map = useMapEvents({});
+// Ajusta bounds apenas no mount e quando o radius muda significativamente
+function AutoFit({ center, radiusMeters }: { center: [number, number]; radiusMeters: number }) {
+  const map = useMap();
+  const lastRadius = useRef(radiusMeters);
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
-    const circle = L.circle(center, { radius: radiusMeters });
-    const bounds = circle.getBounds();
-    map.fitBounds(bounds, { padding: [20, 20] });
-  }, [center, radiusMeters, map]);
+    const radiusDiff = Math.abs(radiusMeters - lastRadius.current);
+    const shouldFit = isFirstRender.current || radiusDiff > lastRadius.current * 0.3;
+
+    if (shouldFit) {
+      const circle = L.circle(center, { radius: radiusMeters });
+      map.fitBounds(circle.getBounds(), { padding: [30, 30], animate: true });
+      lastRadius.current = radiusMeters;
+      isFirstRender.current = false;
+    } else {
+      map.panTo(center, { animate: true });
+    }
+  }, [center[0], center[1], radiusMeters]);
+
   return null;
 }
 
@@ -70,9 +82,10 @@ export default function DeliveryRadiusMapInner({ center, radiusMeters, onCenterC
       zoom={11}
       style={{ height: "100%", width: "100%" }}
       zoomControl={true}
+      scrollWheelZoom={true}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        attribution={'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <Circle
@@ -83,11 +96,12 @@ export default function DeliveryRadiusMapInner({ center, radiusMeters, onCenterC
           fillColor: "#06b6d4",
           fillOpacity: 0.12,
           weight: 2,
+          dashArray: "6 4",
         }}
       />
       <DraggableMarker position={center} onDragEnd={onCenterChange} />
       <MapClickHandler onClick={onCenterChange} />
-      <FitBounds center={center} radiusMeters={radiusMeters} />
+      <AutoFit center={center} radiusMeters={radiusMeters} />
     </MapContainer>
   );
 }

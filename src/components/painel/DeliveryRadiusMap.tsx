@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { MapPin, Minus, Plus } from "lucide-react";
 
@@ -12,7 +12,6 @@ interface DeliveryRadiusMapProps {
   onUpdate: (lat: number, lng: number, radiusKm: number) => void;
 }
 
-// Leaflet precisa de dynamic import (SSR incompativel)
 const MapInner = dynamic(() => import("./DeliveryRadiusMapInner"), { ssr: false });
 
 export default function DeliveryRadiusMap({
@@ -24,50 +23,60 @@ export default function DeliveryRadiusMap({
   const [radius, setRadius] = useState(radiusKm || 15);
   const [loading, setLoading] = useState(!lat || !lng);
   const [geocodeError, setGeocodeError] = useState("");
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
 
-  // Geocode store address to lat/lng if not set
+  // Geocode apenas 1 vez no mount se nao tem lat/lng
   useEffect(() => {
-    if (center) { setLoading(false); return; }
+    if (lat && lng) { setLoading(false); return; }
     if (!storeCep && !storeCity) { setLoading(false); return; }
+
+    let cancelled = false;
 
     const geocode = async () => {
       try {
-        // Try Nominatim (OpenStreetMap) first
         const query = storeCep
           ? `${storeCep}, ${storeState || "Brasil"}`
           : `${storeCity}, ${storeState || "PB"}, Brasil`;
+
         const resp = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+          { headers: { "Accept-Language": "pt-BR" } }
         );
         const data = await resp.json();
+
+        if (cancelled) return;
+
         if (data?.[0]) {
           const newCenter: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
           setCenter(newCenter);
-          onUpdate(newCenter[0], newCenter[1], radius);
+          onUpdateRef.current(newCenter[0], newCenter[1], radius);
         } else {
-          // Fallback: Joao Pessoa
           setCenter([-7.115, -34.861]);
           setGeocodeError("Endere\u00e7o n\u00e3o encontrado. Ajuste o pin manualmente.");
         }
       } catch {
+        if (cancelled) return;
         setCenter([-7.115, -34.861]);
-        setGeocodeError("Erro ao buscar localiza\u00e7\u00e3o. Ajuste o pin manualmente.");
+        setGeocodeError("Erro ao buscar localiza\u00e7\u00e3o. Ajuste o pin.");
       }
       setLoading(false);
     };
+
     geocode();
-  }, [storeCep, storeCity, storeState]);
+    return () => { cancelled = true; };
+  }, []); // Roda apenas 1 vez
 
   const handleCenterChange = useCallback((newLat: number, newLng: number) => {
     setCenter([newLat, newLng]);
-    onUpdate(newLat, newLng, radius);
-  }, [radius, onUpdate]);
+    onUpdateRef.current(newLat, newLng, radius);
+  }, [radius]);
 
   const handleRadiusChange = useCallback((newRadius: number) => {
-    const r = Math.max(1, newRadius);
+    const r = Math.max(1, Math.round(newRadius));
     setRadius(r);
-    if (center) onUpdate(center[0], center[1], r);
-  }, [center, onUpdate]);
+    if (center) onUpdateRef.current(center[0], center[1], r);
+  }, [center]);
 
   if (loading) {
     return (
@@ -86,7 +95,6 @@ export default function DeliveryRadiusMap({
         </div>
       )}
 
-      {/* Map */}
       <div className="rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100" style={{ height: 340 }}>
         {center && (
           <MapInner
@@ -97,7 +105,6 @@ export default function DeliveryRadiusMap({
         )}
       </div>
 
-      {/* Radius control */}
       <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -118,7 +125,7 @@ export default function DeliveryRadiusMap({
                 min={1}
                 value={radius}
                 onChange={e => handleRadiusChange(Number(e.target.value) || 1)}
-                className="w-12 text-center text-sm font-bold text-zinc-900 bg-transparent border-none outline-none"
+                className="w-12 text-center text-sm font-bold text-zinc-900 bg-transparent border-none outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
               />
               <span className="text-xs text-zinc-400 ml-0.5">km</span>
             </div>
@@ -136,16 +143,16 @@ export default function DeliveryRadiusMap({
           min={1}
           max={500}
           step={1}
-          value={radius}
+          value={Math.min(radius, 500)}
           onChange={e => handleRadiusChange(Number(e.target.value))}
           className="w-full accent-cyan-500"
         />
         <div className="flex justify-between text-[10px] text-zinc-400 mt-1">
           <span>1 km</span>
-          <span>50 km</span>
-          <span>100 km</span>
-          <span>250 km</span>
-          <span>500 km</span>
+          <span>50</span>
+          <span>100</span>
+          <span>250</span>
+          <span>500+ km</span>
         </div>
       </div>
     </div>
