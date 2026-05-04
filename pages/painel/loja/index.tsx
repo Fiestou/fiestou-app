@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Api from "@/src/services/api";
+import DeliveryRadiusMap from "@/src/components/painel/DeliveryRadiusMap";
 import { Input, Select, TextArea } from "@/src/components/ui/form";
 import { Cover, DayType, StoreType } from "@/src/models/store";
 import Img from "@/src/components/utils/ImgBase";
