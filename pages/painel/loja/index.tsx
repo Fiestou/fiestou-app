@@ -1405,6 +1405,19 @@ export default function Loja() {
                 })}
               />
             </div>
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e as any)}
+              disabled={saving}
+              className={submitButtonClass}
+            >
+              {saving ? (
+                <div className="animate-spin w-4 h-4 border-2 border-zinc-900 border-t-transparent rounded-full" />
+              ) : (
+                <Save size={16} />
+              )}
+              {saving ? "Salvando..." : "Salvar vitrine"}
+            </button>
           </div>
         );
       case "contato":
