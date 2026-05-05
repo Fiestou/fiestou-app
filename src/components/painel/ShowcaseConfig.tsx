@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Shuffle, Hand, TrendingUp, Search, X, GripVertical } from "lucide-react";
+import { Shuffle, Hand, TrendingUp, Search, X } from "lucide-react";
 import Img from "@/src/components/utils/ImgBase";
 import { getImage, moneyFormat } from "@/src/helper";
 import Api from "@/src/services/api";
@@ -32,9 +32,10 @@ export default function ShowcaseConfig({ storeId, mode, selectedIds, onUpdate }:
     loaded.current = true;
     setLoading(true);
 
-    api.bridge({ method: "get", url: "stores/products" })
+    api.bridge({ method: "get", url: "stores/products?limit=999" })
       .then((res: any) => {
-        const list = res?.data?.products || res?.data || res?.products || [];
+        const raw = res?.data || res || {};
+        const list = Array.isArray(raw) ? raw : (raw?.data || raw?.products || []);
         setProducts(Array.isArray(list) ? list : []);
       })
       .catch(() => {})

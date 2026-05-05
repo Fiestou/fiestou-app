@@ -73,7 +73,7 @@ const tabs = [
 ];
 
 const TAB_HELPERS: Record<string, string> = {
-  vitrine: "Produtos em destaque na p\u00e1gina de parceiros.",
+  vitrine: "Produtos em destaque na página de parceiros.",
   aparencia: "Capa, foto e apresentação da loja.",
   informacoes: "CNPJ, razão social e endereço principal.",
   horarios: "Dias e faixas de atendimento da loja.",
@@ -1389,7 +1389,7 @@ export default function Loja() {
               <div className="mb-3">
                 <label className="block text-sm font-medium text-zinc-700 mb-1.5">Vitrine de produtos</label>
                 <p className="text-xs leading-5 text-zinc-500">
-                  Escolha como seus produtos aparecem no card da sua loja na p\u00e1gina de parceiros.
+                  Escolha como seus produtos aparecem no card da sua loja na página de parceiros.
                 </p>
               </div>
               <ShowcaseConfig
