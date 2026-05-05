@@ -17,6 +17,7 @@ import {
   ImageIcon, UserCircle, Save, X, Pencil, FileText,
   Building2, MapPin, Clock, Truck, ScrollText, Share2,
   Instagram, Facebook, Globe, Phone, Eye, ChevronRight, ChevronDown,
+  Star,
 } from "lucide-react";
 import { PainelLayout, PageHeader } from "@/src/components/painel";
 import usePainelPageMode from "@/src/components/painel/usePainelPageMode";
