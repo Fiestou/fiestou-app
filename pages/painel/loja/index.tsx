@@ -1,6 +1,6 @@
 //@ts-nocheck
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Star, useRouter } from "next/router";
+import { useRouter } from "next/router";
 import Api from "@/src/services/api";
 import DeliveryRadiusMap from "@/src/components/painel/DeliveryRadiusMap";
 import ShowcaseConfig from "@/src/components/painel/ShowcaseConfig";
