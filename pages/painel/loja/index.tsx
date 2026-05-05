@@ -1,8 +1,9 @@
 //@ts-nocheck
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/router";
+import { Star, useRouter } from "next/router";
 import Api from "@/src/services/api";
 import DeliveryRadiusMap from "@/src/components/painel/DeliveryRadiusMap";
+import ShowcaseConfig from "@/src/components/painel/ShowcaseConfig";
 import { Input, Select, TextArea } from "@/src/components/ui/form";
 import { Cover, DayType, StoreType } from "@/src/models/store";
 import Img from "@/src/components/utils/ImgBase";
@@ -62,6 +63,7 @@ const days: Record<string, string[]> = [
 
 const tabs = [
   { id: "aparencia", label: "Aparência", icon: ImageIcon },
+  { id: "vitrine", label: "Vitrine", icon: Star },
   { id: "informacoes", label: "Informações", icon: Building2 },
   { id: "horarios", label: "Horários", icon: Clock },
   { id: "entrega", label: "Entrega", icon: Truck },
@@ -70,6 +72,7 @@ const tabs = [
 ];
 
 const TAB_HELPERS: Record<string, string> = {
+  vitrine: "Produtos em destaque na p\u00e1gina de parceiros.",
   aparencia: "Capa, foto e apresentação da loja.",
   informacoes: "CNPJ, razão social e endereço principal.",
   horarios: "Dias e faixas de atendimento da loja.",
@@ -1378,6 +1381,31 @@ export default function Loja() {
           </form>
         );
 
+      case "vitrine":
+        return (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4">
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-zinc-700 mb-1.5">Vitrine de produtos</label>
+                <p className="text-xs leading-5 text-zinc-500">
+                  Escolha como seus produtos aparecem no card da sua loja na p\u00e1gina de parceiros.
+                </p>
+              </div>
+              <ShowcaseConfig
+                storeId={Number(store?.id || 0)}
+                mode={store?.metadata?.showcase_mode || "random"}
+                selectedIds={store?.metadata?.showcase_product_ids || []}
+                onUpdate={(mode, ids) => handleStore({
+                  metadata: {
+                    ...(store?.metadata || {}),
+                    showcase_mode: mode,
+                    showcase_product_ids: ids,
+                  }
+                })}
+              />
+            </div>
+          </div>
+        );
       case "contato":
         return (
           <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-6">
