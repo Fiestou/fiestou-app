@@ -506,8 +506,8 @@ export default function Loja() {
   };
 
   const renderStorePreviewCard = (compact = false) => (
-    <div className={`overflow-hidden rounded-xl border border-zinc-200 bg-white ${compact ? "" : "sticky top-6"}`}>
-      <div className="relative aspect-[16/7] bg-zinc-100">
+    <div className={`rounded-xl border border-zinc-200 bg-white ${compact ? "" : "sticky top-6"}`}>
+      <div className="relative aspect-[16/7] bg-zinc-100 overflow-hidden rounded-t-xl">
         {handleCover.preview ? (
           <Img src={handleCover.preview} className="absolute inset-0 h-full w-full object-cover" />
         ) : (
