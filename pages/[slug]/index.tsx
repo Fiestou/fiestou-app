@@ -550,17 +550,7 @@ export default function Store({
                     <span className="hidden md:block">Salvar</span>
                   </Button>
                 </div>
-                {socialLinks.whatsapp && (
-                  <a
-                    href={`https://wa.me/55${socialLinks.whatsapp.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-2 md:py-3 px-5 flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    <Phone size={16} />
-                    <span className="hidden md:block">WhatsApp</span>
-                  </a>
-                )}
+
               </div>
             </div>
           </div>
@@ -571,28 +561,7 @@ export default function Store({
             </div>
           )}
 
-          {hasSocial && (
-            <div className="flex items-center gap-3 mt-4">
-              {socialLinks.instagram && (
-                <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-pink-500 transition-colors">
-                  <Instagram size={18} />
-                  <span className="hidden md:inline">Instagram</span>
-                </a>
-              )}
-              {socialLinks.facebook && (
-                <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-blue-600 transition-colors">
-                  <Facebook size={18} />
-                  <span className="hidden md:inline">Facebook</span>
-                </a>
-              )}
-              {socialLinks.website && (
-                <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-800 transition-colors">
-                  <Globe size={18} />
-                  <span className="hidden md:inline">Site</span>
-                </a>
-              )}
-            </div>
-          )}
+
 
           <div className="mt-6 md:mt-8">
             {(store?.street || store?.city) && (
