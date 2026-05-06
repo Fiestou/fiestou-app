@@ -518,7 +518,7 @@ export default function Loja() {
       </div>
 
       <div className="px-4 pb-4">
-        <div className="mb-3 -mt-6 flex items-end gap-3">
+        <div className="mb-3 -mt-6 flex items-end gap-3 relative z-10">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-zinc-100 shadow-sm">
             {handleProfile.preview ? (
               <Img src={handleProfile.preview} className="h-full w-full object-cover" />
